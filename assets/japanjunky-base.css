@@ -1,7 +1,9 @@
 /* ============================================
    JAPANJUNKY BASE CSS
-   Reset, typography, color vars, body styling
+   Reset, typography, CRT frame, body styling
    ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@400;600;700&family=Press+Start+2P&display=swap');
 
 /* --- Reset --- */
 *, *::before, *::after {
@@ -13,11 +15,12 @@
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
+  background: var(--jj-bg);
+  overflow-x: hidden;
 }
 
 body, input, button, textarea, select {
-  font-family: 'MS Gothic', 'Courier New', 'Courier', monospace;
+  font-family: 'VT323', 'MS Gothic', 'Courier New', monospace;
 }
 
 img, video, svg {
@@ -55,10 +58,57 @@ button {
   color: var(--jj-text);
   font-size: 14px;
   line-height: 1.5;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  overflow-x: hidden;
-  padding-bottom: 48px; /* space for fixed Win95 taskbar */
+}
+
+/* --- CRT Monitor Frame --- */
+.jj-crt-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Scanline overlay */
+.jj-crt-frame::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.07) 2px,
+    rgba(0, 0, 0, 0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Subtle flicker */
+.jj-crt-frame::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(40, 10, 15, 0.02);
+  pointer-events: none;
+  z-index: 9998;
+  animation: jj-flicker 0.08s infinite alternate;
+}
+
+@keyframes jj-flicker {
+  0% { opacity: 0.97; }
+  100% { opacity: 1; }
+}
+
+@keyframes jj-phosphor-pulse {
+  0%, 100% { text-shadow: 0 0 8px rgba(232, 49, 58, 0.4), 0 0 20px rgba(232, 49, 58, 0.15); }
+  50% { text-shadow: 0 0 12px rgba(232, 49, 58, 0.6), 0 0 30px rgba(232, 49, 58, 0.2); }
 }
 
 /* --- Matrix rain canvas --- */
@@ -77,10 +127,18 @@ button {
 .jj-page-wrapper {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .jj-main {
-  min-height: calc(100vh - 140px);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* --- Typography --- */
@@ -112,27 +170,57 @@ h4 { font-size: 1rem; }
 .jj-text-accent { color: var(--jj-accent); }
 .jj-text-cream { color: var(--jj-text); }
 
+/* --- Blink / Marquee --- */
+.jj-blink { animation: jj-blink-anim 1s step-end infinite; }
+@keyframes jj-blink-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* --- HR Fancy --- */
+.jj-hr-fancy {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--jj-primary) 15%, var(--jj-secondary) 35%, var(--jj-text) 50%, var(--jj-secondary) 65%, var(--jj-primary) 85%, transparent 100%);
+  margin: 0;
+  box-shadow: 0 0 6px rgba(232,49,58,0.45), 0 0 16px rgba(232,49,58,0.2);
+  flex-shrink: 0;
+}
+
 /* --- Scrollbar styling --- */
-::-webkit-scrollbar {
-  width: 14px;
+::-webkit-scrollbar { width: 18px; height: 18px; }
+::-webkit-scrollbar-track { background: var(--jj-bg); border: 1px solid rgba(245,215,66,0.15); }
+::-webkit-scrollbar-thumb { background: rgba(92,92,92,0.4); border: 1px solid rgba(245,215,66,0.1); }
+::-webkit-scrollbar-thumb:hover { background: rgba(92,92,92,0.6); }
+::-webkit-scrollbar-corner { background: var(--jj-bg); }
+::-webkit-scrollbar-button:single-button {
+  background: rgba(43,43,43,0.8);
+  border: 1px solid rgba(245,215,66,0.1);
+  display: block;
+  height: 18px;
+  width: 18px;
 }
-
-::-webkit-scrollbar-track {
-  background: var(--jj-bg);
-  border-left: 1px solid #444;
+::-webkit-scrollbar-button:single-button:hover {
+  background: rgba(92,92,92,0.3);
 }
-
-::-webkit-scrollbar-thumb {
-  background: var(--jj-win95-bar);
-  border: 2px solid var(--jj-bg);
+::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpolygon points='5,2 1,8 9,8' fill='%23e8313a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: #777;
+::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpolygon points='5,8 1,2 9,2' fill='%23e8313a'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px;
 }
 
 /* --- Selection --- */
 ::selection {
   background: var(--jj-primary);
   color: var(--jj-text);
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .jj-crt-frame::after { animation: none; }
+  .jj-blink { animation: none; }
 }

@@ -1,83 +1,86 @@
-<div class="jj-homepage-grid">
-  {%- comment -%} LEFT COLUMN: Categories + Login {%- endcomment -%}
-  <aside class="jj-col-left">
-    <div class="jj-ascii-window jj-depth-2" data-parallax-layer>
-      <div class="jj-window-titlebar">
-        <span class="jj-window-titlebar__title">{{ 'categories.title' | t }}</span>
-        <div class="jj-window-titlebar__controls">
-          <span class="jj-window-titlebar__btn">─</span>
-          <span class="jj-window-titlebar__btn">□</span>
-          <span class="jj-window-titlebar__btn">×</span>
-        </div>
-      </div>
-      <div class="jj-window-body">
-        {% render 'category-list' %}
-      </div>
-    </div>
+{%- assign featured = section.settings.collection | default: collections['all'] -%}
 
-    <div class="jj-ascii-window jj-depth-2" data-parallax-layer>
-      <div class="jj-window-titlebar">
-        <span class="jj-window-titlebar__title">{% if customer %}{{ 'customer.account' | t }}{% else %}{{ 'customer.login' | t }}{% endif %}</span>
-        <div class="jj-window-titlebar__controls">
-          <span class="jj-window-titlebar__btn">─</span>
-          <span class="jj-window-titlebar__btn">×</span>
-        </div>
-      </div>
-      <div class="jj-window-body">
-        {% render 'member-login-box' %}
-      </div>
-    </div>
-  </aside>
+{%- comment -%} THREE-COLUMN CATALOG {%- endcomment -%}
+<div class="jj-catalog-layout">
 
-  {%- comment -%} CENTER COLUMN: Product Grid {%- endcomment -%}
-  <section class="jj-col-center">
-    <div class="jj-ascii-window jj-depth-1" data-parallax-layer>
-      <div class="jj-window-titlebar">
-        <span class="jj-window-titlebar__title">
-          {% if section.settings.collection != blank %}
-            {{ section.settings.collection.title }}
-          {% else %}
-            Featured Products
-          {% endif %}
-        </span>
-        <div class="jj-window-titlebar__controls">
-          <span class="jj-window-titlebar__btn">─</span>
-          <span class="jj-window-titlebar__btn">□</span>
-          <span class="jj-window-titlebar__btn">×</span>
-        </div>
-      </div>
-      <div class="jj-window-body">
-        <div class="jj-product-grid" id="jj-product-grid">
-          {%- assign featured = section.settings.collection | default: collections['all'] -%}
+  {%- comment -%} LEFT SIDEBAR {%- endcomment -%}
+  <div class="jj-left-sidebar">
+    {% render 'category-list', section: section %}
+    {% render 'member-login-box' %}
+  </div>
+
+  {%- comment -%} CENTER: PRODUCT TABLE {%- endcomment -%}
+  <div class="jj-center-content">
+    <div class="jj-product-table-wrap" id="jj-product-table-wrap">
+      <table class="jj-product-table" id="jj-product-table">
+        <colgroup>
+          <col style="width:86px;">
+          <col style="width:70px;">
+          <col style="width:70px;">
+          <col style="width:70px;">
+          <col style="width:70px;">
+          <col>
+          <col style="width:84px;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th></th>
+            <th>CODE</th>
+            <th>CAT#</th>
+            <th>COND</th>
+            <th>FORMAT</th>
+            <th>TITLE &amp; DESCRIPTION</th>
+            <th style="text-align:right;">PRICE</th>
+          </tr>
+        </thead>
+        <tbody id="jj-product-tbody">
           {%- for product in featured.products limit: section.settings.products_to_show -%}
-            {% render 'product-card-ascii', product: product %}
+            {% render 'product-table-row', product: product, index: forloop.index0 %}
           {%- else -%}
-            {%- for i in (1..8) -%}
-              {% render 'product-card-ascii', product: blank %}
+            {%- for i in (1..12) -%}
+              {% render 'product-table-row', product: blank, index: forloop.index0 %}
             {%- endfor -%}
           {%- endfor -%}
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
-  </section>
 
-  {%- comment -%} RIGHT COLUMN: Product Detail Pane {%- endcomment -%}
-  <aside class="jj-col-right">
-    <div class="jj-detail-pane jj-ascii-window jj-ascii-window--active jj-depth-3" data-parallax-layer id="jj-detail-pane">
-      <div class="jj-window-titlebar">
-        <span class="jj-window-titlebar__title" id="jj-detail-title-bar">Product Details</span>
-        <div class="jj-window-titlebar__controls">
-          <span class="jj-window-titlebar__btn">─</span>
-          <span class="jj-window-titlebar__btn">□</span>
-          <span class="jj-window-titlebar__btn">×</span>
-        </div>
+    <div class="jj-table-footer">
+      <div class="jj-table-footer__left">
+        <span style="font-weight:bold; color:var(--jj-text);">
+          {{ featured.products_count | default: 0 }} ITEMS
+        </span>
+        <span style="color:var(--jj-secondary);">|</span>
+        <span style="color:var(--jj-secondary);">
+          SHOWING 1-{{ section.settings.products_to_show }}
+        </span>
       </div>
-      <div class="jj-window-body" id="jj-detail-content">
-        {% render 'product-detail-pane' %}
+      <div class="jj-table-footer__right">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--jj-secondary);text-transform:uppercase;">Order:</span>
+        <select class="jj-table-sort-select" id="jj-sort-select">
+          <option value="manual">Default</option>
+          <option value="price-ascending">Price &#8593;</option>
+          <option value="price-descending">Price &#8595;</option>
+          <option value="title-ascending">Name A-Z</option>
+          <option value="title-descending">Name Z-A</option>
+        </select>
       </div>
     </div>
-  </aside>
+  </div>
+
+  {%- comment -%} RIGHT SIDEBAR: ITEM DETAILS {%- endcomment -%}
+  <div class="jj-right-sidebar" id="jj-detail-pane">
+    {% render 'product-detail-pane' %}
+  </div>
+
 </div>
+
+{%- comment -%} MARQUEE BAR {%- endcomment -%}
+{%- if section.settings.marquee_text != blank -%}
+  <div class="jj-marquee-bar">
+    <span class="jj-marquee-text">{{ section.settings.marquee_text }}</span>
+  </div>
+{%- endif -%}
 
 {% schema %}
 {
@@ -93,9 +96,15 @@
       "id": "products_to_show",
       "label": "Products to show",
       "min": 4,
-      "max": 24,
+      "max": 50,
       "step": 2,
-      "default": 12
+      "default": 20
+    },
+    {
+      "type": "textarea",
+      "id": "marquee_text",
+      "label": "Marquee scrolling text",
+      "default": "★★★ JAPANJUNKY ★★★ FREE SHIPPING ON ORDERS OVER $50 ★★★ USE CODE AMBER95 FOR 10% OFF ★★★ BEST VIEWED WITH NETSCAPE NAVIGATOR 3.0 AT 800x600 ★★★"
     }
   ],
   "presets": [

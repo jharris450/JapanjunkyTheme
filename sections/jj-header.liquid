@@ -1,150 +1,41 @@
-<header class="jj-header jj-ascii-window jj-depth-1" data-parallax-layer>
-  <div class="jj-window-titlebar">
-    <span class="jj-window-titlebar__title">{{ shop.name | upcase }}</span>
-    <div class="jj-window-titlebar__controls">
-      <span class="jj-window-titlebar__btn">─</span>
-      <span class="jj-window-titlebar__btn">□</span>
-      <span class="jj-window-titlebar__btn">×</span>
-    </div>
+{%- comment -%} NAV BAR {%- endcomment -%}
+<div class="jj-nav-bar">
+  <span class="jj-nav-bar__icon">&#9658;</span>
+  <span class="jj-nav-bar__label">Search</span>
+  <span class="jj-nav-bar__sep">&#8250;</span>
+  <form action="/search" method="get" style="flex:1;display:flex;">
+    <input type="search" name="q" class="jj-nav-bar__input" placeholder="Search catalog..." autocomplete="off">
+  </form>
+  <div class="jj-nav-bar__actions">
+    <a href="/checkout" class="jj-nav-action-btn">&#9632; Checkout</a>
+    <a href="/account" class="jj-nav-action-btn">&#9734; Watchlist</a>
+    <a href="/cart" class="jj-nav-action-btn">&#9632; Cart ({{ cart.item_count }})</a>
   </div>
+</div>
 
-  <div class="jj-window-body jj-header__body">
-    <div class="jj-header__logo">
-      <a href="/" class="jj-header__logo-link">
-        <pre class="jj-header__ascii-logo jj-glow" aria-label="{{ shop.name }}">
-     ╦╔═╗╔═╗╔═╗╔╗╔ ╦╦ ╦╔╗╔╦╔═╦ ╦
-     ║╠═╣╠═╝╠═╣║║║ ║║ ║║║║╠╩╗╚╦╝
-    ╚╝╩ ╩╩  ╩ ╩╝╚╝╚╝╚═╝╝╚╝╩ ╩ ╩</pre>
+{%- comment -%} STORE HEADER {%- endcomment -%}
+<div class="jj-store-header">
+  <div class="jj-store-header__left">
+    <div class="jj-store-header__logo">
+      <a href="/">
+        <pre aria-label="{{ shop.name }}">
+ ╦╔═╗╔═╗╔═╗╔╗╔ ╦╦ ╦╔╗╔╦╔═╦ ╦
+ ║╠═╣╠═╝╠═╣║║║ ║║ ║║║║╠╩╗╚╦╝
+╚╝╩ ╩╩  ╩ ╩╝╚╝╚╝╚═╝╝╚╝╩ ╩ ╩</pre>
       </a>
     </div>
-
-    <div class="jj-header__nav">
-      <form action="/search" method="get" class="jj-header__search" role="search">
-        <label for="header-search" class="jj-sr-only">{{ 'general.search' | t }}</label>
-        <span class="jj-header__search-icon">{% render 'ascii-icon', icon: 'search' %}</span>
-        <input
-          type="search"
-          id="header-search"
-          name="q"
-          class="jj-header__search-input"
-          placeholder="{{ 'header.search_placeholder' | t }}"
-          autocomplete="off"
-        >
-      </form>
-
-      <div class="jj-header__actions">
-        <a href="/cart" class="jj-header__action" title="{{ 'general.cart' | t }}">
-          {% render 'ascii-icon', icon: 'cart' %}
-          <span class="jj-header__action-label">{{ 'general.cart' | t }}</span>
-          <span class="jj-header__cart-count">({{ cart.item_count }})</span>
-        </a>
-        <a href="/account" class="jj-header__action" title="{{ 'header.watchlist' | t }}">
-          {% render 'ascii-icon', icon: 'star' %}
-          <span class="jj-header__action-label">{{ 'header.watchlist' | t }}</span>
-        </a>
-        <a href="/checkout" class="jj-header__action" title="{{ 'header.checkout' | t }}">
-          {% render 'ascii-icon', icon: 'cart' %}
-          <span class="jj-header__action-label">{{ 'header.checkout' | t }}</span>
-        </a>
-      </div>
+  </div>
+  <div class="jj-store-header__right">
+    <span class="jj-sys-status__rule"></span>
+    <div class="jj-sys-status">
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--online"></span>SYS.ONLINE</div>
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--connected"></span>CONN.SECURE</div>
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--idle"></span>{{ collections['all'].products_count | default: 0 }} ITEMS</div>
     </div>
   </div>
-</header>
+</div>
 
-<style>
-  .jj-header__body {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 8px 12px;
-  }
-
-  .jj-header__logo-link {
-    text-decoration: none;
-    color: var(--jj-primary);
-  }
-
-  .jj-header__logo-link:hover {
-    text-decoration: none;
-  }
-
-  .jj-header__ascii-logo {
-    font-size: 11px;
-    line-height: 1.1;
-    color: var(--jj-primary);
-    margin: 0;
-  }
-
-  .jj-header__nav {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .jj-header__search {
-    display: flex;
-    align-items: center;
-    border: 2px solid;
-    border-color: #808080 #dfdfdf #dfdfdf #808080;
-    background: #1a1a1a;
-    padding: 0 6px;
-  }
-
-  .jj-header__search-icon {
-    color: var(--jj-secondary);
-    font-size: 12px;
-    margin-right: 4px;
-  }
-
-  .jj-header__search-input {
-    background: transparent;
-    border: none;
-    color: var(--jj-text);
-    font-family: inherit;
-    font-size: 12px;
-    padding: 4px;
-    width: 180px;
-    outline: none;
-  }
-
-  .jj-header__actions {
-    display: flex;
-    gap: 12px;
-  }
-
-  .jj-header__action {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--jj-text);
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .jj-header__action:hover {
-    color: var(--jj-secondary);
-    text-decoration: none;
-  }
-
-  .jj-header__cart-count {
-    color: var(--jj-primary);
-    font-size: 11px;
-  }
-
-  @media (max-width: 768px) {
-    .jj-header__body {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .jj-header__search-input {
-      width: 100%;
-    }
-  }
-</style>
+<hr class="jj-hr-fancy">
 
 {% schema %}
 {

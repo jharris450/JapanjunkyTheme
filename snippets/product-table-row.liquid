@@ -1,0 +1,79 @@
+{%- comment -%}
+  Product table row for the catalog table.
+  Usage: {% render 'product-table-row', product: product, index: forloop.index0 %}
+{%- endcomment -%}
+
+{%- if product != blank -%}
+  {%- comment -%} Extract condition from tags {%- endcomment -%}
+  {%- assign p_condition = '' -%}
+  {%- assign p_condition_class = '' -%}
+  {%- for tag in product.tags -%}
+    {%- if tag contains 'condition:' -%}
+      {%- assign p_condition = tag | remove: 'condition:' | strip -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if p_condition == '' -%}
+    {%- assign p_condition = 'N/A' -%}
+  {%- endif -%}
+  {%- assign cond_lower = p_condition | downcase -%}
+  {%- if cond_lower contains 'ex' or cond_lower contains 'mint' or cond_lower contains 'new' -%}
+    {%- assign p_condition_class = 'jj-cond-ex' -%}
+  {%- elsif cond_lower contains 'vg' or cond_lower contains 'very' -%}
+    {%- assign p_condition_class = 'jj-cond-vg' -%}
+  {%- else -%}
+    {%- assign p_condition_class = 'jj-cond-g' -%}
+  {%- endif -%}
+
+  <tr data-index="{{ index }}"
+      data-product-handle="{{ product.handle }}"
+      data-product-id="{{ product.id }}"
+      data-product-title="{{ product.title | escape }}"
+      data-product-vendor="{{ product.vendor | escape }}"
+      data-product-type="{{ product.type | escape }}"
+      data-product-price="{{ product.price | money }}"
+      data-product-sku="{{ product.selected_or_first_available_variant.sku | escape }}"
+      data-product-condition="{{ p_condition | escape }}"
+      data-product-image="{%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 }}{%- endif -%}"
+      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+      data-product-available="{{ product.available }}"
+  >
+    <td class="jj-cell-thumb">
+      <div class="jj-thumb-img">
+        {%- if product.featured_image -%}
+          <img
+            src="{{ product.featured_image | image_url: width: 160 }}"
+            alt="{{ product.featured_image.alt | escape | default: product.title | escape }}"
+            width="80"
+            height="80"
+            loading="lazy"
+          >
+        {%- else -%}
+          <span style="font-size:10px;color:var(--jj-secondary);white-space:pre;font-family:'VT323',monospace;">&#9670;</span>
+        {%- endif -%}
+      </div>
+    </td>
+    <td class="jj-cell-code">{{ product.selected_or_first_available_variant.sku | default: product.handle | truncate: 10, '' }}</td>
+    <td class="jj-cell-cat">
+      {{ product.vendor | truncate: 12, '' }}<br>
+      <span class="jj-cat-label">{{ product.type | default: '---' }}</span>
+    </td>
+    <td class="jj-cell-condition"><span class="{{ p_condition_class }}">{{ p_condition }}</span></td>
+    <td class="jj-cell-format">{{ product.type | default: '---' }}</td>
+    <td class="jj-cell-title">
+      <div class="jj-cell-name">{{ product.title }}</div>
+      <div class="jj-cell-artist">{{ product.vendor }}</div>
+      <div class="jj-cell-meta">{{ product.vendor | upcase }} &middot; {{ product.type }}</div>
+    </td>
+    <td class="jj-cell-price">{{ product.price | money }}</td>
+  </tr>
+{%- else -%}
+  <tr>
+    <td class="jj-cell-thumb"><div class="jj-thumb-img"><span style="color:var(--jj-secondary);opacity:0.3;">&#9670;</span></div></td>
+    <td class="jj-cell-code" style="color:#666;">---</td>
+    <td class="jj-cell-cat" style="color:#666;">---</td>
+    <td class="jj-cell-condition" style="color:#666;">---</td>
+    <td class="jj-cell-format" style="color:#666;">---</td>
+    <td class="jj-cell-title"><div class="jj-cell-name" style="color:#666;">Sample Product</div></td>
+    <td class="jj-cell-price" style="color:#666;">---</td>
+  </tr>
+{%- endif -%}

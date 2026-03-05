@@ -1,154 +1,66 @@
 /**
- * Japanjunky - Product Select (AJAX detail pane)
+ * Japanjunky - Product Select (Table Row → Detail Pane)
  *
- * Click handler on product grid cards.
- * Fetches /products/{handle}.js via AJAX.
- * Renders detail into right column pane.
+ * Click handler on product table rows.
+ * Fetches product data from data attributes + AJAX fallback.
+ * Renders detail into right column pane with CRT render-in effects.
  */
 
 (function () {
   'use strict';
 
-  var grid = document.getElementById('jj-product-grid');
-  var detailContent = document.getElementById('jj-detail-content');
-  var detailTitleBar = document.getElementById('jj-detail-title-bar');
+  var tbody = document.getElementById('jj-product-tbody');
+  var detailPane = document.getElementById('jj-detail-pane');
+  if (!tbody || !detailPane) return;
 
-  if (!grid || !detailContent) return;
+  // Detail pane elements
+  var elArtist = document.getElementById('jj-detail-artist');
+  var elTitle = document.getElementById('jj-detail-title');
+  var elPrice = document.getElementById('jj-detail-price');
+  var elMeta = document.getElementById('jj-detail-meta');
+  var elImageContainer = document.getElementById('jj-detail-image-container');
+  var elVisual = document.getElementById('jj-detail-visual');
+  var elHeader = document.getElementById('jj-detail-header');
+  var elAddBtn = document.getElementById('jj-add-to-cart-btn');
+  var elVariantId = document.getElementById('jj-variant-id');
+  var elCartForm = document.getElementById('jj-detail-cart-form');
 
-  // Delegate click events on the product grid
-  grid.addEventListener('click', function (e) {
-    var card = e.target.closest('[data-product-handle]');
-    if (!card) return;
+  // Reduced motion preference
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var handle = card.getAttribute('data-product-handle');
-    if (!handle) return;
+  // Pending typewriter timeouts
+  var pendingTypes = {};
 
-    // Highlight selected card
-    var allCards = grid.querySelectorAll('.jj-product-card');
-    allCards.forEach(function (c) { c.classList.remove('jj-product-card--selected'); });
-    card.classList.add('jj-product-card--selected');
-
-    // Show loading state
-    detailContent.innerHTML = '<div class="jj-detail-pane__empty"><p>Loading...</p></div>';
-    if (detailTitleBar) detailTitleBar.textContent = 'Loading...';
-
-    // Fetch product data
-    fetch('/products/' + handle + '.js')
-      .then(function (res) {
-        if (!res.ok) throw new Error('Product not found');
-        return res.json();
-      })
-      .then(function (product) {
-        renderProductDetail(product);
-      })
-      .catch(function () {
-        detailContent.innerHTML =
-          '<div class="jj-detail-pane__empty"><p style="color:var(--jj-primary);">Error loading product</p></div>';
-        if (detailTitleBar) detailTitleBar.textContent = 'Error';
-      });
-  });
-
-  // Handle keyboard activation
-  grid.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      var card = e.target.closest('[data-product-handle]');
-      if (card) {
-        e.preventDefault();
-        card.click();
+  // ─── Typewriter Effect ─────────────────────────────────────
+  function typeIn(el, text, msPerChar) {
+    if (!el || text == null) return;
+    var key = el.id || 'el';
+    if (pendingTypes[key]) { clearTimeout(pendingTypes[key]); delete pendingTypes[key]; }
+    var str = String(text);
+    el.textContent = '';
+    if (reducedMotion) { el.textContent = str; return; }
+    var i = 0;
+    function tick() {
+      if (i < str.length) {
+        el.textContent += str[i++];
+        pendingTypes[key] = setTimeout(tick, msPerChar);
+      } else {
+        delete pendingTypes[key];
       }
     }
-  });
-
-  function renderProductDetail(product) {
-    if (detailTitleBar) {
-      detailTitleBar.textContent = product.title;
-    }
-
-    var imageHtml = '';
-    if (product.featured_image) {
-      imageHtml =
-        '<div class="jj-detail__image jj-ascii-img-frame">' +
-          '<img src="' + getSizedImageUrl(product.featured_image, '480x480') + '" ' +
-            'alt="' + escapeHtml(product.title) + '" width="480" height="480">' +
-        '</div>';
-    }
-
-    var priceHtml = '<div class="jj-detail__price">' + formatMoney(product.price);
-    if (product.compare_at_price && product.compare_at_price > product.price) {
-      priceHtml += ' <span class="jj-detail__price--compare">' + formatMoney(product.compare_at_price) + '</span>';
-    }
-    priceHtml += '</div>';
-
-    var variantsHtml = '';
-    if (product.variants && product.variants.length > 1) {
-      variantsHtml = '<div class="jj-detail__variants">' +
-        '<select class="jj-detail__variant-select" id="jj-variant-select">';
-      product.variants.forEach(function (v) {
-        var available = v.available ? '' : ' (Sold Out)';
-        variantsHtml += '<option value="' + v.id + '"' + (v.available ? '' : ' disabled') + '>' +
-          escapeHtml(v.title) + available + ' - ' + formatMoney(v.price) +
-          '</option>';
-      });
-      variantsHtml += '</select></div>';
-    }
-
-    var firstAvailable = product.variants ? product.variants.find(function (v) { return v.available; }) : null;
-    var variantId = firstAvailable ? firstAvailable.id : (product.variants && product.variants[0] ? product.variants[0].id : '');
-    var soldOut = !firstAvailable;
-
-    var addBtnHtml =
-      '<form action="/cart/add" method="post" class="jj-detail__add-form">' +
-        '<input type="hidden" name="id" value="' + variantId + '" id="jj-variant-id">' +
-        '<div class="jj-detail__qty">' +
-          '<label for="jj-qty">Qty:</label>' +
-          '<input type="number" id="jj-qty" name="quantity" value="1" min="1" max="99" class="jj-detail__qty-input">' +
-        '</div>' +
-        '<button type="submit" class="jj-detail__add-btn"' + (soldOut ? ' disabled' : '') + '>' +
-          (soldOut ? 'Sold Out' : 'Add to Cart') +
-        '</button>' +
-      '</form>';
-
-    var descHtml = '';
-    if (product.description) {
-      descHtml = '<div class="jj-detail__description">' + product.description + '</div>';
-    }
-
-    var viewLink = '<a href="/products/' + product.handle + '" class="jj-detail__view-link">[ View Full Page → ]</a>';
-
-    detailContent.innerHTML =
-      imageHtml +
-      '<div class="jj-detail__title">' + escapeHtml(product.title) + '</div>' +
-      priceHtml +
-      '<div class="jj-ascii-divider">═══════════════════</div>' +
-      variantsHtml +
-      addBtnHtml +
-      '<div class="jj-ascii-divider" style="margin:8px 0;">═══════════════════</div>' +
-      descHtml +
-      viewLink;
-
-    // Variant select change handler
-    var variantSelect = document.getElementById('jj-variant-select');
-    if (variantSelect) {
-      variantSelect.addEventListener('change', function () {
-        var selectedVariant = product.variants.find(function (v) {
-          return v.id === parseInt(variantSelect.value, 10);
-        });
-        if (selectedVariant) {
-          document.getElementById('jj-variant-id').value = selectedVariant.id;
-          var addBtn = detailContent.querySelector('.jj-detail__add-btn');
-          if (addBtn) {
-            addBtn.disabled = !selectedVariant.available;
-            addBtn.textContent = selectedVariant.available ? 'Add to Cart' : 'Sold Out';
-          }
-        }
-      });
-    }
+    tick();
   }
 
-  // ─── Helpers ───────────────────────────────────────────────
+  // ─── CSS Animation Trigger ─────────────────────────────────
+  function triggerClass(el, cls) {
+    if (reducedMotion || !el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth; // force reflow
+    el.classList.add(cls);
+  }
 
+  // ─── Format Money ──────────────────────────────────────────
   function formatMoney(cents) {
-    // Uses shop's money format if available, otherwise default
     var amount = (cents / 100).toFixed(2);
     if (window.Shopify && window.Shopify.currency && window.Shopify.currency.active) {
       return window.Shopify.currency.active + amount;
@@ -162,9 +74,207 @@
     return div.innerHTML;
   }
 
-  function getSizedImageUrl(src, size) {
-    if (!src) return '';
-    // Shopify image URL sizing: insert _SIZExSIZE before extension
-    return src.replace(/\.(jpg|jpeg|png|gif|webp)/, '_' + size + '.$1');
+  // ─── Row Click Handler ─────────────────────────────────────
+  tbody.addEventListener('click', function (e) {
+    var row = e.target.closest('tr[data-product-handle]');
+    if (!row) return;
+
+    // Highlight selected row
+    var allRows = tbody.querySelectorAll('tr');
+    allRows.forEach(function (r) { r.classList.remove('jj-row-selected'); });
+    row.classList.add('jj-row-selected');
+
+    // Read data from row attributes
+    var handle = row.getAttribute('data-product-handle');
+    var title = row.getAttribute('data-product-title') || '';
+    var vendor = row.getAttribute('data-product-vendor') || '';
+    var type = row.getAttribute('data-product-type') || '';
+    var price = row.getAttribute('data-product-price') || '';
+    var sku = row.getAttribute('data-product-sku') || '';
+    var condition = row.getAttribute('data-product-condition') || '';
+    var imageUrl = row.getAttribute('data-product-image') || '';
+    var variantId = row.getAttribute('data-variant-id') || '';
+    var available = row.getAttribute('data-product-available') === 'true';
+
+    // Typewriter effects on key fields
+    typeIn(elArtist, vendor.toUpperCase(), 24);
+    typeIn(elTitle, title, 18);
+    typeIn(elPrice, price, 14);
+
+    // Container phosphor wake-up
+    triggerClass(elImageContainer, 'jj-screen-refresh');
+
+    // Image or ASCII placeholder
+    if (imageUrl) {
+      if (elVisual && elVisual.tagName === 'PRE') {
+        var img = document.createElement('img');
+        img.id = 'jj-detail-visual';
+        img.src = imageUrl;
+        img.alt = title;
+        elVisual.parentNode.replaceChild(img, elVisual);
+        elVisual = img;
+      } else if (elVisual) {
+        elVisual.src = imageUrl;
+        elVisual.alt = title;
+      }
+      triggerClass(elVisual, 'jj-img-rendering');
+    } else {
+      var asciiPlaceholder =
+        '\n    ┌──────────────┐\n' +
+        '    │              │\n' +
+        '    │   ' + (sku || '◆◆◆').substring(0, 6).padEnd(6) + '     │\n' +
+        '    │              │\n' +
+        '    │   NO IMAGE   │\n' +
+        '    │   AVAILABLE  │\n' +
+        '    │              │\n' +
+        '    └──────────────┘';
+      if (elVisual && elVisual.tagName === 'IMG') {
+        var pre = document.createElement('pre');
+        pre.id = 'jj-detail-visual';
+        pre.className = 'jj-ascii-art-large';
+        pre.textContent = asciiPlaceholder;
+        elVisual.parentNode.replaceChild(pre, elVisual);
+        elVisual = pre;
+      } else if (elVisual) {
+        elVisual.textContent = asciiPlaceholder;
+      }
+      triggerClass(elVisual, 'jj-text-rendering');
+    }
+
+    // Meta block
+    if (elMeta) {
+      elMeta.innerHTML =
+        '<div><span class="jj-meta-label">SKU:</span> <span class="jj-meta-value">' + escapeHtml(sku || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">' + escapeHtml(vendor) + '</span></div>' +
+        '<div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">' + escapeHtml(type || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">' + escapeHtml(condition) + '</span>' +
+          (condition ? ' <span class="jj-cond-badge">' + escapeHtml(condition) + '</span>' : '') +
+        '</div>';
+      triggerClass(elMeta, 'jj-meta-rendering');
+    }
+
+    // Update header
+    if (elHeader) {
+      elHeader.textContent = title;
+    }
+
+    // Update add to cart
+    if (elVariantId) {
+      elVariantId.value = variantId;
+    }
+    if (elAddBtn) {
+      elAddBtn.disabled = !available;
+      elAddBtn.textContent = available ? '+ Add to Cart' : 'Sold Out';
+    }
+
+    // Fetch full product data for description (optional enhancement)
+    if (handle) {
+      fetch('/products/' + handle + '.js')
+        .then(function (res) {
+          if (!res.ok) throw new Error('Not found');
+          return res.json();
+        })
+        .then(function (product) {
+          // Update with richer data if available
+          if (product.description && elMeta) {
+            var descDiv = document.createElement('div');
+            descDiv.style.cssText = 'margin-top:8px;font-size:14px;color:var(--jj-text);max-height:100px;overflow-y:auto;line-height:1.4;';
+            descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + product.description.substring(0, 200) + '</span>';
+            elMeta.appendChild(descDiv);
+          }
+          // Update variant ID to first available
+          if (product.variants && product.variants.length > 0) {
+            var firstAvailable = product.variants.find(function (v) { return v.available; });
+            if (firstAvailable && elVariantId) {
+              elVariantId.value = firstAvailable.id;
+            }
+          }
+        })
+        .catch(function () {
+          // Silently fail - we already have data from attributes
+        });
+    }
+  });
+
+  // ─── Add to Cart Button ────────────────────────────────────
+  if (elAddBtn && elCartForm) {
+    elAddBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (elAddBtn.disabled) return;
+      var variantId = elVariantId ? elVariantId.value : '';
+      if (!variantId) return;
+
+      elAddBtn.textContent = 'Adding...';
+      elAddBtn.disabled = true;
+
+      fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: parseInt(variantId, 10), quantity: 1 })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function () {
+          elAddBtn.textContent = 'Added!';
+          setTimeout(function () {
+            elAddBtn.textContent = '+ Add to Cart';
+            elAddBtn.disabled = false;
+          }, 1500);
+          // Update cart count in nav
+          var cartBtns = document.querySelectorAll('.jj-nav-action-btn');
+          cartBtns.forEach(function (btn) {
+            if (btn.textContent.indexOf('Cart') !== -1) {
+              fetch('/cart.js').then(function (r) { return r.json(); }).then(function (cart) {
+                btn.innerHTML = '&#9632; Cart (' + cart.item_count + ')';
+              });
+            }
+          });
+        })
+        .catch(function () {
+          elAddBtn.textContent = 'Error';
+          setTimeout(function () {
+            elAddBtn.textContent = '+ Add to Cart';
+            elAddBtn.disabled = false;
+          }, 1500);
+        });
+    });
+  }
+
+  // ─── Keyboard Support ──────────────────────────────────────
+  tbody.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      var row = e.target.closest('tr[data-product-handle]');
+      if (row) {
+        e.preventDefault();
+        row.click();
+      }
+    }
+  });
+
+  // ─── Sort Select ───────────────────────────────────────────
+  var sortSelect = document.getElementById('jj-sort-select');
+  if (sortSelect) {
+    sortSelect.addEventListener('change', function () {
+      var rows = Array.from(tbody.querySelectorAll('tr[data-product-handle]'));
+      var sortVal = sortSelect.value;
+
+      rows.sort(function (a, b) {
+        switch (sortVal) {
+          case 'price-ascending':
+            return parseFloat(a.getAttribute('data-product-price').replace(/[^0-9.]/g, '')) -
+                   parseFloat(b.getAttribute('data-product-price').replace(/[^0-9.]/g, ''));
+          case 'price-descending':
+            return parseFloat(b.getAttribute('data-product-price').replace(/[^0-9.]/g, '')) -
+                   parseFloat(a.getAttribute('data-product-price').replace(/[^0-9.]/g, ''));
+          case 'title-ascending':
+            return (a.getAttribute('data-product-title') || '').localeCompare(b.getAttribute('data-product-title') || '');
+          case 'title-descending':
+            return (b.getAttribute('data-product-title') || '').localeCompare(a.getAttribute('data-product-title') || '');
+          default:
+            return 0;
+        }
+      });
+
+      rows.forEach(function (row) { tbody.appendChild(row); });
+    });
   }
 })();

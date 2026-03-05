@@ -1,14 +1,44 @@
 {%- comment -%}
-  Empty state for the right-column product detail pane.
-  Populated dynamically by japanjunky-product-select.js via AJAX.
+  Right sidebar product detail pane.
+  Populated dynamically by japanjunky-product-select.js on row click.
 {%- endcomment -%}
 
-<div class="jj-detail-pane__empty" id="jj-detail-empty">
-  <div class="jj-detail-pane__empty-icon">◆</div>
-  <p>← Click a product to view details</p>
-  <p class="jj-ascii-divider" style="margin-top:12px;">═══════════════════</p>
-  <p style="margin-top:8px;font-size:11px;color:#555;">
-    Browse our selection of<br>
-    Japanese electronics &amp; tech
-  </p>
+<div class="jj-detail-header" id="jj-detail-header">Item Details</div>
+<div class="jj-detail-recently">Select an Item</div>
+<div class="jj-detail-artist" id="jj-detail-artist">---</div>
+<div class="jj-detail-image-wrap">
+  <div class="jj-detail-image" id="jj-detail-image-container">
+    <pre class="jj-ascii-art-large" id="jj-detail-visual">
+    ┌──────────────┐
+    │              │
+    │   ◆  ◆  ◆   │
+    │              │
+    │   CLICK A    │
+    │   PRODUCT    │
+    │   TO VIEW    │
+    │              │
+    │   ◆  ◆  ◆   │
+    │              │
+    └──────────────┘</pre>
+  </div>
 </div>
+<div class="jj-detail-item-title" id="jj-detail-title">---</div>
+<div class="jj-detail-meta" id="jj-detail-meta">
+  <div><span class="jj-meta-label">Catalog #:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">---</span></div>
+</div>
+<div class="jj-detail-price-row">
+  <div class="jj-detail-price" id="jj-detail-price">---</div>
+  <div class="jj-detail-price-icons">
+    <span title="Info">&#9632;</span><span title="Compare">&#8801;</span><span title="Share">&#8599;</span><span title="Zoom">&#9670;</span>
+  </div>
+</div>
+<div class="jj-detail-actions" id="jj-detail-actions">
+  <button class="jj-action-btn" id="jj-add-to-cart-btn" disabled>+ Add to Cart</button>
+  <a href="/account" class="jj-action-btn">&#9734; Watchlist</a>
+</div>
+<form id="jj-detail-cart-form" action="/cart/add" method="post" style="display:none;">
+  <input type="hidden" name="id" id="jj-variant-id" value="">
+  <input type="hidden" name="quantity" value="1">
+</form>
