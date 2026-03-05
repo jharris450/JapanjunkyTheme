@@ -1,0 +1,11 @@
+{
+  "type": "header",
+  "name": "Header group",
+  "sections": {
+    "header": {
+      "type": "jj-header",
+      "settings": {}
+    }
+  },
+  "order": ["header"]
+}

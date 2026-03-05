@@ -1,0 +1,40 @@
+{%- comment -%}
+  Member login box / account info for the left column.
+{%- endcomment -%}
+
+{%- if customer -%}
+  <div class="jj-login-box jj-login-box--logged-in">
+    <p style="font-size:12px;margin-bottom:6px;">
+      {% render 'ascii-icon', icon: 'user' %}
+      {{ customer.first_name | default: customer.email }}
+    </p>
+    <a href="/account" class="jj-login-box__link">{{ 'customer.account' | t }}</a>
+    <a href="/account/orders" class="jj-login-box__link">{{ 'customer.orders' | t }}</a>
+    <a href="/account/logout" class="jj-login-box__link" style="color:var(--jj-primary);">{{ 'customer.logout' | t }}</a>
+  </div>
+{%- else -%}
+  <div class="jj-login-box">
+    <form action="/account/login" method="post" class="jj-login-box__form">
+      <input
+        type="email"
+        name="customer[email]"
+        class="jj-login-box__input"
+        placeholder="Email"
+        autocomplete="email"
+        required
+      >
+      <input
+        type="password"
+        name="customer[password]"
+        class="jj-login-box__input"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+      >
+      <button type="submit" class="jj-login-box__btn">
+        {{ 'customer.login' | t }}
+      </button>
+    </form>
+    <a href="/account/register" class="jj-login-box__link">{{ 'customer.register' | t }}</a>
+  </div>
+{%- endif -%}

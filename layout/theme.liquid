@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>{{ page_title }}{% unless page_title contains shop.name %} - {{ shop.name }}{% endunless %}</title>
+
+  {% if page_description %}
+    <meta name="description" content="{{ page_description | escape }}">
+  {% endif %}
+
+  {{ content_for_header }}
+
+  <style>
+    :root {
+      --jj-bg: {{ settings.color_background }};
+      --jj-primary: {{ settings.color_primary }};
+      --jj-secondary: {{ settings.color_secondary }};
+      --jj-accent: {{ settings.color_accent }};
+      --jj-text: {{ settings.color_text }};
+      --jj-win95-bar: {{ settings.color_win95_bar }};
+      --jj-matrix-opacity: {{ settings.matrix_rain_opacity | divided_by: 100.0 }};
+      --jj-parallax-intensity: {{ settings.parallax_intensity }}px;
+    }
+  </style>
+
+  {{ 'japanjunky-base.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
+
+  {% if settings.matrix_rain_enabled %}
+    <script>
+      window.JJ_MATRIX_CONFIG = {
+        speed: {{ settings.matrix_rain_speed }},
+        opacity: {{ settings.matrix_rain_opacity | divided_by: 100.0 }}
+      };
+    </script>
+  {% endif %}
+  {% if settings.parallax_enabled %}
+    <script>
+      window.JJ_PARALLAX_CONFIG = {
+        enabled: true,
+        intensity: {{ settings.parallax_intensity }}
+      };
+    </script>
+  {% endif %}
+</head>
+
+<body class="jj-body">
+  {% if settings.matrix_rain_enabled %}
+    <canvas id="jj-matrix-canvas" aria-hidden="true"></canvas>
+  {% endif %}
+
+  <div class="jj-page-wrapper">
+    {% sections 'header-group' %}
+
+    <main id="MainContent" class="jj-main" role="main">
+      {{ content_for_layout }}
+    </main>
+
+    {% sections 'footer-group' %}
+  </div>
+
+  <script src="{{ 'japanjunky-parallax.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-product-select.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
+</body>
+</html>

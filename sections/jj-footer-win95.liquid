@@ -1,0 +1,24 @@
+{% render 'win95-start-menu' %}
+
+<footer class="jj-taskbar" role="contentinfo">
+  <button class="jj-start-btn" id="jj-start-btn" aria-expanded="false" aria-controls="jj-start-menu">
+    <span class="jj-start-btn__icon jj-glow">■</span>
+    <span>{{ 'footer.start' | t }}</span>
+  </button>
+
+  <div class="jj-taskbar__tabs">
+    {% render 'win95-taskbar-tab', label: 'footer.home' | t, url: '/', icon: '🏠', active: true %}
+    {% render 'win95-taskbar-tab', label: 'footer.collections' | t, url: '/collections', icon: '📦' %}
+    {% render 'win95-taskbar-tab', label: 'footer.about' | t, url: '/pages/about', icon: '📄' %}
+    {% render 'win95-taskbar-tab', label: 'footer.contact' | t, url: '/pages/contact', icon: '✉' %}
+  </div>
+
+  {% render 'win95-clock' %}
+</footer>
+
+{% schema %}
+{
+  "name": "Win95 Footer",
+  "settings": []
+}
+{% endschema %}

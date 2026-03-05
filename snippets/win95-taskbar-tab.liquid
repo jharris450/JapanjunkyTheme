@@ -1,0 +1,13 @@
+{%- comment -%}
+  Taskbar tab component.
+  Usage: {% render 'win95-taskbar-tab', label: 'Home', url: '/', icon: '🏠', active: true %}
+{%- endcomment -%}
+
+<a
+  href="{{ url | default: '#' }}"
+  class="jj-taskbar-tab{% if active %} jj-taskbar-tab--active{% endif %}"
+  title="{{ label }}"
+>
+  {%- if icon -%}<span class="jj-taskbar-tab__icon">{{ icon }}</span>{%- endif -%}
+  {{ label }}
+</a>

@@ -1,0 +1,25 @@
+{%- comment -%}
+  ASCII art icons. Usage: {% render 'ascii-icon', icon: 'cart' %}
+  Available: cart, search, user, star, home, folder, mail
+{%- endcomment -%}
+
+{%- case icon -%}
+  {%- when 'cart' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">[■]</span>
+  {%- when 'search' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">◎</span>
+  {%- when 'user' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">☻</span>
+  {%- when 'star' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">★</span>
+  {%- when 'home' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">⌂</span>
+  {%- when 'folder' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">📁</span>
+  {%- when 'mail' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">✉</span>
+  {%- when 'power' -%}
+    <span class="jj-ascii-icon" aria-hidden="true">⏻</span>
+  {%- else -%}
+    <span class="jj-ascii-icon" aria-hidden="true">◆</span>
+{%- endcase -%}

@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "homepage_body": {
+      "type": "jj-homepage-body",
+      "settings": {}
+    }
+  },
+  "order": ["homepage_body"]
+}

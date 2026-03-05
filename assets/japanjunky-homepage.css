@@ -1,0 +1,319 @@
+/* ============================================
+   JAPANJUNKY HOMEPAGE CSS
+   3-column CSS Grid layout
+   ============================================ */
+
+/* --- Homepage 3-Column Grid --- */
+.jj-homepage-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  gap: 0;
+  min-height: calc(100vh - 140px);
+  padding: 8px;
+}
+
+/* --- Left Column (Categories + Login) --- */
+.jj-col-left {
+  padding-right: 8px;
+}
+
+/* --- Center Column (Product Grid) --- */
+.jj-col-center {
+  padding: 0 8px;
+  border-left: 1px solid rgba(245, 215, 66, 0.2);
+  border-right: 1px solid rgba(245, 215, 66, 0.2);
+}
+
+.jj-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 8px 0;
+}
+
+/* --- Right Column (Product Detail Pane) --- */
+.jj-col-right {
+  padding-left: 8px;
+}
+
+.jj-detail-pane {
+  position: sticky;
+  top: 8px;
+}
+
+.jj-detail-pane__empty {
+  text-align: center;
+  color: #777;
+  padding: 40px 10px;
+  font-size: 12px;
+}
+
+.jj-detail-pane__empty-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  color: var(--jj-secondary);
+  opacity: 0.4;
+}
+
+/* --- Product Card --- */
+.jj-product-card {
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.jj-product-card:hover {
+  border-color: var(--jj-primary);
+  box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
+}
+
+.jj-product-card--selected {
+  border-color: var(--jj-primary);
+  box-shadow: 0 0 10px rgba(232, 49, 58, 0.4);
+}
+
+.jj-product-card__image {
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--jj-secondary);
+}
+
+.jj-product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.jj-product-card__info {
+  padding: 6px 8px;
+}
+
+.jj-product-card__title {
+  font-size: 11px;
+  color: var(--jj-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.jj-product-card__price {
+  font-size: 13px;
+  color: var(--jj-primary);
+  font-weight: bold;
+}
+
+.jj-product-card__price--compare {
+  font-size: 10px;
+  color: #888;
+  text-decoration: line-through;
+  margin-left: 6px;
+  font-weight: normal;
+}
+
+/* --- Product Detail (right column) --- */
+.jj-detail__image {
+  margin-bottom: 10px;
+}
+
+.jj-detail__title {
+  font-size: 14px;
+  color: var(--jj-secondary);
+  margin-bottom: 6px;
+}
+
+.jj-detail__price {
+  font-size: 18px;
+  color: var(--jj-primary);
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.jj-detail__price--compare {
+  font-size: 12px;
+  color: #888;
+  text-decoration: line-through;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.jj-detail__description {
+  font-size: 12px;
+  color: var(--jj-text);
+  margin-bottom: 12px;
+  line-height: 1.6;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.jj-detail__variants {
+  margin-bottom: 10px;
+}
+
+.jj-detail__variant-select {
+  width: 100%;
+  padding: 4px 6px;
+  background: #1a1a1a;
+  border: 2px solid;
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  color: var(--jj-text);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.jj-detail__qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.jj-detail__qty-input {
+  width: 50px;
+  padding: 3px 6px;
+  background: #1a1a1a;
+  border: 2px solid;
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  color: var(--jj-text);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+
+.jj-detail__add-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--jj-primary);
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+  border: 2px solid;
+  border-color: #ff6068 #a01020 #a01020 #ff6068;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.jj-detail__add-btn:hover {
+  background: #c02030;
+}
+
+.jj-detail__add-btn:active {
+  border-color: #a01020 #ff6068 #ff6068 #a01020;
+}
+
+.jj-detail__add-btn:disabled {
+  background: #555;
+  border-color: #666 #444 #444 #666;
+  cursor: default;
+  color: #999;
+}
+
+.jj-detail__view-link {
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--jj-accent);
+}
+
+/* --- Category List --- */
+.jj-category-list__item {
+  display: block;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--jj-text);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: border-color 0.1s, color 0.1s;
+}
+
+.jj-category-list__item:hover,
+.jj-category-list__item--active {
+  color: var(--jj-secondary);
+  border-left-color: var(--jj-primary);
+  text-decoration: none;
+}
+
+.jj-category-list__count {
+  float: right;
+  color: #777;
+  font-size: 10px;
+}
+
+/* --- Member Login Box --- */
+.jj-login-box__form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jj-login-box__input {
+  padding: 4px 6px;
+  background: #1a1a1a;
+  border: 2px solid;
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  color: var(--jj-text);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.jj-login-box__btn {
+  padding: 4px 8px;
+  background: var(--jj-win95-bar);
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  color: var(--jj-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.jj-login-box__btn:active {
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+}
+
+.jj-login-box__link {
+  font-size: 11px;
+  color: var(--jj-accent);
+  text-align: center;
+  display: block;
+  margin-top: 4px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .jj-homepage-grid {
+    grid-template-columns: 180px 1fr 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .jj-homepage-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .jj-col-left {
+    padding-right: 0;
+  }
+
+  .jj-col-center {
+    padding: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .jj-col-right {
+    padding-left: 0;
+  }
+
+  .jj-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .jj-product-grid {
+    grid-template-columns: 1fr;
+  }
+}

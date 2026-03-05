@@ -1,0 +1,28 @@
+{%- comment -%}
+  Left-column category navigation.
+  Lists all collections in the store.
+{%- endcomment -%}
+
+<nav class="jj-category-list" aria-label="{{ 'categories.title' | t }}">
+  <a href="/collections/all" class="jj-category-list__item{% if request.path == '/collections/all' %} jj-category-list__item--active{% endif %}">
+    ► {{ 'categories.all' | t }}
+  </a>
+
+  {%- for collection in collections -%}
+    {%- if collection.handle != 'all' and collection.handle != 'frontpage' -%}
+      <a
+        href="{{ collection.url }}"
+        class="jj-category-list__item{% if request.path == collection.url %} jj-category-list__item--active{% endif %}"
+      >
+        ► {{ collection.title }}
+        <span class="jj-category-list__count">({{ collection.products_count }})</span>
+      </a>
+    {%- endif -%}
+  {%- else -%}
+    <a href="/collections/all" class="jj-category-list__item">► Electronics</a>
+    <a href="/collections/all" class="jj-category-list__item">► Retro Gaming</a>
+    <a href="/collections/all" class="jj-category-list__item">► Audio</a>
+    <a href="/collections/all" class="jj-category-list__item">► Accessories</a>
+    <a href="/collections/all" class="jj-category-list__item">► New Arrivals</a>
+  {%- endfor -%}
+</nav>

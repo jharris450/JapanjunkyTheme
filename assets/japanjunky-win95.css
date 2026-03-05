@@ -1,0 +1,222 @@
+/* ============================================
+   JAPANJUNKY WIN95 CSS
+   Fixed taskbar, bevel borders, Start menu
+   ============================================ */
+
+/* --- Classic Bevel Borders --- */
+.jj-bevel-out {
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+}
+
+.jj-bevel-in {
+  border: 2px solid;
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+}
+
+/* --- Win95 Taskbar (fixed bottom) --- */
+.jj-taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: var(--jj-win95-bar);
+  border-top: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  z-index: 1000;
+  gap: 4px;
+  font-size: 12px;
+}
+
+/* --- Start Button --- */
+.jj-start-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  height: 32px;
+  background: var(--jj-win95-bar);
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  font-weight: bold;
+  color: var(--jj-text);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.jj-start-btn:active,
+.jj-start-btn--active {
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  padding: 3px 7px 1px 9px;
+}
+
+.jj-start-btn__icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* --- Start Menu --- */
+.jj-start-menu {
+  display: none;
+  position: fixed;
+  bottom: 40px;
+  left: 0;
+  width: 220px;
+  background: var(--jj-win95-bar);
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  z-index: 1001;
+  box-shadow: 4px -4px 8px rgba(0,0,0,0.4);
+}
+
+.jj-start-menu--open {
+  display: block;
+}
+
+.jj-start-menu__sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to top, var(--jj-primary), #a01020);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 0;
+  font-weight: bold;
+  font-size: 14px;
+  color: var(--jj-text);
+  letter-spacing: 2px;
+}
+
+.jj-start-menu__items {
+  margin-left: 24px;
+  padding: 4px 0;
+}
+
+.jj-start-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  color: var(--jj-text);
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+}
+
+.jj-start-menu__item:hover {
+  background: var(--jj-primary);
+  color: #fff;
+  text-decoration: none;
+}
+
+.jj-start-menu__item--has-submenu::after {
+  content: '►';
+  margin-left: auto;
+  font-size: 8px;
+}
+
+.jj-start-menu__divider {
+  height: 1px;
+  background: #808080;
+  margin: 2px 24px 2px 36px;
+  border-bottom: 1px solid #dfdfdf;
+}
+
+/* --- Submenu --- */
+.jj-start-submenu {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: -2px;
+  width: 180px;
+  background: var(--jj-win95-bar);
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  padding: 4px 0;
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+}
+
+.jj-start-menu__item:hover > .jj-start-submenu {
+  display: block;
+}
+
+.jj-start-submenu__item {
+  display: block;
+  padding: 4px 12px;
+  color: var(--jj-text);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.jj-start-submenu__item:hover {
+  background: var(--jj-primary);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* --- Taskbar Tabs --- */
+.jj-taskbar__tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.jj-taskbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  height: 28px;
+  max-width: 160px;
+  background: var(--jj-win95-bar);
+  border: 2px solid;
+  border-color: #dfdfdf #808080 #808080 #dfdfdf;
+  font-size: 11px;
+  color: var(--jj-text);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jj-taskbar-tab:hover {
+  text-decoration: none;
+  color: var(--jj-secondary);
+}
+
+.jj-taskbar-tab--active {
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  background: #4a4a4a;
+}
+
+/* --- Clock Tray --- */
+.jj-clock-tray {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  height: 28px;
+  border: 2px solid;
+  border-color: #808080 #dfdfdf #dfdfdf #808080;
+  font-size: 12px;
+  color: var(--jj-text);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.jj-clock-tray__label {
+  color: var(--jj-accent);
+  font-size: 10px;
+}

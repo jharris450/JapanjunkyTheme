@@ -1,0 +1,51 @@
+{
+  "general": {
+    "search": "Search",
+    "cart": "Cart",
+    "menu": "Menu",
+    "close": "Close",
+    "loading": "Loading..."
+  },
+  "header": {
+    "search_placeholder": "Search products...",
+    "cart_count": {
+      "one": "{{ count }} item",
+      "other": "{{ count }} items"
+    },
+    "watchlist": "Watchlist",
+    "checkout": "Checkout"
+  },
+  "products": {
+    "add_to_cart": "Add to Cart",
+    "view_full_page": "View Full Page",
+    "sold_out": "Sold Out",
+    "price": "Price",
+    "quantity": "Qty",
+    "description": "Description",
+    "select_variant": "Select option"
+  },
+  "footer": {
+    "start": "Start",
+    "clock_label": "JST",
+    "home": "Home",
+    "collections": "Collections",
+    "about": "About",
+    "contact": "Contact",
+    "policies": "Policies",
+    "shipping": "Shipping Policy",
+    "returns": "Return Policy",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "customer": {
+    "login": "Login",
+    "register": "Register",
+    "account": "My Account",
+    "orders": "Orders",
+    "logout": "Logout"
+  },
+  "categories": {
+    "title": "Categories",
+    "all": "All Products"
+  }
+}

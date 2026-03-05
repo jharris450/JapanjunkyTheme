@@ -1,0 +1,107 @@
+<div class="jj-homepage-grid">
+  {%- comment -%} LEFT COLUMN: Categories + Login {%- endcomment -%}
+  <aside class="jj-col-left">
+    <div class="jj-ascii-window jj-depth-2" data-parallax-layer>
+      <div class="jj-window-titlebar">
+        <span class="jj-window-titlebar__title">{{ 'categories.title' | t }}</span>
+        <div class="jj-window-titlebar__controls">
+          <span class="jj-window-titlebar__btn">─</span>
+          <span class="jj-window-titlebar__btn">□</span>
+          <span class="jj-window-titlebar__btn">×</span>
+        </div>
+      </div>
+      <div class="jj-window-body">
+        {% render 'category-list' %}
+      </div>
+    </div>
+
+    <div class="jj-ascii-window jj-depth-2" data-parallax-layer>
+      <div class="jj-window-titlebar">
+        <span class="jj-window-titlebar__title">{% if customer %}{{ 'customer.account' | t }}{% else %}{{ 'customer.login' | t }}{% endif %}</span>
+        <div class="jj-window-titlebar__controls">
+          <span class="jj-window-titlebar__btn">─</span>
+          <span class="jj-window-titlebar__btn">×</span>
+        </div>
+      </div>
+      <div class="jj-window-body">
+        {% render 'member-login-box' %}
+      </div>
+    </div>
+  </aside>
+
+  {%- comment -%} CENTER COLUMN: Product Grid {%- endcomment -%}
+  <section class="jj-col-center">
+    <div class="jj-ascii-window jj-depth-1" data-parallax-layer>
+      <div class="jj-window-titlebar">
+        <span class="jj-window-titlebar__title">
+          {% if section.settings.collection != blank %}
+            {{ section.settings.collection.title }}
+          {% else %}
+            Featured Products
+          {% endif %}
+        </span>
+        <div class="jj-window-titlebar__controls">
+          <span class="jj-window-titlebar__btn">─</span>
+          <span class="jj-window-titlebar__btn">□</span>
+          <span class="jj-window-titlebar__btn">×</span>
+        </div>
+      </div>
+      <div class="jj-window-body">
+        <div class="jj-product-grid" id="jj-product-grid">
+          {%- assign featured = section.settings.collection | default: collections['all'] -%}
+          {%- for product in featured.products limit: section.settings.products_to_show -%}
+            {% render 'product-card-ascii', product: product %}
+          {%- else -%}
+            {%- for i in (1..8) -%}
+              {% render 'product-card-ascii', product: blank %}
+            {%- endfor -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {%- comment -%} RIGHT COLUMN: Product Detail Pane {%- endcomment -%}
+  <aside class="jj-col-right">
+    <div class="jj-detail-pane jj-ascii-window jj-ascii-window--active jj-depth-3" data-parallax-layer id="jj-detail-pane">
+      <div class="jj-window-titlebar">
+        <span class="jj-window-titlebar__title" id="jj-detail-title-bar">Product Details</span>
+        <div class="jj-window-titlebar__controls">
+          <span class="jj-window-titlebar__btn">─</span>
+          <span class="jj-window-titlebar__btn">□</span>
+          <span class="jj-window-titlebar__btn">×</span>
+        </div>
+      </div>
+      <div class="jj-window-body" id="jj-detail-content">
+        {% render 'product-detail-pane' %}
+      </div>
+    </div>
+  </aside>
+</div>
+
+{% schema %}
+{
+  "name": "Homepage Body",
+  "settings": [
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Featured collection"
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "label": "Products to show",
+      "min": 4,
+      "max": 24,
+      "step": 2,
+      "default": 12
+    }
+  ],
+  "presets": [
+    {
+      "name": "Homepage Body"
+    }
+  ]
+}
+{% endschema %}

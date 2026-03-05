@@ -1,0 +1,49 @@
+{%- comment -%}
+  Product card for the grid. Renders an ASCII-framed product tile.
+  Usage: {% render 'product-card-ascii', product: product %}
+{%- endcomment -%}
+
+{%- if product != blank -%}
+  <article
+    class="jj-product-card jj-ascii-window"
+    data-product-handle="{{ product.handle }}"
+    data-product-id="{{ product.id }}"
+    role="button"
+    tabindex="0"
+    aria-label="{{ product.title | escape }}"
+  >
+    <div class="jj-product-card__image">
+      {%- if product.featured_image != blank -%}
+        <img
+          src="{{ product.featured_image | image_url: width: 360 }}"
+          alt="{{ product.featured_image.alt | escape | default: product.title | escape }}"
+          width="360"
+          height="360"
+          loading="lazy"
+        >
+      {%- else -%}
+        <div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--jj-secondary);font-size:24px;">◆</div>
+      {%- endif -%}
+    </div>
+    <div class="jj-product-card__info">
+      <div class="jj-product-card__title">{{ product.title }}</div>
+      <div class="jj-product-card__price">
+        {{ product.price | money }}
+        {%- if product.compare_at_price > product.price -%}
+          <span class="jj-product-card__price--compare">{{ product.compare_at_price | money }}</span>
+        {%- endif -%}
+      </div>
+    </div>
+  </article>
+{%- else -%}
+  {%- comment -%} Placeholder card when no products exist {%- endcomment -%}
+  <article class="jj-product-card jj-ascii-window">
+    <div class="jj-product-card__image">
+      <div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;color:var(--jj-secondary);font-size:24px;opacity:0.3;">◆</div>
+    </div>
+    <div class="jj-product-card__info">
+      <div class="jj-product-card__title" style="color:#666;">Sample Product</div>
+      <div class="jj-product-card__price" style="color:#666;">¥0</div>
+    </div>
+  </article>
+{%- endif -%}

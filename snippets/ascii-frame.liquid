@@ -1,0 +1,43 @@
+{%- comment -%}
+  Reusable ASCII border wrapper.
+  Usage: {% render 'ascii-frame', title: 'Window Title' %}
+  Content is passed via the body of the render block or via `content` param.
+{%- endcomment -%}
+
+{%- liquid
+  assign border_style = settings.ascii_border_style | default: 'double'
+  case border_style
+    when 'single'
+      assign tl = '+'
+      assign tr = '+'
+      assign bl = '+'
+      assign br = '+'
+      assign h  = '-'
+      assign v  = '|'
+    when 'double'
+      assign tl = '╔'
+      assign tr = '╗'
+      assign bl = '╚'
+      assign br = '╝'
+      assign h  = '═'
+      assign v  = '║'
+    when 'heavy'
+      assign tl = '┏'
+      assign tr = '┓'
+      assign bl = '┗'
+      assign br = '┛'
+      assign h  = '━'
+      assign v  = '┃'
+  endcase
+-%}
+
+<div class="jj-ascii-frame">
+  <span class="jj-ascii-frame__top" aria-hidden="true">{{ tl }}{{ h | repeat: 40 }}{{ tr }}</span>
+  {%- if title -%}
+    <span class="jj-ascii-frame__top" aria-hidden="true">{{ v }} {{ title }}{{ v }}</span>
+  {%- endif -%}
+  <div class="jj-ascii-frame__content">
+    {{ content }}
+  </div>
+  <span class="jj-ascii-frame__bottom" aria-hidden="true">{{ bl }}{{ h | repeat: 40 }}{{ br }}</span>
+</div>

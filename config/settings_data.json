@@ -1,0 +1,19 @@
+{
+  "current": {
+    "color_background": "#2b2b2b",
+    "color_primary": "#e8313a",
+    "color_secondary": "#f5d742",
+    "color_accent": "#4aa4e0",
+    "color_text": "#f0e6d3",
+    "color_win95_bar": "#5c5c5c",
+    "matrix_rain_enabled": true,
+    "matrix_rain_opacity": 15,
+    "matrix_rain_speed": 50,
+    "parallax_enabled": true,
+    "parallax_intensity": 8,
+    "ascii_border_style": "double",
+    "ascii_glow_enabled": true,
+    "sections": {},
+    "content_for_index": []
+  }
+}
