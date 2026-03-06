@@ -27,6 +27,7 @@
   </style>
 
   {{ 'japanjunky-base.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
@@ -54,7 +55,7 @@
     <canvas id="jj-matrix-canvas" aria-hidden="true"></canvas>
   {% endif %}
 
-  <div class="jj-page-wrapper jj-crt-frame">
+  <div class="jj-page-wrapper jj-crt-frame jj-crt-on">
     {% sections 'header-group' %}
 
     <main id="MainContent" class="jj-main" role="main">

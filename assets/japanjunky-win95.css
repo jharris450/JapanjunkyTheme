@@ -49,6 +49,8 @@
 
 .jj-start-btn:hover {
   border-color: var(--jj-primary);
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
+  box-shadow: 0 0 6px rgba(232, 49, 58, 0.15);
 }
 
 .jj-start-btn:active,
@@ -101,6 +103,7 @@
   background: #111;
   border-color: #444;
   color: var(--jj-text);
+  text-shadow: 0 0 4px rgba(212, 201, 168, 0.3);
 }
 
 /* --- Clock Tray --- */
@@ -163,6 +166,7 @@
   letter-spacing: 2px;
   line-height: 1.3;
   white-space: nowrap;
+  text-shadow: 0 0 6px rgba(232, 49, 58, 0.4);
 }
 
 .jj-start-menu__items {
@@ -199,6 +203,8 @@
   background: var(--jj-primary);
   color: #000;
   text-decoration: none;
+  text-shadow: none;
+  box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
 }
 
 .jj-start-menu__item--has-submenu::after {
@@ -246,6 +252,8 @@
   background: var(--jj-primary);
   color: #000;
   text-decoration: none;
+  text-shadow: none;
+  box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
 }
 
 /* --- Start menu icon --- */

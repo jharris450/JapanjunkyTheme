@@ -17,6 +17,8 @@ html {
   -webkit-text-size-adjust: 100%;
   background: #000;
   overflow-x: hidden;
+  /* CRT: no rounded corners anywhere */
+  border-radius: 0;
 }
 
 body, input, button, textarea, select {
@@ -37,6 +39,7 @@ a {
 a:hover {
   color: var(--jj-secondary);
   text-decoration: underline;
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.3);
 }
 
 ul, ol {
@@ -119,17 +122,27 @@ button {
   overflow: hidden;
 }
 
-/* --- Typography --- */
+/* --- Typography (CRT: color + glow for hierarchy, not weight) --- */
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
   color: var(--jj-secondary);
   line-height: 1.2;
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.3);
 }
 
-h1 { font-size: 1.5rem; }
-h2 { font-size: 1.25rem; }
-h3 { font-size: 1.125rem; }
-h4 { font-size: 1rem; }
+h1 { font-size: 20px; }
+h2 { font-size: 16px; }
+h3 { font-size: 14px; }
+h4 { font-size: 13px; }
+
+/* Display headings — VT323 pixel font for hero/large text */
+.jj-display {
+  font-family: 'VT323', 'IBM Plex Mono', monospace;
+  line-height: 1.1;
+}
+.jj-display--lg { font-size: 48px; }
+.jj-display--md { font-size: 36px; }
+.jj-display--sm { font-size: 24px; }
 
 /* --- Utility --- */
 .jj-sr-only {
@@ -173,6 +186,13 @@ h4 { font-size: 1rem; }
 ::selection {
   background: var(--jj-primary);
   color: #000;
+}
+
+/* --- Focus Indicators (CRT glow) --- */
+:focus-visible {
+  outline: 1px solid var(--jj-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 6px rgba(232, 49, 58, 0.3);
 }
 
 /* --- Reduced Motion --- */

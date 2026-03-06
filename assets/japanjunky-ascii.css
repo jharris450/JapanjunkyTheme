@@ -75,23 +75,23 @@
   padding: 10px;
 }
 
-/* --- Glow Effects --- */
+/* --- Glow Effects (CRT phosphor emission) --- */
 .jj-glow {
   text-shadow:
     0 0 4px var(--jj-primary),
-    0 0 8px rgba(232, 49, 58, 0.4);
+    0 0 10px rgba(232, 49, 58, 0.4);
 }
 
 .jj-glow--gold {
   text-shadow:
     0 0 4px var(--jj-secondary),
-    0 0 8px rgba(245, 215, 66, 0.4);
+    0 0 10px rgba(245, 215, 66, 0.4);
 }
 
 .jj-glow--blue {
   text-shadow:
     0 0 4px var(--jj-accent),
-    0 0 8px rgba(74, 164, 224, 0.4);
+    0 0 10px rgba(74, 164, 224, 0.4);
 }
 
 .jj-glow-box {
@@ -106,6 +106,21 @@
     0 0 12px rgba(245, 215, 66, 0.15);
 }
 
+/* Strong glow variants for hero / emphasis */
+.jj-glow--strong {
+  text-shadow:
+    0 0 4px var(--jj-primary),
+    0 0 10px var(--jj-primary),
+    0 0 20px rgba(232, 49, 58, 0.3);
+}
+
+.jj-glow--gold-strong {
+  text-shadow:
+    0 0 4px var(--jj-secondary),
+    0 0 10px var(--jj-secondary),
+    0 0 20px rgba(245, 215, 66, 0.3);
+}
+
 /* --- ASCII Divider --- */
 .jj-ascii-divider {
   text-align: center;
@@ -115,6 +130,7 @@
   overflow: hidden;
   white-space: nowrap;
   opacity: 0.6;
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.2);
 }
 
 /* --- ASCII Frame (inline border characters) --- */
@@ -148,6 +164,7 @@
 .jj-ascii-window--active {
   border-color: var(--jj-primary);
   z-index: 10;
+  box-shadow: 0 0 8px rgba(232, 49, 58, 0.2);
 }
 
 .jj-ascii-window--active .jj-window-titlebar {
