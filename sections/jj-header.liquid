@@ -1,15 +1,15 @@
-{%- comment -%} NAV BAR {%- endcomment -%}
+{%- comment -%} TERMINAL TITLE BAR {%- endcomment -%}
 <div class="jj-nav-bar">
-  <span class="jj-nav-bar__icon">&#9658;</span>
-  <span class="jj-nav-bar__label">Search</span>
-  <span class="jj-nav-bar__sep">&#8250;</span>
+  <span class="jj-nav-bar__icon">C:\&gt;</span>
+  <span class="jj-nav-bar__label">find</span>
+  <span class="jj-nav-bar__sep">/i</span>
   <form action="/search" method="get" style="flex:1;display:flex;">
-    <input type="search" name="q" class="jj-nav-bar__input" placeholder="Search catalog..." autocomplete="off">
+    <input type="search" name="q" class="jj-nav-bar__input" placeholder="search query..." autocomplete="off">
   </form>
   <div class="jj-nav-bar__actions">
-    <a href="/checkout" class="jj-nav-action-btn">&#9632; Checkout</a>
-    <a href="/account" class="jj-nav-action-btn">&#9734; Watchlist</a>
-    <a href="/cart" class="jj-nav-action-btn">&#9632; Cart ({{ cart.item_count }})</a>
+    <a href="/checkout" class="jj-nav-action-btn">[Checkout]</a>
+    <a href="/account" class="jj-nav-action-btn">[Watchlist]</a>
+    <a href="/cart" class="jj-nav-action-btn">[Cart:{{ cart.item_count }}]</a>
   </div>
 </div>
 
@@ -28,9 +28,9 @@
   <div class="jj-store-header__right">
     <span class="jj-sys-status__rule"></span>
     <div class="jj-sys-status">
-      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--online"></span>SYS.ONLINE</div>
-      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--connected"></span>CONN.SECURE</div>
-      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--idle"></span>{{ collections['all'].products_count | default: 0 }} ITEMS</div>
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--online"></span>[ONLINE]</div>
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--connected"></span>[SECURE]</div>
+      <div class="jj-sys-status__line"><span class="jj-sys-dot jj-sys-dot--idle"></span>{{ collections['all'].products_count | default: 0 }} items</div>
     </div>
   </div>
 </div>

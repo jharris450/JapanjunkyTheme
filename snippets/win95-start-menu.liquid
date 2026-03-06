@@ -1,53 +1,53 @@
 {%- comment -%}
-  Win95-style Start menu with cascading submenus.
+  Terminal-style command menu (Start menu).
 {%- endcomment -%}
 
-<div class="jj-start-menu" id="jj-start-menu" role="menu" aria-label="Start menu">
-  <div class="jj-start-menu__sidebar">JAPANJUNKY 95</div>
+<div class="jj-start-menu" id="jj-start-menu" role="menu" aria-label="Command menu">
+  <div class="jj-start-menu__sidebar">JAPANJUNKY</div>
 
   <div class="jj-start-menu__items">
     {%- comment -%} My Account {%- endcomment -%}
-    <div class="jj-start-menu__section-title">&#9632; My Account</div>
+    <div class="jj-start-menu__section-title">-- account --</div>
     {%- if customer -%}
       <a href="/account" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9654;</span>
-        <span>My Profile</span>
+        <span class="jj-start-item-icon">&gt;</span>
+        <span>profile</span>
       </a>
       <a href="/account/orders" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9654;</span>
-        <span>Order History</span>
+        <span class="jj-start-item-icon">&gt;</span>
+        <span>orders</span>
       </a>
     {%- else -%}
       <a href="/account/login" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9654;</span>
-        <span>Login</span>
+        <span class="jj-start-item-icon">&gt;</span>
+        <span>login</span>
       </a>
       <a href="/account/register" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9654;</span>
-        <span>Register</span>
+        <span class="jj-start-item-icon">&gt;</span>
+        <span>register</span>
       </a>
     {%- endif -%}
     <a href="/account" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>Watchlist</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>watchlist</span>
     </a>
     <a href="/cart" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>Cart ({{ cart.item_count }} items)</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>cart ({{ cart.item_count }})</span>
     </a>
 
     <div class="jj-start-menu__divider"></div>
 
     {%- comment -%} Catalog {%- endcomment -%}
-    <div class="jj-start-menu__section-title">&#9632; Catalog</div>
+    <div class="jj-start-menu__section-title">-- catalog --</div>
     <div class="jj-start-menu__item jj-start-menu__item--has-submenu" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>Collections</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>collections</span>
       <div class="jj-start-submenu" role="menu">
-        <a href="/collections/all" class="jj-start-submenu__item" role="menuitem">All Products</a>
+        <a href="/collections/all" class="jj-start-submenu__item" role="menuitem">all</a>
         {%- for collection in collections limit: 8 -%}
           {%- if collection.handle != 'all' and collection.handle != 'frontpage' -%}
-            <a href="{{ collection.url }}" class="jj-start-submenu__item" role="menuitem">{{ collection.title }}</a>
+            <a href="{{ collection.url }}" class="jj-start-submenu__item" role="menuitem">{{ collection.title | downcase }}</a>
           {%- endif -%}
         {%- endfor -%}
       </div>
@@ -56,39 +56,39 @@
     <div class="jj-start-menu__divider"></div>
 
     {%- comment -%} Site Pages {%- endcomment -%}
-    <div class="jj-start-menu__section-title">&#9632; Site</div>
+    <div class="jj-start-menu__section-title">-- navigate --</div>
     <a href="/" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>Home</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>home</span>
     </a>
     <a href="/collections/all" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>New Arrivals</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>new arrivals</span>
     </a>
     <a href="/pages/about" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>About Us</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>about</span>
     </a>
     <a href="/pages/faq" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>FAQ / Help</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>help</span>
     </a>
     <a href="/pages/contact" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9654;</span>
-      <span>Contact</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>contact</span>
     </a>
 
     <div class="jj-start-menu__divider"></div>
 
     {%- if customer -%}
       <a href="/account/logout" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9632;</span>
-        <span>Log Off...</span>
+        <span class="jj-start-item-icon">&gt;</span>
+        <span>logout</span>
       </a>
     {%- endif -%}
     <a href="/" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
-      <span>Shut Down...</span>
+      <span class="jj-start-item-icon">&gt;</span>
+      <span>exit</span>
     </a>
   </div>
 </div>

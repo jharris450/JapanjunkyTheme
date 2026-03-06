@@ -1,24 +1,24 @@
 {%- comment -%}
-  Cyberpunk-styled member login box for the left sidebar.
+  Terminal-styled member login box for the left sidebar.
 {%- endcomment -%}
 
 <div class="jj-member-login">
-  <div class="jj-member-login__title">&#9632; Member Login</div>
+  <div class="jj-member-login__title">auth /login</div>
   {%- if customer -%}
-    <div style="font-size:18px;margin-bottom:6px;color:var(--jj-primary);">
-      {{ customer.first_name | default: customer.email }}
+    <div style="font-size:13px;margin-bottom:4px;color:var(--jj-text);font-family:'IBM Plex Mono',monospace;">
+      user: {{ customer.first_name | default: customer.email }}
     </div>
     <div class="jj-login-buttons">
-      <a href="/account" class="jj-win95-btn-sm">&#9654; Account</a>
-      <a href="/account/logout" class="jj-win95-btn-sm">Log Off</a>
+      <a href="/account" class="jj-win95-btn-sm">[Account]</a>
+      <a href="/account/logout" class="jj-win95-btn-sm">[Log Off]</a>
     </div>
   {%- else -%}
     <form action="/account/login" method="post">
-      <div class="jj-login-row"><label>ID:</label><input type="email" name="customer[email]" autocomplete="email" required></div>
-      <div class="jj-login-row"><label>PW:</label><input type="password" name="customer[password]" autocomplete="current-password" required></div>
+      <div class="jj-login-row"><label>user:</label><input type="email" name="customer[email]" autocomplete="email" required></div>
+      <div class="jj-login-row"><label>pass:</label><input type="password" name="customer[password]" autocomplete="current-password" required></div>
       <div class="jj-login-buttons">
-        <button type="submit" class="jj-win95-btn-sm">&#9654; Login</button>
-        <a href="/account/register" class="jj-win95-btn-sm">Register</a>
+        <button type="submit" class="jj-win95-btn-sm">[Login]</button>
+        <a href="/account/register" class="jj-win95-btn-sm">[Register]</a>
       </div>
     </form>
   {%- endif -%}

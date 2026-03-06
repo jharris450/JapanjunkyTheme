@@ -153,9 +153,9 @@
       triggerClass(elMeta, 'jj-meta-rendering');
     }
 
-    // Update header
+    // Update header with terminal path
     if (elHeader) {
-      elHeader.textContent = title;
+      elHeader.textContent = 'C:\\catalog\\' + (handle || 'item') + '.dat';
     }
 
     // Update add to cart
@@ -164,7 +164,7 @@
     }
     if (elAddBtn) {
       elAddBtn.disabled = !available;
-      elAddBtn.textContent = available ? '+ Add to Cart' : 'Sold Out';
+      elAddBtn.textContent = available ? '[Add to Cart]' : '[Sold Out]';
     }
 
     // Fetch full product data for description (optional enhancement)
@@ -178,7 +178,7 @@
           // Update with richer data if available
           if (product.description && elMeta) {
             var descDiv = document.createElement('div');
-            descDiv.style.cssText = 'margin-top:8px;font-size:14px;color:var(--jj-text);max-height:100px;overflow-y:auto;line-height:1.4;';
+            descDiv.style.cssText = 'margin-top:6px;font-size:12px;color:#aaa;max-height:80px;overflow-y:auto;line-height:1.4;';
             descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + product.description.substring(0, 200) + '</span>';
             elMeta.appendChild(descDiv);
           }
@@ -204,7 +204,7 @@
       var variantId = elVariantId ? elVariantId.value : '';
       if (!variantId) return;
 
-      elAddBtn.textContent = 'Adding...';
+      elAddBtn.textContent = '[Adding...]';
       elAddBtn.disabled = true;
 
       fetch('/cart/add.js', {
@@ -214,9 +214,9 @@
       })
         .then(function (res) { return res.json(); })
         .then(function () {
-          elAddBtn.textContent = 'Added!';
+          elAddBtn.textContent = '[OK]';
           setTimeout(function () {
-            elAddBtn.textContent = '+ Add to Cart';
+            elAddBtn.textContent = '[Add to Cart]';
             elAddBtn.disabled = false;
           }, 1500);
           // Update cart count in nav
@@ -224,15 +224,15 @@
           cartBtns.forEach(function (btn) {
             if (btn.textContent.indexOf('Cart') !== -1) {
               fetch('/cart.js').then(function (r) { return r.json(); }).then(function (cart) {
-                btn.innerHTML = '&#9632; Cart (' + cart.item_count + ')';
+                btn.textContent = '[Cart:' + cart.item_count + ']';
               });
             }
           });
         })
         .catch(function () {
-          elAddBtn.textContent = 'Error';
+          elAddBtn.textContent = '[ERR]';
           setTimeout(function () {
-            elAddBtn.textContent = '+ Add to Cart';
+            elAddBtn.textContent = '[Add to Cart]';
             elAddBtn.disabled = false;
           }, 1500);
         });

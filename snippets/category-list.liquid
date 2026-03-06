@@ -1,35 +1,35 @@
 {%- comment -%}
-  Left sidebar filter sections driven by Shopify collections and tags.
+  Left sidebar filter sections — terminal directory listing style.
 {%- endcomment -%}
 
 {%- comment -%} CATEGORIES from collections {%- endcomment -%}
 <div class="jj-sidebar-section">
-  <div class="jj-sidebar-section__title">Categories</div>
+  <div class="jj-sidebar-section__title">dir /categories</div>
   <ul class="jj-filter-list">
     {%- for collection in collections limit: 10 -%}
       {%- if collection.handle != 'all' and collection.handle != 'frontpage' -%}
         <li>
           <a href="{{ collection.url }}">
-            <span>&#9632;</span> {{ collection.title | upcase }}
+            &gt; {{ collection.title | upcase }}
             {%- if collection.products_count > 0 -%}
-              <span class="jj-filter-count">({{ collection.products_count }})</span>
+              <span class="jj-filter-count">{{ collection.products_count }}</span>
             {%- endif -%}
           </a>
         </li>
       {%- endif -%}
     {%- else -%}
-      <li><span>&#9632;</span> ELECTRONICS</li>
-      <li><span>&#9632;</span> RETRO GAMING</li>
-      <li><span>&#9632;</span> AUDIO</li>
-      <li><span>&#9632;</span> ACCESSORIES</li>
-      <li><span>&#9632;</span> NEW ARRIVALS</li>
+      <li>&gt; ELECTRONICS</li>
+      <li>&gt; RETRO GAMING</li>
+      <li>&gt; AUDIO</li>
+      <li>&gt; ACCESSORIES</li>
+      <li>&gt; NEW ARRIVALS</li>
     {%- endfor -%}
   </ul>
 </div>
 
 {%- comment -%} PRODUCT TYPE from all products {%- endcomment -%}
 <div class="jj-sidebar-section">
-  <div class="jj-sidebar-section__title">Format</div>
+  <div class="jj-sidebar-section__title">dir /format</div>
   <ul class="jj-filter-list">
     {%- assign types_seen = '' -%}
     {%- assign featured = section.settings.collection | default: collections['all'] -%}
@@ -37,44 +37,44 @@
       {%- if product.type != blank -%}
         {%- unless types_seen contains product.type -%}
           {%- assign types_seen = types_seen | append: product.type | append: '|' -%}
-          <li><span>&#9632;</span> {{ product.type | upcase }}</li>
+          <li>&gt; {{ product.type | upcase }}</li>
         {%- endunless -%}
       {%- endif -%}
     {%- endfor -%}
     {%- if types_seen == '' -%}
-      <li><span>&#9632;</span> BOXED</li>
-      <li><span>&#9632;</span> LOOSE</li>
-      <li><span>&#9632;</span> SEALED</li>
-      <li><span>&#9632;</span> OEM</li>
+      <li>&gt; BOXED</li>
+      <li>&gt; LOOSE</li>
+      <li>&gt; SEALED</li>
+      <li>&gt; OEM</li>
     {%- endif -%}
   </ul>
 </div>
 
 {%- comment -%} VENDOR / Brand {%- endcomment -%}
 <div class="jj-sidebar-section">
-  <div class="jj-sidebar-section__title">Brand</div>
+  <div class="jj-sidebar-section__title">dir /brand</div>
   <ul class="jj-filter-list">
     {%- assign vendors_seen = '' -%}
     {%- for product in featured.products limit: 50 -%}
       {%- if product.vendor != blank -%}
         {%- unless vendors_seen contains product.vendor -%}
           {%- assign vendors_seen = vendors_seen | append: product.vendor | append: '|' -%}
-          <li><span>&#9632;</span> {{ product.vendor | upcase }}</li>
+          <li>&gt; {{ product.vendor | upcase }}</li>
         {%- endunless -%}
       {%- endif -%}
     {%- endfor -%}
     {%- if vendors_seen == '' -%}
-      <li><span>&#9632;</span> IBM</li>
-      <li><span>&#9632;</span> MICROSOFT</li>
-      <li><span>&#9632;</span> CREATIVE</li>
-      <li><span>&#9632;</span> IOMEGA</li>
+      <li>&gt; IBM</li>
+      <li>&gt; MICROSOFT</li>
+      <li>&gt; CREATIVE</li>
+      <li>&gt; IOMEGA</li>
     {%- endif -%}
   </ul>
 </div>
 
 {%- comment -%} CONDITION from tags {%- endcomment -%}
 <div class="jj-sidebar-section">
-  <div class="jj-sidebar-section__title">Condition</div>
+  <div class="jj-sidebar-section__title">dir /condition</div>
   <ul class="jj-filter-list">
     {%- assign conditions_seen = '' -%}
     {%- for product in featured.products limit: 50 -%}
@@ -83,17 +83,17 @@
           {%- assign cond_val = tag | remove: 'condition:' | strip -%}
           {%- unless conditions_seen contains cond_val -%}
             {%- assign conditions_seen = conditions_seen | append: cond_val | append: '|' -%}
-            <li><span>&#9632;</span> {{ cond_val | upcase }}</li>
+            <li>&gt; {{ cond_val | upcase }}</li>
           {%- endunless -%}
         {%- endif -%}
       {%- endfor -%}
     {%- endfor -%}
     {%- if conditions_seen == '' -%}
-      <li><span>&#9632;</span> MINT</li>
-      <li><span>&#9632;</span> EXCELLENT</li>
-      <li><span>&#9632;</span> VERY GOOD</li>
-      <li><span>&#9632;</span> GOOD</li>
-      <li><span>&#9632;</span> FAIR</li>
+      <li>&gt; MINT</li>
+      <li>&gt; EXCELLENT</li>
+      <li>&gt; VERY GOOD</li>
+      <li>&gt; GOOD</li>
+      <li>&gt; FAIR</li>
     {%- endif -%}
   </ul>
 </div>

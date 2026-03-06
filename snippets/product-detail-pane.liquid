@@ -1,10 +1,10 @@
 {%- comment -%}
-  Right sidebar product detail pane.
+  Right sidebar product detail pane — terminal output style.
   Populated dynamically by japanjunky-product-select.js on row click.
 {%- endcomment -%}
 
-<div class="jj-detail-header" id="jj-detail-header">Item Details</div>
-<div class="jj-detail-recently">Select an Item</div>
+<div class="jj-detail-header" id="jj-detail-header">C:\catalog\item.dat</div>
+<div class="jj-detail-recently">type item.dat</div>
 <div class="jj-detail-artist" id="jj-detail-artist">---</div>
 <div class="jj-detail-image-wrap">
   <div class="jj-detail-image" id="jj-detail-image-container">
@@ -24,19 +24,19 @@
 </div>
 <div class="jj-detail-item-title" id="jj-detail-title">---</div>
 <div class="jj-detail-meta" id="jj-detail-meta">
-  <div><span class="jj-meta-label">Catalog #:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Catalog#:</span> <span class="jj-meta-value">---</span></div>
   <div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">---</span></div>
   <div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">---</span></div>
 </div>
 <div class="jj-detail-price-row">
   <div class="jj-detail-price" id="jj-detail-price">---</div>
   <div class="jj-detail-price-icons">
-    <span title="Info">&#9632;</span><span title="Compare">&#8801;</span><span title="Share">&#8599;</span><span title="Zoom">&#9670;</span>
+    <span title="Info">[i]</span><span title="Compare">[=]</span><span title="Share">[^]</span><span title="Zoom">[+]</span>
   </div>
 </div>
 <div class="jj-detail-actions" id="jj-detail-actions">
-  <button class="jj-action-btn" id="jj-add-to-cart-btn" disabled>+ Add to Cart</button>
-  <a href="/account" class="jj-action-btn">&#9734; Watchlist</a>
+  <button class="jj-action-btn" id="jj-add-to-cart-btn" disabled>[Add to Cart]</button>
+  <a href="/account" class="jj-action-btn">[Watchlist]</a>
 </div>
 <form id="jj-detail-cart-form" action="/cart/add" method="post" style="display:none;">
   <input type="hidden" name="id" id="jj-variant-id" value="">

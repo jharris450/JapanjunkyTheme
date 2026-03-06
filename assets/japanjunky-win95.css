@@ -1,32 +1,21 @@
 /* ============================================
    JAPANJUNKY WIN95 CSS
-   Taskbar, Start menu, bevel borders
+   Terminal-style taskbar, command menu
    ============================================ */
 
-/* --- Classic Bevel Borders --- */
-.jj-bevel-out {
-  border: 2px solid;
-  border-color: #dfdfdf #808080 #808080 #dfdfdf;
-}
-
-.jj-bevel-in {
-  border: 2px solid;
-  border-color: #808080 #dfdfdf #dfdfdf #808080;
-}
-
-/* --- Win95 Taskbar (fixed at bottom of CRT frame) --- */
+/* --- Win95 Taskbar (terminal status bar) --- */
 .jj-taskbar {
-  height: 38px;
-  background: rgba(30,30,30,1);
-  border-top: 2px solid var(--jj-primary);
-  box-shadow: inset 0 1px 0 var(--jj-primary);
+  height: 32px;
+  background: #0a0a0a;
+  border-top: 1px solid #333;
   display: flex;
   align-items: center;
-  padding: 2px 6px;
+  padding: 2px 8px;
   gap: 4px;
   flex-shrink: 0;
   z-index: 1000;
   font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
 }
 
 /* --- Start Button Wrapper --- */
@@ -37,58 +26,59 @@
 /* --- Start Button --- */
 .jj-start-btn {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--jj-bg);
-  background: var(--jj-primary);
-  border: 2px solid;
-  border-color: rgba(255,96,104,0.6) rgba(160,16,32,0.8) rgba(160,16,32,0.8) rgba(255,96,104,0.6);
-  padding: 3px 14px 3px 6px;
+  color: var(--jj-primary);
+  background: transparent;
+  border: 1px solid #444;
+  padding: 2px 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 4px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  text-transform: none;
+  letter-spacing: 0;
   white-space: nowrap;
-  height: 32px;
+  height: 26px;
 }
 
 .jj-start-btn__icon {
-  font-size: 16px;
+  font-size: 12px;
   line-height: 1;
+}
+
+.jj-start-btn:hover {
+  border-color: var(--jj-primary);
 }
 
 .jj-start-btn:active,
 .jj-start-btn--active {
-  box-shadow: inset -1px -1px 0 rgba(255,96,104,0.4), inset 1px 1px 0 rgba(80,10,20,0.6);
-  transform: translate(1px, 1px);
+  background: #111;
 }
 
 /* --- Taskbar Divider --- */
 .jj-taskbar__divider {
-  width: 2px;
-  height: 26px;
-  background: var(--jj-secondary);
-  opacity: 0.3;
+  width: 1px;
+  height: 20px;
+  background: #333;
   margin: 0 4px;
 }
 
 /* --- Taskbar Tabs --- */
 .jj-taskbar__tabs {
   display: flex;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
   overflow: hidden;
 }
 
 .jj-taskbar-tab {
-  font-family: 'VT323', monospace;
-  font-size: 17px;
-  color: var(--jj-text);
-  background: var(--jj-bg);
-  border: 1px solid rgba(245,215,66,0.2);
-  padding: 2px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #888;
+  background: transparent;
+  border: 1px solid #222;
+  padding: 2px 10px;
   cursor: pointer;
   white-space: nowrap;
   max-width: 200px;
@@ -98,54 +88,53 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 28px;
+  height: 24px;
 }
 
 .jj-taskbar-tab:hover {
   text-decoration: none;
-  color: var(--jj-secondary);
+  color: var(--jj-text);
+  border-color: #444;
 }
 
 .jj-taskbar-tab--active {
-  background: rgba(232,49,58,0.08);
-  border-color: var(--jj-primary);
-  box-shadow: inset 0 0 6px rgba(232,49,58,0.15);
+  background: #111;
+  border-color: #444;
+  color: var(--jj-text);
 }
 
 /* --- Clock Tray --- */
 .jj-clock-tray {
-  font-family: 'VT323', monospace;
-  font-size: 19px;
-  color: var(--jj-secondary);
-  background: var(--jj-bg);
-  border: 1px solid rgba(245,215,66,0.2);
-  box-shadow: inset 1px 1px 0 rgba(43,43,43,0.5);
-  padding: 2px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #222;
+  padding: 2px 10px;
   margin-left: auto;
   min-width: 80px;
   text-align: center;
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
+  height: 24px;
   white-space: nowrap;
 }
 
 .jj-clock-tray__label {
-  color: var(--jj-accent);
+  color: #555;
   font-size: 10px;
 }
 
-/* --- Start Menu --- */
+/* --- Start Menu (command menu) --- */
 .jj-start-menu {
   display: none;
   position: fixed;
-  bottom: 38px;
+  bottom: 32px;
   left: 0;
-  width: 280px;
-  background: rgba(30,30,30,1);
-  border: 2px solid var(--jj-primary);
-  box-shadow: inset 1px 1px 0 rgba(232,49,58,0.2), inset -1px -1px 0 rgba(92,92,92,0.2), 4px 4px 0 rgba(0,0,0,0.6);
+  width: 260px;
+  background: #0a0a0a;
+  border: 1px solid #444;
   z-index: 2000;
   flex-direction: row;
   margin-bottom: 2px;
@@ -156,16 +145,18 @@
 }
 
 .jj-start-menu__sidebar {
-  width: 32px;
-  background: linear-gradient(to top, rgba(80,10,20,1), var(--jj-primary), rgba(255,96,104,0.8));
+  width: 28px;
+  background: #111;
+  border-right: 1px solid #333;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: 8px 2px;
   flex-shrink: 0;
-  font-family: 'Press Start 2P', cursive;
-  font-size: 8px;
-  color: var(--jj-bg);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--jj-primary);
   writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg);
@@ -183,11 +174,11 @@
 
 .jj-start-menu__section-title {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--jj-secondary);
+  color: #555;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   padding: 6px 12px 3px;
   user-select: none;
 }
@@ -195,35 +186,34 @@
 .jj-start-menu__item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 5px 12px;
-  font-family: 'VT323', monospace;
-  font-size: 20px;
-  color: var(--jj-text);
+  gap: 8px;
+  padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  color: #aaa;
   text-decoration: none;
   cursor: pointer;
   position: relative;
 }
 .jj-start-menu__item:hover {
   background: var(--jj-primary);
-  color: var(--jj-bg);
+  color: #000;
   text-decoration: none;
 }
 
 .jj-start-menu__item--has-submenu::after {
-  content: '\25BA'; /* ► */
+  content: '>>';
   font-size: 10px;
   margin-left: auto;
-  color: var(--jj-secondary);
+  color: #555;
 }
 .jj-start-menu__item--has-submenu:hover::after {
-  color: var(--jj-bg);
+  color: #000;
 }
 
 .jj-start-menu__divider {
-  height: 2px;
-  background: var(--jj-secondary);
-  opacity: 0.2;
+  height: 1px;
+  background: #333;
   margin: 4px 8px;
 }
 
@@ -234,10 +224,9 @@
   left: 100%;
   top: -2px;
   width: 180px;
-  background: rgba(30,30,30,1);
-  border: 2px solid var(--jj-primary);
+  background: #0a0a0a;
+  border: 1px solid #444;
   padding: 4px 0;
-  box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
 }
 
 .jj-start-menu__item:hover > .jj-start-submenu {
@@ -246,27 +235,35 @@
 
 .jj-start-submenu__item {
   display: block;
-  padding: 4px 12px;
-  color: var(--jj-text);
-  font-family: 'VT323', monospace;
-  font-size: 18px;
+  padding: 3px 12px;
+  color: #aaa;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
   text-decoration: none;
 }
 
 .jj-start-submenu__item:hover {
   background: var(--jj-primary);
-  color: var(--jj-bg);
+  color: #000;
   text-decoration: none;
 }
 
 /* --- Start menu icon --- */
 .jj-start-item-icon {
-  font-size: 12px;
-  color: var(--jj-secondary);
-  width: 16px;
+  font-size: 10px;
+  color: #555;
+  width: 14px;
   text-align: center;
   flex-shrink: 0;
 }
 .jj-start-menu__item:hover .jj-start-item-icon {
-  color: var(--jj-bg);
+  color: #000;
+}
+
+/* --- Bevel borders (unused but kept for compat) --- */
+.jj-bevel-out {
+  border: 1px solid #444;
+}
+.jj-bevel-in {
+  border: 1px solid #333;
 }

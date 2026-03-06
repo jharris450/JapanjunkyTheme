@@ -47,16 +47,14 @@
 
     <div class="jj-table-footer">
       <div class="jj-table-footer__left">
-        <span style="font-weight:bold; color:var(--jj-text);">
-          {{ featured.products_count | default: 0 }} ITEMS
-        </span>
-        <span style="color:var(--jj-secondary);">|</span>
-        <span style="color:var(--jj-secondary);">
-          SHOWING 1-{{ section.settings.products_to_show }}
+        <span>{{ featured.products_count | default: 0 }} items</span>
+        <span style="color:#444;">|</span>
+        <span style="color:#555;">
+          showing 1-{{ section.settings.products_to_show }}
         </span>
       </div>
       <div class="jj-table-footer__right">
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--jj-secondary);text-transform:uppercase;">Order:</span>
+        <span style="color:#666;">sort:</span>
         <select class="jj-table-sort-select" id="jj-sort-select">
           <option value="manual">Default</option>
           <option value="price-ascending">Price &#8593;</option>

@@ -3,16 +3,16 @@
 <footer class="jj-taskbar" role="contentinfo">
   <div class="jj-start-menu-wrapper">
     <button class="jj-start-btn" id="jj-start-btn" aria-expanded="false" aria-controls="jj-start-menu">
-      <span class="jj-start-btn__icon">&#8862;</span>
-      <span>Start</span>
+      <span class="jj-start-btn__icon">&gt;_</span>
+      <span>CMD</span>
     </button>
   </div>
 
   <div class="jj-taskbar__divider"></div>
 
   <div class="jj-taskbar__tabs">
-    {% render 'win95-taskbar-tab', label: shop.name | append: ' - Catalog', url: '/', icon: '▶', active: true %}
-    {% render 'win95-taskbar-tab', label: 'My Computer', url: '/collections/all', icon: '■' %}
+    {% render 'win95-taskbar-tab', label: 'catalog.exe', url: '/', icon: '>', active: true %}
+    {% render 'win95-taskbar-tab', label: 'browse.exe', url: '/collections/all', icon: '>' %}
   </div>
 
   {% render 'win95-clock' %}
