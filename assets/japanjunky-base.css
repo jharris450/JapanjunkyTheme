@@ -47,7 +47,7 @@ ul, ol {
 }
 
 button {
-  cursor: pointer;
+  cursor: crosshair;
   border: none;
   background: none;
   font-family: inherit;
@@ -77,19 +77,20 @@ button {
   position: relative;
 }
 
-/* Cursor light overlay */
-.jj-crt-frame::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(
-    circle 380px at var(--jj-light-x, 50%) var(--jj-light-y, 50%),
-    rgba(232, 49, 58, 0.06) 0%,
-    rgba(232, 49, 58, 0.02) 30%,
-    transparent 65%
-  );
-  pointer-events: none;
-  z-index: 9999;
+/* CRT cursor — terminal crosshair style */
+.jj-crt-frame {
+  cursor: crosshair;
+}
+.jj-crt-frame a,
+.jj-crt-frame button,
+.jj-crt-frame [role="button"],
+.jj-crt-frame select,
+.jj-crt-frame label {
+  cursor: crosshair;
+}
+.jj-crt-frame input,
+.jj-crt-frame textarea {
+  cursor: text;
 }
 
 /* --- Matrix rain canvas --- */
