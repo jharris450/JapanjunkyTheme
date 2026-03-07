@@ -10,8 +10,9 @@
 (function () {
   'use strict';
 
-  // Bail if reduced motion preferred
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // Check reduced motion preference — cursor always works,
+  // but trail/pixel animations are disabled
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Glyph Sets ────────────────────────────────────────────
   var cursorGlyphs = [
@@ -227,20 +228,22 @@
       rafId = requestAnimationFrame(updateCursor);
     }
 
-    // Rotate cursor glyph every few moves
-    moveCount++;
-    if (moveCount % 3 === 0) {
-      glyphIndex = (glyphIndex + 1) % cursorGlyphs.length;
-      cursor.textContent = cursorGlyphs[glyphIndex];
-    }
+    if (!reducedMotion) {
+      // Rotate cursor glyph every few moves
+      moveCount++;
+      if (moveCount % 3 === 0) {
+        glyphIndex = (glyphIndex + 1) % cursorGlyphs.length;
+        cursor.textContent = cursorGlyphs[glyphIndex];
+      }
 
-    // Spawn trail if moved enough distance
-    var dx = cursorX - lastTrailX;
-    var dy = cursorY - lastTrailY;
-    if (dx * dx + dy * dy > TRAIL_MIN_DIST * TRAIL_MIN_DIST) {
-      spawnTrail(cursorX, cursorY);
-      lastTrailX = cursorX;
-      lastTrailY = cursorY;
+      // Spawn trail if moved enough distance
+      var dx = cursorX - lastTrailX;
+      var dy = cursorY - lastTrailY;
+      if (dx * dx + dy * dy > TRAIL_MIN_DIST * TRAIL_MIN_DIST) {
+        spawnTrail(cursorX, cursorY);
+        lastTrailX = cursorX;
+        lastTrailY = cursorY;
+      }
     }
   });
 
