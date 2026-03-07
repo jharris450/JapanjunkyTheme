@@ -77,16 +77,14 @@ button {
   position: relative;
 }
 
-/* CRT cursor — terminal crosshair style */
-.jj-crt-frame {
-  cursor: crosshair;
-}
+/* CRT cursor — hidden, replaced by custom ASCII cursor */
+.jj-crt-frame,
 .jj-crt-frame a,
 .jj-crt-frame button,
 .jj-crt-frame [role="button"],
 .jj-crt-frame select,
 .jj-crt-frame label {
-  cursor: crosshair;
+  cursor: none;
 }
 .jj-crt-frame input,
 .jj-crt-frame textarea {
