@@ -241,85 +241,9 @@
 .jj-status-info     { color: var(--jj-accent); }
 .jj-status-special  { color: var(--jj-magenta); }
 
-/* ===== CUSTOM ASCII CURSOR ===== */
-#jj-cursor {
-  position: fixed;
-  pointer-events: none;
-  z-index: 10001;
-  font-family: 'IBM Plex Mono', 'Consolas', monospace;
-  font-size: 18px;
-  line-height: 1;
-  color: var(--jj-primary);
-  text-shadow:
-    0 0 4px var(--jj-primary),
-    0 0 10px rgba(232, 49, 58, 0.5);
-  transform: translate(-50%, -50%);
-  will-change: left, top;
-  user-select: none;
-}
-
-/* Trail particle */
-.jj-trail {
-  position: fixed;
-  pointer-events: none;
-  z-index: 10000;
-  font-family: 'IBM Plex Mono', 'Consolas', monospace;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--jj-secondary);
-  text-shadow: 0 0 4px rgba(245, 215, 66, 0.4);
-  transform: translate(-50%, -50%);
-  animation: jj-trail-fall 1.2s ease-in forwards;
-  will-change: transform, opacity;
-  user-select: none;
-}
-
-/* Pixel fragment — spawned when trail char dematerializes */
-.jj-pixel {
-  position: fixed;
-  pointer-events: none;
-  z-index: 10000;
-  width: 3px;
-  height: 3px;
-  background: var(--jj-primary);
-  box-shadow: 0 0 3px var(--jj-primary);
-  animation: jj-pixel-scatter 0.6s ease-out forwards;
-  will-change: transform, opacity;
-}
-
-@keyframes jj-trail-fall {
-  0% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) translateY(0);
-    filter: blur(0);
-  }
-  60% {
-    opacity: 0.5;
-    transform: translate(-50%, -50%) translateY(40px);
-    filter: blur(0);
-  }
-  85% {
-    opacity: 0.2;
-    transform: translate(-50%, -50%) translateY(70px);
-    filter: blur(1px);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) translateY(90px);
-    filter: blur(2px);
-  }
-}
-
-@keyframes jj-pixel-scatter {
-  0% {
-    opacity: 1;
-    transform: translate(var(--px-x, 0), var(--px-y, 0)) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--px-x, 0), calc(var(--px-y, 0) + 20px)) scale(0);
-  }
-}
+/* ===== CUSTOM CURSOR (CSS url() approach) ===== */
+/* Cursor PNGs are applied via <style> injected by japanjunky-cursor-light.js */
+/* No DOM-element cursor styles needed */
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
@@ -334,12 +258,7 @@
   .jj-crt-frame::after {
     display: none;
   }
-  /* Disable trail animations, keep cursor visible */
-  .jj-trail,
-  .jj-pixel {
-    animation: none;
-    display: none;
-  }
+  /* CSS cursor PNGs are inherently reduced-motion safe */
 }
 
 /* ===== HIGH CONTRAST MODE ===== */

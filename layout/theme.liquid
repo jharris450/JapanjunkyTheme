@@ -32,6 +32,29 @@
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
 
+  <script>
+    window.JJ_CURSOR_URLS = {
+      arrow: [
+        {{ 'cursor-arrow-0.png' | asset_url | json }},
+        {{ 'cursor-arrow-1.png' | asset_url | json }},
+        {{ 'cursor-arrow-2.png' | asset_url | json }},
+        {{ 'cursor-arrow-3.png' | asset_url | json }}
+      ],
+      hand: [
+        {{ 'cursor-hand-0.png' | asset_url | json }},
+        {{ 'cursor-hand-1.png' | asset_url | json }},
+        {{ 'cursor-hand-2.png' | asset_url | json }},
+        {{ 'cursor-hand-3.png' | asset_url | json }}
+      ],
+      text: {{ 'cursor-text.png' | asset_url | json }},
+      wait: [
+        {{ 'cursor-wait-0.png' | asset_url | json }},
+        {{ 'cursor-wait-1.png' | asset_url | json }},
+        {{ 'cursor-wait-2.png' | asset_url | json }},
+        {{ 'cursor-wait-3.png' | asset_url | json }}
+      ]
+    };
+  </script>
   {% if settings.matrix_rain_enabled %}
     <script>
       window.JJ_MATRIX_CONFIG = {

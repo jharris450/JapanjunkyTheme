@@ -77,17 +77,8 @@ button {
   position: relative;
 }
 
-/* CRT cursor — hidden when custom ASCII cursor JS is active.
-   The .jj-cursor-active class is added to <html> by the cursor JS.
-   Until JS loads, the native default cursor remains visible. */
-.jj-cursor-active,
-.jj-cursor-active *:not(input):not(textarea) {
-  cursor: none !important;
-}
-.jj-cursor-active input,
-.jj-cursor-active textarea {
-  cursor: text !important;
-}
+/* Custom CRT pixel cursor is applied via cursor:url() in japanjunky-cursor-light.js.
+   No cursor:none needed — the PNGs replace the native cursor directly. */
 
 /* --- Matrix rain canvas --- */
 #jj-matrix-canvas {
