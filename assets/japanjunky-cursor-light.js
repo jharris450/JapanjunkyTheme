@@ -10,9 +10,8 @@
 (function () {
   'use strict';
 
-  // Bail if reduced motion preferred or no mouse pointer available
+  // Bail if reduced motion preferred
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (!window.matchMedia('(hover: hover)').matches) return;
 
   // ─── Glyph Sets ────────────────────────────────────────────
   var cursorGlyphs = [
