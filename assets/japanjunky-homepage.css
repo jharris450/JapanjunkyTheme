@@ -116,14 +116,11 @@
   color: var(--jj-primary);
 }
 
-.jj-store-header__logo pre {
-  font-size: 11px;
-  line-height: 1.1;
-  color: var(--jj-primary);
-  margin: 0;
-  text-shadow:
-    0 0 4px var(--jj-primary),
-    0 0 12px rgba(232, 49, 58, 0.4);
+.jj-logo-img {
+  height: 44px;
+  width: auto;
+  display: block;
+  image-rendering: pixelated;
 }
 
 .jj-store-header__right {
