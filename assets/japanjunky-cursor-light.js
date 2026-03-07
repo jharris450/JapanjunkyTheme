@@ -5,15 +5,14 @@
  * - Trail: characters spawn behind cursor as it moves
  * - Trail chars fall down, blur, then burst into pixel fragments
  * - Respects prefers-reduced-motion
+ * - v2: improved reliability for Shopify CDN/stacking contexts
  */
 (function () {
   'use strict';
 
-  // Bail if reduced motion preferred
+  // Bail if reduced motion preferred or touch device
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  var frame = document.querySelector('.jj-crt-frame');
-  if (!frame) return;
+  if ('ontouchstart' in window && !window.matchMedia('(pointer: fine)').matches) return;
 
   // ─── Glyph Sets ────────────────────────────────────────────
   var cursorGlyphs = [
@@ -83,11 +82,31 @@
   ];
 
   // ─── Create Cursor Element ─────────────────────────────────
+  // Apply inline critical styles to guarantee visibility regardless of
+  // CSS load order, stacking contexts, or Shopify theme editor overlays.
   var cursor = document.createElement('div');
   cursor.id = 'jj-cursor';
   cursor.textContent = cursorGlyphs[0];
   cursor.setAttribute('aria-hidden', 'true');
+  cursor.style.cssText = [
+    'position:fixed',
+    'pointer-events:none',
+    'z-index:2147483647',       // max 32-bit int — above everything
+    'font-family:"IBM Plex Mono",Consolas,monospace',
+    'font-size:18px',
+    'line-height:1',
+    'color:#e8313a',
+    'text-shadow:0 0 4px #e8313a,0 0 10px rgba(232,49,58,0.5)',
+    'transform:translate(-50%,-50%)',
+    'will-change:left,top',
+    'user-select:none',
+    'left:-100px',
+    'top:-100px'
+  ].join(';');
   document.body.appendChild(cursor);
+
+  // Add class to <html> to hide native cursor via CSS
+  document.documentElement.classList.add('jj-cursor-active');
 
   var cursorX = -100;
   var cursorY = -100;
@@ -125,17 +144,27 @@
     // Random glyph and color
     el.textContent = trailGlyphs[Math.floor(Math.random() * trailGlyphs.length)];
     var c = trailColors[Math.floor(Math.random() * trailColors.length)];
-    el.style.color = c.color;
-    el.style.textShadow = '0 0 4px ' + c.shadow;
 
     // Slight random offset for organic feel
     var ox = (Math.random() - 0.5) * 8;
     var oy = (Math.random() - 0.5) * 8;
-    el.style.left = (x + ox) + 'px';
-    el.style.top = (y + oy) + 'px';
+    var sz = 11 + Math.floor(Math.random() * 7);
 
-    // Random size variation
-    el.style.fontSize = (11 + Math.floor(Math.random() * 7)) + 'px';
+    el.style.cssText = [
+      'position:fixed',
+      'pointer-events:none',
+      'z-index:2147483646',
+      'font-family:"IBM Plex Mono",Consolas,monospace',
+      'line-height:1',
+      'transform:translate(-50%,-50%)',
+      'will-change:transform,opacity',
+      'user-select:none',
+      'color:' + c.color,
+      'text-shadow:0 0 4px ' + c.shadow,
+      'font-size:' + sz + 'px',
+      'left:' + (x + ox) + 'px',
+      'top:' + (y + oy) + 'px'
+    ].join(';');
 
     document.body.appendChild(el);
     trailPool.push(el);
@@ -166,18 +195,21 @@
       var dist = 4 + Math.random() * 12;
       var dx = Math.cos(angle) * dist;
       var dy = Math.sin(angle) * dist;
-
-      px.style.left = x + 'px';
-      px.style.top = y + 'px';
-      px.style.setProperty('--px-x', dx + 'px');
-      px.style.setProperty('--px-y', dy + 'px');
-      px.style.background = colorObj.color;
-      px.style.boxShadow = '0 0 3px ' + colorObj.shadow;
-
-      // Random size (2-4px)
       var size = 2 + Math.floor(Math.random() * 3);
-      px.style.width = size + 'px';
-      px.style.height = size + 'px';
+
+      px.style.cssText = [
+        'position:fixed',
+        'pointer-events:none',
+        'z-index:2147483646',
+        'width:' + size + 'px',
+        'height:' + size + 'px',
+        'background:' + colorObj.color,
+        'box-shadow:0 0 3px ' + colorObj.shadow,
+        'left:' + x + 'px',
+        'top:' + y + 'px',
+        '--px-x:' + dx + 'px',
+        '--px-y:' + dy + 'px'
+      ].join(';');
 
       document.body.appendChild(px);
 

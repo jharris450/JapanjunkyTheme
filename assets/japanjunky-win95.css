@@ -32,7 +32,7 @@
   background: transparent;
   border: 1px solid #444;
   padding: 2px 10px;
-  cursor: none;
+  cursor: default;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -81,7 +81,7 @@
   background: transparent;
   border: 1px solid #222;
   padding: 2px 10px;
-  cursor: none;
+  cursor: default;
   white-space: nowrap;
   max-width: 200px;
   overflow: hidden;
@@ -196,7 +196,7 @@
   font-size: 13px;
   color: #aaa;
   text-decoration: none;
-  cursor: none;
+  cursor: default;
   position: relative;
 }
 .jj-start-menu__item:hover {

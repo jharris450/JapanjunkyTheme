@@ -77,18 +77,16 @@ button {
   position: relative;
 }
 
-/* CRT cursor — hidden, replaced by custom ASCII cursor */
-.jj-crt-frame,
-.jj-crt-frame a,
-.jj-crt-frame button,
-.jj-crt-frame [role="button"],
-.jj-crt-frame select,
-.jj-crt-frame label {
-  cursor: none;
+/* CRT cursor — hidden when custom ASCII cursor JS is active.
+   The .jj-cursor-active class is added to <html> by the cursor JS.
+   Until JS loads, the native default cursor remains visible. */
+.jj-cursor-active,
+.jj-cursor-active *:not(input):not(textarea) {
+  cursor: none !important;
 }
-.jj-crt-frame input,
-.jj-crt-frame textarea {
-  cursor: text;
+.jj-cursor-active input,
+.jj-cursor-active textarea {
+  cursor: text !important;
 }
 
 /* --- Matrix rain canvas --- */
