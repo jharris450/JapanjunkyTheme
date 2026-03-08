@@ -1,10 +1,12 @@
 {%- comment -%}
   JST clock display for the Win95 taskbar tray.
   Time is updated by japanjunky-win95-menu.js
+  Click clock to show date popover.
 {%- endcomment -%}
 
-<div class="jj-clock-tray">
-  <span class="jj-clock-tray__label">{{ 'footer.clock_label' | t }}</span>
-  <span class="jj-clock-tray__date" id="jj-date">--/--/--</span>
+<div class="jj-clock-tray" id="jj-clock-tray">
   <span class="jj-clock-tray__time" id="jj-clock">--:--</span>
+  <div class="jj-clock-popover" id="jj-clock-popover">
+    <div class="jj-clock-popover__date" id="jj-popover-date">--/--/----</div>
+  </div>
 </div>
