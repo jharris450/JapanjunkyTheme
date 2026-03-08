@@ -253,13 +253,32 @@
     });
   }
 
-  // ─── Keyboard Support ──────────────────────────────────────
-  tbody.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      var row = e.target.closest('tr[data-product-handle]');
-      if (row) {
-        e.preventDefault();
-        row.click();
+  // ─── Keyboard Navigation ──────────────────────────────────
+  document.addEventListener('keydown', function (e) {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
+
+    var rows = Array.from(tbody.querySelectorAll('tr[data-product-handle]'));
+    if (!rows.length) return;
+
+    var selectedRow = tbody.querySelector('tr.jj-row-selected');
+    var currentIndex = selectedRow ? rows.indexOf(selectedRow) : -1;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      var nextIndex = currentIndex < rows.length - 1 ? currentIndex + 1 : 0;
+      rows[nextIndex].click();
+      rows[nextIndex].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      var prevIndex = currentIndex > 0 ? currentIndex - 1 : rows.length - 1;
+      rows[prevIndex].click();
+      rows[prevIndex].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && selectedRow) {
+      e.preventDefault();
+      var handle = selectedRow.getAttribute('data-product-handle');
+      if (handle) {
+        window.location.href = '/products/' + handle;
       }
     }
   });
