@@ -21,7 +21,6 @@
       --jj-accent: {{ settings.color_accent }};
       --jj-text: {{ settings.color_text }};
       --jj-win95-bar: {{ settings.color_win95_bar }};
-      --jj-matrix-opacity: {{ settings.matrix_rain_opacity | divided_by: 100.0 }};
       --jj-parallax-intensity: {{ settings.parallax_intensity }}px;
     }
   </style>
@@ -55,14 +54,6 @@
       ]
     };
   </script>
-  {% if settings.matrix_rain_enabled %}
-    <script>
-      window.JJ_MATRIX_CONFIG = {
-        speed: {{ settings.matrix_rain_speed }},
-        opacity: {{ settings.matrix_rain_opacity | divided_by: 100.0 }}
-      };
-    </script>
-  {% endif %}
   {% if settings.parallax_enabled %}
     <script>
       window.JJ_PARALLAX_CONFIG = {
@@ -74,10 +65,6 @@
 </head>
 
 <body class="jj-body">
-  {% if settings.matrix_rain_enabled %}
-    <canvas id="jj-matrix-canvas" aria-hidden="true"></canvas>
-  {% endif %}
-
   <div class="jj-page-wrapper jj-crt-frame jj-crt-on">
     {% sections 'header-group' %}
 

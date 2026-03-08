@@ -80,19 +80,7 @@ button {
 /* Custom CRT pixel cursor is applied via cursor:url() in japanjunky-cursor-light.js.
    No cursor:none needed — the PNGs replace the native cursor directly. */
 
-/* --- Matrix rain canvas --- */
-#jj-matrix-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-  opacity: var(--jj-matrix-opacity, 0.15);
-}
-
-/* --- Page wrapper sits above canvas --- */
+/* --- Page wrapper --- */
 .jj-page-wrapper {
   position: relative;
   z-index: 1;
