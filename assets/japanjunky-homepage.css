@@ -660,3 +660,51 @@
   .jj-detail-image pre.jj-text-rendering,
   .jj-detail-meta.jj-meta-rendering { animation: none; }
 }
+
+/* ===== FORMAT-CODED PHOSPHOR COLORS ===== */
+
+/* Left border by format */
+.jj-product-table tbody tr[data-product-format="vinyl"] {
+  border-left-color: var(--jj-amber);
+}
+.jj-product-table tbody tr[data-product-format="cd"] {
+  border-left-color: var(--jj-cyan);
+}
+.jj-product-table tbody tr[data-product-format="cassette"] {
+  border-left-color: var(--jj-green);
+}
+.jj-product-table tbody tr[data-product-format="minidisc"] {
+  border-left-color: var(--jj-magenta);
+}
+.jj-product-table tbody tr[data-product-format="hardware"] {
+  border-left-color: var(--jj-white);
+}
+
+/* Format cell text tint */
+tr[data-product-format="vinyl"] .jj-cell-format { color: var(--jj-amber); }
+tr[data-product-format="cd"] .jj-cell-format { color: var(--jj-cyan); }
+tr[data-product-format="cassette"] .jj-cell-format { color: var(--jj-green); }
+tr[data-product-format="minidisc"] .jj-cell-format { color: var(--jj-magenta); }
+tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
+
+/* Selected row — intensify format glow */
+.jj-product-table tbody tr[data-product-format="vinyl"].jj-row-selected {
+  box-shadow: inset 3px 0 0 var(--jj-amber), 0 0 8px rgba(255, 170, 0, 0.1);
+}
+.jj-product-table tbody tr[data-product-format="cd"].jj-row-selected {
+  box-shadow: inset 3px 0 0 var(--jj-cyan), 0 0 8px rgba(0, 229, 229, 0.1);
+}
+.jj-product-table tbody tr[data-product-format="cassette"].jj-row-selected {
+  box-shadow: inset 3px 0 0 var(--jj-green), 0 0 8px rgba(51, 255, 51, 0.1);
+}
+.jj-product-table tbody tr[data-product-format="minidisc"].jj-row-selected {
+  box-shadow: inset 3px 0 0 var(--jj-magenta), 0 0 8px rgba(224, 64, 224, 0.1);
+}
+.jj-product-table tbody tr[data-product-format="hardware"].jj-row-selected {
+  box-shadow: inset 3px 0 0 var(--jj-white), 0 0 8px rgba(224, 224, 224, 0.1);
+}
+
+/* Hover — brief format color flash on left border */
+.jj-product-table tbody tr[data-product-format]:hover {
+  border-left-width: 2px;
+}
