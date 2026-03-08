@@ -24,6 +24,21 @@
     {%- assign p_condition_class = 'jj-cond-g' -%}
   {%- endif -%}
 
+  {%- comment -%} Normalize product type to format key {%- endcomment -%}
+  {%- assign p_type_lower = product.type | downcase -%}
+  {%- assign p_format = '' -%}
+  {%- if p_type_lower contains 'vinyl' or p_type_lower contains 'lp' or p_type_lower contains 'record' -%}
+    {%- assign p_format = 'vinyl' -%}
+  {%- elsif p_type_lower contains 'cd' or p_type_lower contains 'compact disc' -%}
+    {%- assign p_format = 'cd' -%}
+  {%- elsif p_type_lower contains 'cassette' or p_type_lower contains 'tape' -%}
+    {%- assign p_format = 'cassette' -%}
+  {%- elsif p_type_lower contains 'minidisc' or p_type_lower contains 'mini disc' or p_type_lower contains 'md' -%}
+    {%- assign p_format = 'minidisc' -%}
+  {%- elsif p_type_lower contains 'hardware' or p_type_lower contains 'player' or p_type_lower contains 'walkman' or p_type_lower contains 'stereo' -%}
+    {%- assign p_format = 'hardware' -%}
+  {%- endif -%}
+
   <tr data-index="{{ index }}"
       data-product-handle="{{ product.handle }}"
       data-product-id="{{ product.id }}"
@@ -33,6 +48,7 @@
       data-product-price="{{ product.price | money }}"
       data-product-sku="{{ product.selected_or_first_available_variant.sku | escape }}"
       data-product-condition="{{ p_condition | escape }}"
+      data-product-format="{{ p_format }}"
       data-product-image="{%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 }}{%- endif -%}"
       data-variant-id="{{ product.selected_or_first_available_variant.id }}"
       data-product-available="{{ product.available }}"
@@ -58,7 +74,7 @@
       <span class="jj-cat-label">{{ product.type | default: '---' }}</span>
     </td>
     <td class="jj-cell-condition"><span class="{{ p_condition_class }}">{{ p_condition }}</span></td>
-    <td class="jj-cell-format">{{ product.type | default: '---' }}</td>
+    <td class="jj-cell-format">{%- case p_format -%}{%- when 'vinyl' -%}○ {%- when 'cd' -%}◎ {%- when 'cassette' -%}▭ {%- when 'minidisc' -%}◇ {%- when 'hardware' -%}▪ {%- endcase -%}{{ product.type | default: '---' }}</td>
     <td class="jj-cell-title">
       <div class="jj-cell-name">{{ product.title }}</div>
       <div class="jj-cell-artist">{{ product.vendor }}</div>
