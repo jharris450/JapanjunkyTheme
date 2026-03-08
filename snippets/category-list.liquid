@@ -27,7 +27,7 @@
   </ul>
 </div>
 
-{%- comment -%} PRODUCT TYPE from all products {%- endcomment -%}
+{%- comment -%} FORMAT with phosphor colors {%- endcomment -%}
 <div class="jj-sidebar-section">
   <div class="jj-sidebar-section__title">dir /format</div>
   <ul class="jj-filter-list">
@@ -37,15 +37,29 @@
       {%- if product.type != blank -%}
         {%- unless types_seen contains product.type -%}
           {%- assign types_seen = types_seen | append: product.type | append: '|' -%}
-          <li>&gt; {{ product.type | upcase }}</li>
+          {%- assign type_lower = product.type | downcase -%}
+          {%- if type_lower contains 'vinyl' or type_lower contains 'lp' or type_lower contains 'record' -%}
+            <li><span style="color:var(--jj-amber);">○</span> {{ product.type | upcase }}</li>
+          {%- elsif type_lower contains 'cd' or type_lower contains 'compact disc' -%}
+            <li><span style="color:var(--jj-cyan);">◎</span> {{ product.type | upcase }}</li>
+          {%- elsif type_lower contains 'cassette' or type_lower contains 'tape' -%}
+            <li><span style="color:var(--jj-green);">▭</span> {{ product.type | upcase }}</li>
+          {%- elsif type_lower contains 'minidisc' or type_lower contains 'mini disc' or type_lower contains 'md' -%}
+            <li><span style="color:var(--jj-magenta);">◇</span> {{ product.type | upcase }}</li>
+          {%- elsif type_lower contains 'hardware' or type_lower contains 'player' or type_lower contains 'walkman' or type_lower contains 'stereo' -%}
+            <li><span style="color:var(--jj-white);">▪</span> {{ product.type | upcase }}</li>
+          {%- else -%}
+            <li>&gt; {{ product.type | upcase }}</li>
+          {%- endif -%}
         {%- endunless -%}
       {%- endif -%}
     {%- endfor -%}
     {%- if types_seen == '' -%}
-      <li>&gt; BOXED</li>
-      <li>&gt; LOOSE</li>
-      <li>&gt; SEALED</li>
-      <li>&gt; OEM</li>
+      <li><span style="color:var(--jj-amber);">○</span> VINYL</li>
+      <li><span style="color:var(--jj-cyan);">◎</span> CD</li>
+      <li><span style="color:var(--jj-green);">▭</span> CASSETTE</li>
+      <li><span style="color:var(--jj-magenta);">◇</span> MINIDISC</li>
+      <li><span style="color:var(--jj-white);">▪</span> HARDWARE</li>
     {%- endif -%}
   </ul>
 </div>
