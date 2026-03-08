@@ -285,12 +285,26 @@
      1px 0 0 rgba(0, 0, 255, 0.12);
 }
 
+/* Phosphor decay — afterglow fade on deselection */
+@keyframes jj-phosphor-decay {
+  0%   { opacity: 1; filter: brightness(1.15); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+.jj-phosphor-decay {
+  animation: jj-phosphor-decay 0.15s ease-out forwards;
+}
+
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
   .jj-crt-on,
   .jj-crt-off,
   .jj-glow-pulse,
   .jj-loading::after {
+    animation: none;
+  }
+
+  .jj-phosphor-decay {
     animation: none;
   }
 
