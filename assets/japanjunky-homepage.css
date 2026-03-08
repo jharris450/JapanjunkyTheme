@@ -708,3 +708,9 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
 .jj-product-table tbody tr[data-product-format]:hover {
   border-left-width: 2px;
 }
+
+/* Detail pane header picks up format color */
+.jj-detail-header {
+  border-left: 2px solid transparent;
+  transition: border-left-color 0.15s ease-out;
+}

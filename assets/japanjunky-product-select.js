@@ -160,6 +160,16 @@
     // Update header with terminal path
     if (elHeader) {
       elHeader.textContent = 'C:\\catalog\\' + (handle || 'item') + '.dat';
+      // Format color on detail header
+      var format = row.getAttribute('data-product-format') || '';
+      var formatColors = {
+        vinyl: 'var(--jj-amber)',
+        cd: 'var(--jj-cyan)',
+        cassette: 'var(--jj-green)',
+        minidisc: 'var(--jj-magenta)',
+        hardware: 'var(--jj-white)'
+      };
+      elHeader.style.borderLeftColor = formatColors[format] || 'transparent';
     }
 
     // Update add to cart
