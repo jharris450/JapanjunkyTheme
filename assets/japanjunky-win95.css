@@ -101,13 +101,15 @@
 
 .jj-taskbar-tab--active {
   background: #111;
-  border-color: #444;
+  border-color: #555;
   color: var(--jj-text);
-  text-shadow: 0 0 4px rgba(212, 201, 168, 0.3);
+  text-shadow: 0 0 4px rgba(212, 201, 168, 0.4), 0 0 8px rgba(212, 201, 168, 0.15);
 }
 
 /* --- Clock Tray --- */
 .jj-clock-tray {
+  position: relative;
+  cursor: default;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
   color: #666;
@@ -274,4 +276,29 @@
 }
 .jj-bevel-in {
   border: 1px solid #333;
+}
+
+/* --- Clock Date Popover --- */
+.jj-clock-popover {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: var(--jj-bg-panel, #0a0a0a);
+  border: 1px solid #444;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  z-index: 2000;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--jj-text);
+}
+
+.jj-clock-popover--open {
+  display: block;
+}
+
+.jj-clock-popover__date {
+  text-align: center;
 }
