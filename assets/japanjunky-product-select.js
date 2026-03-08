@@ -221,6 +221,20 @@
           // Silently fail - we already have data from attributes
         });
     }
+
+    // On tablet: open detail pane overlay
+    if (window.innerWidth <= 960 && detailPane) {
+      detailPane.classList.add('jj-detail-open');
+    }
+  });
+
+  // Close detail pane overlay on tablet when clicking outside
+  document.addEventListener('click', function (e) {
+    if (window.innerWidth <= 960 && detailPane && detailPane.classList.contains('jj-detail-open')) {
+      if (!detailPane.contains(e.target) && !tbody.contains(e.target)) {
+        detailPane.classList.remove('jj-detail-open');
+      }
+    }
   });
 
   // ─── Add to Cart Button ────────────────────────────────────
