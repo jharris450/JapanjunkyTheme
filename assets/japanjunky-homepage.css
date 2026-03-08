@@ -395,7 +395,7 @@
   border-bottom: 1px solid #1a1a1a;
   cursor: default;
   transition: background 0.06s, box-shadow 0.15s ease-out, border-left-color 0.15s ease-out;
-  height: 86px;
+  height: 64px;
   border-left: 2px solid transparent;
 }
 .jj-product-table tbody tr:hover { background: #0d0d0d; }
@@ -415,8 +415,8 @@
 /* Table cells */
 .jj-cell-thumb { padding: 2px; }
 .jj-thumb-img {
-  width: 80px;
-  height: 80px;
+  width: 56px;
+  height: 56px;
   background: #000;
   border: 1px solid #333;
   display: flex;
@@ -436,7 +436,7 @@
 .jj-cond-g  { color: #888; }
 .jj-cell-format { font-size: 12px; white-space: nowrap; color: #888; }
 .jj-cell-title { min-width: 120px; overflow: hidden; }
-.jj-cell-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--jj-text); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jj-cell-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 400; color: var(--jj-text); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-artist { font-size: 11px; color: #888; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-meta { font-size: 10px; color: #555; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-price { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--jj-secondary); white-space: nowrap; text-align: right; font-weight: 700; text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
