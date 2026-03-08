@@ -118,6 +118,10 @@
         elVisual.alt = title;
       }
       triggerClass(elVisual, 'jj-img-rendering');
+      // Auto-dither the detail image
+      if (window.JJ_Dither) {
+        window.JJ_Dither.ditherSingle(elVisual);
+      }
     } else {
       var asciiPlaceholder =
         '\n    ┌──────────────┐\n' +
