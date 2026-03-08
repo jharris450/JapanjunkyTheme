@@ -24,6 +24,7 @@
   var elAddBtn = document.getElementById('jj-add-to-cart-btn');
   var elVariantId = document.getElementById('jj-variant-id');
   var elCartForm = document.getElementById('jj-detail-cart-form');
+  var elJpTitle = document.getElementById('jj-detail-jp-title');
 
   // Reduced motion preference
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -100,6 +101,11 @@
     typeIn(elArtist, vendor.toUpperCase(), 24);
     typeIn(elTitle, title, 18);
     typeIn(elPrice, price, 14);
+
+    // Clear Japanese title (populated from fetch)
+    if (elJpTitle) {
+      elJpTitle.textContent = '';
+    }
 
     // Container phosphor wake-up
     triggerClass(elImageContainer, 'jj-screen-refresh');
@@ -195,6 +201,13 @@
             descDiv.style.cssText = 'margin-top:6px;font-size:12px;color:#aaa;max-height:80px;overflow-y:auto;line-height:1.4;';
             descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + product.description.substring(0, 200) + '</span>';
             elMeta.appendChild(descDiv);
+          }
+          // Japanese original title from tags
+          if (elJpTitle && product.tags) {
+            var jpTag = product.tags.find(function (t) { return t.indexOf('jp:') === 0; });
+            if (jpTag) {
+              elJpTitle.textContent = '\u539F\u984C: ' + jpTag.substring(3);
+            }
           }
           // Update variant ID to first available
           if (product.variants && product.variants.length > 0) {

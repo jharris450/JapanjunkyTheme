@@ -714,3 +714,64 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   border-left: 2px solid transparent;
   transition: border-left-color 0.15s ease-out;
 }
+
+/* Japanese original title — data, not decoration */
+.jj-detail-jp-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--jj-muted);
+  padding: 0 12px 4px;
+  line-height: 1.4;
+  min-height: 0;
+}
+.jj-detail-jp-title:empty {
+  display: none;
+}
+
+/* ===== ACTIVE FILTER QUERY BAR ===== */
+.jj-filter-bar {
+  background: var(--jj-bg-panel, #0a0a0a);
+  border-bottom: 1px solid #222;
+  padding: 4px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--jj-accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.jj-filter-bar__prompt {
+  color: var(--jj-green);
+  text-shadow: 0 0 4px rgba(51, 255, 51, 0.4);
+  flex-shrink: 0;
+}
+
+.jj-filter-bar__tags {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.jj-filter-tag {
+  color: var(--jj-accent);
+  cursor: default;
+  padding: 0 2px;
+}
+.jj-filter-tag:hover {
+  color: var(--jj-primary);
+  text-decoration: line-through;
+}
+
+.jj-filter-bar__clear {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--jj-muted);
+  cursor: default;
+  flex-shrink: 0;
+}
+.jj-filter-bar__clear:hover {
+  color: var(--jj-primary);
+}
