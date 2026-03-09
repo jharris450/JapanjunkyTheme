@@ -4,38 +4,41 @@
 {%- endcomment -%}
 
 {%- if product != blank -%}
-  {%- comment -%} Extract condition from tags {%- endcomment -%}
-  {%- assign p_condition = '' -%}
-  {%- assign p_condition_class = '' -%}
-  {%- for tag in product.tags -%}
-    {%- if tag contains 'condition:' -%}
-      {%- assign p_condition = tag | remove: 'condition:' | strip -%}
-    {%- endif -%}
-  {%- endfor -%}
+  {%- comment -%} Read metafields {%- endcomment -%}
+  {%- assign m_artist = product.metafields.custom.artist | default: '' -%}
+  {%- assign m_condition = product.metafields.custom.condition | default: '' -%}
+  {%- assign m_code = product.metafields.custom.code | default: '' -%}
+  {%- assign m_year = product.metafields.custom.year | default: '' -%}
+  {%- assign m_label = product.metafields.custom.label | default: '' -%}
+  {%- assign m_format = product.metafields.custom.format | default: '' -%}
+  {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
+  {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
+
+  {%- comment -%} Condition CSS class {%- endcomment -%}
+  {%- assign p_condition = m_condition -%}
   {%- if p_condition == '' -%}
     {%- assign p_condition = 'N/A' -%}
   {%- endif -%}
   {%- assign cond_lower = p_condition | downcase -%}
+  {%- assign p_condition_class = 'jj-cond-g' -%}
   {%- if cond_lower contains 'ex' or cond_lower contains 'mint' or cond_lower contains 'new' -%}
     {%- assign p_condition_class = 'jj-cond-ex' -%}
   {%- elsif cond_lower contains 'vg' or cond_lower contains 'very' -%}
     {%- assign p_condition_class = 'jj-cond-vg' -%}
-  {%- else -%}
-    {%- assign p_condition_class = 'jj-cond-g' -%}
   {%- endif -%}
 
-  {%- comment -%} Normalize product type to format key {%- endcomment -%}
-  {%- assign p_type_lower = product.type | downcase -%}
+  {%- comment -%} Normalize format to key {%- endcomment -%}
+  {%- assign p_format_lower = m_format | downcase -%}
   {%- assign p_format = '' -%}
-  {%- if p_type_lower contains 'vinyl' or p_type_lower contains 'lp' or p_type_lower contains 'record' -%}
+  {%- if p_format_lower contains 'vinyl' or p_format_lower contains 'lp' or p_format_lower contains 'record' -%}
     {%- assign p_format = 'vinyl' -%}
-  {%- elsif p_type_lower contains 'cd' or p_type_lower contains 'compact disc' -%}
+  {%- elsif p_format_lower contains 'cd' or p_format_lower contains 'compact disc' -%}
     {%- assign p_format = 'cd' -%}
-  {%- elsif p_type_lower contains 'cassette' or p_type_lower contains 'tape' -%}
+  {%- elsif p_format_lower contains 'cassette' or p_format_lower contains 'tape' -%}
     {%- assign p_format = 'cassette' -%}
-  {%- elsif p_type_lower contains 'minidisc' or p_type_lower contains 'mini disc' or p_type_lower contains 'md' -%}
+  {%- elsif p_format_lower contains 'minidisc' or p_format_lower contains 'mini disc' or p_format_lower contains 'md' -%}
     {%- assign p_format = 'minidisc' -%}
-  {%- elsif p_type_lower contains 'hardware' or p_type_lower contains 'player' or p_type_lower contains 'walkman' or p_type_lower contains 'stereo' -%}
+  {%- elsif p_format_lower contains 'hardware' or p_format_lower contains 'player' or p_format_lower contains 'walkman' or p_format_lower contains 'stereo' -%}
     {%- assign p_format = 'hardware' -%}
   {%- endif -%}
 
@@ -43,12 +46,18 @@
       data-product-handle="{{ product.handle }}"
       data-product-id="{{ product.id }}"
       data-product-title="{{ product.title | escape }}"
+      data-product-artist="{{ m_artist | escape }}"
       data-product-vendor="{{ product.vendor | escape }}"
       data-product-type="{{ product.type | escape }}"
       data-product-price="{{ product.price | money }}"
-      data-product-sku="{{ product.selected_or_first_available_variant.sku | escape }}"
+      data-product-code="{{ m_code | escape }}"
       data-product-condition="{{ p_condition | escape }}"
       data-product-format="{{ p_format }}"
+      data-product-format-label="{{ m_format | escape }}"
+      data-product-year="{{ m_year | escape }}"
+      data-product-label="{{ m_label | escape }}"
+      data-product-jp-name="{{ m_jp_name | escape }}"
+      data-product-jp-title="{{ m_jp_title | escape }}"
       data-product-image="{%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 }}{%- endif -%}"
       data-variant-id="{{ product.selected_or_first_available_variant.id }}"
       data-product-available="{{ product.available }}"
@@ -68,17 +77,17 @@
         {%- endif -%}
       </div>
     </td>
-    <td class="jj-cell-code">{{ product.selected_or_first_available_variant.sku | default: product.handle | truncate: 10, '' }}</td>
+    <td class="jj-cell-code">{{ m_code | default: product.selected_or_first_available_variant.sku | default: product.handle | truncate: 10, '' }}</td>
     <td class="jj-cell-cat">
       {{ product.vendor | truncate: 12, '' }}<br>
       <span class="jj-cat-label">{{ product.type | default: '---' }}</span>
     </td>
     <td class="jj-cell-condition"><span class="{{ p_condition_class }}">{{ p_condition }}</span></td>
-    <td class="jj-cell-format">{%- case p_format -%}{%- when 'vinyl' -%}○ {%- when 'cd' -%}◎ {%- when 'cassette' -%}▭ {%- when 'minidisc' -%}◇ {%- when 'hardware' -%}▪ {%- endcase -%}{{ product.type | default: '---' }}</td>
+    <td class="jj-cell-format">{%- case p_format -%}{%- when 'vinyl' -%}○ {%- when 'cd' -%}◎ {%- when 'cassette' -%}▭ {%- when 'minidisc' -%}◇ {%- when 'hardware' -%}▪ {%- endcase -%}{{ m_format | default: product.type | default: '---' }}</td>
     <td class="jj-cell-title">
       <div class="jj-cell-name">{{ product.title }}</div>
-      <div class="jj-cell-artist">{{ product.vendor }}</div>
-      <div class="jj-cell-meta">{{ product.vendor | upcase }} &middot; {{ product.type }}</div>
+      <div class="jj-cell-artist">{{ m_artist | default: '---' }}</div>
+      <div class="jj-cell-meta">{{ m_label | default: '---' }} &middot; {{ m_year | default: '---' }}</div>
     </td>
     <td class="jj-cell-price">{{ product.price | money }}</td>
   </tr>
