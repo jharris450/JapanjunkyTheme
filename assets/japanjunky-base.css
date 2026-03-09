@@ -98,6 +98,14 @@ button {
   overflow: hidden;
 }
 
+/* Shopify wraps each section in .shopify-section — make it fill flex parent */
+.jj-main > .shopify-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 /* --- Typography (CRT: color + glow for hierarchy, not weight) --- */
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;

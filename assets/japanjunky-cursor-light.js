@@ -18,11 +18,11 @@
     return 'url("' + u + '") 0 0, auto';
   });
   var handCursors = urls.hand.map(function (u) {
-    return 'url("' + u + '") 6 0, pointer';
+    return 'url("' + u + '") 3 0, pointer';
   });
-  var textCursor = 'url("' + urls.text + '") 7 17, text';
+  var textCursor = 'url("' + urls.text + '") 3 8, text';
   var waitCursors = urls.wait.map(function (u) {
-    return 'url("' + u + '") 11 13, wait';
+    return 'url("' + u + '") 5 6, wait';
   });
 
   // Inject a <style> element for cursor rules
