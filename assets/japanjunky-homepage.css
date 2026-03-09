@@ -371,7 +371,7 @@
   border-bottom: 1px solid #1a1a1a;
   cursor: default;
   transition: background 0.06s, box-shadow 0.15s ease-out, border-left-color 0.15s ease-out;
-  height: 64px;
+  height: 86px;
   border-left: 2px solid transparent;
 }
 .jj-product-table tbody tr:hover { background: #0d0d0d; }
@@ -391,8 +391,8 @@
 /* Table cells */
 .jj-cell-thumb { padding: 2px; }
 .jj-thumb-img {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
   background: #000;
   border: 1px solid #333;
   display: flex;
@@ -481,7 +481,7 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--jj-primary);
-  padding: 2px 12px 6px;
+  padding: 6px 12px 4px;
   text-transform: uppercase;
   text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
 }
@@ -520,17 +520,6 @@
 .jj-detail-meta { padding: 4px 12px; font-size: 12px; line-height: 1.4; color: #aaa; font-family: 'IBM Plex Mono', monospace; }
 .jj-detail-meta .jj-meta-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #666; text-transform: none; letter-spacing: 0; }
 .jj-detail-meta .jj-meta-value { color: var(--jj-text); }
-.jj-detail-meta .jj-cond-badge {
-  display: inline;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #000;
-  background: var(--jj-secondary);
-  padding: 0 4px;
-  margin-left: 4px;
-}
-
 .jj-detail-price-row {
   padding: 8px 12px;
   display: flex;

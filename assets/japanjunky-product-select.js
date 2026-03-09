@@ -157,9 +157,7 @@
         '<div><span class="jj-meta-label">SKU:</span> <span class="jj-meta-value">' + escapeHtml(sku || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">' + escapeHtml(vendor) + '</span></div>' +
         '<div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">' + escapeHtml(type || '---') + '</span></div>' +
-        '<div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">' + escapeHtml(condition) + '</span>' +
-          (condition ? ' <span class="jj-cond-badge">' + escapeHtml(condition) + '</span>' : '') +
-        '</div>';
+        '<div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">' + escapeHtml(condition || '---') + '</span></div>';
       triggerClass(elMeta, 'jj-meta-rendering');
     }
 

@@ -57,10 +57,10 @@
       <div class="jj-thumb-img">
         {%- if product.featured_image -%}
           <img
-            src="{{ product.featured_image | image_url: width: 112 }}"
+            src="{{ product.featured_image | image_url: width: 144 }}"
             alt="{{ product.featured_image.alt | escape | default: product.title | escape }}"
-            width="56"
-            height="56"
+            width="72"
+            height="72"
             loading="lazy"
           >
         {%- else -%}
