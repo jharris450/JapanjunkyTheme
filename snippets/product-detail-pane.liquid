@@ -1,12 +1,24 @@
 {%- comment -%}
   Right sidebar product detail pane — terminal output style.
   Populated dynamically by japanjunky-product-select.js on row click.
+
+  Layout order:
+    1. Header (terminal path)
+    2. "Recently Added" label
+    3. Artist (large, from custom.artist)
+    4. JP Name (from custom.jp_name)
+    5. Image
+    6. Product Title
+    7. JP Title (from custom.jp_title)
+    8. Meta (Code, Label, Format, Year, Condition)
+    9. Price row
+   10. Actions
 {%- endcomment -%}
 
 <div class="jj-detail-header" id="jj-detail-header">C:\catalog\item.dat</div>
-<div class="jj-detail-recently">type item.dat</div>
-<div class="jj-detail-item-title" id="jj-detail-title">---</div>
-<div class="jj-detail-jp-title" id="jj-detail-jp-title"></div>
+<div class="jj-detail-recently">Recently Added</div>
+<div class="jj-detail-artist" id="jj-detail-artist">---</div>
+<div class="jj-detail-jp-name" id="jj-detail-jp-name"></div>
 <div class="jj-detail-image-wrap">
   <div class="jj-detail-image" id="jj-detail-image-container">
     <pre class="jj-ascii-art-large" id="jj-detail-visual">
@@ -23,11 +35,14 @@
     └──────────────┘</pre>
   </div>
 </div>
-<div class="jj-detail-artist" id="jj-detail-artist">---</div>
+<div class="jj-detail-item-title" id="jj-detail-title">---</div>
+<div class="jj-detail-jp-title" id="jj-detail-jp-title"></div>
 <div class="jj-detail-meta" id="jj-detail-meta">
-  <div><span class="jj-meta-label">Catalog#:</span> <span class="jj-meta-value">---</span></div>
-  <div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">---</span></div>
-  <div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Code:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Label:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Format:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Year:</span> <span class="jj-meta-value">---</span></div>
+  <div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">---</span></div>
 </div>
 <div class="jj-detail-price-row">
   <div class="jj-detail-price" id="jj-detail-price">---</div>
