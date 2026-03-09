@@ -15,7 +15,9 @@
 
   // Detail pane elements
   var elArtist = document.getElementById('jj-detail-artist');
+  var elJpName = document.getElementById('jj-detail-jp-name');
   var elTitle = document.getElementById('jj-detail-title');
+  var elJpTitle = document.getElementById('jj-detail-jp-title');
   var elPrice = document.getElementById('jj-detail-price');
   var elMeta = document.getElementById('jj-detail-meta');
   var elImageContainer = document.getElementById('jj-detail-image-container');
@@ -24,7 +26,6 @@
   var elAddBtn = document.getElementById('jj-add-to-cart-btn');
   var elVariantId = document.getElementById('jj-variant-id');
   var elCartForm = document.getElementById('jj-detail-cart-form');
-  var elJpTitle = document.getElementById('jj-detail-jp-title');
 
   // Reduced motion preference
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -60,15 +61,6 @@
     el.classList.add(cls);
   }
 
-  // ─── Format Money ──────────────────────────────────────────
-  function formatMoney(cents) {
-    var amount = (cents / 100).toFixed(2);
-    if (window.Shopify && window.Shopify.currency && window.Shopify.currency.active) {
-      return window.Shopify.currency.active + amount;
-    }
-    return '$' + amount;
-  }
-
   function escapeHtml(str) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
@@ -88,23 +80,33 @@
     // Read data from row attributes
     var handle = row.getAttribute('data-product-handle');
     var title = row.getAttribute('data-product-title') || '';
+    var artist = row.getAttribute('data-product-artist') || '';
     var vendor = row.getAttribute('data-product-vendor') || '';
-    var type = row.getAttribute('data-product-type') || '';
     var price = row.getAttribute('data-product-price') || '';
-    var sku = row.getAttribute('data-product-sku') || '';
+    var code = row.getAttribute('data-product-code') || '';
     var condition = row.getAttribute('data-product-condition') || '';
+    var formatLabel = row.getAttribute('data-product-format-label') || '';
+    var year = row.getAttribute('data-product-year') || '';
+    var label = row.getAttribute('data-product-label') || '';
+    var jpName = row.getAttribute('data-product-jp-name') || '';
+    var jpTitle = row.getAttribute('data-product-jp-title') || '';
     var imageUrl = row.getAttribute('data-product-image') || '';
     var variantId = row.getAttribute('data-variant-id') || '';
     var available = row.getAttribute('data-product-available') === 'true';
 
     // Typewriter effects on key fields
-    typeIn(elArtist, vendor.toUpperCase(), 24);
+    typeIn(elArtist, (artist || vendor).toUpperCase(), 24);
     typeIn(elTitle, title, 18);
     typeIn(elPrice, price, 14);
 
-    // Clear Japanese title (populated from fetch)
+    // JP Name (below artist)
+    if (elJpName) {
+      elJpName.textContent = jpName;
+    }
+
+    // JP Title (below product title)
     if (elJpTitle) {
-      elJpTitle.textContent = '';
+      elJpTitle.textContent = jpTitle;
     }
 
     // Container phosphor wake-up
@@ -132,7 +134,7 @@
       var asciiPlaceholder =
         '\n    ┌──────────────┐\n' +
         '    │              │\n' +
-        '    │   ' + (sku || '◆◆◆').substring(0, 6).padEnd(6) + '     │\n' +
+        '    │   ' + (code || '◆◆◆').substring(0, 6).padEnd(6) + '     │\n' +
         '    │              │\n' +
         '    │   NO IMAGE   │\n' +
         '    │   AVAILABLE  │\n' +
@@ -151,12 +153,13 @@
       triggerClass(elVisual, 'jj-text-rendering');
     }
 
-    // Meta block
+    // Meta block — Code, Label, Format, Year, Condition
     if (elMeta) {
       elMeta.innerHTML =
-        '<div><span class="jj-meta-label">SKU:</span> <span class="jj-meta-value">' + escapeHtml(sku || '---') + '</span></div>' +
-        '<div><span class="jj-meta-label">Vendor:</span> <span class="jj-meta-value">' + escapeHtml(vendor) + '</span></div>' +
-        '<div><span class="jj-meta-label">Type:</span> <span class="jj-meta-value">' + escapeHtml(type || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Code:</span> <span class="jj-meta-value">' + escapeHtml(code || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Label:</span> <span class="jj-meta-value">' + escapeHtml(label || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Format:</span> <span class="jj-meta-value">' + escapeHtml(formatLabel || '---') + '</span></div>' +
+        '<div><span class="jj-meta-label">Year:</span> <span class="jj-meta-value">' + escapeHtml(year || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">' + escapeHtml(condition || '---') + '</span></div>';
       triggerClass(elMeta, 'jj-meta-rendering');
     }
@@ -185,7 +188,7 @@
       elAddBtn.textContent = available ? '[Add to Cart]' : '[Sold Out]';
     }
 
-    // Fetch full product data for description (optional enhancement)
+    // Fetch full product data for description and variant update
     if (handle) {
       fetch('/products/' + handle + '.js')
         .then(function (res) {
@@ -193,19 +196,12 @@
           return res.json();
         })
         .then(function (product) {
-          // Update with richer data if available
+          // Append description as Notes if available
           if (product.description && elMeta) {
             var descDiv = document.createElement('div');
             descDiv.style.cssText = 'margin-top:6px;font-size:12px;color:#aaa;max-height:80px;overflow-y:auto;line-height:1.4;';
             descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + product.description.substring(0, 200) + '</span>';
             elMeta.appendChild(descDiv);
-          }
-          // Japanese original title from tags
-          if (elJpTitle && product.tags) {
-            var jpTag = product.tags.find(function (t) { return t.indexOf('jp:') === 0; });
-            if (jpTag) {
-              elJpTitle.textContent = '\u539F\u984C: ' + jpTag.substring(3);
-            }
           }
           // Update variant ID to first available
           if (product.variants && product.variants.length > 0) {
