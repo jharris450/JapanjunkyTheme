@@ -17,6 +17,7 @@ html {
   -webkit-text-size-adjust: 100%;
   background: #000;
   overflow-x: hidden;
+  height: 100%;
   /* CRT: no rounded corners anywhere */
   border-radius: 0;
 }
@@ -61,7 +62,7 @@ button {
   color: var(--jj-text);
   font-size: 13px;
   line-height: 1.5;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -72,7 +73,7 @@ button {
 .jj-crt-frame {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   position: relative;
 }
@@ -86,7 +87,7 @@ button {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
 }
 
