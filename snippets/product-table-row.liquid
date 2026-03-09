@@ -1,12 +1,12 @@
 {%- comment -%}
   Product table row for the catalog table.
-  Usage: {% render 'product-table-row', product: product, index: forloop.index0 %}
+  One row per variant. Product-level data from metafields, variant-level from variant object.
+  Usage: {% render 'product-table-row', product: product, variant: variant, index: row_index %}
 {%- endcomment -%}
 
 {%- if product != blank -%}
-  {%- comment -%} Read metafields {%- endcomment -%}
+  {%- comment -%} Read product metafields {%- endcomment -%}
   {%- assign m_artist = product.metafields.custom.artist | default: '' -%}
-  {%- assign m_condition = product.metafields.custom.condition | default: '' -%}
   {%- assign m_code = product.metafields.custom.code | default: '' -%}
   {%- assign m_year = product.metafields.custom.year | default: '' -%}
   {%- assign m_label = product.metafields.custom.label | default: '' -%}
@@ -14,16 +14,16 @@
   {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
   {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
 
-  {%- comment -%} Condition CSS class {%- endcomment -%}
-  {%- assign p_condition = m_condition -%}
+  {%- comment -%} Condition from variant option {%- endcomment -%}
+  {%- assign p_condition = variant.option1 | default: '' -%}
   {%- if p_condition == '' -%}
     {%- assign p_condition = 'N/A' -%}
   {%- endif -%}
-  {%- assign cond_lower = p_condition | downcase -%}
+  {%- assign cond_lower = p_condition | downcase | strip -%}
   {%- assign p_condition_class = 'jj-cond-g' -%}
-  {%- if cond_lower contains 'ex' or cond_lower contains 'mint' or cond_lower contains 'new' -%}
+  {%- if cond_lower == 'n' or cond_lower == 'nm' or cond_lower == 'mint' or cond_lower contains 'ex' or cond_lower contains 'new' -%}
     {%- assign p_condition_class = 'jj-cond-ex' -%}
-  {%- elsif cond_lower contains 'vg' or cond_lower contains 'very' -%}
+  {%- elsif cond_lower == 'vg' or cond_lower contains 'very' -%}
     {%- assign p_condition_class = 'jj-cond-vg' -%}
   {%- endif -%}
 
@@ -49,7 +49,7 @@
       data-product-artist="{{ m_artist | escape }}"
       data-product-vendor="{{ product.vendor | escape }}"
       data-product-type="{{ product.type | escape }}"
-      data-product-price="{{ product.price | money }}"
+      data-product-price="{{ variant.price | money }}"
       data-product-code="{{ m_code | escape }}"
       data-product-condition="{{ p_condition | escape }}"
       data-product-format="{{ p_format }}"
@@ -59,8 +59,8 @@
       data-product-jp-name="{{ m_jp_name | escape }}"
       data-product-jp-title="{{ m_jp_title | escape }}"
       data-product-image="{%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 }}{%- endif -%}"
-      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
-      data-product-available="{{ product.available }}"
+      data-variant-id="{{ variant.id }}"
+      data-product-available="{{ variant.available }}"
   >
     <td class="jj-cell-thumb">
       <div class="jj-thumb-img">
@@ -77,7 +77,7 @@
         {%- endif -%}
       </div>
     </td>
-    <td class="jj-cell-code">{{ m_code | default: product.selected_or_first_available_variant.sku | default: product.handle | truncate: 10, '' }}</td>
+    <td class="jj-cell-code">{{ m_code | default: variant.sku | default: product.handle | truncate: 10, '' }}</td>
     <td class="jj-cell-cat">
       {{ product.vendor | truncate: 12, '' }}<br>
       <span class="jj-cat-label">{{ product.type | default: '---' }}</span>
@@ -89,7 +89,7 @@
       <div class="jj-cell-artist">{{ m_artist | default: '---' }}</div>
       <div class="jj-cell-meta">{{ m_label | default: '---' }} &middot; {{ m_year | default: '---' }}</div>
     </td>
-    <td class="jj-cell-price">{{ product.price | money }}</td>
+    <td class="jj-cell-price">{{ variant.price | money }}</td>
   </tr>
 {%- else -%}
   <tr>

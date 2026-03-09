@@ -39,8 +39,12 @@
           </tr>
         </thead>
         <tbody id="jj-product-tbody">
+          {%- assign row_index = 0 -%}
           {%- for product in featured.products limit: section.settings.products_to_show -%}
-            {% render 'product-table-row', product: product, index: forloop.index0 %}
+            {%- for variant in product.variants -%}
+              {% render 'product-table-row', product: product, variant: variant, index: row_index %}
+              {%- assign row_index = row_index | plus: 1 -%}
+            {%- endfor -%}
           {%- else -%}
             {%- for i in (1..12) -%}
               {% render 'product-table-row', product: blank, index: forloop.index0 %}

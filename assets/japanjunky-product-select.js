@@ -207,13 +207,8 @@
             descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + escapeHtml(plainDesc) + '</span>';
             elMeta.appendChild(descDiv);
           }
-          // Update variant ID to first available
-          if (product.variants && product.variants.length > 0) {
-            var firstAvailable = product.variants.find(function (v) { return v.available; });
-            if (firstAvailable && elVariantId) {
-              elVariantId.value = firstAvailable.id;
-            }
-          }
+          // Variant ID is already set from the row's data-variant-id attribute
+          // (each row is a specific variant, no need to override)
         })
         .catch(function () {
           // Silently fail - we already have data from attributes
