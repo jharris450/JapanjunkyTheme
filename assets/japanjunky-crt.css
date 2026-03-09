@@ -39,7 +39,48 @@
   border-radius: 0 !important;
 }
 
-/* --- CRT Scanline + Vignette Overlay (combined on ::after) --- */
+/* ===== SONY BVM-D20F1U CRT SIMULATION ===== */
+/*
+ * Full-screen CRT filter modeled on a Sony BVM-D20F1U:
+ * 20" Super HR Trinitron, 900 TVL, 0.30mm aperture grille.
+ *
+ * Layer stack (back → front):
+ *   ::before  — Trinitron aperture grille (vertical R|G|B phosphor stripes)
+ *   ::after   — Gaussian scanlines + vignette + D65 warm tint
+ *   body::before — Damper wire shadows (2 wires at 1/3 and 2/3 height)
+ */
+
+/* --- Layer 1: Trinitron Aperture Grille (vertical phosphor stripes) --- */
+/* Real Trinitron uses continuous vertical phosphor stripes, not dots.
+   Pattern: Red | Green | Blue | black gap — repeating 4px period.
+   mix-blend-mode: screen makes RGB stripes brighten content slightly,
+   while the black gap darkens between triplets. */
+.jj-crt-frame::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 40, 40, 0.06) 0px,
+      rgba(255, 40, 40, 0.06) 1px,
+      rgba(40, 255, 40, 0.06) 1px,
+      rgba(40, 255, 40, 0.06) 2px,
+      rgba(60, 60, 255, 0.06) 2px,
+      rgba(60, 60, 255, 0.06) 3px,
+      rgba(0, 0, 0, 0.10) 3px,
+      rgba(0, 0, 0, 0.10) 4px
+    );
+  pointer-events: none;
+  z-index: 9998;
+  will-change: transform;
+}
+
+/* --- Layer 2: Gaussian Scanlines + Vignette + D65 Warm Tint --- */
+/* BVM scanlines at 240p on 1080p ≈ 4px per scanline cell.
+   Gaussian profile: bright center → dark gap (gap wider than lit line).
+   Vignette tightened to 45%→0.5 for BVM edge darkening.
+   D65 warm tint: barely perceptible warmth across the whole screen. */
 .jj-crt-frame::after {
   content: '';
   position: fixed;
@@ -47,18 +88,55 @@
   background:
     repeating-linear-gradient(
       to bottom,
-      transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.04) 2px,
-      rgba(0, 0, 0, 0.04) 4px
+      rgba(0, 0, 0, 0.02) 0px,
+      rgba(0, 0, 0, 0.02) 0.5px,
+      rgba(0, 0, 0, 0.06) 1px,
+      rgba(0, 0, 0, 0.15) 1.5px,
+      rgba(0, 0, 0, 0.20) 2px,
+      rgba(0, 0, 0, 0.20) 2.5px,
+      rgba(0, 0, 0, 0.15) 3px,
+      rgba(0, 0, 0, 0.06) 3.5px,
+      rgba(0, 0, 0, 0.02) 4px
     ),
     radial-gradient(
       ellipse at center,
-      transparent 50%,
-      rgba(0, 0, 0, 0.4) 100%
+      transparent 45%,
+      rgba(0, 0, 0, 0.50) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 245, 230, 0.02) 0%,
+      rgba(255, 245, 230, 0.02) 100%
     );
   pointer-events: none;
-  z-index: 9998;
+  z-index: 9999;
+  will-change: transform;
+}
+
+/* --- Layer 3: Trinitron Damper Wire Shadows --- */
+/* BVM 20" has 2 damper wires at 1/3 and 2/3 screen height.
+   Thin tungsten wires that hold the aperture grille taut.
+   Cast faint horizontal shadows — the Trinitron "fingerprint".
+   mix-blend-mode: multiply makes them visible on bright content,
+   invisible on dark areas (just like the real thing). */
+.jj-body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent calc(33.33% - 0.5px),
+      rgba(0, 0, 0, 0.14) 33.33%,
+      transparent calc(33.33% + 0.5px),
+      transparent calc(66.67% - 0.5px),
+      rgba(0, 0, 0, 0.14) 66.67%,
+      transparent calc(66.67% + 0.5px)
+    );
+  pointer-events: none;
+  z-index: 9997;
+  mix-blend-mode: multiply;
+  will-change: transform;
 }
 
 /* ===== TEXT GLOW UTILITIES ===== */
@@ -245,44 +323,13 @@
 /* Cursor PNGs are applied via <style> injected by japanjunky-cursor-light.js */
 /* No DOM-element cursor styles needed */
 
-/* ===== PHOSPHOR DOT OVERLAY (product images only) ===== */
+/* ===== IMAGE CONTAINERS ===== */
+/* Phosphor stripe overlay now handled by full-screen aperture grille.
+   Keep position:relative for internal layout and dither overlays. */
 
 .jj-thumb-img,
 .jj-detail-image {
   position: relative;
-}
-
-.jj-thumb-img::after,
-.jj-detail-image::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      rgba(255, 0, 0, 0.03) 0px,
-      rgba(255, 0, 0, 0.03) 1px,
-      rgba(0, 255, 0, 0.03) 1px,
-      rgba(0, 255, 0, 0.03) 2px,
-      rgba(0, 0, 255, 0.03) 2px,
-      rgba(0, 0, 255, 0.03) 3px
-    );
-  pointer-events: none;
-  z-index: 1;
-  mix-blend-mode: screen;
-}
-
-/* Chromatic aberration — subtle color fringe on image containers */
-.jj-thumb-img {
-  box-shadow:
-    -1px 0 0 rgba(255, 0, 0, 0.15),
-     1px 0 0 rgba(0, 0, 255, 0.15);
-}
-
-.jj-detail-image {
-  box-shadow:
-    -1px 0 0 rgba(255, 0, 0, 0.12),
-     1px 0 0 rgba(0, 0, 255, 0.12);
 }
 
 /* Phosphor decay — afterglow fade on deselection */
@@ -308,8 +355,10 @@
     animation: none;
   }
 
-  /* Remove scanlines and vignette for users who prefer reduced motion */
-  .jj-crt-frame::after {
+  /* Remove all CRT overlay layers for reduced motion */
+  .jj-crt-frame::before,
+  .jj-crt-frame::after,
+  .jj-body::before {
     display: none;
   }
   /* CSS cursor PNGs are inherently reduced-motion safe */
@@ -324,7 +373,10 @@
     --jj-subtle: #333333;
   }
 
-  .jj-crt-frame::after {
+  /* Remove all CRT overlay layers for high contrast */
+  .jj-crt-frame::before,
+  .jj-crt-frame::after,
+  .jj-body::before {
     display: none;
   }
 }
