@@ -489,7 +489,7 @@
 .jj-detail-jp-name {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
-  color: var(--jj-muted);
+  color: var(--jj-muted, #666);
   padding: 0 12px 4px;
   line-height: 1.4;
   min-height: 0;

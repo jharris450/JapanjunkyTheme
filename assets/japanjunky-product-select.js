@@ -198,9 +198,13 @@
         .then(function (product) {
           // Append description as Notes if available
           if (product.description && elMeta) {
+            var existingNotes = elMeta.querySelector('.jj-meta-notes');
+            if (existingNotes) existingNotes.remove();
+            var plainDesc = product.description.replace(/<[^>]*>/g, '').substring(0, 200);
             var descDiv = document.createElement('div');
+            descDiv.className = 'jj-meta-notes';
             descDiv.style.cssText = 'margin-top:6px;font-size:12px;color:#aaa;max-height:80px;overflow-y:auto;line-height:1.4;';
-            descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + product.description.substring(0, 200) + '</span>';
+            descDiv.innerHTML = '<span class="jj-meta-label">Notes:</span> <span class="jj-meta-value">' + escapeHtml(plainDesc) + '</span>';
             elMeta.appendChild(descDiv);
           }
           // Update variant ID to first available
