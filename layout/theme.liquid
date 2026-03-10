@@ -32,31 +32,88 @@
   {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
 
   <script>
-    window.JJ_CURSOR_URLS = {
-      arrow: [
-        {{ 'cursor-arrow-0.png' | asset_url | json }},
-        {{ 'cursor-arrow-1.png' | asset_url | json }},
-        {{ 'cursor-arrow-2.png' | asset_url | json }},
-        {{ 'cursor-arrow-3.png' | asset_url | json }}
-      ],
-      hand: [
-        {{ 'cursor-hand-0.png' | asset_url | json }},
-        {{ 'cursor-hand-1.png' | asset_url | json }},
-        {{ 'cursor-hand-2.png' | asset_url | json }},
-        {{ 'cursor-hand-3.png' | asset_url | json }}
-      ],
-      text: [
-        {{ 'cursor-text-0.png' | asset_url | json }},
-        {{ 'cursor-text-1.png' | asset_url | json }},
-        {{ 'cursor-text-2.png' | asset_url | json }},
-        {{ 'cursor-text-3.png' | asset_url | json }}
-      ],
-      wait: [
-        {{ 'cursor-wait-0.png' | asset_url | json }},
-        {{ 'cursor-wait-1.png' | asset_url | json }},
-        {{ 'cursor-wait-2.png' | asset_url | json }},
-        {{ 'cursor-wait-3.png' | asset_url | json }}
-      ]
+    window.JJ_CURSOR_SETS = {
+      std: {
+        arrow: [
+          {{ 'cursor-arrow-0.png' | asset_url | json }},
+          {{ 'cursor-arrow-1.png' | asset_url | json }},
+          {{ 'cursor-arrow-2.png' | asset_url | json }},
+          {{ 'cursor-arrow-3.png' | asset_url | json }}
+        ],
+        hand: [
+          {{ 'cursor-hand-0.png' | asset_url | json }},
+          {{ 'cursor-hand-1.png' | asset_url | json }},
+          {{ 'cursor-hand-2.png' | asset_url | json }},
+          {{ 'cursor-hand-3.png' | asset_url | json }}
+        ],
+        text: [
+          {{ 'cursor-text-0.png' | asset_url | json }},
+          {{ 'cursor-text-1.png' | asset_url | json }},
+          {{ 'cursor-text-2.png' | asset_url | json }},
+          {{ 'cursor-text-3.png' | asset_url | json }}
+        ],
+        wait: [
+          {{ 'cursor-wait-0.png' | asset_url | json }},
+          {{ 'cursor-wait-1.png' | asset_url | json }},
+          {{ 'cursor-wait-2.png' | asset_url | json }},
+          {{ 'cursor-wait-3.png' | asset_url | json }}
+        ],
+        hotspots: { arrow: [0,0], hand: [3,0], text: [3,8], wait: [5,6] }
+      },
+      hi: {
+        arrow: [
+          {{ 'cursor-arrow-0-hi.png' | asset_url | json }},
+          {{ 'cursor-arrow-1-hi.png' | asset_url | json }},
+          {{ 'cursor-arrow-2-hi.png' | asset_url | json }},
+          {{ 'cursor-arrow-3-hi.png' | asset_url | json }}
+        ],
+        hand: [
+          {{ 'cursor-hand-0-hi.png' | asset_url | json }},
+          {{ 'cursor-hand-1-hi.png' | asset_url | json }},
+          {{ 'cursor-hand-2-hi.png' | asset_url | json }},
+          {{ 'cursor-hand-3-hi.png' | asset_url | json }}
+        ],
+        text: [
+          {{ 'cursor-text-0-hi.png' | asset_url | json }},
+          {{ 'cursor-text-1-hi.png' | asset_url | json }},
+          {{ 'cursor-text-2-hi.png' | asset_url | json }},
+          {{ 'cursor-text-3-hi.png' | asset_url | json }}
+        ],
+        wait: [
+          {{ 'cursor-wait-0-hi.png' | asset_url | json }},
+          {{ 'cursor-wait-1-hi.png' | asset_url | json }},
+          {{ 'cursor-wait-2-hi.png' | asset_url | json }},
+          {{ 'cursor-wait-3-hi.png' | asset_url | json }}
+        ],
+        hotspots: { arrow: [0,0], hand: [5,0], text: [5,12], wait: [8,9] }
+      },
+      hh: {
+        arrow: [
+          {{ 'cursor-arrow-0-hh.png' | asset_url | json }},
+          {{ 'cursor-arrow-1-hh.png' | asset_url | json }},
+          {{ 'cursor-arrow-2-hh.png' | asset_url | json }},
+          {{ 'cursor-arrow-3-hh.png' | asset_url | json }}
+        ],
+        hand: [
+          {{ 'cursor-hand-0-hh.png' | asset_url | json }},
+          {{ 'cursor-hand-1-hh.png' | asset_url | json }},
+          {{ 'cursor-hand-2-hh.png' | asset_url | json }},
+          {{ 'cursor-hand-3-hh.png' | asset_url | json }}
+        ],
+        text: [
+          {{ 'cursor-text-0-hh.png' | asset_url | json }},
+          {{ 'cursor-text-1-hh.png' | asset_url | json }},
+          {{ 'cursor-text-2-hh.png' | asset_url | json }},
+          {{ 'cursor-text-3-hh.png' | asset_url | json }}
+        ],
+        wait: [
+          {{ 'cursor-wait-0-hh.png' | asset_url | json }},
+          {{ 'cursor-wait-1-hh.png' | asset_url | json }},
+          {{ 'cursor-wait-2-hh.png' | asset_url | json }},
+          {{ 'cursor-wait-3-hh.png' | asset_url | json }}
+        ],
+        hotspots: { arrow: [0,0], hand: [8,0], text: [8,20], wait: [13,15] }
+      }
     };
   </script>
   {% if settings.parallax_enabled %}
