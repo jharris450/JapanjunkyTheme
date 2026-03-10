@@ -31,7 +31,7 @@
           <tr>
             <th></th>
             <th>CODE</th>
-            <th>CAT#</th>
+            <th>GENRE</th>
             <th>COND</th>
             <th>FORMAT</th>
             <th>TITLE &amp; DESCRIPTION</th>
@@ -42,8 +42,10 @@
           {%- assign row_index = 0 -%}
           {%- for product in featured.products limit: section.settings.products_to_show -%}
             {%- for variant in product.variants -%}
-              {% render 'product-table-row', product: product, variant: variant, index: row_index %}
-              {%- assign row_index = row_index | plus: 1 -%}
+              {%- if variant.available -%}
+                {% render 'product-table-row', product: product, variant: variant, index: row_index %}
+                {%- assign row_index = row_index | plus: 1 -%}
+              {%- endif -%}
             {%- endfor -%}
           {%- else -%}
             {%- for i in (1..12) -%}

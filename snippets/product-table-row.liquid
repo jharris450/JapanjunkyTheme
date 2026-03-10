@@ -13,6 +13,7 @@
   {%- assign m_format = product.metafields.custom.format | default: '' -%}
   {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
   {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
+  {%- assign m_genre = product.metafields.custom.genre | default: '' -%}
 
   {%- comment -%} Condition from variant option {%- endcomment -%}
   {%- assign p_condition = variant.option1 | default: '' -%}
@@ -21,9 +22,11 @@
   {%- endif -%}
   {%- assign cond_lower = p_condition | downcase | strip -%}
   {%- assign p_condition_class = 'jj-cond-g' -%}
-  {%- if cond_lower == 'n' or cond_lower == 'nm' or cond_lower == 'mint' or cond_lower contains 'ex' or cond_lower contains 'new' -%}
-    {%- assign p_condition_class = 'jj-cond-ex' -%}
-  {%- elsif cond_lower == 'vg' or cond_lower contains 'very' -%}
+  {%- if cond_lower == 'n' or cond_lower == 'mint' or cond_lower == 'new' or cond_lower == 'sealed' -%}
+    {%- assign p_condition_class = 'jj-cond-m' -%}
+  {%- elsif cond_lower == 'nm' or cond_lower == 'near mint' or cond_lower contains 'ex' -%}
+    {%- assign p_condition_class = 'jj-cond-nm' -%}
+  {%- elsif cond_lower == 'vg' or cond_lower == 'vg+' or cond_lower contains 'very' -%}
     {%- assign p_condition_class = 'jj-cond-vg' -%}
   {%- endif -%}
 
@@ -78,10 +81,7 @@
       </div>
     </td>
     <td class="jj-cell-code">{{ m_code | default: variant.sku | default: product.handle | truncate: 10, '' }}</td>
-    <td class="jj-cell-cat">
-      {{ product.vendor | truncate: 12, '' }}<br>
-      <span class="jj-cat-label">{{ product.type | default: '---' }}</span>
-    </td>
+    <td class="jj-cell-cat">{{ m_genre | default: '---' }}</td>
     <td class="jj-cell-condition"><span class="{{ p_condition_class }}">{{ p_condition }}</span></td>
     <td class="jj-cell-format">{%- case p_format -%}{%- when 'vinyl' -%}○ {%- when 'cd' -%}◎ {%- when 'cassette' -%}▭ {%- when 'minidisc' -%}◇ {%- when 'hardware' -%}▪ {%- endcase -%}{{ m_format | default: product.type | default: '---' }}</td>
     <td class="jj-cell-title">

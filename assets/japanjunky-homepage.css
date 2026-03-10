@@ -407,7 +407,8 @@
 .jj-cell-cat { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; line-height: 1.4; }
 .jj-cell-cat .jj-cat-label { color: #555; font-size: 10px; }
 .jj-cell-condition { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.jj-cond-ex { color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.3); }
+.jj-cond-m  { color: var(--jj-cyan, #00e5e5); text-shadow: 0 0 4px rgba(0, 229, 229, 0.3); }
+.jj-cond-nm { color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.3); }
 .jj-cond-vg { color: var(--jj-secondary); text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
 .jj-cond-g  { color: #888; }
 .jj-cell-format { font-size: 12px; white-space: nowrap; color: #888; }
