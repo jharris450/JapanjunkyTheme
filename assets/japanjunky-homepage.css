@@ -799,8 +799,12 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   50%, 100% { opacity: 0; }
 }
 .jj-typing-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: currentColor;
   animation: jj-cursor-blink 1.06s step-end infinite;
-  font-weight: 400;
   user-select: none;
   caret-color: transparent;
 }

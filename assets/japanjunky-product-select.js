@@ -41,10 +41,9 @@
     if (!el || text == null) { if (cb) cb(); return; }
     var str = String(text);
     el.textContent = '';
-    // Create cursor span
+    // Create cursor span (rendered as CSS block, no text character)
     var cursor = document.createElement('span');
     cursor.className = 'jj-typing-cursor';
-    cursor.textContent = '\u2588'; // █
     cursor.style.color = 'inherit';
     el.appendChild(cursor);
     typeCursorSpan = cursor;
@@ -81,7 +80,6 @@
           // Re-append cursor to last field, keep blinking
           var cursor = document.createElement('span');
           cursor.className = 'jj-typing-cursor';
-          cursor.textContent = '\u2588';
           cursor.style.color = 'inherit';
           f.el.appendChild(cursor);
           typeCursorSpan = cursor;
