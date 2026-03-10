@@ -45,6 +45,7 @@
 
   // Pick a random year between 1970 and current year, fixed for this page load
   var retroYear = 1970 + Math.floor(Math.random() * (new Date().getFullYear() - 1970 + 1));
+  window.JJ_RetroYear = retroYear;
 
   if (clockEl) {
     function updateClock() {
