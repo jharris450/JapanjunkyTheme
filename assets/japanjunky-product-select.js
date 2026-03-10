@@ -27,9 +27,6 @@
   var elVariantId = document.getElementById('jj-variant-id');
   var elCartForm = document.getElementById('jj-detail-cart-form');
 
-  // Reduced motion preference
-  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   // Pending typewriter timeouts
   var pendingTypes = {};
 
@@ -40,7 +37,6 @@
     if (pendingTypes[key]) { clearTimeout(pendingTypes[key]); delete pendingTypes[key]; }
     var str = String(text);
     el.textContent = '';
-    if (reducedMotion) { el.textContent = str; return; }
     var i = 0;
     function tick() {
       if (i < str.length) {
@@ -55,7 +51,7 @@
 
   // ─── CSS Animation Trigger ─────────────────────────────────
   function triggerClass(el, cls) {
-    if (reducedMotion || !el) return;
+    if (!el) return;
     el.classList.remove(cls);
     void el.offsetWidth; // force reflow
     el.classList.add(cls);

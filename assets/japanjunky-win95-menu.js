@@ -77,42 +77,26 @@
   var clockPopover = document.getElementById('jj-clock-popover');
   var popoverDateEl = document.getElementById('jj-popover-date');
 
-  if (clockTray && clockPopover) {
-    clockTray.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var isOpen = clockPopover.classList.toggle('jj-clock-popover--open');
-
-      if (isOpen && popoverDateEl) {
-        try {
-          var now = new Date();
-          var dayName = now.toLocaleDateString('en-US', {
-            timeZone: 'Asia/Tokyo',
-            weekday: 'long'
-          });
-          var month = now.toLocaleDateString('en-US', {
-            timeZone: 'Asia/Tokyo',
-            month: 'long'
-          });
-          var day = now.toLocaleDateString('en-US', {
-            timeZone: 'Asia/Tokyo',
-            day: 'numeric'
-          });
-          popoverDateEl.textContent = dayName + ', ' + month + ' ' + day + ', ' + retroYear;
-        } catch (err) {
-          popoverDateEl.textContent = retroYear;
-        }
-      }
-    });
-
-    document.addEventListener('click', function (e) {
-      if (!clockTray.contains(e.target)) {
-        clockPopover.classList.remove('jj-clock-popover--open');
-      }
-    });
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        clockPopover.classList.remove('jj-clock-popover--open');
+  if (clockTray && popoverDateEl) {
+    // Populate date on hover (CSS handles show/hide via :hover)
+    clockTray.addEventListener('mouseenter', function () {
+      try {
+        var now = new Date();
+        var dayName = now.toLocaleDateString('en-US', {
+          timeZone: 'Asia/Tokyo',
+          weekday: 'long'
+        });
+        var month = now.toLocaleDateString('en-US', {
+          timeZone: 'Asia/Tokyo',
+          month: 'long'
+        });
+        var day = now.toLocaleDateString('en-US', {
+          timeZone: 'Asia/Tokyo',
+          day: 'numeric'
+        });
+        popoverDateEl.textContent = dayName + ', ' + month + ' ' + day + ', ' + retroYear;
+      } catch (err) {
+        popoverDateEl.textContent = retroYear;
       }
     });
   }

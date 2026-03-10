@@ -502,6 +502,7 @@
 .jj-detail-image-wrap { padding: 0 10px 6px; }
 .jj-detail-image {
   width: 100%;
+  aspect-ratio: 1;
   background: #000;
   border: 1px solid #333;
   display: flex;
@@ -510,7 +511,7 @@
   position: relative;
   overflow: hidden;
 }
-.jj-detail-image img { width: 100%; height: auto; display: block; }
+.jj-detail-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .jj-detail-image .jj-ascii-art-large {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -601,9 +602,7 @@
 }
 .jj-marquee-text { display: inline-block; animation: jj-marquee 30s linear infinite; padding-left: 100%; }
 @keyframes jj-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-@media (prefers-reduced-motion: reduce) {
-  .jj-marquee-text { animation: none; padding-left: 0; }
-}
+/* marquee is a decorative visual, not a motion hazard — keep it running */
 
 /* ===== RENDER-IN EFFECTS ===== */
 @keyframes jj-screen-refresh {
@@ -632,12 +631,7 @@
 }
 .jj-detail-meta.jj-meta-rendering { animation: jj-meta-render-in 0.2s ease-out 0.05s both; }
 
-@media (prefers-reduced-motion: reduce) {
-  .jj-detail-image.jj-screen-refresh,
-  .jj-detail-image img.jj-img-rendering,
-  .jj-detail-image pre.jj-text-rendering,
-  .jj-detail-meta.jj-meta-rendering { animation: none; }
-}
+/* render-in effects are brief one-shot transitions, not looping — keep them */
 
 /* ===== FORMAT-CODED PHOSPHOR COLORS ===== */
 

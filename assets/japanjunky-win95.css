@@ -295,7 +295,8 @@
   color: var(--jj-text);
 }
 
-.jj-clock-popover--open {
+.jj-clock-popover--open,
+.jj-clock-tray:hover .jj-clock-popover {
   display: block;
 }
 
