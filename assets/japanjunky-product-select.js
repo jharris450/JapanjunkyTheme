@@ -37,27 +37,36 @@
     typeCursorSpan = null;
   }
 
+  function dismissCaret() {
+    var sel = window.getSelection();
+    if (sel) sel.removeAllRanges();
+  }
+
   function typeField(el, text, msPerChar, cb) {
     if (!el || text == null) { if (cb) cb(); return; }
     var str = String(text);
-    el.textContent = '';
-    // Create cursor span (rendered as CSS block, no text character)
+    // Use a single text node + cursor span (avoids per-char DOM inserts)
+    var textNode = document.createTextNode('');
     var cursor = document.createElement('span');
     cursor.className = 'jj-typing-cursor';
     cursor.style.color = 'inherit';
+    el.textContent = '';
+    el.appendChild(textNode);
     el.appendChild(cursor);
     typeCursorSpan = cursor;
+    dismissCaret();
     var i = 0;
     function tick() {
       if (i < str.length) {
-        // Insert character before cursor
-        el.insertBefore(document.createTextNode(str[i]), cursor);
         i++;
+        textNode.nodeValue = str.substring(0, i);
+        dismissCaret();
         typeSequenceTimer = setTimeout(tick, msPerChar);
       } else {
         // Typing done — remove cursor from this field
         if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
         typeCursorSpan = null;
+        dismissCaret();
         if (cb) cb();
       }
     }
