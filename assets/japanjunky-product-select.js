@@ -136,9 +136,9 @@
 
     // Sequential typewriter: Artist → Title → Price (cursor stays on price)
     typeSequence([
-      { el: elArtist, text: (artist || vendor).toUpperCase(), ms: 24 },
-      { el: elTitle, text: title, ms: 18 },
-      { el: elPrice, text: price, ms: 14 }
+      { el: elArtist, text: (artist || vendor).toUpperCase(), ms: 38 },
+      { el: elTitle, text: title, ms: 28 },
+      { el: elPrice, text: price, ms: 22 }
     ]);
 
     // JP Name (below artist)

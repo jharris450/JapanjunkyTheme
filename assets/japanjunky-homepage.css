@@ -485,6 +485,7 @@
   padding: 6px 12px 2px;
   text-transform: uppercase;
   text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
+  cursor: default;
 }
 
 .jj-detail-jp-name {
@@ -529,6 +530,7 @@
   padding: 6px 12px 4px;
   text-transform: none;
   line-height: 1.4;
+  cursor: default;
 }
 
 .jj-detail-meta { padding: 4px 12px; font-size: 12px; line-height: 1.4; color: #aaa; font-family: 'IBM Plex Mono', monospace; }
@@ -551,6 +553,7 @@
   text-shadow:
     0 0 4px var(--jj-secondary),
     0 0 12px rgba(245, 215, 66, 0.3);
+  cursor: default;
 }
 .jj-detail-price-icons { display: flex; gap: 2px; }
 .jj-detail-price-icons span {
