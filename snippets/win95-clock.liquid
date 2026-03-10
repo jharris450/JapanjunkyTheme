@@ -10,15 +10,17 @@
 <script id="jj-upcoming-releases-data" type="application/json">
 [
   {%- if upcoming_collection -%}
+    {%- assign first_emitted = false -%}
     {%- for product in upcoming_collection.products limit: 50 -%}
       {%- assign release_date = product.metafields.custom.release_date -%}
       {%- if release_date != blank -%}
-        {%- unless forloop.first -%},{%- endunless -%}
+        {%- if first_emitted -%},{%- endif -%}
         {
           "date": {{ release_date | json }},
           "title": {{ product.title | json }},
           "artist": {{ product.metafields.custom.artist | default: product.vendor | json }}
         }
+        {%- assign first_emitted = true -%}
       {%- endif -%}
     {%- endfor -%}
   {%- endif -%}
