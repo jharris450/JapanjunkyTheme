@@ -117,7 +117,7 @@
   border: 1px solid #222;
   padding: 2px 10px;
   margin-left: auto;
-  min-width: 80px;
+  min-width: 110px;
   text-align: center;
   display: flex;
   align-items: center;
@@ -296,7 +296,7 @@
 }
 
 .jj-clock-popover--open,
-.jj-clock-tray:hover .jj-clock-popover {
+.jj-clock-tray:not(.jj-calendar-open):hover .jj-clock-popover {
   display: block;
 }
 

@@ -2,11 +2,35 @@
   JST clock display for the Win95 taskbar tray.
   Time is updated by japanjunky-win95-menu.js
   Hover clock to show date popover.
+  Click clock to open calendar popover.
 {%- endcomment -%}
+
+{%- comment -%} Gather upcoming releases for calendar {%- endcomment -%}
+{%- assign upcoming_collection = collections['upcoming-releases'] -%}
+<script id="jj-upcoming-releases-data" type="application/json">
+[
+  {%- if upcoming_collection -%}
+    {%- assign first_emitted = false -%}
+    {%- for product in upcoming_collection.products limit: 50 -%}
+      {%- assign release_date = product.metafields.custom.release_date -%}
+      {%- if release_date != blank -%}
+        {%- if first_emitted -%},{%- endif -%}
+        {
+          "date": {{ release_date | json }},
+          "title": {{ product.title | json }},
+          "artist": {{ product.metafields.custom.artist | default: product.vendor | json }}
+        }
+        {%- assign first_emitted = true -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endif -%}
+]
+</script>
 
 <div class="jj-clock-tray" id="jj-clock-tray">
   <span class="jj-clock-tray__time" id="jj-clock">--:--</span>
   <div class="jj-clock-popover" id="jj-clock-popover">
     <div class="jj-clock-popover__date" id="jj-popover-date">--/--/----</div>
   </div>
+  <div class="jj-calendar-popover" id="jj-calendar-popover"></div>
 </div>

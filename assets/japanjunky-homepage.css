@@ -789,3 +789,13 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
     padding: 3px 8px;
   }
 }
+
+/* ===== TYPING CURSOR ===== */
+@keyframes jj-cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.jj-typing-cursor {
+  animation: jj-cursor-blink 1.06s step-end infinite;
+  font-weight: 400;
+}

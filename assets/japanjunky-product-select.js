@@ -27,26 +27,70 @@
   var elVariantId = document.getElementById('jj-variant-id');
   var elCartForm = document.getElementById('jj-detail-cart-form');
 
-  // Pending typewriter timeouts
-  var pendingTypes = {};
+  // ─── Sequential Typewriter with Block Cursor ─────────────────
+  var typeSequenceTimer = null;
+  var typeCursorSpan = null;
 
-  // ─── Typewriter Effect ─────────────────────────────────────
-  function typeIn(el, text, msPerChar) {
-    if (!el || text == null) return;
-    var key = el.id || 'el';
-    if (pendingTypes[key]) { clearTimeout(pendingTypes[key]); delete pendingTypes[key]; }
+  function clearTypeSequence() {
+    if (typeSequenceTimer) { clearTimeout(typeSequenceTimer); typeSequenceTimer = null; }
+    if (typeCursorSpan && typeCursorSpan.parentNode) { typeCursorSpan.parentNode.removeChild(typeCursorSpan); }
+    typeCursorSpan = null;
+  }
+
+  function typeField(el, text, msPerChar, cb) {
+    if (!el || text == null) { if (cb) cb(); return; }
     var str = String(text);
     el.textContent = '';
+    // Create cursor span
+    var cursor = document.createElement('span');
+    cursor.className = 'jj-typing-cursor';
+    cursor.textContent = '\u2588'; // █
+    cursor.style.color = 'inherit';
+    el.appendChild(cursor);
+    typeCursorSpan = cursor;
     var i = 0;
     function tick() {
       if (i < str.length) {
-        el.textContent += str[i++];
-        pendingTypes[key] = setTimeout(tick, msPerChar);
+        // Insert character before cursor
+        el.insertBefore(document.createTextNode(str[i]), cursor);
+        i++;
+        typeSequenceTimer = setTimeout(tick, msPerChar);
       } else {
-        delete pendingTypes[key];
+        // Typing done — remove cursor from this field
+        if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+        typeCursorSpan = null;
+        if (cb) cb();
       }
     }
     tick();
+  }
+
+  function typeSequence(fields) {
+    // fields: [{ el, text, ms }, ...]
+    // Types each field in order, 150ms pause between.
+    // Final field keeps blinking cursor.
+    clearTypeSequence();
+    var idx = 0;
+    function next() {
+      if (idx >= fields.length) return;
+      var f = fields[idx];
+      var isLast = idx === fields.length - 1;
+      idx++;
+      typeField(f.el, f.text, f.ms, function () {
+        if (isLast) {
+          // Re-append cursor to last field, keep blinking
+          var cursor = document.createElement('span');
+          cursor.className = 'jj-typing-cursor';
+          cursor.textContent = '\u2588';
+          cursor.style.color = 'inherit';
+          f.el.appendChild(cursor);
+          typeCursorSpan = cursor;
+        } else {
+          typeSequenceTimer = setTimeout(next, 150);
+        }
+      });
+    }
+    next();
   }
 
   // ─── CSS Animation Trigger ─────────────────────────────────
@@ -90,10 +134,12 @@
     var variantId = row.getAttribute('data-variant-id') || '';
     var available = row.getAttribute('data-product-available') === 'true';
 
-    // Typewriter effects on key fields
-    typeIn(elArtist, (artist || vendor).toUpperCase(), 24);
-    typeIn(elTitle, title, 18);
-    typeIn(elPrice, price, 14);
+    // Sequential typewriter: Artist → Title → Price (cursor stays on price)
+    typeSequence([
+      { el: elArtist, text: (artist || vendor).toUpperCase(), ms: 24 },
+      { el: elTitle, text: title, ms: 18 },
+      { el: elPrice, text: price, ms: 14 }
+    ]);
 
     // JP Name (below artist)
     if (elJpName) {

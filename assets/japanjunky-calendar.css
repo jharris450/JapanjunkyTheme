@@ -1,0 +1,182 @@
+/* ============================================
+   JAPANJUNKY CALENDAR POPOVER
+   Win95-style Date/Time Properties (CRT theme)
+   ============================================ */
+
+/* --- Popover Container --- */
+.jj-calendar-popover {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 4px;
+  background: #0a0a0a;
+  border: 1px solid #444;
+  z-index: 2001;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: 10px;
+  width: 380px;
+}
+
+.jj-calendar-popover--open {
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Left Column: Calendar --- */
+.jj-cal-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Month/Year Navigation */
+.jj-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 4px;
+}
+
+.jj-cal-nav__btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #888;
+  background: transparent;
+  border: 1px solid #333;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 0;
+  line-height: 1;
+}
+.jj-cal-nav__btn:hover {
+  color: var(--jj-text);
+  border-color: #666;
+}
+
+.jj-cal-nav__label {
+  font-size: 11px;
+  color: var(--jj-text);
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+}
+
+/* Day Grid */
+.jj-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.jj-cal-grid__header {
+  color: #555;
+  font-size: 10px;
+  padding: 2px 0 4px;
+  font-weight: 700;
+}
+.jj-cal-grid__header--sun {
+  color: var(--jj-primary);
+}
+
+.jj-cal-grid__day {
+  padding: 3px 0;
+  color: var(--jj-text, #d4c9a8);
+  cursor: default;
+  position: relative;
+}
+
+.jj-cal-grid__day--outside {
+  color: #333;
+}
+
+.jj-cal-grid__day--today {
+  outline: 1px solid var(--jj-text);
+  background: #111;
+}
+
+.jj-cal-grid__day--holiday {
+  color: var(--jj-primary);
+}
+
+.jj-cal-grid__day--release {
+  color: var(--jj-secondary);
+}
+
+/* Holiday takes precedence in color, but release dot could show */
+.jj-cal-grid__day--holiday.jj-cal-grid__day--release {
+  color: var(--jj-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--jj-secondary);
+  text-underline-offset: 2px;
+}
+
+/* Tooltip */
+.jj-cal-grid__day[title]:hover {
+  text-shadow: 0 0 6px currentColor;
+}
+
+/* Today Button */
+.jj-cal-today-btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: #888;
+  background: transparent;
+  border: 1px solid #333;
+  padding: 2px 8px;
+  margin-top: 6px;
+  cursor: default;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+.jj-cal-today-btn:hover {
+  color: var(--jj-text);
+  border-color: #666;
+}
+
+/* --- Right Column: Analog Clock --- */
+.jj-cal-right {
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Clock Face SVG Container */
+.jj-cal-clock {
+  width: 130px;
+  height: 130px;
+  position: relative;
+}
+
+.jj-cal-clock svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Digital Time */
+.jj-cal-digital {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  color: var(--jj-text);
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* JST Label */
+.jj-cal-tz-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: #555;
+  text-align: center;
+}
