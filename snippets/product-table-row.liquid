@@ -22,7 +22,7 @@
   {%- endif -%}
   {%- assign cond_lower = p_condition | downcase | strip -%}
   {%- assign p_condition_class = 'jj-cond-g' -%}
-  {%- if cond_lower == 'n' or cond_lower == 'mint' or cond_lower == 'new' or cond_lower == 'sealed' -%}
+  {%- if cond_lower == 'm' or cond_lower == 'n' or cond_lower == 'mint' or cond_lower == 'new' or cond_lower == 'sealed' -%}
     {%- assign p_condition_class = 'jj-cond-m' -%}
   {%- elsif cond_lower == 'nm' or cond_lower == 'near mint' or cond_lower contains 'ex' -%}
     {%- assign p_condition_class = 'jj-cond-nm' -%}
