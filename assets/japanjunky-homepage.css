@@ -800,11 +800,12 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
 }
 .jj-typing-cursor {
   display: inline-block;
-  width: 0;
+  box-sizing: content-box;
+  width: 0.55em;
   height: 1em;
   vertical-align: text-bottom;
-  border-left: 0.55em solid currentColor;
-  background: none;
+  background: currentColor;
+  border: none;
   text-shadow: none;
   box-shadow: none;
   outline: none;
