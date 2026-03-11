@@ -26,7 +26,7 @@
 }
 
 .jj-nav-bar__label {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   font-weight: 600;
   color: #888;
@@ -42,7 +42,7 @@
 
 .jj-nav-bar__input {
   flex: 1;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 13px;
   color: var(--jj-text);
   background: #000;
@@ -61,7 +61,7 @@
 }
 
 .jj-nav-action-btn {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   font-weight: 600;
   color: var(--jj-text);
@@ -197,7 +197,7 @@
 }
 
 .jj-sidebar-section__title {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   font-weight: 700;
   color: var(--jj-secondary);
@@ -218,7 +218,7 @@
 .jj-filter-list li {
   padding: 2px 0 2px 4px;
   font-size: 13px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -248,7 +248,7 @@
   color: #666;
   font-size: 11px;
   margin-left: auto;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-weight: 400;
   border: none;
   padding: 0;
@@ -267,7 +267,7 @@
 .jj-member-login::after { content: none; }
 
 .jj-member-login__title {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   font-weight: 700;
   color: var(--jj-secondary);
@@ -285,10 +285,10 @@
 .jj-member-login__title::after  { content: none; }
 
 .jj-login-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 13px; }
-.jj-login-row label { width: 28px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #888; text-transform: none; }
+.jj-login-row label { width: 28px; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 12px; color: #888; text-transform: none; }
 .jj-login-row input {
   flex: 1;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 13px;
   color: var(--jj-text);
   background: #000;
@@ -301,7 +301,7 @@
 .jj-login-buttons { display: flex; gap: 4px; margin-top: 6px; }
 
 .jj-win95-btn-sm {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-text);
   background: transparent;
@@ -328,7 +328,7 @@
 
 .jj-product-table-wrap { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; min-width: 0; }
 
-.jj-product-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; font-family: 'IBM Plex Mono', monospace; }
+.jj-product-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; }
 .jj-product-table thead { position: sticky; top: 0; z-index: 10; }
 
 .jj-product-table thead tr {
@@ -338,7 +338,7 @@
 .jj-product-table th {
   background: #0a0a0a;
   color: var(--jj-secondary);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   font-weight: 700;
   padding: 6px 8px;
@@ -403,20 +403,20 @@
 }
 .jj-thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.jj-cell-code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--jj-accent); white-space: nowrap; text-shadow: 0 0 4px rgba(74, 164, 224, 0.25); }
-.jj-cell-cat { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #888; line-height: 1.4; }
+.jj-cell-code { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: var(--jj-accent); white-space: nowrap; text-shadow: 0 0 4px rgba(74, 164, 224, 0.25); }
+.jj-cell-cat { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: #888; line-height: 1.4; }
 .jj-cell-cat .jj-cat-label { color: #555; font-size: 10px; }
-.jj-cell-condition { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.jj-cell-condition { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .jj-cond-m  { color: var(--jj-cyan, #00e5e5); text-shadow: 0 0 4px rgba(0, 229, 229, 0.3); }
 .jj-cond-nm { color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.3); }
 .jj-cond-vg { color: var(--jj-secondary); text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
 .jj-cond-g  { color: #888; }
 .jj-cell-format { font-size: 12px; white-space: nowrap; color: #888; }
 .jj-cell-title { min-width: 120px; overflow: hidden; }
-.jj-cell-name { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 400; color: var(--jj-text); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jj-cell-name { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 12px; font-weight: 400; color: var(--jj-text); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-artist { font-size: 11px; color: #888; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-meta { font-size: 10px; color: #555; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.jj-cell-price { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--jj-secondary); white-space: nowrap; text-align: right; font-weight: 700; text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
+.jj-cell-price { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 14px; color: var(--jj-secondary); white-space: nowrap; text-align: right; font-weight: 700; text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
 
 /* Table footer */
 .jj-table-footer {
@@ -430,13 +430,13 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
 }
 .jj-table-footer__left { display: flex; align-items: center; gap: 6px; color: #888; }
 .jj-table-footer__right { display: flex; align-items: center; gap: 6px; }
 .jj-table-sort-select {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-text);
   background: #000;
@@ -460,7 +460,7 @@
 .jj-detail-header {
   background: #111;
   color: var(--jj-secondary);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
@@ -471,14 +471,14 @@
 }
 
 .jj-detail-recently {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: #555;
   padding: 6px 12px 2px;
 }
 
 .jj-detail-artist {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 18px;
   font-weight: 700;
   color: var(--jj-primary);
@@ -489,7 +489,7 @@
 }
 
 .jj-detail-jp-name {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-muted, #666);
   padding: 0 12px 4px;
@@ -514,7 +514,7 @@
 }
 .jj-detail-image img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .jj-detail-image .jj-ascii-art-large {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-muted, #666);
   line-height: 1.2;
@@ -523,7 +523,7 @@
 }
 
 .jj-detail-item-title {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 13px;
   font-weight: 700;
   color: var(--jj-text);
@@ -533,8 +533,8 @@
   cursor: default;
 }
 
-.jj-detail-meta { padding: 4px 12px; font-size: 12px; line-height: 1.4; color: #aaa; font-family: 'IBM Plex Mono', monospace; }
-.jj-detail-meta .jj-meta-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #666; text-transform: none; letter-spacing: 0; }
+.jj-detail-meta { padding: 4px 12px; font-size: 12px; line-height: 1.4; color: #aaa; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; }
+.jj-detail-meta .jj-meta-label { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: #666; text-transform: none; letter-spacing: 0; }
 .jj-detail-meta .jj-meta-value { color: var(--jj-text); }
 .jj-detail-price-row {
   padding: 8px 12px;
@@ -546,7 +546,7 @@
   margin-top: 0;
 }
 .jj-detail-price {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 22px;
   font-weight: 700;
   color: var(--jj-secondary);
@@ -573,7 +573,7 @@
 .jj-detail-actions { padding: 8px 12px 16px; display: flex; gap: 4px; }
 .jj-detail-actions .jj-action-btn {
   flex: 1;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--jj-text);
@@ -593,7 +593,7 @@
 .jj-marquee-bar {
   background: #000;
   color: var(--jj-amber, #ffaa00);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   padding: 3px 0;
   overflow: hidden;
@@ -692,7 +692,7 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
 
 /* Japanese original title — data, not decoration */
 .jj-detail-jp-title {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: var(--jj-muted);
   padding: 0 12px 4px;
@@ -708,7 +708,7 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   background: var(--jj-bg-panel, #0a0a0a);
   border-bottom: 1px solid #222;
   padding: 4px 12px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-accent);
   display: flex;
@@ -741,7 +741,7 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
 }
 
 .jj-filter-bar__clear {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: var(--jj-muted);
   cursor: default;

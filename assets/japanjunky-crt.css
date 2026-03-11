@@ -227,7 +227,7 @@
 
 /* ASCII art container */
 .jj-ascii-art {
-  font-family: 'IBM Plex Mono', 'Consolas', 'Courier New', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   white-space: pre;
   line-height: 1.2;
   overflow: hidden;
@@ -298,7 +298,7 @@
 
 /* Progress bar characters */
 .jj-progress {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   color: var(--jj-green);
   letter-spacing: 0;
 }

@@ -3,7 +3,8 @@
    Terminal aesthetic: black bg, flat, monospace
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=VT323&display=swap');
+@import url('https://fonts.cdnfonts.com/css/fixedsys-excelsior-301');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
 /* --- Reset --- */
 *, *::before, *::after {
@@ -23,7 +24,7 @@ html {
 }
 
 body, input, button, textarea, select {
-  font-family: 'IBM Plex Mono', 'Consolas', 'Courier New', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
 }
 
 img, video, svg {
@@ -120,9 +121,9 @@ h2 { font-size: 16px; }
 h3 { font-size: 14px; }
 h4 { font-size: 13px; }
 
-/* Display headings — VT323 pixel font for hero/large text */
+/* Display headings — large text */
 .jj-display {
-  font-family: 'VT323', 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   line-height: 1.1;
 }
 .jj-display--lg { font-size: 48px; }

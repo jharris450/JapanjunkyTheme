@@ -15,7 +15,7 @@
   flex-shrink: 0;
   z-index: 1000;
   font-size: 12px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
 }
 
 /* --- Start Button Wrapper --- */
@@ -25,7 +25,7 @@
 
 /* --- Start Button --- */
 .jj-start-btn {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--jj-primary);
@@ -75,7 +75,7 @@
 }
 
 .jj-taskbar-tab {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: #888;
   background: transparent;
@@ -110,7 +110,7 @@
 .jj-clock-tray {
   position: relative;
   cursor: default;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: #666;
   background: transparent;
@@ -155,7 +155,7 @@
   justify-content: center;
   padding: 8px 2px;
   flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 7px;
   font-weight: 700;
   color: var(--jj-primary);
@@ -176,7 +176,7 @@
 }
 
 .jj-start-menu__section-title {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 10px;
   font-weight: 700;
   color: #555;
@@ -191,7 +191,7 @@
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 13px;
   color: #aaa;
   text-decoration: none;
@@ -242,7 +242,7 @@
   display: block;
   padding: 3px 12px;
   color: #aaa;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   text-decoration: none;
 }
@@ -287,7 +287,7 @@
   margin-bottom: 4px;
   white-space: nowrap;
   z-index: 2000;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-text);
 }
