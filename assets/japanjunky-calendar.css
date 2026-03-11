@@ -224,9 +224,9 @@
     0 0 12px rgba(245, 215, 66, 0.3);
 }
 
-/* Blinking colon */
+/* Blinking colon — driven by JS visibility toggle in updateClockPanel */
 .jj-cal-digital__colon {
-  animation: jj-cursor-blink 1.06s step-end infinite;
+  /* no CSS animation; JS controls visibility each tick */
 }
 
 /* JST Label */

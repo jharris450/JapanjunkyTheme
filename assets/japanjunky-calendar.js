@@ -47,7 +47,7 @@
     try {
       var s = now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo', hour12: false });
       var parts = s.split(/[\/,\s:]+/);
-      return {
+      var result = {
         year: parseInt(parts[2], 10),
         month: parseInt(parts[0], 10) - 1,
         day: parseInt(parts[1], 10),
@@ -55,6 +55,8 @@
         minutes: parseInt(parts[4], 10),
         seconds: parseInt(parts[5], 10)
       };
+      if (isNaN(result.year) || isNaN(result.hours)) throw new Error('parse');
+      return result;
     } catch (e) {
       var utc = now.getTime() + now.getTimezoneOffset() * 60000;
       var jst = new Date(utc + 9 * 3600000);
@@ -302,8 +304,8 @@
     // Analog hands
     var hourAngle = (h + m / 60) * 30;
     var minAngle = (m + s / 60) * 6;
-    setHandAngle('jj-cal-hand-hour', hourAngle, 24, 45);
-    setHandAngle('jj-cal-hand-min', minAngle, 32, 45);
+    setHandAngle('jj-cal-hand-hour', hourAngle, 24, 90);
+    setHandAngle('jj-cal-hand-min', minAngle, 32, 90);
 
     // Digital time with blinking colon
     var digitalEl = document.getElementById('jj-cal-digital');
