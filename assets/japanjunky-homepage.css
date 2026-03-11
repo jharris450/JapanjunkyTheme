@@ -149,7 +149,7 @@
     top: 0;
     right: -320px;
     width: 300px;
-    height: 100vh;
+    height: 100%;
     z-index: 500;
     border-left: 1px solid #444;
     background: #000;
@@ -403,15 +403,15 @@
 }
 .jj-thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.jj-cell-code { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: var(--jj-accent); white-space: nowrap; text-shadow: 0 0 4px rgba(74, 164, 224, 0.25); }
-.jj-cell-cat { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: #888; line-height: 1.4; }
+.jj-cell-code { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: var(--jj-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 4px rgba(74, 164, 224, 0.25); }
+.jj-cell-cat { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: #888; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-cat .jj-cat-label { color: #555; font-size: 10px; }
-.jj-cell-condition { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.jj-cell-condition { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cond-m  { color: var(--jj-cyan, #00e5e5); text-shadow: 0 0 4px rgba(0, 229, 229, 0.3); }
 .jj-cond-nm { color: #33ff33; text-shadow: 0 0 4px rgba(51, 255, 51, 0.3); }
 .jj-cond-vg { color: var(--jj-secondary); text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
 .jj-cond-g  { color: #888; }
-.jj-cell-format { font-size: 12px; white-space: nowrap; color: #888; }
+.jj-cell-format { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #888; }
 .jj-cell-title { min-width: 120px; overflow: hidden; }
 .jj-cell-name { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 12px; font-weight: 400; color: var(--jj-text); text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jj-cell-artist { font-size: 11px; color: #888; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -486,6 +486,9 @@
   text-transform: uppercase;
   text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
   cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jj-detail-jp-name {
@@ -495,6 +498,9 @@
   padding: 0 12px 4px;
   line-height: 1.4;
   min-height: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .jj-detail-jp-name:empty {
   display: none;
@@ -531,6 +537,9 @@
   text-transform: none;
   line-height: 1.4;
   cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jj-detail-meta { padding: 4px 12px; font-size: 12px; line-height: 1.4; color: #aaa; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; }
@@ -698,6 +707,9 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   padding: 0 12px 4px;
   line-height: 1.4;
   min-height: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .jj-detail-jp-title:empty {
   display: none;

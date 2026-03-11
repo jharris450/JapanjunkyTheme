@@ -16,6 +16,7 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   padding: 10px;
   width: 380px;
+  max-width: calc(100vw - 20px);
 }
 
 .jj-calendar-popover--open {
