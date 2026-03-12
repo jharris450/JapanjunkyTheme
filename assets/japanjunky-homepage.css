@@ -451,7 +451,7 @@
 .jj-right-sidebar {
   background: #000;
   border-left: 1px solid #333;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -468,6 +468,7 @@
   letter-spacing: 0.5px;
   border-bottom: 1px solid #333;
   text-shadow: 0 0 4px rgba(245, 215, 66, 0.3);
+  flex-shrink: 0;
 }
 
 .jj-detail-recently {
@@ -475,6 +476,7 @@
   font-size: 11px;
   color: #555;
   padding: 4px 12px 1px;
+  flex-shrink: 0;
 }
 
 .jj-detail-artist {
@@ -509,11 +511,11 @@
   display: none;
 }
 
-.jj-detail-image-wrap { padding: 0 10px 4px; }
+.jj-detail-image-wrap { padding: 0 10px 4px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .jj-detail-image {
   width: 100%;
-  aspect-ratio: 1;
-  max-height: 220px;
+  flex: 1;
+  min-height: 0;
   background: #000;
   border: 1px solid #333;
   display: flex;
@@ -547,7 +549,7 @@
   flex-shrink: 0;
 }
 
-.jj-detail-meta { padding: 2px 12px; font-size: 11px; line-height: 1.3; color: #aaa; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; }
+.jj-detail-meta { padding: 2px 12px; font-size: 11px; line-height: 1.3; color: #aaa; font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; flex-shrink: 0; }
 .jj-detail-meta .jj-meta-label { font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace; font-size: 11px; color: #666; text-transform: none; letter-spacing: 0; }
 .jj-detail-meta .jj-meta-value { color: var(--jj-text); }
 .jj-detail-price-row {
@@ -558,6 +560,7 @@
   border-top: 1px solid #222;
   border-bottom: 1px solid #222;
   margin-top: 0;
+  flex-shrink: 0;
 }
 .jj-detail-price {
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
@@ -585,7 +588,7 @@
 }
 .jj-detail-price-icons span:hover { border-color: var(--jj-primary); color: var(--jj-primary); text-shadow: 0 0 4px rgba(232, 49, 58, 0.3); }
 
-.jj-detail-actions { padding: 6px 12px 10px; display: flex; gap: 4px; }
+.jj-detail-actions { padding: 6px 12px 10px; display: flex; gap: 4px; flex-shrink: 0; }
 .jj-detail-actions .jj-action-btn {
   flex: 1;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
