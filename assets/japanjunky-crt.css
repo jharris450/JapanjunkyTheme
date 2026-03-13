@@ -8,6 +8,7 @@
 
 /* --- Spacing Scale (8px grid unit) --- */
 :root {
+  --jj-zoom: 1;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -63,13 +64,13 @@
     repeating-linear-gradient(
       to right,
       rgba(255, 40, 40, 0.06) 0px,
-      rgba(255, 40, 40, 0.06) 1px,
-      rgba(40, 255, 40, 0.06) 1px,
-      rgba(40, 255, 40, 0.06) 2px,
-      rgba(60, 60, 255, 0.06) 2px,
-      rgba(60, 60, 255, 0.06) 3px,
-      rgba(0, 0, 0, 0.06) 3px,
-      rgba(0, 0, 0, 0.06) 4px
+      rgba(255, 40, 40, 0.06) calc(1px / var(--jj-zoom)),
+      rgba(40, 255, 40, 0.06) calc(1px / var(--jj-zoom)),
+      rgba(40, 255, 40, 0.06) calc(2px / var(--jj-zoom)),
+      rgba(60, 60, 255, 0.06) calc(2px / var(--jj-zoom)),
+      rgba(60, 60, 255, 0.06) calc(3px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.06) calc(3px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.06) calc(4px / var(--jj-zoom))
     );
   pointer-events: none;
   z-index: 9998;
@@ -89,14 +90,14 @@
     repeating-linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0.01) 0px,
-      rgba(0, 0, 0, 0.01) 0.5px,
-      rgba(0, 0, 0, 0.04) 1px,
-      rgba(0, 0, 0, 0.08) 1.5px,
-      rgba(0, 0, 0, 0.12) 2px,
-      rgba(0, 0, 0, 0.12) 2.5px,
-      rgba(0, 0, 0, 0.08) 3px,
-      rgba(0, 0, 0, 0.04) 3.5px,
-      rgba(0, 0, 0, 0.01) 4px
+      rgba(0, 0, 0, 0.01) calc(0.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.04) calc(1px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.08) calc(1.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.12) calc(2px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.12) calc(2.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.08) calc(3px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.04) calc(3.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.01) calc(4px / var(--jj-zoom))
     ),
     radial-gradient(
       ellipse at center,
@@ -126,12 +127,12 @@
   background:
     linear-gradient(
       to bottom,
-      transparent calc(33.33% - 0.5px),
+      transparent calc(33.33% - 0.5px / var(--jj-zoom)),
       rgba(0, 0, 0, 0.14) 33.33%,
-      transparent calc(33.33% + 0.5px),
-      transparent calc(66.67% - 0.5px),
+      transparent calc(33.33% + 0.5px / var(--jj-zoom)),
+      transparent calc(66.67% - 0.5px / var(--jj-zoom)),
       rgba(0, 0, 0, 0.14) 66.67%,
-      transparent calc(66.67% + 0.5px)
+      transparent calc(66.67% + 0.5px / var(--jj-zoom))
     );
   pointer-events: none;
   z-index: 9997;
