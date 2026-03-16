@@ -1,6 +1,6 @@
 /**
  * japanjunky-search.js
- * Live client-side search with CRT materialization effect.
+ * Live client-side search with ASCII glitch + progressive image pixelation effect.
  * Debounced input on the header search bar filters product table rows.
  */
 (function () {
