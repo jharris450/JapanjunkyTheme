@@ -58,9 +58,9 @@
 
     <div class="jj-table-footer">
       <div class="jj-table-footer__left">
-        <span>{{ featured.products_count | default: 0 }} items</span>
-        <span style="color:#444;">|</span>
-        <span style="color:#555;">
+        <span id="jj-footer-count">{{ featured.products_count | default: 0 }} items</span>
+        <span id="jj-footer-sep" style="color:#444;">|</span>
+        <span id="jj-footer-showing" style="color:#555;">
           showing 1-{{ section.settings.products_to_show }}
         </span>
       </div>
