@@ -327,7 +327,7 @@
     var active = document.activeElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
 
-    var rows = Array.from(tbody.querySelectorAll('tr[data-product-handle]'));
+    var rows = Array.from(tbody.querySelectorAll('tr[data-product-handle]:not(.jj-row--hidden)'));
     if (!rows.length) return;
 
     var selectedRow = tbody.querySelector('tr.jj-row-selected');
