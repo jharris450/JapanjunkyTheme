@@ -19,6 +19,7 @@
   }
 
   var debounceTimer = null;
+  var previousQuery = '';
 
   searchInput.addEventListener('input', function () {
     clearTimeout(debounceTimer);
@@ -58,8 +59,10 @@
     // Restore focus — applyFilters may trigger checkDetailPane which clicks a row
     searchInput.focus();
 
-    // Glitch visible rows — all matches when searching, only newly visible when clearing
-    glitchVisibleRows(rows, wasVisible, query !== '');
+    // Glitch on first search keystroke (all matches), then only newly visible rows after
+    var isFirstSearch = previousQuery === '' && query !== '';
+    previousQuery = query;
+    glitchVisibleRows(rows, wasVisible, isFirstSearch);
   }
 
   // ── Glitch Engine ──
