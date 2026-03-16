@@ -58,13 +58,13 @@
     // Restore focus — applyFilters may trigger checkDetailPane which clicks a row
     searchInput.focus();
 
-    // Materialize rows that just became visible
-    materializeNewlyVisible(rows, wasVisible);
+    // Materialize visible rows — all matches when searching, only newly visible when clearing
+    materializeVisibleRows(rows, wasVisible, query !== '');
   }
 
   // ── Materialization ──
 
-  function materializeNewlyVisible(rows, wasVisible) {
+  function materializeVisibleRows(rows, wasVisible, searchActive) {
     var staggerIndex = 0;
     var MAX_STAGGER = 500; // ms cap
     var STAGGER_STEP = 30; // ms per row
@@ -72,10 +72,12 @@
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
       var isVisible = !row.classList.contains('jj-row--hidden');
-      var wasVis = wasVisible.has(i);
 
-      if (isVisible && !wasVis) {
-        // This row just appeared — animate it
+      // When searching: animate all visible matches (archive scan effect)
+      // When clearing: animate only rows that just became visible
+      var shouldAnimate = isVisible && (searchActive || !wasVisible.has(i));
+
+      if (shouldAnimate) {
         var delay = Math.min(staggerIndex * STAGGER_STEP, MAX_STAGGER);
         applyMaterialization(row, delay);
         staggerIndex++;
