@@ -5,7 +5,9 @@
 
   {%- comment -%} LEFT SIDEBAR {%- endcomment -%}
   <div class="jj-left-sidebar">
-    {% render 'category-list', section: section %}
+    <div class="jj-left-sidebar__filters">
+      {% render 'category-list', section: section %}
+    </div>
     {% render 'member-login-box' %}
   </div>
 
