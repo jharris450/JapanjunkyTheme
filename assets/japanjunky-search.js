@@ -55,6 +55,9 @@
       window.JJ_applyFilters();
     }
 
+    // Restore focus — applyFilters may trigger checkDetailPane which clicks a row
+    searchInput.focus();
+
     // Materialize rows that just became visible
     materializeNewlyVisible(rows, wasVisible);
   }
