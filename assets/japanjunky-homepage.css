@@ -183,6 +183,22 @@
 
 .jj-left-sidebar__filters {
   flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.jj-left-sidebar__filters .jj-sidebar-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.jj-left-sidebar__filters .jj-sidebar-section .jj-filter-list {
+  flex: 1;
   overflow-y: auto;
   min-height: 0;
 }

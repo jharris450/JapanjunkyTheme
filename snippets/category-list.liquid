@@ -52,7 +52,7 @@
       {%- assign p_year = product.metafields.custom.year | plus: 0 -%}
       {%- if p_year >= 1900 -%}
         {%- assign decade_base = p_year | divided_by: 10 | times: 10 -%}
-        {%- assign decade_label = decade_base | modulo: 100 | append: 's' -%}
+        {%- assign decade_label = decade_base | append: 's' -%}
         {%- assign decade_check = '|' | append: decade_base | append: '|' -%}
         {%- unless decades_seen contains decade_check -%}
           {%- assign decades_seen = decades_seen | append: decade_base | append: '|' -%}
@@ -61,11 +61,11 @@
       {%- endif -%}
     {%- endfor -%}
     {%- if decades_seen == '|' -%}
-      <li data-filter-group="decade" data-filter-value="1960" role="button" tabindex="0" aria-pressed="false">&gt; 60s</li>
-      <li data-filter-group="decade" data-filter-value="1970" role="button" tabindex="0" aria-pressed="false">&gt; 70s</li>
-      <li data-filter-group="decade" data-filter-value="1980" role="button" tabindex="0" aria-pressed="false">&gt; 80s</li>
-      <li data-filter-group="decade" data-filter-value="1990" role="button" tabindex="0" aria-pressed="false">&gt; 90s</li>
-      <li data-filter-group="decade" data-filter-value="2000" role="button" tabindex="0" aria-pressed="false">&gt; 00s</li>
+      <li data-filter-group="decade" data-filter-value="1960" role="button" tabindex="0" aria-pressed="false">&gt; 1960s</li>
+      <li data-filter-group="decade" data-filter-value="1970" role="button" tabindex="0" aria-pressed="false">&gt; 1970s</li>
+      <li data-filter-group="decade" data-filter-value="1980" role="button" tabindex="0" aria-pressed="false">&gt; 1980s</li>
+      <li data-filter-group="decade" data-filter-value="1990" role="button" tabindex="0" aria-pressed="false">&gt; 1990s</li>
+      <li data-filter-group="decade" data-filter-value="2000" role="button" tabindex="0" aria-pressed="false">&gt; 2000s</li>
     {%- endif -%}
   </ul>
 </div>
