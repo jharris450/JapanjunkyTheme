@@ -19,9 +19,8 @@
 
   // ── State ──
   var activeFilters = {
-    collection: new Set(),
     format: new Set(),
-    vendor: new Set(),
+    decade: new Set(),
     condition: new Set()
   };
 
@@ -32,24 +31,19 @@
 
   // Map filter groups to data attribute names on <tr>
   var groupToAttr = {
-    collection: 'data-product-collections',
     format: 'data-product-format',
-    vendor: 'data-product-vendor',
+    decade: 'data-product-year',
     condition: 'data-product-condition'
   };
 
   function rowMatchesGroup(row, group, values) {
     var attr = row.getAttribute(groupToAttr[group]) || '';
-    if (group === 'collection') {
-      // Collections is comma-separated; check if any active handle is in the list
-      var cols = attr.split(',');
-      for (var i = 0; i < cols.length; i++) {
-        if (values.has(cols[i])) return true;
-      }
-      return false;
-    }
-    if (group === 'vendor') {
-      return values.has(attr.toLowerCase());
+    if (group === 'decade') {
+      // Year attr is e.g. "1978"; decade filter value is e.g. "1970"
+      var year = parseInt(attr, 10);
+      if (isNaN(year)) return false;
+      var decadeBase = Math.floor(year / 10) * 10;
+      return values.has(String(decadeBase));
     }
     if (group === 'condition') {
       return values.has(attr.toLowerCase());
