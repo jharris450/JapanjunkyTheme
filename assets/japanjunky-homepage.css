@@ -204,7 +204,7 @@
 }
 
 .jj-sidebar-section {
-  padding: 8px 10px;
+  padding: 0;
   position: relative;
   margin: 0;
   border: none;
@@ -228,20 +228,21 @@
   color: var(--jj-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin: 0 0 6px 0;
+  margin: 0;
   padding: 3px 10px;
   display: flex;
   align-items: center;
   gap: 4px;
   border-bottom: 1px solid #333;
   background: #0a0a0a;
+  flex-shrink: 0;
 }
 .jj-sidebar-section__title::before { content: 'C:\\>'; font-size: 10px; color: var(--jj-green, #33ff33); flex-shrink: 0; font-weight: 400; text-shadow: 0 0 4px rgba(51, 255, 51, 0.4); }
 .jj-sidebar-section__title::after  { content: none; }
 
 .jj-filter-list { list-style: none; }
 .jj-filter-list li {
-  padding: 2px 0 2px 4px;
+  padding: 2px 10px 2px 8px;
   font-size: 13px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   display: flex;
