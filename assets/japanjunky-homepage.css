@@ -796,6 +796,13 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   text-shadow: 0 0 4px rgba(232, 49, 58, 0.3);
 }
 
+.jj-format-icon {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .jj-filter-tag {
   cursor: pointer;
 }
