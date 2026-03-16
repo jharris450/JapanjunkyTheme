@@ -79,6 +79,11 @@
         }
       }
 
+      // Search filter (AND with sidebar filters)
+      if (visible && row.getAttribute('data-search-match') === 'false') {
+        visible = false;
+      }
+
       if (visible) {
         row.classList.remove('jj-row--hidden');
         visibleCount++;
@@ -88,7 +93,9 @@
     }
 
     updateFilterBar();
-    updateFooterCount(visibleCount, totalRows, activeGroups.length > 0);
+    var searchInput = document.querySelector('.jj-nav-bar__input');
+    var searchActive = searchInput && searchInput.value.trim() !== '';
+    updateFooterCount(visibleCount, totalRows, activeGroups.length > 0 || searchActive);
     checkDetailPane();
   }
 
@@ -239,6 +246,16 @@
         activeItems[i].setAttribute('aria-pressed', 'false');
       }
 
+      // Clear search
+      var searchInput = document.querySelector('.jj-nav-bar__input');
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      var allRows = tbody.querySelectorAll('tr[data-search-match]');
+      for (var j = 0; j < allRows.length; j++) {
+        allRows[j].removeAttribute('data-search-match');
+      }
+
       applyFilters();
     });
   }
@@ -253,5 +270,8 @@
       setTimeout(applyFilters, 0);
     });
   }
+
+  // Expose for search script
+  window.JJ_applyFilters = applyFilters;
 
 })();
