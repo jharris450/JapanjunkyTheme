@@ -1,5 +1,6 @@
 {%- comment -%}
   Left sidebar filter sections — terminal directory listing style.
+  Each <li> is a clickable filter toggle with data-filter-group/data-filter-value.
 {%- endcomment -%}
 
 {%- comment -%} CATEGORIES from collections {%- endcomment -%}
@@ -8,58 +9,69 @@
   <ul class="jj-filter-list">
     {%- for collection in collections limit: 10 -%}
       {%- if collection.handle != 'all' and collection.handle != 'frontpage' -%}
-        <li>
-          <a href="{{ collection.url }}">
+        <li data-filter-group="collection" data-filter-value="{{ collection.handle }}" role="button" tabindex="0" aria-pressed="false">
+          <span>
             &gt; {{ collection.title | upcase }}
             {%- if collection.products_count > 0 -%}
               <span class="jj-filter-count">{{ collection.products_count }}</span>
             {%- endif -%}
-          </a>
+          </span>
         </li>
       {%- endif -%}
     {%- else -%}
-      <li>&gt; ELECTRONICS</li>
-      <li>&gt; RETRO GAMING</li>
-      <li>&gt; AUDIO</li>
-      <li>&gt; ACCESSORIES</li>
-      <li>&gt; NEW ARRIVALS</li>
+      <li>&gt; NO COLLECTIONS</li>
     {%- endfor -%}
   </ul>
 </div>
 
-{%- comment -%} FORMAT with phosphor colors {%- endcomment -%}
+{%- comment -%} FORMAT with phosphor colors — derives from metafields.custom.format with product.type fallback {%- endcomment -%}
 <div class="jj-sidebar-section">
   <div class="jj-sidebar-section__title">dir /format</div>
   <ul class="jj-filter-list">
-    {%- assign types_seen = '' -%}
+    {%- assign formats_seen = '|' -%}
     {%- assign featured = section.settings.collection | default: collections['all'] -%}
     {%- for product in featured.products limit: 50 -%}
-      {%- if product.type != blank -%}
-        {%- unless types_seen contains product.type -%}
-          {%- assign types_seen = types_seen | append: product.type | append: '|' -%}
-          {%- assign type_lower = product.type | downcase -%}
-          {%- if type_lower contains 'vinyl' or type_lower contains 'lp' or type_lower contains 'record' -%}
-            <li><span style="color:var(--jj-amber);">○</span> {{ product.type | upcase }}</li>
-          {%- elsif type_lower contains 'cd' or type_lower contains 'compact disc' -%}
-            <li><span style="color:var(--jj-cyan);">◎</span> {{ product.type | upcase }}</li>
-          {%- elsif type_lower contains 'cassette' or type_lower contains 'tape' -%}
-            <li><span style="color:var(--jj-green);">▭</span> {{ product.type | upcase }}</li>
-          {%- elsif type_lower contains 'minidisc' or type_lower contains 'mini disc' or type_lower contains 'md' -%}
-            <li><span style="color:var(--jj-magenta);">◇</span> {{ product.type | upcase }}</li>
-          {%- elsif type_lower contains 'hardware' or type_lower contains 'player' or type_lower contains 'walkman' or type_lower contains 'stereo' -%}
-            <li><span style="color:var(--jj-white);">▪</span> {{ product.type | upcase }}</li>
-          {%- else -%}
-            <li>&gt; {{ product.type | upcase }}</li>
-          {%- endif -%}
-        {%- endunless -%}
+      {%- assign raw_format = product.metafields.custom.format | default: product.type -%}
+      {%- if raw_format != blank -%}
+        {%- assign fmt_lower = raw_format | downcase -%}
+        {%- assign fmt_key = '' -%}
+        {%- if fmt_lower contains 'vinyl' or fmt_lower contains 'lp' or fmt_lower contains 'record' -%}
+          {%- assign fmt_key = 'vinyl' -%}
+        {%- elsif fmt_lower contains 'cd' or fmt_lower contains 'compact disc' -%}
+          {%- assign fmt_key = 'cd' -%}
+        {%- elsif fmt_lower contains 'cassette' or fmt_lower contains 'tape' -%}
+          {%- assign fmt_key = 'cassette' -%}
+        {%- elsif fmt_lower contains 'minidisc' or fmt_lower contains 'mini disc' or fmt_lower contains 'md' -%}
+          {%- assign fmt_key = 'minidisc' -%}
+        {%- elsif fmt_lower contains 'hardware' or fmt_lower contains 'player' or fmt_lower contains 'walkman' or fmt_lower contains 'stereo' -%}
+          {%- assign fmt_key = 'hardware' -%}
+        {%- endif -%}
+        {%- if fmt_key != '' -%}
+          {%- assign fmt_check = '|' | append: fmt_key | append: '|' -%}
+          {%- unless formats_seen contains fmt_check -%}
+            {%- assign formats_seen = formats_seen | append: fmt_key | append: '|' -%}
+            {%- case fmt_key -%}
+              {%- when 'vinyl' -%}
+                <li data-filter-group="format" data-filter-value="vinyl" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-amber);">○</span> VINYL</li>
+              {%- when 'cd' -%}
+                <li data-filter-group="format" data-filter-value="cd" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-cyan);">◎</span> CD</li>
+              {%- when 'cassette' -%}
+                <li data-filter-group="format" data-filter-value="cassette" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-green);">▭</span> CASSETTE</li>
+              {%- when 'minidisc' -%}
+                <li data-filter-group="format" data-filter-value="minidisc" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-magenta);">◇</span> MINIDISC</li>
+              {%- when 'hardware' -%}
+                <li data-filter-group="format" data-filter-value="hardware" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-white);">▪</span> HARDWARE</li>
+            {%- endcase -%}
+          {%- endunless -%}
+        {%- endif -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- if types_seen == '' -%}
-      <li><span style="color:var(--jj-amber);">○</span> VINYL</li>
-      <li><span style="color:var(--jj-cyan);">◎</span> CD</li>
-      <li><span style="color:var(--jj-green);">▭</span> CASSETTE</li>
-      <li><span style="color:var(--jj-magenta);">◇</span> MINIDISC</li>
-      <li><span style="color:var(--jj-white);">▪</span> HARDWARE</li>
+    {%- if formats_seen == '|' -%}
+      <li data-filter-group="format" data-filter-value="vinyl" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-amber);">○</span> VINYL</li>
+      <li data-filter-group="format" data-filter-value="cd" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-cyan);">◎</span> CD</li>
+      <li data-filter-group="format" data-filter-value="cassette" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-green);">▭</span> CASSETTE</li>
+      <li data-filter-group="format" data-filter-value="minidisc" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-magenta);">◇</span> MINIDISC</li>
+      <li data-filter-group="format" data-filter-value="hardware" role="button" tabindex="0" aria-pressed="false"><span style="color:var(--jj-white);">▪</span> HARDWARE</li>
     {%- endif -%}
   </ul>
 </div>
@@ -68,46 +80,45 @@
 <div class="jj-sidebar-section">
   <div class="jj-sidebar-section__title">dir /brand</div>
   <ul class="jj-filter-list">
-    {%- assign vendors_seen = '' -%}
+    {%- assign vendors_seen = '|' -%}
     {%- for product in featured.products limit: 50 -%}
       {%- if product.vendor != blank -%}
-        {%- unless vendors_seen contains product.vendor -%}
-          {%- assign vendors_seen = vendors_seen | append: product.vendor | append: '|' -%}
-          <li>&gt; {{ product.vendor | upcase }}</li>
+        {%- assign vendor_lower = product.vendor | downcase -%}
+        {%- assign vendor_check = '|' | append: vendor_lower | append: '|' -%}
+        {%- unless vendors_seen contains vendor_check -%}
+          {%- assign vendors_seen = vendors_seen | append: vendor_lower | append: '|' -%}
+          <li data-filter-group="vendor" data-filter-value="{{ vendor_lower }}" role="button" tabindex="0" aria-pressed="false">&gt; {{ product.vendor | upcase }}</li>
         {%- endunless -%}
       {%- endif -%}
     {%- endfor -%}
-    {%- if vendors_seen == '' -%}
-      <li>&gt; IBM</li>
-      <li>&gt; MICROSOFT</li>
-      <li>&gt; CREATIVE</li>
-      <li>&gt; IOMEGA</li>
+    {%- if vendors_seen == '|' -%}
+      <li>&gt; NO BRANDS</li>
     {%- endif -%}
   </ul>
 </div>
 
-{%- comment -%} CONDITION from tags {%- endcomment -%}
+{%- comment -%} CONDITION from variant option1 (aligned with product table row data source) {%- endcomment -%}
 <div class="jj-sidebar-section">
   <div class="jj-sidebar-section__title">dir /condition</div>
   <ul class="jj-filter-list">
-    {%- assign conditions_seen = '' -%}
+    {%- assign conditions_seen = '|' -%}
     {%- for product in featured.products limit: 50 -%}
-      {%- for tag in product.tags -%}
-        {%- if tag contains 'condition:' -%}
-          {%- assign cond_val = tag | remove: 'condition:' | strip -%}
-          {%- unless conditions_seen contains cond_val -%}
-            {%- assign conditions_seen = conditions_seen | append: cond_val | append: '|' -%}
-            <li>&gt; {{ cond_val | upcase }}</li>
+      {%- for variant in product.variants -%}
+        {%- if variant.option1 != blank -%}
+          {%- assign cond_lower = variant.option1 | downcase | strip -%}
+          {%- assign cond_check = '|' | append: cond_lower | append: '|' -%}
+          {%- unless conditions_seen contains cond_check -%}
+            {%- assign conditions_seen = conditions_seen | append: cond_lower | append: '|' -%}
+            <li data-filter-group="condition" data-filter-value="{{ cond_lower }}" role="button" tabindex="0" aria-pressed="false">&gt; {{ variant.option1 | upcase }}</li>
           {%- endunless -%}
         {%- endif -%}
       {%- endfor -%}
     {%- endfor -%}
-    {%- if conditions_seen == '' -%}
-      <li>&gt; MINT</li>
-      <li>&gt; EXCELLENT</li>
-      <li>&gt; VERY GOOD</li>
-      <li>&gt; GOOD</li>
-      <li>&gt; FAIR</li>
+    {%- if conditions_seen == '|' -%}
+      <li data-filter-group="condition" data-filter-value="m" role="button" tabindex="0" aria-pressed="false">&gt; MINT</li>
+      <li data-filter-group="condition" data-filter-value="nm" role="button" tabindex="0" aria-pressed="false">&gt; NEAR MINT</li>
+      <li data-filter-group="condition" data-filter-value="vg" role="button" tabindex="0" aria-pressed="false">&gt; VERY GOOD</li>
+      <li data-filter-group="condition" data-filter-value="g" role="button" tabindex="0" aria-pressed="false">&gt; GOOD</li>
     {%- endif -%}
   </ul>
 </div>
