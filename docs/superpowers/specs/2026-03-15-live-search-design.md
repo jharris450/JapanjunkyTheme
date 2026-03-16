@@ -12,9 +12,10 @@ Client-side substring search against existing `data-*` attributes on product tab
 
 **New file:** `assets/japanjunky-search.js`
 
-- Listens to `input` events on `.jj-nav-bar__input` with a 200ms debounce
+- Listens to `input` events on `.jj-nav-bar__input` with a 100ms debounce (client-side matching is fast enough for a tight debounce)
 - Prevents the wrapping `<form>` from submitting on Enter (search is client-side only)
-- On each debounced input: runs match logic, sets `data-search-match` on rows, calls `applyFilters()`
+- On each debounced input: runs match logic, sets `data-search-match` on rows, calls `window.JJ_applyFilters()`
+- Guards against missing `JJ_applyFilters` (exits early if product table doesn't exist on the page)
 
 ## 2. Matching Logic
 
@@ -28,19 +29,42 @@ The search engine does NOT show/hide rows directly. Instead:
 - `applyFilters()` in `japanjunky-filter.js` is extended: a row must pass sidebar filters AND have `data-search-match != "false"` to be visible
 - This composes search with sidebar filters naturally (AND logic)
 
-**Changes to `japanjunky-filter.js`:**
-- In the `applyFilters()` function, after checking all sidebar filter groups, also check `row.getAttribute('data-search-match') !== 'false'`
-- Expose `applyFilters` so the search script can call it: attach to `window.JJ_applyFilters = applyFilters`
+**Exact change to `japanjunky-filter.js` `applyFilters()`:**
+
+After the sidebar filter group loop (which sets `visible`), add:
+
+```js
+// Search filter (AND with sidebar filters)
+if (visible && row.getAttribute('data-search-match') === 'false') {
+  visible = false;
+}
+```
+
+**Footer count fix:** The `isFiltered` flag must also account for active search:
+
+```js
+var searchInput = document.querySelector('.jj-nav-bar__input');
+var searchActive = searchInput && searchInput.value.trim() !== '';
+updateFooterCount(visibleCount, totalRows, activeGroups.length > 0 || searchActive);
+```
+
+**Expose for search script:** Add `window.JJ_applyFilters = applyFilters;` inside the IIFE, after the function definition.
+
+**Clear All integration:** The "Clear All" button handler should also clear the search input and remove `data-search-match` attributes from all rows, so users get a full reset.
 
 ## 4. Materialization Effect
 
 When a row transitions from hidden to visible (new search match, or search cleared):
 
+### Animation target
+
+Apply the animation to `<td>` cells within the row (`.jj-row--materializing td`), NOT the `<tr>` itself. `::after` pseudo-elements are unreliable on `<tr>` elements across browsers, and `position: relative` on `<tr>` is undefined behavior per CSS spec, especially with `border-collapse: collapse`. Targeting `<td>` elements is fully cross-browser.
+
 ### Animation stages
 
-- **Stage 1 (0-150ms):** Row visible but obscured — CSS `filter: brightness(2) contrast(0.5) saturate(0)` washes it out. A `::after` pseudo-element overlay shows a noise/static pattern at high opacity.
-- **Stage 2 (150-350ms):** Filter normalizes to `brightness(1) contrast(1) saturate(1)`. Overlay opacity fades to 0. Row content sharpens into place.
-- **Stage 3 (350ms):** `jj-row--materializing` class removed via `animationend` listener. Row is clean.
+- **Stage 1 (0-150ms):** Cells washed out — CSS `filter: brightness(2) contrast(0.5) saturate(0)`, low opacity. A `::after` pseudo-element overlay on each `<td>` shows a scanline/static pattern.
+- **Stage 2 (150-350ms):** Filter normalizes, overlay fades, content sharpens into place.
+- **Stage 3 (350ms):** Cleanup — both `jj-row--materializing` class and inline `animation-delay` style are removed.
 
 ### CSS implementation
 
@@ -70,11 +94,12 @@ When a row transitions from hidden to visible (new search match, or search clear
   100% { opacity: 0; }
 }
 
-.jj-row--materializing {
+.jj-row--materializing td {
   animation: jj-materialize 350ms ease-out forwards;
+  position: relative;
 }
 
-.jj-row--materializing::after {
+.jj-row--materializing td::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -90,16 +115,22 @@ When a row transitions from hidden to visible (new search match, or search clear
 }
 ```
 
+### Cleanup logic
+
+The search JS listens for `animationend` on the **first `<td>`** of a materializing row. On fire, it removes `jj-row--materializing` from the `<tr>` and clears the inline `animation-delay` style.
+
+**Fallback for reduced-motion:** Since `animation: none` means `animationend` never fires, use a `setTimeout(cleanup, 400)` as a fallback that runs alongside the listener. Whichever fires first cleans up; the other is a no-op.
+
 ### Reduced motion
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  .jj-row--materializing {
+  .jj-row--materializing td {
     animation: none;
     filter: none;
     opacity: 1;
   }
-  .jj-row--materializing::after {
+  .jj-row--materializing td::after {
     animation: none;
     opacity: 0;
   }
@@ -110,20 +141,20 @@ This respects the Windows "show animations in Windows" toggle, which maps to `pr
 
 ## 5. Staggered Reveal
 
-Matching rows don't all materialize simultaneously. Each row gets a stagger delay via inline `animation-delay` style:
+Matching rows don't all materialize simultaneously. Each row gets a stagger delay via inline `animation-delay` style on the `<tr>` (inherited by its `<td>` children):
 
 - Row 0: 0ms
 - Row 1: 30ms
 - Row 2: 60ms
 - etc.
 
-The search JS applies both the `jj-row--materializing` class and the stagger delay. Max stagger capped at ~500ms total (so 15+ rows don't take too long).
+Max stagger capped at ~500ms total (so 15+ rows don't take too long). The search JS applies both the `jj-row--materializing` class and the stagger delay. Both are cleaned up after animation completes (see Section 4 cleanup).
+
+Note: `animation-delay` on `<td>` is set via the `<tr>` style attribute and inherited. If inheritance doesn't apply for `animation-delay`, the JS should set it directly on each `<td>` instead.
 
 ## 6. Header Form Prevention
 
-**File:** `sections/jj-header.liquid`
-
-The search `<form>` currently submits to `/search` on Enter. Change to prevent default submission so search stays client-side. The JS attaches a `submit` event listener to the form and calls `preventDefault()`.
+The search `<form>` currently submits to `/search` on Enter. The search JS attaches a `submit` event listener to the form and calls `preventDefault()`. No markup changes needed.
 
 ## 7. Script Loading
 
@@ -134,16 +165,11 @@ Add after `japanjunky-filter.js`:
 <script src="{{ 'japanjunky-search.js' | asset_url }}" defer></script>
 ```
 
-## 8. Table Row Position
-
-The `::after` pseudo-element on materializing rows needs `position: absolute` with `inset: 0`. This requires the `<tr>` to have `position: relative`. Add this to the materializing class only (tables handle positioning differently, so we scope it).
-
 ## Files Changed
 
 | File | Change |
 |---|---|
-| `assets/japanjunky-search.js` | New — debounced input handler, match logic, staggered materialization |
-| `assets/japanjunky-filter.js` | Extend `applyFilters` to check `data-search-match`, expose as `window.JJ_applyFilters` |
-| `assets/japanjunky-homepage.css` | Materialization keyframes, static overlay, reduced-motion override |
+| `assets/japanjunky-search.js` | New — debounced input handler, match logic, staggered materialization, cleanup |
+| `assets/japanjunky-filter.js` | Extend `applyFilters` with search check, fix footer count, expose as `window.JJ_applyFilters`, clear search on "Clear All" |
+| `assets/japanjunky-homepage.css` | Materialization keyframes on `td`, static overlay on `td::after`, reduced-motion override |
 | `layout/theme.liquid` | Load search JS after filter JS |
-| `sections/jj-header.liquid` | No markup change needed — form prevention handled in JS |
