@@ -830,52 +830,6 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   display: none;
 }
 
-/* ── Search materialization effect ── */
-@keyframes jj-materialize {
-  0% {
-    filter: brightness(2) contrast(0.5) saturate(0);
-    opacity: 0.3;
-  }
-  30% {
-    filter: brightness(1.8) contrast(0.6) saturate(0.2);
-    opacity: 0.6;
-  }
-  60% {
-    filter: brightness(1.2) contrast(0.9) saturate(0.8);
-    opacity: 0.9;
-  }
-  100% {
-    filter: brightness(1) contrast(1) saturate(1);
-    opacity: 1;
-  }
-}
-
-@keyframes jj-static-fade {
-  0% { opacity: 0.7; }
-  50% { opacity: 0.3; }
-  100% { opacity: 0; }
-}
-
-.jj-row--materializing td {
-  animation: jj-materialize 350ms ease-out forwards;
-  position: relative;
-}
-
-.jj-row--materializing td::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(255, 255, 255, 0.03) 2px,
-    rgba(255, 255, 255, 0.03) 4px
-  );
-  animation: jj-static-fade 350ms ease-out forwards;
-  pointer-events: none;
-}
-
 @media (max-width: 600px) {
   .jj-product-table th:nth-child(2),
   .jj-product-table td:nth-child(2),
