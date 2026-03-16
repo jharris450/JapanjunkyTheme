@@ -19,7 +19,6 @@
   }
 
   var debounceTimer = null;
-  var previousVisible = null; // Set of row indices that were visible before this search
 
   searchInput.addEventListener('input', function () {
     clearTimeout(debounceTimer);
@@ -113,7 +112,7 @@
     }
 
     // Fallback timeout for reduced-motion (animationend won't fire)
-    setTimeout(cleanup, delay + 400);
+    setTimeout(cleanup, delay + 500);
   }
 
 })();
