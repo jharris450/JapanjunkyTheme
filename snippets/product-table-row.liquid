@@ -48,6 +48,7 @@
   <tr data-index="{{ index }}"
       data-product-handle="{{ product.handle }}"
       data-product-id="{{ product.id }}"
+      data-product-collections="{{ product.collections | map: 'handle' | join: ',' }}"
       data-product-title="{{ product.title | escape }}"
       data-product-artist="{{ m_artist | escape }}"
       data-product-vendor="{{ product.vendor | escape }}"
