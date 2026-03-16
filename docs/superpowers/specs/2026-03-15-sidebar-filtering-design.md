@@ -46,6 +46,7 @@ Values are normalized to lowercase for matching. The `<li>` elements get `role="
 ### Format section
 - `data-filter-group="format"`
 - `data-filter-value` uses the same normalized keys as the product row: vinyl, cd, cassette, minidisc, hardware
+- **Data source alignment:** The sidebar currently derives format from `product.type`, but product rows derive `data-product-format` from `product.metafields.custom.format`. Both sides use contains-based normalization to the same keys (vinyl, cd, cassette, etc.), so in practice they produce matching values. To be safe, the sidebar Format section should also derive from `product.metafields.custom.format` where available, falling back to `product.type`.
 
 ### Brand section
 - `data-filter-group="vendor"`
@@ -111,11 +112,11 @@ Add/remove class `jj-row--hidden` on `<tr>` elements. CSS hides them with `displ
 
 ## 5. Footer Count
 
-Update `.jj-table-footer__left` to reflect filtered state. The element contains two `<span>` children: one for total count and one for "showing 1-N". When filters are active:
-- First span: "X of Y items"
-- Second span: hidden (not meaningful when filtering)
+Update `.jj-table-footer__left` to reflect filtered state. The element contains three `<span>` children: item count, a `|` separator, and "showing 1-N". Add `id="jj-footer-count"` to the first span and `id="jj-footer-showing"` to the third for precise JS targeting. When filters are active:
+- `#jj-footer-count`: "X of Y items"
+- Separator and `#jj-footer-showing`: hidden
 
-When no filters are active, restore original text.
+When no filters are active, restore original text and show all spans.
 
 ## 6. Detail Pane Integration
 
@@ -134,6 +135,11 @@ The sort handler in `japanjunky-product-select.js` re-appends all rows to the tb
 **File:** `assets/japanjunky-homepage.css`
 
 ```css
+/* Make all filter items interactive */
+.jj-filter-list li[data-filter-group] {
+  cursor: pointer;
+}
+
 /* Active sidebar filter item — BEM-compliant */
 .jj-filter-list li.jj-filter-item--active {
   color: var(--jj-primary);
@@ -164,7 +170,8 @@ Add before `</body>`, **after** `japanjunky-product-select.js` (both use `defer`
 | File | Change |
 |---|---|
 | `snippets/product-table-row.liquid` | Add `data-product-collections` attribute |
-| `snippets/category-list.liquid` | Add filter data attrs, remove `<a>` wrappers, rewrite Condition to use variant option1 |
+| `snippets/category-list.liquid` | Add filter data attrs, remove `<a>` wrappers, align Format/Condition data sources |
+| `sections/jj-homepage-body.liquid` | Add IDs to footer count spans for JS targeting |
 | `assets/japanjunky-filter.js` | New file — filter engine, click handlers, filter bar, footer update |
 | `assets/japanjunky-homepage.css` | Active state, hidden row class, filter-tag cursor tweak |
 | `assets/japanjunky-product-select.js` | Update keyboard nav selector to exclude `.jj-row--hidden` |
