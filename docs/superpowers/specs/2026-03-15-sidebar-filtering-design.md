@@ -21,7 +21,9 @@ data-product-collections="{{ product.collections | map: 'handle' | join: ',' }}"
 Existing attributes used for filtering (no changes needed):
 - `data-product-format` — normalized key: vinyl, cd, cassette, minidisc, hardware
 - `data-product-vendor` — raw vendor string
-- `data-product-condition` — from variant option1
+- `data-product-condition` — from variant option1 (e.g. "NM", "VG+", "M")
+
+**Condition data alignment:** The sidebar currently reads conditions from product tags (`condition:` prefix), but table rows source condition from `variant.option1`. These may use different vocabularies. Fix: change the sidebar's Condition section to derive values from the same source as the rows — iterate variant option1 values across the featured collection's products. This ensures filter values match row data exactly.
 
 ## 2. Sidebar Markup
 
@@ -34,11 +36,12 @@ Each `<li>` becomes a clickable filter toggle with two data attributes:
 | `data-filter-group` | Dimension name: `collection`, `format`, `vendor`, `condition` |
 | `data-filter-value` | Value to match against the corresponding `data-product-*` attribute on table rows |
 
-Values are normalized to lowercase for matching. The `<li>` elements get `role="button"` and `tabindex="0"` for accessibility.
+Values are normalized to lowercase for matching. The `<li>` elements get `role="button"`, `tabindex="0"`, and `aria-pressed="false"` for accessibility. The JS toggles `aria-pressed` alongside the visual active class.
 
 ### Categories section
 - `data-filter-group="collection"`
 - `data-filter-value="{{ collection.handle }}"` — matches against comma-separated `data-product-collections`
+- **Remove the `<a href>` wrappers** — category items currently contain `<a href="{{ collection.url }}">` which would navigate away from the page. Replace with `<span>` elements so clicks toggle filters instead of navigating.
 
 ### Format section
 - `data-filter-group="format"`
@@ -50,7 +53,8 @@ Values are normalized to lowercase for matching. The `<li>` elements get `role="
 
 ### Condition section
 - `data-filter-group="condition"`
-- `data-filter-value="{{ cond_val | downcase }}"` — matches against lowercased `data-product-condition`
+- `data-filter-value` uses lowercased variant option1 values (not tag-based `condition:` values) — matches against lowercased `data-product-condition`
+- Sidebar Condition section rewritten to iterate variant option1 values from the featured collection, deduplicating unique condition strings
 
 ## 3. Filter Engine
 
@@ -71,7 +75,8 @@ const activeFilters = {
 
 - Attached to all `[data-filter-group]` elements via event delegation on `.jj-left-sidebar`
 - Toggles value in/out of the relevant Set
-- Toggles `--active` class on the clicked `<li>`
+- Toggles `jj-filter-item--active` class on the clicked `<li>` (BEM-compliant with project convention)
+- Toggles `aria-pressed` attribute for accessibility
 - Calls `applyFilters()`
 
 ### Filter logic
@@ -106,21 +111,31 @@ Add/remove class `jj-row--hidden` on `<tr>` elements. CSS hides them with `displ
 
 ## 5. Footer Count
 
-Update `.jj-table-footer__left` to reflect filtered state:
-- "X of Y items" when filters active
-- "Y items" when no filters active
+Update `.jj-table-footer__left` to reflect filtered state. The element contains two `<span>` children: one for total count and one for "showing 1-N". When filters are active:
+- First span: "X of Y items"
+- Second span: hidden (not meaningful when filtering)
+
+When no filters are active, restore original text.
 
 ## 6. Detail Pane Integration
 
 When filters change, check if the currently highlighted row (in the right sidebar detail pane) is now hidden. If so, clear the detail pane or select the first visible row.
+
+### Keyboard navigation
+
+`japanjunky-product-select.js` has keyboard handlers that cycle through `tr[data-product-handle]` rows with arrow keys. Update the selector to exclude hidden rows: `tr[data-product-handle]:not(.jj-row--hidden)`. This prevents keyboard navigation from landing on filtered-out rows.
+
+### Sort interaction
+
+The sort handler in `japanjunky-product-select.js` re-appends all rows to the tbody. Since it preserves CSS classes, `jj-row--hidden` survives sorting. No special handling needed, but the filter engine should re-read rows from the DOM after sort (or sort should trigger a filter reapply) to keep the footer count accurate.
 
 ## 7. CSS Additions
 
 **File:** `assets/japanjunky-homepage.css`
 
 ```css
-/* Active sidebar filter item */
-.jj-filter-list li.--active {
+/* Active sidebar filter item — BEM-compliant */
+.jj-filter-list li.jj-filter-item--active {
   color: var(--jj-primary);
   border-left-color: var(--jj-primary);
   background: #111;
@@ -131,30 +146,15 @@ When filters change, check if the currently highlighted row (in the right sideba
 .jj-row--hidden {
   display: none;
 }
-
-/* Filter tag chip */
-.jj-filter-tag {
-  display: inline-block;
-  font-size: 11px;
-  padding: 1px 6px;
-  margin: 0 4px;
-  border: 1px solid var(--jj-primary);
-  color: var(--jj-primary);
-  cursor: pointer;
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-}
-
-.jj-filter-tag:hover {
-  background: var(--jj-primary);
-  color: #000;
-}
 ```
+
+**Existing `.jj-filter-tag` styles** are already defined in `japanjunky-homepage.css` (accent color, line-through on hover). These match the terminal aesthetic and will be kept as-is. The filter engine will add `cursor: pointer` to `.jj-filter-tag` to indicate clickability.
 
 ## 8. Script Loading
 
 **File:** `layout/theme.liquid`
 
-Add before `</body>`:
+Add before `</body>`, **after** `japanjunky-product-select.js` (both use `defer`, so DOM order determines execution order — filter engine needs product-select to be initialized first for detail pane integration):
 ```liquid
 <script src="{{ 'japanjunky-filter.js' | asset_url }}" defer></script>
 ```
@@ -164,7 +164,8 @@ Add before `</body>`:
 | File | Change |
 |---|---|
 | `snippets/product-table-row.liquid` | Add `data-product-collections` attribute |
-| `snippets/category-list.liquid` | Add `data-filter-group`/`data-filter-value` to all `<li>`, make clickable |
+| `snippets/category-list.liquid` | Add filter data attrs, remove `<a>` wrappers, rewrite Condition to use variant option1 |
 | `assets/japanjunky-filter.js` | New file — filter engine, click handlers, filter bar, footer update |
-| `assets/japanjunky-homepage.css` | Active state, hidden row, filter tag styles |
+| `assets/japanjunky-homepage.css` | Active state, hidden row class, filter-tag cursor tweak |
+| `assets/japanjunky-product-select.js` | Update keyboard nav selector to exclude `.jj-row--hidden` |
 | `layout/theme.liquid` | Load filter JS |
