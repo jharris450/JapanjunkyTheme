@@ -203,6 +203,130 @@
     pos.needsUpdate = true;
   }
 
+  // ─── Tokyo Cityscape ──────────────────────────────────────────
+  // Iconic structures as low-poly silhouettes, clustered to the
+  // left of Fuji. Scaled small so Fuji remains the anchor.
+  function buildCityscape() {
+    // Cityscape origin — left of Fuji, between camera and mountain
+    var cx = -5.5;
+    var cz = -15;
+    var ground = -0.5; // base y for buildings
+
+    // Helper: add a box-shaped building
+    function addBox(w, h, d, x, y, z, color) {
+      var geo = new THREE.BoxGeometry(w, h, d);
+      var mat = makePS1Material(color, false);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(cx + x, ground + y + h / 2, cz + z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    // Helper: add a cylinder
+    function addCyl(rTop, rBot, h, segs, x, y, z, color) {
+      var geo = new THREE.CylinderGeometry(rTop, rBot, h, segs);
+      var mat = makePS1Material(color, false);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(cx + x, ground + y + h / 2, cz + z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    // --- Generic background buildings (fill the skyline) ---
+    var bgColor = 0x0f0e12;
+    var bgColor2 = 0x12111a;
+    var bgColor3 = 0x0a0a10;
+    addBox(0.6, 1.8, 0.5, -2.0, 0, 0.3, bgColor);
+    addBox(0.5, 2.2, 0.5, -1.3, 0, -0.2, bgColor2);
+    addBox(0.7, 1.5, 0.6, -0.5, 0, 0.5, bgColor3);
+    addBox(0.4, 2.0, 0.4,  1.8, 0, 0.1, bgColor);
+    addBox(0.6, 1.6, 0.5,  2.5, 0, -0.3, bgColor2);
+    addBox(0.5, 1.3, 0.5,  3.2, 0, 0.4, bgColor3);
+    addBox(0.5, 1.7, 0.4, -2.7, 0, -0.1, bgColor2);
+    addBox(0.4, 1.4, 0.5,  0.3, 0, 0.6, bgColor);
+    addBox(0.6, 1.9, 0.5,  3.8, 0, 0.2, bgColor3);
+
+    // === Tokyo Skytree (634m — tallest, narrow lattice tower) ===
+    // Tapered shaft with two observation deck bulges
+    var skytreeColor = 0x1a1a2a;
+    addCyl(0.06, 0.15, 4.5, 4, 1.0, 0, 0, skytreeColor); // main shaft
+    addCyl(0.22, 0.18, 0.3, 6, 1.0, 2.8, 0, 0x222233);   // lower deck
+    addCyl(0.16, 0.14, 0.2, 6, 1.0, 3.6, 0, 0x222233);   // upper deck
+    // Antenna spire
+    addCyl(0.02, 0.02, 0.8, 3, 1.0, 4.5, 0, 0x2a2a3a);
+
+    // === Tokyo Tower (333m — red/orange lattice) ===
+    var towerColor = 0xAA2200;
+    addCyl(0.04, 0.3, 3.0, 4, -0.8, 0, 0.2, towerColor);  // tapered body
+    addCyl(0.12, 0.1, 0.2, 4, -0.8, 1.8, 0.2, 0xAA3300);  // observation deck
+    addCyl(0.02, 0.02, 0.6, 3, -0.8, 3.0, 0.2, towerColor); // antenna
+
+    // === NTT Docomo Yoyogi Building (clock tower with pyramid top) ===
+    var docomoColor = 0x151520;
+    addBox(0.7, 2.8, 0.6, 2.2, 0, -0.5, docomoColor);
+    // Stepped pyramid crown
+    addBox(0.55, 0.3, 0.5, 2.2, 2.8, -0.5, 0x1a1a28);
+    addBox(0.4, 0.3, 0.35, 2.2, 3.1, -0.5, 0x1f1f30);
+    // Spire
+    addCyl(0.02, 0.02, 0.4, 3, 2.2, 3.4, -0.5, 0x2a2a3a);
+
+    // === Tokyo Metropolitan Government Building (twin towers) ===
+    var metroColor = 0x121218;
+    // Left tower
+    addBox(0.45, 3.2, 0.5, -1.8, 0, -0.5, metroColor);
+    // Right tower
+    addBox(0.45, 3.2, 0.5, -1.25, 0, -0.5, metroColor);
+    // Connecting base
+    addBox(1.0, 1.2, 0.6, -1.52, 0, -0.5, 0x0e0e14);
+    // Notched tops (indentations via small lighter boxes)
+    addBox(0.15, 0.3, 0.55, -1.8, 3.2, -0.5, 0x1a1a22);
+    addBox(0.15, 0.3, 0.55, -1.25, 3.2, -0.5, 0x1a1a22);
+
+    // === Senso-ji (Buddhist temple — tiered pagoda) ===
+    var templeColor = 0x2a0808;
+    var roofColor = 0x1a0505;
+    // Main hall base
+    addBox(0.8, 0.5, 0.6, 0.0, 0, 0.8, templeColor);
+    // Tiered pagoda beside it
+    addBox(0.4, 0.4, 0.4, 0.5, 0, 1.2, roofColor);
+    addBox(0.35, 0.35, 0.35, 0.5, 0.4, 1.2, templeColor);
+    addBox(0.28, 0.3, 0.28, 0.5, 0.75, 1.2, roofColor);
+    addBox(0.2, 0.25, 0.2, 0.5, 1.05, 1.2, templeColor);
+    addBox(0.14, 0.2, 0.14, 0.5, 1.3, 1.2, roofColor);
+    // Pagoda spire
+    addCyl(0.02, 0.02, 0.3, 3, 0.5, 1.5, 1.2, 0xAA5500);
+
+    // === Meiji Jingu (Shinto shrine — low profile with torii) ===
+    var shrineColor = 0x1a1008;
+    var toriiColor = 0xAA2200;
+    // Main shrine hall — low and wide
+    addBox(0.9, 0.35, 0.5, -0.3, 0, 1.5, shrineColor);
+    // Sloped roof (wider box on top, slight overhang)
+    addBox(1.1, 0.12, 0.65, -0.3, 0.35, 1.5, 0x0f0a05);
+    // Torii gate in front
+    // Vertical pillars
+    addCyl(0.03, 0.03, 0.6, 4, -0.55, 0, 2.0, toriiColor);
+    addCyl(0.03, 0.03, 0.6, 4, -0.05, 0, 2.0, toriiColor);
+    // Top crossbar (kasagi)
+    addBox(0.7, 0.04, 0.04, -0.3, 0.6, 2.0, toriiColor);
+    // Lower crossbar (nuki)
+    addBox(0.55, 0.03, 0.03, -0.3, 0.45, 2.0, toriiColor);
+
+    // === Fuji Television Building (sphere on rectangular frame) ===
+    var fujiTVColor = 0x151822;
+    // Main rectangular frame
+    addBox(0.8, 1.4, 0.5, 3.5, 0, 0.8, fujiTVColor);
+    // Observation sphere
+    var sphereGeo = new THREE.IcosahedronGeometry(0.25, 1);
+    var sphereMat = makePS1Material(0xAAAAAA, false);
+    var sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.position.set(cx + 3.5, ground + 1.1, cz + 0.8);
+    scene.add(sphere);
+    // Support legs (open frame look)
+    addBox(0.15, 0.6, 0.5, 3.2, 0, 0.8, 0x0f1018);
+    addBox(0.15, 0.6, 0.5, 3.8, 0, 0.8, 0x0f1018);
+  }
+
   // ─── Trees ────────────────────────────────────────────────────
   function buildTrees() {
     var treePositions = [
@@ -442,6 +566,7 @@
   // ─── Build Scene ──────────────────────────────────────────────
   buildSky();
   buildFuji();
+  buildCityscape();
   buildOcean();
   buildTrees();
   buildFloatingPrimitives();
