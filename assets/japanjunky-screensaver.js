@@ -222,11 +222,221 @@
     }
   }
 
+  // ─── Floating Primitives ──────────────────────────────────────
+  var floatingObjects = [];
+
+  function buildFloatingPrimitives() {
+    var shapes = [
+      { geo: new THREE.IcosahedronGeometry(0.4, 0), color: 0xAA5500, wire: false },
+      { geo: new THREE.OctahedronGeometry(0.35, 0), color: 0xAA0000, wire: false },
+      { geo: new THREE.TetrahedronGeometry(0.5, 0), color: 0xAA5522, wire: true },
+      { geo: new THREE.IcosahedronGeometry(0.3, 0), color: 0xFFFF55, wire: false },
+      { geo: new THREE.OctahedronGeometry(0.45, 0), color: 0x005500, wire: true },
+      { geo: new THREE.TetrahedronGeometry(0.35, 0), color: 0xAA5500, wire: false },
+      { geo: new THREE.IcosahedronGeometry(0.5, 0), color: 0x000055, wire: true },
+      { geo: new THREE.OctahedronGeometry(0.4, 0), color: 0xAA0000, wire: false }
+    ];
+
+    for (var i = 0; i < shapes.length; i++) {
+      var s = shapes[i];
+      var mat = makePS1Material(s.color, s.wire);
+      var mesh = new THREE.Mesh(s.geo, mat);
+
+      var angle = (i / shapes.length) * Math.PI * 2;
+      var radius = 4 + Math.random() * 6;
+      var homePos = new THREE.Vector3(
+        Math.cos(angle) * radius,
+        0.5 + Math.random() * 3,
+        Math.sin(angle) * radius - 5
+      );
+      mesh.position.copy(homePos);
+
+      mesh.userData = {
+        homePos: homePos.clone(),
+        displacement: new THREE.Vector3(),
+        rotSpeedX: (Math.random() - 0.5) * 0.02,
+        rotSpeedY: (Math.random() - 0.5) * 0.03,
+        driftFreqX: 0.2 + Math.random() * 0.3,
+        driftFreqY: 0.15 + Math.random() * 0.25,
+        driftAmpX: 0.3 + Math.random() * 0.5,
+        driftAmpY: 0.2 + Math.random() * 0.3,
+        driftPhase: Math.random() * Math.PI * 2
+      };
+
+      scene.add(mesh);
+      floatingObjects.push(mesh);
+    }
+  }
+
+  function animateFloatingPrimitives(time) {
+    var t = time * 0.001;
+    for (var i = 0; i < floatingObjects.length; i++) {
+      var obj = floatingObjects[i];
+      var ud = obj.userData;
+      obj.rotation.x += ud.rotSpeedX;
+      obj.rotation.y += ud.rotSpeedY;
+      var driftX = Math.sin(t * ud.driftFreqX + ud.driftPhase) * ud.driftAmpX;
+      var driftY = Math.sin(t * ud.driftFreqY + ud.driftPhase * 1.3) * ud.driftAmpY;
+      obj.position.x = ud.homePos.x + driftX + ud.displacement.x;
+      obj.position.y = ud.homePos.y + driftY + ud.displacement.y;
+      obj.position.z = ud.homePos.z + ud.displacement.z;
+      ud.displacement.multiplyScalar(0.97);
+    }
+  }
+
+  // ─── Particle Lattice Clusters ────────────────────────────────
+  var latticeClusters = [];
+
+  function buildParticleLattices() {
+    var clusterConfigs = [
+      { center: new THREE.Vector3(6, 3, -3), count: 12, spread: 1.5, color: 0xAA5500 },
+      { center: new THREE.Vector3(-5, 4, -7), count: 10, spread: 1.2, color: 0xFFFF55 },
+      { center: new THREE.Vector3(3, 2, -12), count: 8, spread: 1.0, color: 0xAA5522 }
+    ];
+
+    for (var ci = 0; ci < clusterConfigs.length; ci++) {
+      var cfg = clusterConfigs[ci];
+      var group = new THREE.Group();
+      group.position.copy(cfg.center);
+
+      var points = [];
+      for (var i = 0; i < cfg.count; i++) {
+        points.push(new THREE.Vector3(
+          (Math.random() - 0.5) * cfg.spread * 2,
+          (Math.random() - 0.5) * cfg.spread * 2,
+          (Math.random() - 0.5) * cfg.spread * 2
+        ));
+      }
+
+      // Connect nearest neighbors with lines
+      var lineGeo = new THREE.BufferGeometry();
+      var lineVerts = [];
+      var CONNECTION_DIST = cfg.spread * 1.5;
+
+      for (var a = 0; a < points.length; a++) {
+        for (var b = a + 1; b < points.length; b++) {
+          if (points[a].distanceTo(points[b]) < CONNECTION_DIST) {
+            lineVerts.push(points[a].x, points[a].y, points[a].z);
+            lineVerts.push(points[b].x, points[b].y, points[b].z);
+          }
+        }
+      }
+
+      lineGeo.setAttribute('position',
+        new THREE.Float32BufferAttribute(lineVerts, 3));
+
+      var lineMat = makePS1Material(cfg.color, true);
+      lineMat.wireframe = false;
+      var lines = new THREE.LineSegments(lineGeo, lineMat);
+      group.add(lines);
+
+      // SET userData FIRST so dotMeshes array exists
+      group.userData = {
+        homePos: cfg.center.clone(),
+        displacement: new THREE.Vector3(),
+        rotSpeed: 0.003 + Math.random() * 0.005,
+        lineGeo: lineGeo,
+        baseLineVerts: new Float32Array(lineVerts),
+        points: points.map(function (p) { return p.clone(); }),
+        dotMeshes: []
+      };
+
+      // THEN create dot meshes and push to the array
+      for (var p = 0; p < points.length; p++) {
+        var dotGeo = new THREE.SphereGeometry(0.05, 4, 4);
+        var dotMat = makePS1Material(cfg.color, false);
+        var dot = new THREE.Mesh(dotGeo, dotMat);
+        dot.position.copy(points[p]);
+        group.add(dot);
+        group.userData.dotMeshes.push(dot);
+      }
+
+      scene.add(group);
+      latticeClusters.push(group);
+      floatingObjects.push(group);
+    }
+  }
+
+  function animateLatticeClusters(time) {
+    var t = time * 0.001;
+    for (var i = 0; i < latticeClusters.length; i++) {
+      var cluster = latticeClusters[i];
+      var ud = cluster.userData;
+
+      cluster.rotation.y += ud.rotSpeed;
+      cluster.rotation.x += ud.rotSpeed * 0.3;
+
+      // Per-vertex morphing
+      for (var p = 0; p < ud.points.length; p++) {
+        var base = ud.points[p];
+        var phase = p * 1.7;
+        var dx = Math.sin(t * 0.4 + phase) * 0.15;
+        var dy = Math.sin(t * 0.3 + phase * 1.3) * 0.12;
+        var dz = Math.sin(t * 0.5 + phase * 0.7) * 0.15;
+
+        if (ud.dotMeshes[p]) {
+          ud.dotMeshes[p].position.set(
+            base.x + dx, base.y + dy, base.z + dz
+          );
+        }
+      }
+
+      // Rebuild line geometry from morphed dot positions
+      if (ud.lineGeo && ud.dotMeshes.length > 0) {
+        var pos = ud.lineGeo.attributes.position;
+        var vertIdx = 0;
+        for (var a = 0; a < ud.dotMeshes.length; a++) {
+          for (var b = a + 1; b < ud.dotMeshes.length; b++) {
+            if (ud.points[a].distanceTo(ud.points[b]) < 2.25) {
+              var da = ud.dotMeshes[a].position;
+              var db = ud.dotMeshes[b].position;
+              pos.setXYZ(vertIdx, da.x, da.y, da.z); vertIdx++;
+              pos.setXYZ(vertIdx, db.x, db.y, db.z); vertIdx++;
+            }
+          }
+        }
+        pos.needsUpdate = true;
+      }
+    }
+  }
+
+  // ─── Rotating Wireframe Shapes ────────────────────────────────
+  var wireframeShapes = [];
+
+  function buildWireframeShapes() {
+    var sphereGeo = new THREE.SphereGeometry(1.2, 8, 6);
+    var sphereMat = makePS1Material(0x000055, true);
+    var sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.position.set(-4, 3, -4);
+    sphere.userData.rotSpeed = 0.005;
+    scene.add(sphere);
+    wireframeShapes.push(sphere);
+
+    var torusGeo = new THREE.TorusGeometry(0.8, 0.3, 6, 8);
+    var torusMat = makePS1Material(0x005555, true);
+    var torus = new THREE.Mesh(torusGeo, torusMat);
+    torus.position.set(8, 2, -6);
+    torus.userData.rotSpeed = 0.008;
+    scene.add(torus);
+    wireframeShapes.push(torus);
+  }
+
+  function animateWireframeShapes() {
+    for (var i = 0; i < wireframeShapes.length; i++) {
+      var shape = wireframeShapes[i];
+      shape.rotation.y += shape.userData.rotSpeed;
+      shape.rotation.x += shape.userData.rotSpeed * 0.7;
+    }
+  }
+
   // ─── Build Scene ──────────────────────────────────────────────
   buildSky();
   buildFuji();
   buildOcean();
   buildTrees();
+  buildFloatingPrimitives();
+  buildParticleLattices();
+  buildWireframeShapes();
 
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
@@ -239,6 +449,9 @@
     lastFrame = time;
 
     animateOcean(time);
+    animateFloatingPrimitives(time);
+    animateLatticeClusters(time);
+    animateWireframeShapes();
 
     renderer.render(scene, camera);
   }
