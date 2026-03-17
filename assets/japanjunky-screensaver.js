@@ -443,6 +443,70 @@
   buildParticleLattices();
   buildWireframeShapes();
 
+  // ─── Offscreen Render Target ──────────────────────────────────
+  var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat
+  });
+
+  // Display canvas (2D) — the visible output
+  var displayCanvas = document.createElement('canvas');
+  displayCanvas.width = resW;
+  displayCanvas.height = resH;
+  var displayCtx = displayCanvas.getContext('2d');
+  var displayImageData = displayCtx.createImageData(resW, resH);
+
+  // Pixel readback buffer
+  var pixelBuffer = new Uint8Array(resW * resH * 4);
+
+  // The original #jj-screensaver canvas becomes the offscreen WebGL context
+  // holder (hidden). The new display canvas is the visible output.
+  canvas.style.display = 'none';
+
+  displayCanvas.id = 'jj-screensaver-display';
+  displayCanvas.setAttribute('aria-hidden', 'true');
+  displayCanvas.tabIndex = -1;
+  displayCanvas.style.cssText = [
+    'position:fixed', 'top:0', 'left:0',
+    'width:100vw', 'height:100vh',
+    'z-index:0', 'pointer-events:none',
+    'image-rendering:pixelated',
+    'image-rendering:crisp-edges'
+  ].join(';');
+  canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
+
+  // ─── Reusable render pipeline ─────────────────────────────────
+  // Used by both the animate loop and the reduced-motion static frame.
+  function renderOneFrame() {
+    // 1. Render scene to offscreen target
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+
+    // 2. Read pixels back to CPU
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
+
+    // 3. Copy to ImageData (WebGL reads bottom-up, flip vertically)
+    var src = pixelBuffer;
+    var dst = displayImageData.data;
+    for (var row = 0; row < resH; row++) {
+      var srcRow = (resH - 1 - row) * resW * 4;
+      var dstRow = row * resW * 4;
+      for (var col = 0; col < resW * 4; col++) {
+        dst[dstRow + col] = src[srcRow + col];
+      }
+    }
+
+    // 4. VGA palette quantization + Floyd-Steinberg dither
+    if (window.JJ_ScreensaverPost) {
+      JJ_ScreensaverPost.dither(displayImageData);
+    }
+
+    // 5. Draw dithered frame to display canvas
+    displayCtx.putImageData(displayImageData, 0, 0);
+  }
+
   // ─── Camera Orbit ─────────────────────────────────────────────
   var ORBIT = {
     radiusX: 14,
@@ -558,7 +622,7 @@
     var lookY = ORBIT.lookTarget.y - parallaxOffset.y;
     camera.lookAt(lookX, lookY, ORBIT.lookTarget.z);
 
-    renderer.render(scene, camera);
+    renderOneFrame();
   }
 
   // ─── Init ────────────────────────────────────────────────────
