@@ -39,11 +39,74 @@
   camera.position.set(0, 2, 5);
   camera.lookAt(0, 0, 0);
 
-  // ─── Proof of life: spinning cube ────────────────────────────
-  var geo = new THREE.BoxGeometry(1, 1, 1);
-  var mat = new THREE.MeshBasicMaterial({ color: 0xAA5500, wireframe: true });
-  var cube = new THREE.Mesh(geo, mat);
-  scene.add(cube);
+  // ─── Custom PS1-Style ShaderMaterial ───────────────────────────
+  // Vertex shader: snaps positions to a coarse screen-space grid.
+  // Fragment shader: simple directional + ambient lighting with flat color.
+  var VERT_SHADER = [
+    'uniform float uResolution;',
+    'varying vec3 vNormal;',
+    'varying vec3 vWorldPos;',
+    '',
+    'void main() {',
+    '  vNormal = normalize(normalMatrix * normal);',
+    '  vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;',
+    '',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '',
+    '  // PS1-style screen-space vertex snapping',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
+  var FRAG_SHADER = [
+    'uniform vec3 uColor;',
+    'uniform vec3 uLightDir;',
+    'uniform vec3 uAmbient;',
+    'varying vec3 vNormal;',
+    '',
+    'void main() {',
+    '  float diff = max(dot(vNormal, uLightDir), 0.0);',
+    '  vec3 lit = uColor * (uAmbient + diff * vec3(0.8));',
+    '  gl_FragColor = vec4(lit, 1.0);',
+    '}'
+  ].join('\n');
+
+  // Wireframe variant — no lighting, flat color
+  var FRAG_SHADER_WIRE = [
+    'uniform vec3 uColor;',
+    '',
+    'void main() {',
+    '  gl_FragColor = vec4(uColor, 1.0);',
+    '}'
+  ].join('\n');
+
+  // Light direction: from upper-right, matching lacquer reference illumination
+  var lightDir = new THREE.Vector3(0.5, 0.8, 0.3).normalize();
+
+  function makePS1Material(color, wireframe) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: parseFloat(resH) },
+        uColor: { value: new THREE.Color(color) },
+        uLightDir: { value: lightDir },
+        uAmbient: { value: new THREE.Vector3(0.25, 0.22, 0.18) }
+      },
+      vertexShader: VERT_SHADER,
+      fragmentShader: wireframe ? FRAG_SHADER_WIRE : FRAG_SHADER,
+      wireframe: !!wireframe,
+      side: THREE.DoubleSide
+    });
+  }
+
+  // ─── Test: PS1 material on icosahedron ────────────────────────
+  var testGeo = new THREE.IcosahedronGeometry(1, 1);
+  var testMat = makePS1Material(0xAA5500, false);
+  var testMesh = new THREE.Mesh(testGeo, testMat);
+  scene.add(testMesh);
 
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
@@ -55,8 +118,8 @@
     if (time - lastFrame < targetInterval) return;
     lastFrame = time;
 
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.015;
+    testMesh.rotation.x += 0.01;
+    testMesh.rotation.y += 0.015;
 
     renderer.render(scene, camera);
   }
