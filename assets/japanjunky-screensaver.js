@@ -18,13 +18,9 @@
   var canvas = document.getElementById('jj-screensaver');
   if (!canvas) return;
 
-  // Accessibility: respect user preferences
-  var prefersReducedMotion = window.matchMedia
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Accessibility: respect high-contrast preference
   var prefersHighContrast = window.matchMedia
     && window.matchMedia('(prefers-contrast: more)').matches;
-
-  // High contrast: disable screensaver entirely
   if (prefersHighContrast) return;
 
   // ─── Resolution ──────────────────────────────────────────────
@@ -514,13 +510,6 @@
 
     // 5. Draw dithered frame to display canvas
     displayCtx.putImageData(displayImageData, 0, 0);
-  }
-
-  // Reduced motion: render one static frame, then stop
-  if (prefersReducedMotion) {
-    updateCameraOrbit(0);
-    renderOneFrame();
-    return; // Don't start the animation loop
   }
 
   // ─── Camera Orbit ─────────────────────────────────────────────
