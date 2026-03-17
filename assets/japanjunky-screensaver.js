@@ -365,6 +365,12 @@
       cluster.rotation.y += ud.rotSpeed;
       cluster.rotation.x += ud.rotSpeed * 0.3;
 
+      // Apply cursor displacement + damping
+      cluster.position.x = ud.homePos.x + ud.displacement.x;
+      cluster.position.y = ud.homePos.y + ud.displacement.y;
+      cluster.position.z = ud.homePos.z + ud.displacement.z;
+      ud.displacement.multiplyScalar(0.97);
+
       // Per-vertex morphing
       for (var p = 0; p < ud.points.length; p++) {
         var base = ud.points[p];
