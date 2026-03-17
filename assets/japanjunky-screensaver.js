@@ -209,7 +209,7 @@
   function buildCityscape() {
     // Cityscape origin — front-right of Fuji, near the right tree
     var cx = 5.5;
-    var cz = -10;
+    var cz = -7;
     var ground = -0.5; // base y for buildings
 
     // Helper: add a box-shaped building
