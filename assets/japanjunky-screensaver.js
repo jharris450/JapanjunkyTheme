@@ -18,6 +18,15 @@
   var canvas = document.getElementById('jj-screensaver');
   if (!canvas) return;
 
+  // Accessibility: respect user preferences
+  var prefersReducedMotion = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var prefersHighContrast = window.matchMedia
+    && window.matchMedia('(prefers-contrast: more)').matches;
+
+  // High contrast: disable screensaver entirely
+  if (prefersHighContrast) return;
+
   // ─── Resolution ──────────────────────────────────────────────
   var resH = parseInt(config.resolution, 10) || 240;
   var resW = Math.round(resH * (4 / 3)); // 4:3 fixed aspect
@@ -507,6 +516,13 @@
     displayCtx.putImageData(displayImageData, 0, 0);
   }
 
+  // Reduced motion: render one static frame, then stop
+  if (prefersReducedMotion) {
+    updateCameraOrbit(0);
+    renderOneFrame();
+    return; // Don't start the animation loop
+  }
+
   // ─── Camera Orbit ─────────────────────────────────────────────
   var ORBIT = {
     radiusX: 14,
@@ -598,11 +614,46 @@
     }
   }
 
+  // ─── Performance Safeguards ───────────────────────────────────
+  var pauseReasons = { hidden: false, scrolled: false };
+
+  function isPaused() {
+    return pauseReasons.hidden || pauseReasons.scrolled;
+  }
+
+  function resumeIfNeeded() {
+    if (!isPaused()) {
+      lastFrame = performance.now(); // prevent time jump on resume
+      requestAnimationFrame(animate);
+    }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    pauseReasons.hidden = document.hidden;
+    resumeIfNeeded();
+  });
+
+  // Scroll sentinel — pause when user scrolls past the fold
+  var sentinel = document.createElement('div');
+  sentinel.style.cssText = 'position:absolute;top:100vh;width:1px;height:1px;pointer-events:none;';
+  document.body.appendChild(sentinel);
+
+  if (window.IntersectionObserver) {
+    var scrollObserver = new IntersectionObserver(function (entries) {
+      // Sentinel is at the fold. When it's NOT intersecting,
+      // the user has scrolled past the viewport height.
+      pauseReasons.scrolled = !entries[0].isIntersecting;
+      resumeIfNeeded();
+    }, { threshold: 0 });
+    scrollObserver.observe(sentinel);
+  }
+
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
   var lastFrame = 0;
 
   function animate(time) {
+    if (isPaused()) return;
     requestAnimationFrame(animate);
 
     if (time - lastFrame < targetInterval) return;
