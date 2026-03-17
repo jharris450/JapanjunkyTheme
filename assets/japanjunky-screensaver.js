@@ -325,14 +325,63 @@
     // Support legs (open frame look)
     addBox(0.15, 0.6, 0.5, 3.2, 0, 0.8, 0x0f1018);
     addBox(0.15, 0.6, 0.5, 3.8, 0, 0.8, 0x0f1018);
+
+    // === Window lights ===
+    // Tiny bright boxes on building faces to simulate lit windows.
+    // Warm amber/gold tones matching the lacquer palette.
+    var lightColors = [0xFFFF55, 0xAA5500, 0xAA5522, 0xAAAA55];
+
+    function addLight(x, y, z) {
+      var c = lightColors[Math.floor(Math.random() * lightColors.length)];
+      addBox(0.06, 0.06, 0.01, x, y, z + 0.26, c);
+    }
+
+    // Skytree observation deck lights
+    addLight(0.92, 2.85, 0);
+    addLight(1.08, 2.85, 0);
+    addLight(0.95, 3.65, 0);
+
+    // Tokyo Tower beacon
+    addLight(-0.8, 1.85, 0.2);
+    addLight(-0.75, 1.0, 0.2);
+
+    // NTT Docomo windows
+    addLight(2.0, 0.5, -0.5);
+    addLight(2.3, 0.9, -0.5);
+    addLight(2.1, 1.5, -0.5);
+    addLight(2.35, 2.1, -0.5);
+    addLight(2.15, 2.5, -0.5);
+
+    // Metro Government windows
+    addLight(-1.9, 0.6, -0.5);
+    addLight(-1.7, 1.3, -0.5);
+    addLight(-1.15, 0.8, -0.5);
+    addLight(-1.35, 1.9, -0.5);
+    addLight(-1.8, 2.4, -0.5);
+    addLight(-1.2, 2.6, -0.5);
+
+    // Fuji TV windows
+    addLight(3.3, 0.3, 0.8);
+    addLight(3.6, 0.5, 0.8);
+    addLight(3.4, 0.9, 0.8);
+
+    // Background building windows
+    addLight(-2.0, 0.6, 0.3);
+    addLight(-1.3, 0.8, -0.2);
+    addLight(-0.5, 0.5, 0.5);
+    addLight(1.8, 0.7, 0.1);
+    addLight(2.5, 0.5, -0.3);
+    addLight(3.2, 0.4, 0.4);
+    addLight(-2.7, 0.6, -0.1);
+    addLight(0.3, 0.5, 0.6);
+    addLight(3.8, 0.7, 0.2);
   }
 
   // ─── Trees ────────────────────────────────────────────────────
   function buildTrees() {
     var treePositions = [
       [-6, -1, -8],
-      [-3, -1.2, -10],
-      [5, -0.8, -9]
+      [-3, -1.2, -10]
     ];
     for (var i = 0; i < treePositions.length; i++) {
       var p = treePositions[i];
