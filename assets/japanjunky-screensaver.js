@@ -106,6 +106,42 @@
     });
   }
 
+  // Textured fragment shader — shows a texture instead of flat color
+  var FRAG_SHADER_TEX = [
+    'uniform sampler2D uTexture;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  gl_FragColor = texture2D(uTexture, vUv);',
+    '}'
+  ].join('\n');
+
+  var VERT_SHADER_TEX = [
+    'uniform float uResolution;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
+  function makePS1TextureMaterial(texture) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: parseFloat(resH) },
+        uTexture: { value: texture }
+      },
+      vertexShader: VERT_SHADER_TEX,
+      fragmentShader: FRAG_SHADER_TEX,
+      side: THREE.DoubleSide
+    });
+  }
+
   // ─── Sky Gradient ─────────────────────────────────────────────
   function buildSky() {
     var geo = new THREE.PlaneGeometry(80, 60);
@@ -382,7 +418,7 @@
   // of Fuji, mirroring Tokyo's placement on the right.
   function buildOsakaCityscape() {
     var cx = -5.5;
-    var cz = -7;
+    var cz = -4;
     var ground = -0.5;
 
     function addBox(w, h, d, x, y, z, color) {
@@ -452,21 +488,17 @@
     var dtnbColor = 0x121218;
     // Building block (the billboard building)
     addBox(0.9, 1.6, 0.5, 1.5, 0, 0.8, dtnbColor);
-    // Glico billboard panel (bright, visible)
-    addBox(0.7, 0.5, 0.01, 1.5, 1.0, 1.06, 0x000055);  // blue bg
-    // Running Man silhouette — built from small boxes
-    // Torso
-    addBox(0.08, 0.14, 0.02, 1.5, 1.08, 1.07, 0xFFFF55);
-    // Head
-    addBox(0.06, 0.06, 0.02, 1.5, 1.2, 1.07, 0xFFFF55);
-    // Left arm (raised)
-    addBox(0.1, 0.04, 0.02, 1.42, 1.18, 1.07, 0xFFFF55);
-    // Right arm (back)
-    addBox(0.1, 0.04, 0.02, 1.58, 1.12, 1.07, 0xFFFF55);
-    // Left leg (forward stride)
-    addBox(0.04, 0.12, 0.02, 1.45, 0.92, 1.07, 0xFFFF55);
-    // Right leg (back stride)
-    addBox(0.04, 0.12, 0.02, 1.56, 0.92, 1.07, 0xFFFF55);
+    // Glico Running Man billboard — real image, degraded by the VGA dither pipeline
+    var glicoLoader = new THREE.TextureLoader();
+    glicoLoader.load('assets/glico.png', function (tex) {
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      var billboardGeo = new THREE.PlaneGeometry(0.7, 0.9);
+      var billboardMat = makePS1TextureMaterial(tex);
+      var billboard = new THREE.Mesh(billboardGeo, billboardMat);
+      billboard.position.set(cx + 1.5, ground + 1.05 + 0.45, cz + 1.07);
+      scene.add(billboard);
+    });
     // Additional Dotonbori signage (neon strips)
     addBox(0.6, 0.06, 0.01, 1.5, 0.6, 1.06, 0xAA0000);
     addBox(0.5, 0.06, 0.01, 1.5, 0.4, 1.06, 0xAA5500);
@@ -764,6 +796,157 @@
     }
   }
 
+  // ─── JR Yamanote Line Train (floating debris) ────────────────
+  function buildYamanoteTrain() {
+    var train = new THREE.Group();
+
+    // Yamanote green: 0x80C241 mapped to VGA → greenish
+    var bodyColor = 0x228822;
+    var stripeColor = 0x55AA55;
+    var windowColor = 0x222244;
+    var roofColor = 0x555555;
+
+    // Train body — 3 connected cars
+    for (var car = 0; car < 3; car++) {
+      var offset = (car - 1) * 0.55;
+
+      // Car body
+      var bodyGeo = new THREE.BoxGeometry(0.5, 0.2, 0.18);
+      var bodyMat = makePS1Material(bodyColor, false);
+      var body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.set(offset, 0, 0);
+      train.add(body);
+
+      // Green stripe along the side
+      var stripeGeo = new THREE.BoxGeometry(0.5, 0.04, 0.19);
+      var stripeMat = makePS1Material(stripeColor, false);
+      var stripe = new THREE.Mesh(stripeGeo, stripeMat);
+      stripe.position.set(offset, 0.04, 0);
+      train.add(stripe);
+
+      // Windows
+      var winGeo = new THREE.BoxGeometry(0.08, 0.06, 0.19);
+      var winMat = makePS1Material(windowColor, false);
+      for (var w = 0; w < 3; w++) {
+        var win = new THREE.Mesh(winGeo, winMat);
+        win.position.set(offset + (w - 1) * 0.14, 0.04, 0);
+        train.add(win);
+      }
+
+      // Roof
+      var roofGeo = new THREE.BoxGeometry(0.48, 0.03, 0.16);
+      var roofMat = makePS1Material(roofColor, false);
+      var roof = new THREE.Mesh(roofGeo, roofMat);
+      roof.position.set(offset, 0.115, 0);
+      train.add(roof);
+    }
+
+    // Place it floating in space
+    var homePos = new THREE.Vector3(-2, 3.5, -4);
+    train.position.copy(homePos);
+    train.rotation.y = 0.3;
+
+    train.userData = {
+      homePos: homePos.clone(),
+      displacement: new THREE.Vector3(),
+      rotSpeedX: 0.003,
+      rotSpeedY: 0.008,
+      driftFreqX: 0.15,
+      driftFreqY: 0.12,
+      driftAmpX: 0.5,
+      driftAmpY: 0.3,
+      driftPhase: Math.random() * Math.PI * 2
+    };
+
+    scene.add(train);
+    floatingObjects.push(train);
+  }
+
+  // ─── Shinkansen (Tokyo ↔ Osaka shuttle) ─────────────────────
+  var shinkansen;
+  var shinkansenGroup;
+
+  function buildShinkansen() {
+    shinkansenGroup = new THREE.Group();
+
+    var bodyWhite = 0xAAAA99;
+    var stripeBlue = 0x000055;
+    var noseColor = 0xAAAA99;
+    var windowColor = 0x222244;
+
+    // Bullet nose (front)
+    var noseGeo = new THREE.ConeGeometry(0.07, 0.3, 4);
+    var noseMat = makePS1Material(noseColor, false);
+    var nose = new THREE.Mesh(noseGeo, noseMat);
+    nose.rotation.z = -Math.PI / 2;
+    nose.position.set(0.55, 0, 0);
+    shinkansenGroup.add(nose);
+
+    // Main body — 4 cars
+    for (var car = 0; car < 4; car++) {
+      var offset = car * 0.28 - 0.15;
+
+      var bodyGeo = new THREE.BoxGeometry(0.26, 0.1, 0.1);
+      var bodyMat = makePS1Material(bodyWhite, false);
+      var body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.set(offset, 0, 0);
+      shinkansenGroup.add(body);
+
+      // Blue stripe
+      var strGeo = new THREE.BoxGeometry(0.26, 0.02, 0.105);
+      var strMat = makePS1Material(stripeBlue, false);
+      var str = new THREE.Mesh(strGeo, strMat);
+      str.position.set(offset, -0.02, 0);
+      shinkansenGroup.add(str);
+
+      // Windows
+      var wGeo = new THREE.BoxGeometry(0.04, 0.025, 0.105);
+      var wMat = makePS1Material(windowColor, false);
+      for (var w = 0; w < 3; w++) {
+        var win = new THREE.Mesh(wGeo, wMat);
+        win.position.set(offset + (w - 1) * 0.07, 0.02, 0);
+        shinkansenGroup.add(win);
+      }
+    }
+
+    // Tail nose
+    var tailGeo = new THREE.ConeGeometry(0.07, 0.3, 4);
+    var tailMat = makePS1Material(noseColor, false);
+    var tail = new THREE.Mesh(tailGeo, tailMat);
+    tail.rotation.z = Math.PI / 2;
+    tail.position.set(-0.55, 0, 0);
+    shinkansenGroup.add(tail);
+
+    // Position at ground level, between cities
+    shinkansenGroup.position.set(0, -0.3, -6);
+    scene.add(shinkansenGroup);
+    shinkansen = shinkansenGroup;
+  }
+
+  function animateShinkansen(time) {
+    if (!shinkansen) return;
+    var t = time * 0.001;
+
+    // Ping-pong between Tokyo (x=5.5) and Osaka (x=-5.5)
+    // Uses a triangle wave for sharp back-and-forth
+    var speed = 0.15; // full trip ~7 seconds one way
+    var phase = (t * speed) % 2; // 0→2 repeating
+    var x;
+    if (phase < 1) {
+      x = -5 + phase * 10; // Osaka → Tokyo
+    } else {
+      x = 5 - (phase - 1) * 10; // Tokyo → Osaka
+    }
+    shinkansen.position.x = x;
+
+    // Point in direction of travel
+    if (phase < 1) {
+      shinkansen.rotation.y = 0; // facing Tokyo (positive x)
+    } else {
+      shinkansen.rotation.y = Math.PI; // facing Osaka (negative x)
+    }
+  }
+
   // ─── Build Scene ──────────────────────────────────────────────
   buildSky();
   buildFuji();
@@ -772,6 +955,8 @@
   buildOcean();
   buildTrees();
   buildFloatingPrimitives();
+  buildYamanoteTrain();
+  buildShinkansen();
   buildParticleLattices();
   buildWireframeShapes();
 
@@ -980,6 +1165,7 @@
     animateFloatingPrimitives(time);
     animateLatticeClusters(time);
     animateWireframeShapes();
+    animateShinkansen(time);
 
     updateCameraOrbit(time);
     updateParallax();
