@@ -377,10 +377,162 @@
     addLight(3.8, 0.7, 0.2);
   }
 
+  // ─── Osaka Cityscape ─────────────────────────────────────────
+  // Iconic Osaka landmarks as low-poly silhouettes, to the left
+  // of Fuji, mirroring Tokyo's placement on the right.
+  function buildOsakaCityscape() {
+    var cx = -5.5;
+    var cz = -7;
+    var ground = -0.5;
+
+    function addBox(w, h, d, x, y, z, color) {
+      var geo = new THREE.BoxGeometry(w, h, d);
+      var mat = makePS1Material(color, false);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(cx + x, ground + y + h / 2, cz + z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    function addCyl(rTop, rBot, h, segs, x, y, z, color) {
+      var geo = new THREE.CylinderGeometry(rTop, rBot, h, segs);
+      var mat = makePS1Material(color, false);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(cx + x, ground + y + h / 2, cz + z);
+      scene.add(mesh);
+      return mesh;
+    }
+
+    // --- Generic background buildings ---
+    var bgColor = 0x0f0e12;
+    var bgColor2 = 0x12111a;
+    var bgColor3 = 0x0a0a10;
+    addBox(0.5, 1.6, 0.5, -2.2, 0, 0.2, bgColor);
+    addBox(0.6, 2.0, 0.5, -1.5, 0, -0.3, bgColor2);
+    addBox(0.5, 1.4, 0.5, 2.0, 0, 0.4, bgColor3);
+    addBox(0.4, 1.8, 0.4, 2.7, 0, -0.1, bgColor);
+    addBox(0.6, 1.5, 0.5, 3.3, 0, 0.3, bgColor2);
+    addBox(0.5, 1.3, 0.4, -0.3, 0, 0.5, bgColor3);
+    addBox(0.4, 1.7, 0.5, 0.4, 0, -0.2, bgColor);
+
+    // === Osaka Castle (tiered castle with stone base) ===
+    var stoneColor = 0x1a1a1a;
+    var castleWhite = 0x555555;
+    var roofGreen = 0x0a2a0a;
+    // Stone base (wider trapezoid-like)
+    addBox(1.4, 0.6, 1.0, 0.0, 0, 0, stoneColor);
+    addBox(1.2, 0.15, 0.85, 0.0, 0.6, 0, 0x222222);
+    // Main keep — tiered floors
+    addBox(1.0, 0.5, 0.7, 0.0, 0.75, 0, castleWhite);
+    addBox(1.15, 0.1, 0.8, 0.0, 1.25, 0, roofGreen);  // roof 1
+    addBox(0.75, 0.45, 0.55, 0.0, 1.35, 0, castleWhite);
+    addBox(0.9, 0.1, 0.65, 0.0, 1.8, 0, roofGreen);    // roof 2
+    addBox(0.5, 0.35, 0.4, 0.0, 1.9, 0, castleWhite);
+    addBox(0.65, 0.1, 0.5, 0.0, 2.25, 0, roofGreen);   // roof 3
+    // Gold shachihoko (roof ornaments — tiny gold boxes)
+    addBox(0.06, 0.1, 0.06, -0.2, 2.35, 0, 0xAA5500);
+    addBox(0.06, 0.1, 0.06, 0.2, 2.35, 0, 0xAA5500);
+
+    // === Tsutenkaku Tower (Osaka's iconic lattice tower) ===
+    var tsutenkakuColor = 0x1a1a2a;
+    // Base structure
+    addBox(0.5, 0.6, 0.5, -1.8, 0, 0.5, 0x151520);
+    // Tower shaft (tapered)
+    addCyl(0.1, 0.2, 2.2, 4, -1.8, 0.6, 0.5, tsutenkakuColor);
+    // Observation deck
+    addCyl(0.25, 0.22, 0.3, 6, -1.8, 2.0, 0.5, 0x222233);
+    // Crown/dome
+    addCyl(0.15, 0.2, 0.25, 6, -1.8, 2.3, 0.5, 0x2a2a3a);
+    // Antenna
+    addCyl(0.02, 0.02, 0.5, 3, -1.8, 2.55, 0.5, 0x333344);
+    // Neon billboard base (warm glow)
+    addBox(0.35, 0.15, 0.01, -1.8, 1.4, 0.76, 0xAA5500);
+
+    // === Dotonbori — Glico Running Man building ===
+    var dtnbColor = 0x121218;
+    // Building block (the billboard building)
+    addBox(0.9, 1.6, 0.5, 1.5, 0, 0.8, dtnbColor);
+    // Glico billboard panel (bright, visible)
+    addBox(0.7, 0.5, 0.01, 1.5, 1.0, 1.06, 0x000055);  // blue bg
+    // Running Man silhouette — built from small boxes
+    // Torso
+    addBox(0.08, 0.14, 0.02, 1.5, 1.08, 1.07, 0xFFFF55);
+    // Head
+    addBox(0.06, 0.06, 0.02, 1.5, 1.2, 1.07, 0xFFFF55);
+    // Left arm (raised)
+    addBox(0.1, 0.04, 0.02, 1.42, 1.18, 1.07, 0xFFFF55);
+    // Right arm (back)
+    addBox(0.1, 0.04, 0.02, 1.58, 1.12, 1.07, 0xFFFF55);
+    // Left leg (forward stride)
+    addBox(0.04, 0.12, 0.02, 1.45, 0.92, 1.07, 0xFFFF55);
+    // Right leg (back stride)
+    addBox(0.04, 0.12, 0.02, 1.56, 0.92, 1.07, 0xFFFF55);
+    // Additional Dotonbori signage (neon strips)
+    addBox(0.6, 0.06, 0.01, 1.5, 0.6, 1.06, 0xAA0000);
+    addBox(0.5, 0.06, 0.01, 1.5, 0.4, 1.06, 0xAA5500);
+    // Neighboring Dotonbori buildings
+    addBox(0.5, 1.3, 0.5, 2.2, 0, 0.9, 0x101018);
+    addBox(0.5, 1.1, 0.5, 0.8, 0, 0.9, 0x0e0e16);
+
+    // === Umeda Sky Building (twin towers with floating garden) ===
+    var umedaColor = 0x151520;
+    // Left tower
+    addBox(0.4, 3.0, 0.5, -0.9, 0, -0.6, umedaColor);
+    // Right tower
+    addBox(0.4, 3.0, 0.5, -0.35, 0, -0.6, umedaColor);
+    // Floating Garden Observatory (connecting bridge at top)
+    addBox(0.95, 0.2, 0.6, -0.62, 2.8, -0.6, 0x1a1a28);
+    // Open atrium (gap in the middle at top — lighter strip)
+    addBox(0.15, 0.15, 0.55, -0.62, 3.0, -0.6, 0x222233);
+
+    // === Window lights ===
+    var lightColors = [0xFFFF55, 0xAA5500, 0xAA5522, 0xAAAA55];
+
+    function addLight(x, y, z) {
+      var c = lightColors[Math.floor(Math.random() * lightColors.length)];
+      addBox(0.06, 0.06, 0.01, x, y, z + 0.26, c);
+    }
+
+    // Osaka Castle gold accents
+    addLight(-0.1, 1.0, 0);
+    addLight(0.1, 1.5, 0);
+    addLight(0.0, 2.0, 0);
+
+    // Tsutenkaku lights
+    addLight(-1.85, 1.5, 0.5);
+    addLight(-1.75, 1.8, 0.5);
+    addLight(-1.8, 2.1, 0.5);
+
+    // Umeda Sky Building windows
+    addLight(-0.95, 0.5, -0.6);
+    addLight(-0.85, 1.2, -0.6);
+    addLight(-0.9, 2.0, -0.6);
+    addLight(-0.4, 0.6, -0.6);
+    addLight(-0.3, 1.4, -0.6);
+    addLight(-0.35, 2.2, -0.6);
+    addLight(-0.95, 2.5, -0.6);
+    addLight(-0.3, 2.6, -0.6);
+
+    // Dotonbori area lights
+    addLight(1.2, 0.3, 0.8);
+    addLight(1.7, 0.3, 0.8);
+    addLight(2.1, 0.4, 0.9);
+    addLight(0.9, 0.5, 0.9);
+    addLight(2.3, 0.7, 0.9);
+
+    // Background building windows
+    addLight(-2.2, 0.5, 0.2);
+    addLight(-1.5, 0.7, -0.3);
+    addLight(2.0, 0.5, 0.4);
+    addLight(2.7, 0.6, -0.1);
+    addLight(3.3, 0.5, 0.3);
+    addLight(-0.3, 0.4, 0.5);
+    addLight(0.4, 0.6, -0.2);
+  }
+
   // ─── Trees ────────────────────────────────────────────────────
   function buildTrees() {
     var treePositions = [
-      [-6, -1, -8],
       [-3, -1.2, -10]
     ];
     for (var i = 0; i < treePositions.length; i++) {
@@ -616,6 +768,7 @@
   buildSky();
   buildFuji();
   buildCityscape();
+  buildOsakaCityscape();
   buildOcean();
   buildTrees();
   buildFloatingPrimitives();
