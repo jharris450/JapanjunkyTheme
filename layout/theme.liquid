@@ -128,6 +128,11 @@
 </head>
 
 <body class="jj-body">
+<canvas id="jj-screensaver" aria-hidden="true" tabindex="-1" style="
+  position:fixed;top:0;left:0;width:100vw;height:100vh;
+  z-index:0;image-rendering:pixelated;image-rendering:crisp-edges;
+  pointer-events:none;
+"></canvas>
   <div class="jj-page-wrapper jj-crt-frame jj-crt-on">
     {% sections 'header-group' %}
 
@@ -138,6 +143,20 @@
     {% sections 'footer-group' %}
   </div>
 
+  {%- if request.page_type == 'index' -%}
+  <script>
+    window.JJ_SCREENSAVER_CONFIG = {
+      enabled: {{ settings.screensaver_enabled | default: true }},
+      resolution: {{ settings.screensaver_resolution | default: 240 }},
+      fps: {{ settings.screensaver_fps | default: 24 }},
+      orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
+      mouseInteraction: {{ settings.screensaver_mouse | default: true }}
+    };
+  </script>
+  <script src="{{ 'three.min.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
+  {%- endif -%}
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-parallax.js' | asset_url }}" defer></script>

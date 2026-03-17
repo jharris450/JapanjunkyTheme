@@ -1,1 +1,51 @@
-[]
+[
+  {
+    "name": "Screensaver",
+    "settings": [
+      {
+        "type": "checkbox",
+        "id": "screensaver_enabled",
+        "label": "Enable homepage screensaver",
+        "default": true
+      },
+      {
+        "type": "select",
+        "id": "screensaver_resolution",
+        "label": "Render resolution",
+        "options": [
+          { "value": "240", "label": "240p (fastest)" },
+          { "value": "360", "label": "360p" },
+          { "value": "480", "label": "480p (sharpest)" }
+        ],
+        "default": "240"
+      },
+      {
+        "type": "range",
+        "id": "screensaver_fps",
+        "label": "Target framerate",
+        "min": 15,
+        "max": 30,
+        "step": 1,
+        "default": 24,
+        "unit": "fps"
+      },
+      {
+        "type": "select",
+        "id": "screensaver_orbit_speed",
+        "label": "Camera orbit speed",
+        "options": [
+          { "value": "slow", "label": "Slow" },
+          { "value": "medium", "label": "Medium" },
+          { "value": "fast", "label": "Fast" }
+        ],
+        "default": "slow"
+      },
+      {
+        "type": "checkbox",
+        "id": "screensaver_mouse",
+        "label": "Enable mouse interaction",
+        "default": true
+      }
+    ]
+  }
+]
