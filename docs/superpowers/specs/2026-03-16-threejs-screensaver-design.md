@@ -93,18 +93,23 @@ void main() {
 }
 ```
 
+This is a simplified excerpt showing only the position snapping. The full implementation uses a custom `ShaderMaterial` that replaces Three.js's built-in materials, handling lighting via a simple directional + ambient calculation in the fragment shader alongside the snapped vertex positions.
+
 Strong/coarse snapping — visible vertex popping as the camera orbits. Closer objects jitter more. Fuji in the background stays relatively stable.
 
 ### 3. Render to Offscreen Canvas
 - Resolution: 320×240 (configurable: 240p / 360p / 480p)
+- Render target uses a fixed 4:3 aspect ratio regardless of viewport — the stretch/squash when mapped to non-4:3 viewports is intentional, matching how VGA content was displayed on various monitors
 - Three.js renders to `WebGLRenderTarget`
 
 ### 4. Read Pixels to Canvas 2D
-- `readPixels()` from WebGL framebuffer
-- Write to 2D canvas `ImageData`
+- `readPixels()` from WebGL framebuffer to CPU-side `ImageData`
+- `readPixels()` is a synchronous GPU stall, but at 320×240 (307KB of pixel data) the cost is negligible — this is orders of magnitude smaller than typical readback bottlenecks at full resolution
+- If profiling reveals issues on low-end hardware, fallback option: perform quantization + dithering entirely in a fragment shader (Approach A from brainstorming), eliminating CPU readback
 
 ### 5. VGA Palette Quantization
 - Map each pixel to nearest color in the standard VGA 256-color palette
+- This is a **separate palette** from the site's existing 32-color CRT phosphor palette used in `japanjunky-dither.js` — the screensaver intentionally uses VGA 256 to produce a distinct "PC rendering" look, while the product image dithering uses the CRT phosphor palette for a "monitor displaying" look
 - Lacquer colors map to VGA equivalents:
   - Black lacquer → `#000000`
   - Burnished gold → VGA `#AA5500`
@@ -112,12 +117,12 @@ Strong/coarse snapping — visible vertex popping as the camera orbits. Closer o
   - Deep red → VGA `#AA0000`
   - Dark indigo → VGA `#000055`
   - Deep green → VGA `#005500`
-  - Warm amber → VGA `#AA5500`
+  - Warm amber → VGA `#AA5522` (differentiated from burnished gold)
   - Snow/cream → VGA `#AAAAAA`
 - Scene naturally maps to ~20-30 VGA entries across these hue families
 
 ### 6. Floyd-Steinberg Dithering
-- Reuses algorithm from `japanjunky-dither.js` with VGA 256 palette
+- Reuses the Floyd-Steinberg *algorithm* from `japanjunky-dither.js` but with the VGA 256 palette instead of the CRT phosphor palette
 - For each pixel: find nearest VGA color, compute error, distribute to neighbors (7/16 right, 3/16 below-left, 5/16 below, 1/16 below-right)
 - At 320×240 = 76,800 pixels per frame. At 24fps target = ~1.8M pixel ops/sec — well within CPU budget
 
@@ -170,9 +175,9 @@ canvas.jj-screensaver {
 ### New Files
 | File | Purpose |
 |------|---------|
-| `assets/three.min.js` | Three.js library (r160+) |
+| `assets/three.min.js` | Three.js library (r160+, ~700KB min / ~150KB gzip). Bundled as Shopify asset rather than CDN to avoid external dependency. A custom stripped build excluding unused modules (audio, loaders, animation system) could reduce this. |
 | `assets/japanjunky-screensaver.js` | Scene setup, geometry, orbit, interaction, render loop |
-| `assets/japanjunky-screensaver-post.js` | VGA quantization + Floyd-Steinberg dithering (extends dither.js patterns) |
+| `assets/japanjunky-screensaver-post.js` | VGA quantization + Floyd-Steinberg dithering. Exposes a global `JJ_ScreensaverPost` object with a `dither(imageData)` method. Called by `japanjunky-screensaver.js` after reading pixels from the WebGL framebuffer. |
 
 ### Modified Files
 | File | Change |
@@ -198,10 +203,10 @@ canvas.jj-screensaver {
 |---------|---------|
 | 0 | `#jj-screensaver` canvas |
 | 1 | `.jj-crt-frame` background |
-| 2 | Site content (header, columns, footer) |
-| 999 | `.jj-crt-frame::before` (aperture grille) |
-| 1000 | `.jj-crt-frame::after` (scanlines + vignette) |
-| 1001 | `.jj-body::before` (damper wires) |
+| auto | Site content (header, columns, footer) |
+| 9997 | `.jj-body::before` (damper wires) |
+| 9998 | `.jj-crt-frame::before` (aperture grille) |
+| 9999 | `.jj-crt-frame::after` (scanlines + vignette) |
 
 ### Content Transparency
 - Content panels keep opaque black backgrounds
@@ -243,7 +248,7 @@ Homepage only — no performance impact on other pages.
 
 - **defer loading:** Three.js + screensaver scripts load after HTML parse — no render blocking
 - **Tab visibility:** `document.hidden` → pause render loop entirely
-- **Intersection Observer:** Pause rendering if user scrolls below the fold (mobile)
+- **Scroll pause:** On mobile, observe a sentinel element placed at the fold in the content flow. When the sentinel scrolls out of view (meaning the user has scrolled past the homepage hero area), pause the render loop. The canvas itself is `position: fixed` and never leaves the viewport, so IntersectionObserver targets the sentinel, not the canvas.
 - **WebGL fallback:** If context creation fails, silently fall back to plain black bg — no errors, no broken layout
 - **prefers-reduced-motion:** Render one static dithered frame, then stop the loop
 - **Memory:** At 320×240, offscreen canvas + ImageData is ~300KB
@@ -254,6 +259,6 @@ Homepage only — no performance impact on other pages.
 
 - `<canvas>` gets `aria-hidden="true"` — purely decorative, no semantic content
 - `prefers-reduced-motion: reduce` → static frame, no animation
-- `prefers-contrast: more` → could disable screensaver entirely or boost contrast of dithered output
+- `prefers-contrast: more` → disable screensaver entirely, fall back to plain black background
 - No keyboard focus on the canvas — tab order skips it entirely
 - Screensaver does not interfere with existing keyboard navigation
