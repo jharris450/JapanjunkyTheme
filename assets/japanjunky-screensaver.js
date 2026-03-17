@@ -102,11 +102,131 @@
     });
   }
 
-  // ─── Test: PS1 material on icosahedron ────────────────────────
-  var testGeo = new THREE.IcosahedronGeometry(1, 1);
-  var testMat = makePS1Material(0xAA5500, false);
-  var testMesh = new THREE.Mesh(testGeo, testMat);
-  scene.add(testMesh);
+  // ─── Sky Gradient ─────────────────────────────────────────────
+  function buildSky() {
+    var geo = new THREE.PlaneGeometry(80, 60);
+    var colors = new Float32Array(geo.attributes.position.count * 3);
+    var pos = geo.attributes.position;
+    var topColor = new THREE.Color(0xAA5500);
+    var bottomColor = new THREE.Color(0x0a0800);
+    for (var i = 0; i < pos.count; i++) {
+      var t = (pos.getY(i) + 30) / 60;
+      t = Math.max(0, Math.min(1, t));
+      var col = new THREE.Color().lerpColors(bottomColor, topColor, t);
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    var mat = new THREE.ShaderMaterial({
+      vertexShader: [
+        'varying vec3 vColor;',
+        'void main() {',
+        '  vColor = color;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'varying vec3 vColor;',
+        'void main() {',
+        '  gl_FragColor = vec4(vColor, 1.0);',
+        '}'
+      ].join('\n'),
+      vertexColors: true,
+      depthWrite: false
+    });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(0, 8, -35);
+    scene.add(mesh);
+  }
+
+  // ─── Mt. Fuji ─────────────────────────────────────────────────
+  function buildFuji() {
+    var fujiGeo = new THREE.ConeGeometry(8, 10, 8);
+    var fujiMat = makePS1Material(0x1a1008, false);
+    var fuji = new THREE.Mesh(fujiGeo, fujiMat);
+    fuji.position.set(0, 3, -20);
+    scene.add(fuji);
+
+    var capGeo = new THREE.ConeGeometry(2.5, 2.5, 8);
+    var capMat = makePS1Material(0xAAAA88, false);
+    var cap = new THREE.Mesh(capGeo, capMat);
+    cap.position.set(0, 7.8, -20);
+    scene.add(cap);
+
+    var hill1Geo = new THREE.ConeGeometry(5, 4, 6);
+    var hill1Mat = makePS1Material(0x0f0a05, false);
+    var hill1 = new THREE.Mesh(hill1Geo, hill1Mat);
+    hill1.position.set(-8, 0.5, -16);
+    scene.add(hill1);
+
+    var hill2Geo = new THREE.ConeGeometry(4, 3, 5);
+    var hill2Mat = makePS1Material(0x120d06, false);
+    var hill2 = new THREE.Mesh(hill2Geo, hill2Mat);
+    hill2.position.set(7, 0, -14);
+    scene.add(hill2);
+  }
+
+  // ─── Wireframe Ocean ──────────────────────────────────────────
+  var oceanGeo, oceanPositions;
+
+  function buildOcean() {
+    oceanGeo = new THREE.PlaneGeometry(40, 30, 30, 30);
+    oceanGeo.rotateX(-Math.PI / 2);
+    oceanPositions = new Float32Array(oceanGeo.attributes.position.count);
+    var pos = oceanGeo.attributes.position;
+    for (var i = 0; i < pos.count; i++) {
+      oceanPositions[i] = pos.getY(i);
+    }
+    var mat = makePS1Material(0xAA5522, true);
+    var ocean = new THREE.Mesh(oceanGeo, mat);
+    ocean.position.set(0, -1.5, -5);
+    scene.add(ocean);
+  }
+
+  function animateOcean(time) {
+    if (!oceanGeo) return;
+    var pos = oceanGeo.attributes.position;
+    var t = time * 0.001;
+    for (var i = 0; i < pos.count; i++) {
+      var x = pos.getX(i);
+      var z = pos.getZ(i);
+      var wave = Math.sin(x * 0.3 + t * 0.8) * 0.4
+               + Math.sin(z * 0.5 + t * 0.5) * 0.3
+               + Math.sin((x + z) * 0.2 + t * 1.2) * 0.2;
+      pos.setY(i, oceanPositions[i] + wave);
+    }
+    pos.needsUpdate = true;
+  }
+
+  // ─── Trees ────────────────────────────────────────────────────
+  function buildTrees() {
+    var treePositions = [
+      [-6, -1, -8],
+      [-3, -1.2, -10],
+      [5, -0.8, -9]
+    ];
+    for (var i = 0; i < treePositions.length; i++) {
+      var p = treePositions[i];
+      var trunkGeo = new THREE.CylinderGeometry(0.15, 0.2, 1.5, 4);
+      var trunkMat = makePS1Material(0x5a3410, false);
+      var trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.set(p[0], p[1] + 0.75, p[2]);
+      scene.add(trunk);
+
+      var canopyGeo = new THREE.ConeGeometry(1.2, 2.5, 5);
+      var canopyMat = makePS1Material(0x005500, false);
+      var canopy = new THREE.Mesh(canopyGeo, canopyMat);
+      canopy.position.set(p[0], p[1] + 2.5, p[2]);
+      scene.add(canopy);
+    }
+  }
+
+  // ─── Build Scene ──────────────────────────────────────────────
+  buildSky();
+  buildFuji();
+  buildOcean();
+  buildTrees();
 
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
@@ -118,8 +238,7 @@
     if (time - lastFrame < targetInterval) return;
     lastFrame = time;
 
-    testMesh.rotation.x += 0.01;
-    testMesh.rotation.y += 0.015;
+    animateOcean(time);
 
     renderer.render(scene, camera);
   }
