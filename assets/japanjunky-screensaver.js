@@ -207,9 +207,9 @@
   // Iconic structures as low-poly silhouettes, clustered to the
   // left of Fuji. Scaled small so Fuji remains the anchor.
   function buildCityscape() {
-    // Cityscape origin — front-right of Fuji, between camera and mountain
+    // Cityscape origin — front-right of Fuji, near the right tree
     var cx = 5.5;
-    var cz = -13;
+    var cz = -10;
     var ground = -0.5; // base y for buildings
 
     // Helper: add a box-shaped building
