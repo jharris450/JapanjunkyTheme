@@ -485,6 +485,49 @@
     parallaxOffset.y += (mouseNorm.y * MAX_PARALLAX - parallaxOffset.y) * PARALLAX_LERP;
   }
 
+  // ─── Object Cursor Reaction ───────────────────────────────────
+  var raycaster = new THREE.Raycaster();
+  var mouseVec2 = new THREE.Vector2();
+  var REACTION_RADIUS = 3;
+  var REPULSION_STRENGTH = 0.15;
+  var MAX_DISPLACEMENT = 0.5;
+  var DAMPING = 0.97;
+
+  // Scratch vectors (reused per frame to avoid GC pressure)
+  var _closestPoint = new THREE.Vector3();
+  var _pushDir = new THREE.Vector3();
+
+  function updateCursorReaction() {
+    if (config.mouseInteraction === false || isMobile) return;
+
+    mouseVec2.set(mouseNorm.x, -mouseNorm.y); // flip Y for Three.js coords
+    raycaster.setFromCamera(mouseVec2, camera);
+
+    var ray = raycaster.ray;
+
+    for (var i = 0; i < floatingObjects.length; i++) {
+      var obj = floatingObjects[i];
+      var ud = obj.userData;
+      if (!ud.displacement) continue;
+
+      ray.closestPointToPoint(obj.position, _closestPoint);
+      var dist = obj.position.distanceTo(_closestPoint);
+
+      if (dist < REACTION_RADIUS) {
+        var force = REPULSION_STRENGTH / (dist * dist + 0.1);
+        force = Math.min(force, MAX_DISPLACEMENT);
+
+        _pushDir.subVectors(obj.position, _closestPoint).normalize();
+        ud.displacement.add(_pushDir.multiplyScalar(force));
+
+        // Clamp total displacement
+        if (ud.displacement.length() > MAX_DISPLACEMENT) {
+          ud.displacement.normalize().multiplyScalar(MAX_DISPLACEMENT);
+        }
+      }
+    }
+  }
+
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
   var lastFrame = 0;
@@ -496,6 +539,7 @@
     lastFrame = time;
 
     animateOcean(time);
+    updateCursorReaction();
     animateFloatingPrimitives(time);
     animateLatticeClusters(time);
     animateWireframeShapes();
