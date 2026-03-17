@@ -36,8 +36,7 @@
   // ─── Scene + Camera ──────────────────────────────────────────
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(60, resW / resH, 0.1, 100);
-  camera.position.set(0, 2, 5);
-  camera.lookAt(0, 0, 0);
+  // Camera positioning handled by orbit system (see updateCameraOrbit)
 
   // ─── Custom PS1-Style ShaderMaterial ───────────────────────────
   // Vertex shader: snaps positions to a coarse screen-space grid.
@@ -438,6 +437,54 @@
   buildParticleLattices();
   buildWireframeShapes();
 
+  // ─── Camera Orbit ─────────────────────────────────────────────
+  var ORBIT = {
+    radiusX: 14,
+    radiusZ: 12,
+    baseHeight: 5,
+    bobAmount: 0.25,
+    lookTarget: new THREE.Vector3(0, 1.5, -10),
+    // 2*PI / desired_seconds: slow=~100s, medium=~60s, fast=~40s
+    speed: { slow: 0.063, medium: 0.105, fast: 0.157 }
+  };
+  var orbitSpeed = ORBIT.speed[config.orbitSpeed] || ORBIT.speed.slow;
+
+  function updateCameraOrbit(time) {
+    var t = time * 0.001 * orbitSpeed;
+
+    camera.position.x = Math.cos(t) * ORBIT.radiusX;
+    camera.position.z = Math.sin(t) * ORBIT.radiusZ;
+    camera.position.y = ORBIT.baseHeight
+      + Math.sin(t * 0.3) * ORBIT.bobAmount;
+
+    camera.lookAt(ORBIT.lookTarget);
+  }
+
+  // ─── Mouse Parallax ──────────────────────────────────────────
+  var mouseNorm = { x: 0, y: 0 };
+  var parallaxOffset = { x: 0, y: 0 };
+  var MAX_PARALLAX = 0.5; // world units offset on look target
+  var PARALLAX_LERP = 0.05;
+  var isMobile = window.matchMedia && window.matchMedia('(hover: none)').matches;
+
+  if (config.mouseInteraction !== false && !isMobile) {
+    window.addEventListener('mousemove', function (e) {
+      mouseNorm.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseNorm.y = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+
+    // Ease back when mouse leaves window
+    document.addEventListener('mouseleave', function () {
+      mouseNorm.x = 0;
+      mouseNorm.y = 0;
+    });
+  }
+
+  function updateParallax() {
+    parallaxOffset.x += (mouseNorm.x * MAX_PARALLAX - parallaxOffset.x) * PARALLAX_LERP;
+    parallaxOffset.y += (mouseNorm.y * MAX_PARALLAX - parallaxOffset.y) * PARALLAX_LERP;
+  }
+
   // ─── Render Loop ─────────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
   var lastFrame = 0;
@@ -452,6 +499,14 @@
     animateFloatingPrimitives(time);
     animateLatticeClusters(time);
     animateWireframeShapes();
+
+    updateCameraOrbit(time);
+    updateParallax();
+
+    // Apply parallax offset to look target
+    var lookX = ORBIT.lookTarget.x + parallaxOffset.x;
+    var lookY = ORBIT.lookTarget.y - parallaxOffset.y;
+    camera.lookAt(lookX, lookY, ORBIT.lookTarget.z);
 
     renderer.render(scene, camera);
   }
