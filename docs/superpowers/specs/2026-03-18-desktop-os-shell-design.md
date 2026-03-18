@@ -33,6 +33,9 @@ z-index 2    ┌─────────────────────�
 z-index 1000 ┌─────────────────────────────┐
              │  Taskbar (DOM, fixed)        │  existing, enhanced
              └─────────────────────────────┘
+z-index      ┌─────────────────────────────┐
+9997-9999    │  CRT overlays (existing)     │  pointer-events:none, cosmetic only
+             └─────────────────────────────┘
 ```
 
 - **Window Manager Layer**: JavaScript module creates, positions, drags, focuses, minimizes, and closes window DOM elements.
@@ -92,7 +95,7 @@ z-index 1000 ┌─────────────────────�
 - Click and hold title bar to initiate drag
 - Window follows cursor with offset preserved (no jump-to-center)
 - Slight CSS drop shadow while dragging to indicate "lifted" state
-- Custom cursor switches to "move" variant from `JJ_CURSOR_SETS` during drag
+- During drag, temporarily use native CSS `cursor: move` (override the custom cursor system via high-specificity rule on `.jj-window--dragging`). No new cursor PNGs needed for Phase 1.
 - Other windows remain interactive underneath
 
 ### Focus / Z-ordering
