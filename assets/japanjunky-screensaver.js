@@ -91,8 +91,15 @@
     '  float angle = vUv.x * 6.2832;',
     '  float depth = vUv.y;',
     '',
-    '  float swirl1 = angle * 2.0 + depth * 4.0 + uTime * uSwirlSpeed;',
-    '  float swirl2 = angle * 3.0 - depth * 2.5 + uTime * uSwirlSpeed * 1.4;',
+    '  float ringCount = 10.0;',
+    '  float ringId = floor(depth * ringCount);',
+    '  float ringFract = fract(depth * ringCount);',
+    '',
+    '  float ringDir = step(0.5, fract(ringId * 0.5)) * 2.0 - 1.0;',
+    '  float ringSpeed = uSwirlSpeed * (1.0 + ringId * 0.12) * ringDir;',
+    '',
+    '  float swirl1 = angle * 2.0 + ringId * 0.7 + uTime * ringSpeed;',
+    '  float swirl2 = angle * 3.0 - depth * 2.5 + uTime * ringSpeed * 1.4;',
     '  float turb = sin(angle * 5.0 + depth * 8.0 + uTime * 0.7) * 0.3;',
     '  float t = swirl1 + sin(swirl2) * 0.4 + turb;',
     '',
@@ -104,7 +111,11 @@
     '  float burst = pow(max(0.0, sin(angle * 6.0 + depth * 10.0 - uTime * 2.5)), 8.0);',
     '  val += burst * 0.5;',
     '',
-    '  float falloff = smoothstep(0.0, 0.2, depth) * smoothstep(1.0, 0.65, depth);',
+    '  float edgeDist = min(ringFract, 1.0 - ringFract);',
+    '  float edgeGlow = 1.0 - smoothstep(0.0, 0.06, edgeDist);',
+    '  val += edgeGlow * 0.6;',
+    '',
+    '  float falloff = smoothstep(0.0, 0.15, depth) * smoothstep(1.0, 0.65, depth);',
     '  val *= 0.45 + 0.55 * falloff;',
     '  val += smoothstep(0.75, 1.0, depth) * 0.3;',
     '',
@@ -260,6 +271,60 @@
 
   var sparkles = new THREE.Points(sparkleGeo, sparkleMat);
   scene.add(sparkles);
+
+  // ─── Portal Rings ──────────────────────────────────────────
+  var RING_FRAG = [
+    'uniform float uHue;',
+    'varying vec2 vUv;',
+    '',
+    'vec3 ringPalette(float t) {',
+    '  t = fract(t);',
+    '  vec3 c0 = vec3(0.0, 1.0, 1.0);',
+    '  vec3 c1 = vec3(1.0, 0.1, 0.8);',
+    '  vec3 c2 = vec3(1.0, 0.75, 0.0);',
+    '  vec3 c3 = vec3(0.2, 1.0, 0.4);',
+    '  vec3 c4 = vec3(1.0, 0.4, 0.7);',
+    '  float s = t * 5.0;',
+    '  vec3 c = mix(c0, c1, clamp(s, 0.0, 1.0));',
+    '  c = mix(c, c2, clamp(s - 1.0, 0.0, 1.0));',
+    '  c = mix(c, c3, clamp(s - 2.0, 0.0, 1.0));',
+    '  c = mix(c, c4, clamp(s - 3.0, 0.0, 1.0));',
+    '  c = mix(c, c0, clamp(s - 4.0, 0.0, 1.0));',
+    '  return c;',
+    '}',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv - 0.5;',
+    '  float dist = length(uv) * 2.0;',
+    '  float ring = smoothstep(0.6, 0.78, dist) * smoothstep(1.0, 0.88, dist);',
+    '  vec3 color = ringPalette(uHue);',
+    '  gl_FragColor = vec4(color * 1.5, ring);',
+    '}'
+  ].join('\n');
+
+  var PORTAL_RING_COUNT = 6;
+  var portalRings = [];
+  var ringGeo = new THREE.PlaneGeometry(5.6, 5.6);
+
+  for (var ri = 0; ri < PORTAL_RING_COUNT; ri++) {
+    var ringMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: parseFloat(resH) },
+        uHue: { value: ri / PORTAL_RING_COUNT }
+      },
+      vertexShader: GLOW_VERT,
+      fragmentShader: RING_FRAG,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    var ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.position.z = 4 + ri * 5;
+    ringMesh.userData.rotSpeed = (0.3 + ri * 0.15) * (ri % 2 === 0 ? 1 : -1);
+    scene.add(ringMesh);
+    portalRings.push(ringMesh);
+  }
 
   // ─── PS1 Textured Material ───────────────────────────────────
   var TEX_VERT = [
@@ -530,6 +595,11 @@
     tunnel.material.uniforms.uTime.value = t;
     glow.material.uniforms.uTime.value = t;
     sparkles.material.uniforms.uTime.value = t;
+
+    // Spin portal rings
+    for (var ri = 0; ri < portalRings.length; ri++) {
+      portalRings[ri].rotation.z += portalRings[ri].userData.rotSpeed * 0.02;
+    }
 
     // Spawn and animate flying objects
     spawnObject(time);
