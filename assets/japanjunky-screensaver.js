@@ -71,21 +71,44 @@
     'uniform float uSwirlSpeed;',
     'varying vec2 vUv;',
     '',
-    'vec3 hsv2rgb(vec3 c) {',
-    '  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);',
-    '  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);',
-    '  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);',
+    'vec3 fusionPalette(float t) {',
+    '  t = fract(t);',
+    '  vec3 c0 = vec3(0.0, 1.0, 1.0);',
+    '  vec3 c1 = vec3(1.0, 0.1, 0.8);',
+    '  vec3 c2 = vec3(1.0, 0.75, 0.0);',
+    '  vec3 c3 = vec3(0.2, 1.0, 0.4);',
+    '  vec3 c4 = vec3(1.0, 0.4, 0.7);',
+    '  float s = t * 5.0;',
+    '  vec3 c = mix(c0, c1, clamp(s, 0.0, 1.0));',
+    '  c = mix(c, c2, clamp(s - 1.0, 0.0, 1.0));',
+    '  c = mix(c, c3, clamp(s - 2.0, 0.0, 1.0));',
+    '  c = mix(c, c4, clamp(s - 3.0, 0.0, 1.0));',
+    '  c = mix(c, c0, clamp(s - 4.0, 0.0, 1.0));',
+    '  return c;',
     '}',
     '',
     'void main() {',
     '  float angle = vUv.x * 6.2832;',
     '  float depth = vUv.y;',
-    '  float hue = fract(angle * 2.0 + depth * 4.0 + uTime * uSwirlSpeed);',
-    '  float sat = 0.85 + 0.15 * sin(depth * 6.0 + uTime * 2.0);',
-    '  float val = 0.6 + 0.3 * sin(depth * 3.0 - uTime * 1.5);',
-    '  float falloff = smoothstep(0.0, 0.3, depth) * smoothstep(1.0, 0.7, depth);',
-    '  val *= 0.4 + 0.6 * falloff;',
-    '  vec3 color = hsv2rgb(vec3(hue, sat, val));',
+    '',
+    '  float swirl1 = angle * 2.0 + depth * 4.0 + uTime * uSwirlSpeed;',
+    '  float swirl2 = angle * 3.0 - depth * 2.5 + uTime * uSwirlSpeed * 1.4;',
+    '  float turb = sin(angle * 5.0 + depth * 8.0 + uTime * 0.7) * 0.3;',
+    '  float t = swirl1 + sin(swirl2) * 0.4 + turb;',
+    '',
+    '  vec3 color = fusionPalette(t);',
+    '',
+    '  float val = 0.7 + 0.3 * sin(depth * 6.0 - uTime * 2.0);',
+    '  val *= 0.85 + 0.15 * sin(angle * 4.0 + uTime * 3.0);',
+    '',
+    '  float burst = pow(max(0.0, sin(angle * 6.0 + depth * 10.0 - uTime * 2.5)), 8.0);',
+    '  val += burst * 0.5;',
+    '',
+    '  float falloff = smoothstep(0.0, 0.2, depth) * smoothstep(1.0, 0.65, depth);',
+    '  val *= 0.45 + 0.55 * falloff;',
+    '  val += smoothstep(0.75, 1.0, depth) * 0.3;',
+    '',
+    '  color *= val;',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
@@ -112,11 +135,54 @@
 
   var tunnel = buildTunnel();
 
-  // ─── Vanishing Point Glow ────────────────────────────────────
+  // ─── Starburst Glow ─────────────────────────────────────────
+  var GLOW_VERT = [
+    'uniform float uResolution;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
+  var GLOW_FRAG = [
+    'uniform float uTime;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv - 0.5;',
+    '  float dist = length(uv);',
+    '  float angle = atan(uv.y, uv.x);',
+    '',
+    '  float rays = pow(abs(sin(angle * 8.0 + uTime * 0.5)), 4.0);',
+    '  rays += pow(abs(sin(angle * 13.0 - uTime * 0.3)), 6.0) * 0.5;',
+    '',
+    '  float glow = 1.0 / (1.0 + dist * 6.0);',
+    '  glow = pow(glow, 1.5);',
+    '',
+    '  float intensity = glow + rays * glow * 0.6;',
+    '',
+    '  vec3 color = mix(vec3(1.0, 0.3, 0.7), vec3(1.0, 0.95, 1.0), glow);',
+    '',
+    '  gl_FragColor = vec4(color * intensity, intensity);',
+    '}'
+  ].join('\n');
+
   function buildGlow() {
-    var geo = new THREE.PlaneGeometry(1.5, 1.5);
-    var mat = new THREE.MeshBasicMaterial({
-      color: 0xFFFFFF,
+    var geo = new THREE.PlaneGeometry(4, 4);
+    var mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: parseFloat(resH) },
+        uTime: { value: 0.0 }
+      },
+      vertexShader: GLOW_VERT,
+      fragmentShader: GLOW_FRAG,
+      transparent: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     });
@@ -126,7 +192,74 @@
     return glow;
   }
 
-  buildGlow();
+  var glow = buildGlow();
+
+  // ─── Sparkle Particles ─────────────────────────────────────
+  var SPARKLE_COUNT = 30;
+  var sparkleGeo = new THREE.BufferGeometry();
+  var sparklePositions = new Float32Array(SPARKLE_COUNT * 3);
+  var sparkleSizes = new Float32Array(SPARKLE_COUNT);
+  var sparklePhases = new Float32Array(SPARKLE_COUNT);
+
+  for (var si = 0; si < SPARKLE_COUNT; si++) {
+    var sAngle = Math.random() * Math.PI * 2;
+    var sRadius = Math.random() * 2.4;
+    var sDepth = 1 + Math.random() * 34;
+    sparklePositions[si * 3] = Math.cos(sAngle) * sRadius;
+    sparklePositions[si * 3 + 1] = Math.sin(sAngle) * sRadius;
+    sparklePositions[si * 3 + 2] = sDepth;
+    sparkleSizes[si] = 1.0 + Math.random() * 1.5;
+    sparklePhases[si] = Math.random() * Math.PI * 2;
+  }
+
+  sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+  sparkleGeo.setAttribute('aSize', new THREE.BufferAttribute(sparkleSizes, 1));
+  sparkleGeo.setAttribute('aPhase', new THREE.BufferAttribute(sparklePhases, 1));
+
+  var SPARKLE_VERT = [
+    'attribute float aSize;',
+    'attribute float aPhase;',
+    'uniform float uTime;',
+    'uniform float uResolution;',
+    'varying float vAlpha;',
+    '',
+    'void main() {',
+    '  float twinkle = sin(uTime * 3.0 + aPhase) * 0.5 + 0.5;',
+    '  vAlpha = pow(twinkle, 3.0);',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  gl_PointSize = aSize * (20.0 / -viewPos.z);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
+  var SPARKLE_FRAG = [
+    'varying float vAlpha;',
+    '',
+    'void main() {',
+    '  float dist = length(gl_PointCoord - vec2(0.5));',
+    '  if (dist > 0.5) discard;',
+    '  float glow = 1.0 - dist * 2.0;',
+    '  gl_FragColor = vec4(1.0, 1.0, 1.0, glow * vAlpha);',
+    '}'
+  ].join('\n');
+
+  var sparkleMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0.0 },
+      uResolution: { value: parseFloat(resH) }
+    },
+    vertexShader: SPARKLE_VERT,
+    fragmentShader: SPARKLE_FRAG,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  var sparkles = new THREE.Points(sparkleGeo, sparkleMat);
+  scene.add(sparkles);
 
   // ─── PS1 Textured Material ───────────────────────────────────
   var TEX_VERT = [
@@ -392,8 +525,11 @@
     if (time - lastFrame < targetInterval) return;
     lastFrame = time;
 
-    // Update tunnel shader time
-    tunnel.material.uniforms.uTime.value = time * 0.001;
+    // Update shader time uniforms
+    var t = time * 0.001;
+    tunnel.material.uniforms.uTime.value = t;
+    glow.material.uniforms.uTime.value = t;
+    sparkles.material.uniforms.uTime.value = t;
 
     // Spawn and animate flying objects
     spawnObject(time);
@@ -412,6 +548,7 @@
   if (prefersReducedMotion) {
     // Render one static dithered frame, then stop
     tunnel.material.uniforms.uTime.value = 0;
+    glow.material.uniforms.uTime.value = 0;
     renderOneFrame();
     return; // Exit IIFE — no animation loop
   }
