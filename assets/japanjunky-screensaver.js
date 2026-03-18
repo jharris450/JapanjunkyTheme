@@ -326,6 +326,9 @@
     portalRings.push(ringMesh);
   }
 
+  // ─── Texture Loader (shared) ─────────────────────────────
+  var textureLoader = new THREE.TextureLoader();
+
   // ─── Vortex Swirl Backdrop ─────────────────────────────────
   var BACKDROP_FRAG = [
     'uniform sampler2D uTexture;',
@@ -475,7 +478,6 @@
   var objectGeo = new THREE.PlaneGeometry(OBJECT_SIZE, OBJECT_SIZE);
 
   var textureUrls = config.textures || [];
-  var textureLoader = new THREE.TextureLoader();
 
   for (var ti = 0; ti < textureUrls.length; ti++) {
     (function (url) {
