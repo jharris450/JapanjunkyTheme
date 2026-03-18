@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JapanJunky Screensaver Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #d4c9a8;
+      font-family: monospace;
+      overflow-x: hidden;
+    }
+    /* Screensaver canvas — matches theme.liquid inline styles */
+    #jj-screensaver {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      pointer-events: none;
+    }
+    /* Simulated site content overlay */
+    .preview-overlay {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+    }
+    .preview-panel {
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #aa5500;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .preview-panel h2 {
+      color: #ffff55;
+      margin-bottom: 0.5rem;
+    }
+    .preview-panel p {
+      line-height: 1.6;
+    }
+    .preview-panel code {
+      color: #55ffff;
+    }
+    .controls {
+      position: fixed;
+      top: 10px; right: 10px;
+      z-index: 100;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid #aa5500;
+      padding: 12px;
+      font-size: 12px;
+    }
+    .controls label {
+      display: block;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .controls button {
+      background: #aa5500;
+      color: #000;
+      border: none;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-family: monospace;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Screensaver canvas (same as theme.liquid) -->
+  <canvas id="jj-screensaver" aria-hidden="true" tabindex="-1"></canvas>
+
+  <!-- Live controls -->
+  <div class="controls">
+    <strong style="color:#ffff55;">PREVIEW CONTROLS</strong>
+    <label><input type="checkbox" id="ctrl-overlay" checked> Show content overlay</label>
+    <label><input type="checkbox" id="ctrl-dither" checked> VGA dithering</label>
+    <button onclick="location.reload()">Reload</button>
+  </div>
+
+  <!-- Simulated site content -->
+  <div class="preview-overlay" id="overlay">
+    <div class="preview-panel">
+      <h2>JapanJunky Screensaver Preview</h2>
+      <p>This is a standalone preview of the Three.js lacquer screensaver background.
+         Move your mouse to see the parallax effect and cursor reaction on floating objects.</p>
+    </div>
+    <div class="preview-panel">
+      <h2>What You're Seeing</h2>
+      <p>Low-poly Mt. Fuji landscape rendered at <code>320x240</code> with PS1-style vertex snapping,
+         quantized to the VGA 256-color palette with Floyd-Steinberg dithering,
+         nearest-neighbor upscaled. The camera orbits slowly (~100s per revolution).</p>
+    </div>
+    <div class="preview-panel">
+      <h2>Scene Elements</h2>
+      <p>Mt. Fuji (dark silhouette) + snow cap + foothills, wireframe ocean with sine waves,
+         3 low-poly trees, 8 floating geometric primitives (icosahedrons, octahedrons, tetrahedrons),
+         3 particle lattice clusters, and 2 rotating wireframe shapes (sphere + torus).</p>
+    </div>
+    <div class="preview-panel" style="height: 400px;">
+      <h2>Scroll Test</h2>
+      <p>Scroll down to test the scroll sentinel pause. The screensaver should pause
+         when you scroll past the viewport height.</p>
+    </div>
+  </div>
+
+  <!-- Config (mimics theme.liquid injection) -->
+  <script>
+    window.JJ_SCREENSAVER_CONFIG = {
+      enabled: true,
+      resolution: 240,
+      fps: 24,
+      orbitSpeed: 'slow',
+      mouseInteraction: true,
+      textures: [
+        'assets/glico.png'
+      ]
+    };
+  </script>
+
+  <!-- Load scripts in same order as theme.liquid -->
+  <script src="assets/three.min.js"></script>
+  <script src="assets/japanjunky-screensaver-post.js"></script>
+  <script src="assets/japanjunky-screensaver.js"></script>
+
+  <!-- Preview controls logic -->
+  <script>
+    document.getElementById('ctrl-overlay').addEventListener('change', function() {
+      document.getElementById('overlay').style.display = this.checked ? '' : 'none';
+    });
+    document.getElementById('ctrl-dither').addEventListener('change', function() {
+      // Toggle dithering by swapping the post-processor
+      if (this.checked) {
+        // Re-enable: reload is simplest since the IIFE already ran
+        location.reload();
+      } else {
+        // Disable by replacing dither with a no-op
+        if (window.JJ_ScreensaverPost) {
+          window.JJ_ScreensaverPost._originalDither = window.JJ_ScreensaverPost.dither;
+          window.JJ_ScreensaverPost.dither = function(imageData) { return imageData; };
+        }
+      }
+    });
+  </script>
+</body>
+</html>
