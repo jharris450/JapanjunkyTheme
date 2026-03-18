@@ -326,6 +326,103 @@
     portalRings.push(ringMesh);
   }
 
+  // ─── Vortex Swirl Backdrop ─────────────────────────────────
+  var BACKDROP_FRAG = [
+    'uniform sampler2D uTexture;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec4 texColor = texture2D(uTexture, vUv);',
+    '  vec3 color = texColor.rgb * 0.35;',
+    '  gl_FragColor = vec4(color, 1.0);',
+    '}'
+  ].join('\n');
+
+  var vortexBackdrop = null;
+  var swirlUrl = config.swirlTexture;
+  if (swirlUrl) {
+    textureLoader.load(swirlUrl, function (tex) {
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      var geo = new THREE.PlaneGeometry(7, 7);
+      var mat = new THREE.ShaderMaterial({
+        uniforms: {
+          uResolution: { value: parseFloat(resH) },
+          uTexture: { value: tex }
+        },
+        vertexShader: GLOW_VERT,
+        fragmentShader: BACKDROP_FRAG,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      vortexBackdrop = new THREE.Mesh(geo, mat);
+      vortexBackdrop.position.set(0, 0, 37);
+      scene.add(vortexBackdrop);
+    });
+  }
+
+  // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
+  var GHOST_FRAG = [
+    'uniform sampler2D uTexture;',
+    'uniform float uTime;',
+    'uniform vec3 uTint;',
+    'uniform float uAlpha;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv;',
+    '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
+    '  vec4 texColor = texture2D(uTexture, uv);',
+    '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
+    '  float mask = 1.0 - lum;',
+    '  vec3 color = uTint * mask * uAlpha;',
+    '  gl_FragColor = vec4(color, 1.0);',
+    '}'
+  ].join('\n');
+
+  var ghosts = [];
+  var ghostConfigs = [
+    { z: 8, radius: 2.0, speed: 0.3, tint: [0.0, 1.0, 0.9], alpha: 0.5, phase: 0 },
+    { z: 16, radius: 1.8, speed: -0.2, tint: [1.0, 0.3, 0.8], alpha: 0.4, phase: 2.1 },
+    { z: 24, radius: 2.2, speed: 0.25, tint: [0.3, 1.0, 0.5], alpha: 0.45, phase: 4.2 }
+  ];
+  var ghostGeo = new THREE.PlaneGeometry(1.2, 3.5);
+
+  var ghostUrl = config.ghostTexture;
+  if (ghostUrl) {
+    textureLoader.load(ghostUrl, function (tex) {
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      for (var gi = 0; gi < ghostConfigs.length; gi++) {
+        var gc = ghostConfigs[gi];
+        var mat = new THREE.ShaderMaterial({
+          uniforms: {
+            uResolution: { value: parseFloat(resH) },
+            uTexture: { value: tex },
+            uTime: { value: 0.0 },
+            uTint: { value: new THREE.Vector3(gc.tint[0], gc.tint[1], gc.tint[2]) },
+            uAlpha: { value: gc.alpha }
+          },
+          vertexShader: GLOW_VERT,
+          fragmentShader: GHOST_FRAG,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        var ghost = new THREE.Mesh(ghostGeo, mat);
+        ghost.position.z = gc.z;
+        ghost.userData = {
+          baseZ: gc.z,
+          radius: gc.radius,
+          speed: gc.speed,
+          phase: gc.phase
+        };
+        scene.add(ghost);
+        ghosts.push(ghost);
+      }
+    });
+  }
+
   // ─── PS1 Textured Material ───────────────────────────────────
   var TEX_VERT = [
     'uniform float uResolution;',
@@ -599,6 +696,23 @@
     // Spin portal rings
     for (var ri = 0; ri < portalRings.length; ri++) {
       portalRings[ri].rotation.z += portalRings[ri].userData.rotSpeed * 0.02;
+    }
+
+    // Rotate vortex backdrop
+    if (vortexBackdrop) {
+      vortexBackdrop.rotation.z = t * 0.15;
+    }
+
+    // Orbit ghost figures
+    for (var gi = 0; gi < ghosts.length; gi++) {
+      var ghost = ghosts[gi];
+      var gd = ghost.userData;
+      var ghostAngle = gd.phase + t * gd.speed;
+      ghost.position.x = Math.cos(ghostAngle) * gd.radius;
+      ghost.position.y = Math.sin(ghostAngle) * gd.radius;
+      ghost.position.z = gd.baseZ + Math.sin(t * 0.3 + gd.phase) * 3;
+      ghost.lookAt(camera.position);
+      ghost.material.uniforms.uTime.value = t;
     }
 
     // Spawn and animate flying objects
