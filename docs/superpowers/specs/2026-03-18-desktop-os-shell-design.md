@@ -12,7 +12,7 @@ The core experience: a user lands on what feels like a forbidden old archive mac
 |----------|--------|-----------|
 | First-visit experience | Hybrid: catalog auto-opens, more appears over time | Store must be immediately functional; discovery rewards engagement |
 | OS aesthetic | Custom terminal OS with Win95/98 roots | Weird and unique, but familiar interaction patterns users know instinctively |
-| 3D technology | CSS3DRenderer for effects only | DOM windows preserve Shopify functionality (forms, scrolling, links, a11y); 3D used surgically for transitions |
+| 3D technology | CSS3DRenderer for effects only (vendored separately) | DOM windows preserve Shopify functionality (forms, scrolling, links, a11y); 3D used surgically for transitions |
 | Mobile strategy | Simplified single-window PDA/WinCE mode (Phase 3) | Full desktop doesn't work on touch; PDA framing maintains the lore |
 | Phasing | 4 phases, this spec covers Phase 1 (core shell) | Manages scope; each phase is independently useful |
 
@@ -38,7 +38,7 @@ z-index 1000 ┌─────────────────────�
 - **Window Manager Layer**: JavaScript module creates, positions, drags, focuses, minimizes, and closes window DOM elements.
 - **CSS3D Overlay**: Transparent layer. When a 3D effect is needed (minimize/restore animation), the window's DOM node is temporarily handed to CSS3DRenderer, animated in 3D space, then returned to the DOM layer.
 - **Taskbar**: Fixed DOM, always on top. Receives events from the Window Manager and updates tabs accordingly.
-- **Screensaver**: Continues running independently on its WebGL canvas. No changes in Phase 1.
+- **Screensaver**: Continues running independently on its WebGL canvas. No changes in Phase 1. Currently only loads on the homepage (`request.page_type == 'index'`); Phase 1 must move Three.js and screensaver loading site-wide in `theme.liquid` so the desktop background is present on all pages.
 
 ### Window Anatomy
 
@@ -79,7 +79,7 @@ z-index 1000 ┌─────────────────────�
 
 **Persistent windows** (catalog, cart, checkout):
 - `[×]` button minimizes to taskbar instead of closing
-- If dragged so >70% leaves viewport, auto-minimizes to taskbar
+- If the window's center point is dragged outside the viewport during an active drag, auto-minimizes to taskbar (does not trigger on browser/viewport resize)
 - Can never be fully removed
 
 **Disposable windows** (README, media player, etc.):
@@ -92,6 +92,7 @@ z-index 1000 ┌─────────────────────�
 - Click and hold title bar to initiate drag
 - Window follows cursor with offset preserved (no jump-to-center)
 - Slight CSS drop shadow while dragging to indicate "lifted" state
+- Custom cursor switches to "move" variant from `JJ_CURSOR_SETS` during drag
 - Other windows remain interactive underneath
 
 ### Focus / Z-ordering
@@ -131,28 +132,59 @@ z-index 1000 ┌─────────────────────�
 - `japanjunky-screensaver-post.js` — VGA dithering, untouched
 - `japanjunky-base.css`, `japanjunky-crt.css`, `japanjunky-ascii.css` — styles apply inside window content areas
 - `japanjunky-filter.js`, `japanjunky-search.js`, `japanjunky-calendar.js` — work inside their window's DOM
-- `three.min.js` — reused for CSS3DRenderer
 
 ### Modified
-- **`layout/theme.liquid`** — `.jj-page-wrapper` restructured: header and main content become catalog window content. Taskbar footer stays as fixed DOM, wired to window manager.
+- **`layout/theme.liquid`** — Major restructure:
+  - Move `three.min.js` and screensaver script loading **outside** the `request.page_type == 'index'` conditional so they load site-wide. The desktop background must be present on all pages.
+  - The header (`jj-header.liquid`) stays **outside** windows as a shell-level toolbar bar below the taskbar at the top of the screen. Search, cart count, and nav actions are OS-level chrome, not window content.
+  - `{{ content_for_layout }}` (main content) gets wrapped in window chrome by JS on page load.
+  - Taskbar footer stays as fixed DOM, wired to window manager.
 - **`japanjunky-win95.css`** — extended with window chrome styles (`.jj-window`, `.jj-window__titlebar`, `.jj-window__content`, etc.). Existing taskbar styles stay, new tab states added.
 - **`japanjunky-win95-menu.js`** — start menu handlers call `JJ_WM.open()` instead of direct navigation.
+- **`sections/jj-footer-win95.liquid`** — The static taskbar tab area (currently `<a>` tags rendered by `win95-taskbar-tab.liquid`) is replaced with an empty container (`<div class="jj-taskbar__tabs" id="jj-taskbar-tabs"></div>`). The window manager JS dynamically creates `<button>` tab elements as windows open/close. The start button and clock tray remain server-rendered.
+- **`snippets/win95-taskbar-tab.liquid`** — Removed (replaced by JS-managed tabs).
 
 ### New Files
 - **`assets/japanjunky-wm.js`** — Window manager module. Handles: window registry, creation, drag, focus, minimize/maximize/close, taskbar sync, edge detection, CSS3D animation handoff.
 - **`assets/japanjunky-wm.css`** — Window chrome styles, drag states, animation keyframes.
-- **`snippets/jj-window.liquid`** — Reusable window wrapper snippet. Usage:
-  ```liquid
-  {% render 'jj-window',
-      title: 'CATALOG.EXE',
-      icon: 'catalog',
-      persistent: true,
-      status_bar: true %}
-  ```
-  Wraps section content in window chrome DOM. JS window manager finds these on page load and registers them.
+- **`assets/three-css3d.js`** — Vendored `CSS3DRenderer` extracted from Three.js r160 `examples/jsm/renderers/CSS3DRenderer.js`. The core `three.min.js` does not include CSS3DRenderer; it must be vendored as a separate file and loaded after `three.min.js`.
 
-### Shopify Routing
-Phase 1 uses full page reloads for navigation. Clicking a collection or product triggers a normal Shopify page load, which re-renders the desktop with the appropriate window open. SPA-like behavior (opening products in new windows via AJAX) is Phase 4.
+### Liquid Window Pattern
+
+Shopify's `{% render %}` cannot wrap content (no block/yield). Instead, content sections emit a wrapper div with data attributes, and the JS window manager injects window chrome around it on page load:
+
+```html
+<!-- In a section or template -->
+<div data-jj-window="catalog"
+     data-jj-window-title="CATALOG.EXE"
+     data-jj-window-icon="catalog"
+     data-jj-window-persistent="true"
+     data-jj-window-statusbar="true">
+  <!-- Liquid-rendered content goes here normally -->
+</div>
+```
+
+On DOMContentLoaded, `japanjunky-wm.js` finds all `[data-jj-window]` elements, wraps each in window chrome (title bar, controls, status bar), and registers them in the window manager.
+
+### Page Type Mapping
+
+Phase 1 uses full page reloads. Each Shopify page type maps to a window:
+
+| `request.page_type` | Window ID | Window Title | Persistent? |
+|---------------------|-----------|--------------|-------------|
+| `index` | `catalog` | `CATALOG.EXE` | Yes |
+| `collection` | `catalog` | `CATALOG.EXE` | Yes |
+| `product` | `catalog` | `CATALOG.EXE` | Yes |
+| `cart` | `catalog` | `CART.EXE` | Yes |
+| `search` | `catalog` | `SEARCH.EXE` | Yes |
+| `page` | `catalog` | `CATALOG.EXE` | Yes |
+| `404` | `catalog` | `ERROR.EXE` | Yes |
+
+In Phase 1, all content renders inside a single persistent window. The window title changes based on page type. Multiple simultaneous windows are a Phase 4 concern (SPA/AJAX navigation).
+
+Checkout is handled by Shopify's hosted checkout and is outside theme control — it does not get window chrome.
+
+SPA-like behavior (opening products in new windows without page reload) is Phase 4.
 
 ## CSS Class Structure
 
@@ -169,9 +201,10 @@ Following existing `jj-` BEM convention:
 .jj-window__icon              — app icon in title bar
 .jj-window__title             — title text
 .jj-window__controls          — min/max/close button group
-.jj-window__btn--minimize     — minimize button
-.jj-window__btn--maximize     — maximize button
-.jj-window__btn--close        — close button
+.jj-window-btn                — window control button (base)
+.jj-window-btn--minimize      — minimize button
+.jj-window-btn--maximize      — maximize button
+.jj-window-btn--close         — close button
 .jj-window__content           — scrollable content area
 .jj-window__statusbar         — optional status bar
 .jj-taskbar-tab--active       — focused window tab
