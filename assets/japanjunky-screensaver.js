@@ -265,14 +265,164 @@
     }
   }
 
-  // TEMPORARY — replaced in Task 5
-  function _tempAnimate(time) {
-    requestAnimationFrame(_tempAnimate);
+  // ─── Offscreen Render Target ──────────────────────────────────
+  var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat
+  });
+
+  // Display canvas (2D) — the visible output
+  var displayCanvas = document.createElement('canvas');
+  displayCanvas.width = resW;
+  displayCanvas.height = resH;
+  var displayCtx = displayCanvas.getContext('2d');
+  var displayImageData = displayCtx.createImageData(resW, resH);
+
+  // Pixel readback buffer
+  var pixelBuffer = new Uint8Array(resW * resH * 4);
+
+  // Hide the WebGL canvas, show the 2D display canvas
+  canvas.style.display = 'none';
+
+  displayCanvas.id = 'jj-screensaver-display';
+  displayCanvas.setAttribute('aria-hidden', 'true');
+  displayCanvas.tabIndex = -1;
+  displayCanvas.style.cssText = [
+    'position:fixed', 'top:0', 'left:0',
+    'width:100vw', 'height:100vh',
+    'z-index:0', 'pointer-events:none',
+    'image-rendering:pixelated',
+    'image-rendering:crisp-edges'
+  ].join(';');
+  canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
+
+  // ─── Render one frame (reusable) ─────────────────────────────
+  function renderOneFrame() {
+    renderer.setRenderTarget(renderTarget);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
+
+    // Copy pixels (WebGL reads bottom-up, flip vertically)
+    var src = pixelBuffer;
+    var dst = displayImageData.data;
+    for (var row = 0; row < resH; row++) {
+      var srcRow = (resH - 1 - row) * resW * 4;
+      var dstRow = row * resW * 4;
+      for (var col = 0; col < resW * 4; col++) {
+        dst[dstRow + col] = src[srcRow + col];
+      }
+    }
+
+    // VGA palette quantization + Floyd-Steinberg dither
+    if (window.JJ_ScreensaverPost) {
+      JJ_ScreensaverPost.dither(displayImageData);
+    }
+
+    displayCtx.putImageData(displayImageData, 0, 0);
+  }
+
+  // ─── Mouse Parallax ──────────────────────────────────────────
+  var mouseNorm = { x: 0, y: 0 };
+  var parallaxOffset = { x: 0, y: 0 };
+  var MAX_PARALLAX = 0.5;
+  var PARALLAX_LERP = 0.05;
+  var LOOK_TARGET = { x: 0, y: 0, z: 30 };
+  var isMobile = window.matchMedia && window.matchMedia('(hover: none)').matches;
+
+  if (config.mouseInteraction !== false && !isMobile) {
+    window.addEventListener('mousemove', function (e) {
+      mouseNorm.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseNorm.y = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+
+    document.addEventListener('mouseleave', function () {
+      mouseNorm.x = 0;
+      mouseNorm.y = 0;
+    });
+  }
+
+  function updateParallax() {
+    parallaxOffset.x += (mouseNorm.x * MAX_PARALLAX - parallaxOffset.x) * PARALLAX_LERP;
+    parallaxOffset.y += (mouseNorm.y * MAX_PARALLAX - parallaxOffset.y) * PARALLAX_LERP;
+  }
+
+  // ─── Performance Safeguards ───────────────────────────────────
+  var pauseReasons = { hidden: false, scrolled: false };
+
+  function isPaused() {
+    return pauseReasons.hidden || pauseReasons.scrolled;
+  }
+
+  function resumeIfNeeded() {
+    if (!isPaused()) {
+      lastFrame = performance.now();
+      requestAnimationFrame(animate);
+    }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    pauseReasons.hidden = document.hidden;
+    resumeIfNeeded();
+  });
+
+  // Scroll sentinel — pause when user scrolls past the fold
+  var sentinel = document.createElement('div');
+  sentinel.style.cssText = 'position:absolute;top:100vh;width:1px;height:1px;pointer-events:none;';
+  document.body.appendChild(sentinel);
+
+  if (window.IntersectionObserver) {
+    var scrollObserver = new IntersectionObserver(function (entries) {
+      pauseReasons.scrolled = !entries[0].isIntersecting;
+      resumeIfNeeded();
+    }, { threshold: 0 });
+    scrollObserver.observe(sentinel);
+  }
+
+  // ─── Animation Loop ──────────────────────────────────────────
+  var targetInterval = 1000 / (config.fps || 24);
+  var lastFrame = 0;
+
+  function animate(time) {
+    if (isPaused()) return;
+    requestAnimationFrame(animate);
+
+    if (time - lastFrame < targetInterval) return;
+    lastFrame = time;
+
+    // Update tunnel shader time
     tunnel.material.uniforms.uTime.value = time * 0.001;
+
+    // Spawn and animate flying objects
     spawnObject(time);
     animateObjects(time);
-    renderer.render(scene, camera);
+
+    // Update parallax
+    updateParallax();
+    var lookX = LOOK_TARGET.x + parallaxOffset.x;
+    var lookY = LOOK_TARGET.y - parallaxOffset.y;
+    camera.lookAt(lookX, lookY, LOOK_TARGET.z);
+
+    renderOneFrame();
   }
-  requestAnimationFrame(_tempAnimate);
+
+  // ─── Reduced Motion: Static Frame ─────────────────────────────
+  if (prefersReducedMotion) {
+    // Render one static dithered frame, then stop
+    tunnel.material.uniforms.uTime.value = 0;
+    renderOneFrame();
+    return; // Exit IIFE — no animation loop
+  }
+
+  // ─── Init ────────────────────────────────────────────────────
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      requestAnimationFrame(animate);
+    });
+  } else {
+    requestAnimationFrame(animate);
+  }
 
 })();
