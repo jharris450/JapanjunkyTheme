@@ -1,0 +1,223 @@
+/* ============================================
+   JAPANJUNKY WINDOW MANAGER CSS
+   Desktop OS shell — window chrome, states
+   ============================================ */
+
+/* --- Desktop Layer --- */
+.jj-desktop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 32px); /* minus taskbar */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* --- Window Container --- */
+.jj-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0a;
+  border: 1px solid #444;
+  pointer-events: auto;
+  min-width: 280px;
+  min-height: 180px;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.jj-window--focused {
+  border-color: #555;
+  box-shadow: 2px 2px 0 #000, 0 0 12px rgba(232, 49, 58, 0.1);
+}
+
+.jj-window--maximized {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: calc(100vh - 32px) !important;
+}
+
+.jj-window--dragging {
+  box-shadow: 4px 4px 0 #000, 0 0 20px rgba(0, 0, 0, 0.5);
+  opacity: 0.95;
+}
+
+/* Override custom cursor during drag */
+.jj-window--dragging,
+.jj-window--dragging *,
+.jj-window--dragging .jj-window__titlebar {
+  cursor: move !important;
+}
+
+.jj-window--minimizing {
+  transition: transform 0.3s ease-in, opacity 0.3s ease-in;
+  pointer-events: none;
+}
+
+.jj-window--restoring {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  pointer-events: none;
+}
+
+/* --- Title Bar --- */
+.jj-window__titlebar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  background: #111;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+  user-select: none;
+  cursor: default;
+  gap: 6px;
+}
+
+.jj-window--focused .jj-window__titlebar {
+  background: #151515;
+  border-bottom-color: #444;
+  text-shadow: 0 0 6px rgba(232, 49, 58, 0.3);
+}
+
+.jj-window__icon {
+  font-size: 10px;
+  color: var(--jj-primary);
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+
+.jj-window--focused .jj-window__icon {
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
+}
+
+.jj-window__title {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  text-transform: uppercase;
+}
+
+.jj-window--focused .jj-window__title {
+  color: var(--jj-text);
+}
+
+/* --- Window Control Buttons --- */
+.jj-window__controls {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.jj-window-btn {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  width: 22px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #333;
+  color: #666;
+  cursor: default;
+  padding: 0;
+  line-height: 1;
+}
+
+.jj-window-btn:hover {
+  border-color: #555;
+}
+
+.jj-window-btn--minimize:hover {
+  color: var(--jj-secondary);
+  text-shadow: 0 0 4px rgba(207, 174, 74, 0.5);
+  border-color: var(--jj-secondary);
+}
+
+.jj-window-btn--maximize:hover {
+  color: var(--jj-accent);
+  text-shadow: 0 0 4px rgba(55, 205, 190, 0.5);
+  border-color: var(--jj-accent);
+}
+
+.jj-window-btn--close:hover {
+  color: var(--jj-primary);
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.5);
+  border-color: var(--jj-primary);
+}
+
+/* --- Window Content --- */
+.jj-window__content {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Content inside windows should flow naturally */
+.jj-window__content .jj-catalog-layout {
+  height: auto;
+  min-height: 100%;
+}
+
+/* --- Status Bar --- */
+.jj-window__statusbar {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  background: #0a0a0a;
+  border-top: 1px solid #333;
+  flex-shrink: 0;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 10px;
+  color: #555;
+  gap: 8px;
+}
+
+/* --- Taskbar Tab States (extend existing) --- */
+.jj-taskbar-tab--minimized {
+  opacity: 0.5;
+  border-style: inset;
+}
+
+/* --- OS Shell: header becomes fixed chrome above desktop --- */
+.jj-shell-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 999;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .jj-window--minimizing,
+  .jj-window--restoring {
+    transition: none;
+  }
+}
+
+/* --- High Contrast --- */
+@media (prefers-contrast: more) {
+  .jj-window {
+    border-width: 2px;
+  }
+  .jj-window--focused {
+    box-shadow: none;
+    border-color: #fff;
+  }
+  .jj-window--focused .jj-window__titlebar {
+    text-shadow: none;
+  }
+  .jj-window--focused .jj-window__icon {
+    text-shadow: none;
+  }
+}
