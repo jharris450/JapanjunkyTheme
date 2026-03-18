@@ -71,13 +71,13 @@
     'uniform float uSwirlSpeed;',
     'varying vec2 vUv;',
     '',
-    'vec3 fusionPalette(float t) {',
+    'vec3 flamePalette(float t) {',
     '  t = fract(t);',
-    '  vec3 c0 = vec3(0.0, 1.0, 1.0);',
-    '  vec3 c1 = vec3(1.0, 0.1, 0.8);',
-    '  vec3 c2 = vec3(1.0, 0.75, 0.0);',
-    '  vec3 c3 = vec3(0.2, 1.0, 0.4);',
-    '  vec3 c4 = vec3(1.0, 0.4, 0.7);',
+    '  vec3 c0 = vec3(0.1, 0.02, 0.0);',
+    '  vec3 c1 = vec3(0.7, 0.05, 0.0);',
+    '  vec3 c2 = vec3(0.95, 0.2, 0.05);',
+    '  vec3 c3 = vec3(0.95, 0.85, 0.7);',
+    '  vec3 c4 = vec3(0.85, 0.55, 0.1);',
     '  float s = t * 5.0;',
     '  vec3 c = mix(c0, c1, clamp(s, 0.0, 1.0));',
     '  c = mix(c, c2, clamp(s - 1.0, 0.0, 1.0));',
@@ -103,7 +103,7 @@
     '  float turb = sin(angle * 5.0 + depth * 8.0 + uTime * 0.7) * 0.3;',
     '  float t = swirl1 + sin(swirl2) * 0.4 + turb;',
     '',
-    '  vec3 color = fusionPalette(t);',
+    '  vec3 color = flamePalette(t);',
     '',
     '  float val = 0.7 + 0.3 * sin(depth * 6.0 - uTime * 2.0);',
     '  val *= 0.85 + 0.15 * sin(angle * 4.0 + uTime * 3.0);',
@@ -178,7 +178,7 @@
     '',
     '  float intensity = glow + rays * glow * 0.6;',
     '',
-    '  vec3 color = mix(vec3(1.0, 0.3, 0.7), vec3(1.0, 0.95, 1.0), glow);',
+    '  vec3 color = mix(vec3(0.8, 0.1, 0.0), vec3(0.95, 0.85, 0.7), glow);',
     '',
     '  gl_FragColor = vec4(color * intensity, intensity);',
     '}'
@@ -253,7 +253,7 @@
     '  float dist = length(gl_PointCoord - vec2(0.5));',
     '  if (dist > 0.5) discard;',
     '  float glow = 1.0 - dist * 2.0;',
-    '  gl_FragColor = vec4(1.0, 1.0, 1.0, glow * vAlpha);',
+    '  gl_FragColor = vec4(0.95, 0.85, 0.7, glow * vAlpha);',
     '}'
   ].join('\n');
 
@@ -277,13 +277,13 @@
     'uniform float uHue;',
     'varying vec2 vUv;',
     '',
-    'vec3 ringPalette(float t) {',
+    'vec3 flamePalette(float t) {',
     '  t = fract(t);',
-    '  vec3 c0 = vec3(0.0, 1.0, 1.0);',
-    '  vec3 c1 = vec3(1.0, 0.1, 0.8);',
-    '  vec3 c2 = vec3(1.0, 0.75, 0.0);',
-    '  vec3 c3 = vec3(0.2, 1.0, 0.4);',
-    '  vec3 c4 = vec3(1.0, 0.4, 0.7);',
+    '  vec3 c0 = vec3(0.1, 0.02, 0.0);',
+    '  vec3 c1 = vec3(0.7, 0.05, 0.0);',
+    '  vec3 c2 = vec3(0.95, 0.2, 0.05);',
+    '  vec3 c3 = vec3(0.95, 0.85, 0.7);',
+    '  vec3 c4 = vec3(0.85, 0.55, 0.1);',
     '  float s = t * 5.0;',
     '  vec3 c = mix(c0, c1, clamp(s, 0.0, 1.0));',
     '  c = mix(c, c2, clamp(s - 1.0, 0.0, 1.0));',
@@ -297,7 +297,7 @@
     '  vec2 uv = vUv - 0.5;',
     '  float dist = length(uv) * 2.0;',
     '  float ring = smoothstep(0.6, 0.78, dist) * smoothstep(1.0, 0.88, dist);',
-    '  vec3 color = ringPalette(uHue);',
+    '  vec3 color = flamePalette(uHue);',
     '  gl_FragColor = vec4(color * 1.5, ring);',
     '}'
   ].join('\n');
@@ -374,9 +374,7 @@
     '',
     'void main() {',
     '  vec2 uv = vUv;',
-    '  uv.x += sin(uv.y * 3.0 + uTime * 1.5) * 0.15;',
-    '  uv.x += sin(uv.y * 7.0 - uTime * 2.0) * 0.08;',
-    '  uv.y += sin(uv.x * 5.0 + uTime * 1.0) * 0.04;',
+    '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
     '  vec4 texColor = texture2D(uTexture, uv);',
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',
@@ -387,9 +385,11 @@
 
   var ghosts = [];
   var ghostConfigs = [
-    { z: 11.5, radius: 2.0, speed: -0.3, tint: [0.0, 1.0, 0.9], alpha: 0.5, phase: 0 }
+    { z: 8, radius: 2.0, speed: 0.3, tint: [0.9, 0.15, 0.05], alpha: 0.5, phase: 0 },
+    { z: 16, radius: 1.8, speed: -0.2, tint: [0.95, 0.85, 0.7], alpha: 0.4, phase: 2.1 },
+    { z: 24, radius: 2.2, speed: 0.25, tint: [0.85, 0.55, 0.1], alpha: 0.45, phase: 4.2 }
   ];
-  var ghostGeo = new THREE.PlaneGeometry(0.8, 5.0);
+  var ghostGeo = new THREE.PlaneGeometry(1.2, 3.5);
 
   var ghostUrl = config.ghostTexture;
   if (ghostUrl) {
