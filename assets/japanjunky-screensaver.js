@@ -374,7 +374,9 @@
     '',
     'void main() {',
     '  vec2 uv = vUv;',
-    '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
+    '  uv.x += sin(uv.y * 3.0 + uTime * 1.5) * 0.15;',
+    '  uv.x += sin(uv.y * 7.0 - uTime * 2.0) * 0.08;',
+    '  uv.y += sin(uv.x * 5.0 + uTime * 1.0) * 0.04;',
     '  vec4 texColor = texture2D(uTexture, uv);',
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',
@@ -385,11 +387,9 @@
 
   var ghosts = [];
   var ghostConfigs = [
-    { z: 8, radius: 2.0, speed: 0.3, tint: [0.0, 1.0, 0.9], alpha: 0.5, phase: 0 },
-    { z: 16, radius: 1.8, speed: -0.2, tint: [1.0, 0.3, 0.8], alpha: 0.4, phase: 2.1 },
-    { z: 24, radius: 2.2, speed: 0.25, tint: [0.3, 1.0, 0.5], alpha: 0.45, phase: 4.2 }
+    { z: 11.5, radius: 2.0, speed: -0.3, tint: [0.0, 1.0, 0.9], alpha: 0.5, phase: 0 }
   ];
-  var ghostGeo = new THREE.PlaneGeometry(1.2, 3.5);
+  var ghostGeo = new THREE.PlaneGeometry(0.8, 5.0);
 
   var ghostUrl = config.ghostTexture;
   if (ghostUrl) {
@@ -712,7 +712,7 @@
       var ghostAngle = gd.phase + t * gd.speed;
       ghost.position.x = Math.cos(ghostAngle) * gd.radius;
       ghost.position.y = Math.sin(ghostAngle) * gd.radius;
-      ghost.position.z = gd.baseZ + Math.sin(t * 0.3 + gd.phase) * 3;
+      ghost.position.z = gd.baseZ + Math.sin(t * 0.3 + gd.phase) * 2.5;
       ghost.lookAt(camera.position);
       ghost.material.uniforms.uTime.value = t;
     }
