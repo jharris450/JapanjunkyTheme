@@ -32,7 +32,7 @@
       {
         "type": "select",
         "id": "screensaver_orbit_speed",
-        "label": "Camera orbit speed",
+        "label": "Portal swirl speed",
         "options": [
           { "value": "slow", "label": "Slow" },
           { "value": "medium", "label": "Medium" },
