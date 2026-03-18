@@ -10,9 +10,8 @@
 
   <div class="jj-taskbar__divider"></div>
 
-  <div class="jj-taskbar__tabs">
-    {% render 'win95-taskbar-tab', label: 'catalog.exe', url: '/', icon: '>', active: true %}
-    {% render 'win95-taskbar-tab', label: 'browse.exe', url: '/collections/all', icon: '>' %}
+  <div class="jj-taskbar__tabs" id="jj-taskbar-tabs">
+    {%- comment -%} Tabs managed dynamically by japanjunky-wm.js {%- endcomment -%}
   </div>
 
   {% render 'win95-clock' %}
