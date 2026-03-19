@@ -28,11 +28,15 @@
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Resolution ──────────────────────────────────────────────
-  var resH = parseInt(config.resolution, 10) || 240;
+  // Scale render height to viewport so pixels stay small at any zoom.
+  // Config value is a floor; we go higher if the viewport demands it.
+  var configRes = parseInt(config.resolution, 10) || 240;
+  var viewH = window.innerHeight || 720;
+  var resH = Math.max(configRes, Math.round(viewH * 0.45));
   var viewportAspect = (window.innerWidth && window.innerHeight)
     ? window.innerWidth / window.innerHeight
     : 4 / 3;
-  var resW = Math.round(resH * viewportAspect); // match viewport aspect
+  var resW = Math.round(resH * viewportAspect);
 
   // ─── Renderer ────────────────────────────────────────────────
   var renderer;
