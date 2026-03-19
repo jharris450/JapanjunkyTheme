@@ -195,7 +195,7 @@
   left: 0;
   width: 100%;
   z-index: 999;
-  /* Override .jj-crt-frame which sets height:100% and overflow:hidden */
+  /* Size naturally around header content */
   height: auto;
   overflow: visible;
 }

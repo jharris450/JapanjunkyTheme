@@ -56,6 +56,15 @@
    Pattern: Red | Green | Blue | black gap — repeating 4px period.
    mix-blend-mode: screen makes RGB stripes brighten content slightly,
    while the black gap darkens between triplets. */
+/* --- CRT Overlay (top-level, above all UI) --- */
+.jj-crt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.jj-crt-overlay::before,
 .jj-crt-frame::before {
   content: '';
   position: fixed;
@@ -82,6 +91,7 @@
    Gaussian profile: bright center → dark gap (gap wider than lit line).
    Vignette tightened to 45%→0.5 for BVM edge darkening.
    D65 warm tint: barely perceptible warmth across the whole screen. */
+.jj-crt-overlay::after,
 .jj-crt-frame::after {
   content: '';
   position: fixed;
@@ -371,6 +381,8 @@
   }
 
   /* Remove all CRT overlay layers for high contrast */
+  .jj-crt-overlay::before,
+  .jj-crt-overlay::after,
   .jj-crt-frame::before,
   .jj-crt-frame::after,
   .jj-body::before {

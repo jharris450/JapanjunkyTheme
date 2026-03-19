@@ -136,9 +136,12 @@
 "></canvas>
 
   {%- comment -%} OS Shell: header as fixed chrome {%- endcomment -%}
-  <div class="jj-shell-header jj-crt-frame jj-crt-on">
+  <div class="jj-shell-header jj-crt-on">
     {% sections 'header-group' %}
   </div>
+
+  {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
+  <div class="jj-crt-overlay" aria-hidden="true"></div>
 
   {%- comment -%} Desktop layer: window manager moves windows here {%- endcomment -%}
   <div class="jj-desktop" id="jj-desktop"></div>
