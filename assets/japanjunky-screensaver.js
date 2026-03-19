@@ -34,11 +34,6 @@
   var viewportAspect = (window.innerWidth && window.innerHeight)
     ? window.innerWidth / window.innerHeight : 4 / 3;
   var resW = Math.round(resH * viewportAspect);
-  console.log('[JJ_SS] screen:', screen.width + 'x' + screen.height,
-    'inner:', window.innerWidth + 'x' + window.innerHeight,
-    'zoom:', getComputedStyle(document.documentElement).zoom,
-    'aspect:', viewportAspect.toFixed(2),
-    'render:', resW + 'x' + resH);
 
   // ─── Renderer ────────────────────────────────────────────────
   var renderer;
@@ -78,22 +73,27 @@
   var TUNNEL_FRAG = [
     'uniform float uTime;',
     'uniform float uSwirlSpeed;',
-    'uniform sampler2D uTunnelTex;',
     'varying vec2 vUv;',
     '',
     'void main() {',
     '  float angle = vUv.x;',
     '  float depth = vUv.y;',
     '',
-    '  float twist = angle - uTime * uSwirlSpeed * 0.08;',
+    '  float twist = angle * 6.2832 - uTime * uSwirlSpeed * 0.08;',
     '  float pull = depth + uTime * 0.15;',
     '',
-    '  vec2 uv = vec2(fract(twist), fract(pull * 2.0));',
+    '  float band = sin(twist * 3.0 + pull * 8.0) * 0.5 + 0.5;',
+    '  float band2 = sin(twist * 5.0 - pull * 12.0 + uTime * 0.5) * 0.5 + 0.5;',
+    '  float pattern = band * 0.6 + band2 * 0.4;',
     '',
-    '  vec3 color = texture2D(uTunnelTex, uv).rgb;',
+    '  vec3 c1 = vec3(0.4, 0.05, 0.02);',
+    '  vec3 c2 = vec3(0.85, 0.35, 0.05);',
+    '  vec3 c3 = vec3(0.95, 0.75, 0.3);',
+    '  vec3 color = mix(c1, c2, smoothstep(0.0, 0.5, pattern));',
+    '  color = mix(color, c3, smoothstep(0.5, 1.0, pattern));',
     '',
     '  float falloff = smoothstep(0.0, 0.12, depth) * smoothstep(1.0, 0.6, depth);',
-    '  color *= 0.55 + 0.45 * falloff;',
+    '  color *= 0.4 + 0.6 * falloff;',
     '',
     '  float glow = smoothstep(0.75, 1.0, depth);',
     '  color += vec3(0.95, 0.75, 0.5) * glow * 0.3;',
@@ -105,19 +105,12 @@
   var textureLoader = new THREE.TextureLoader();
 
   function buildTunnel() {
-    var tunnelTex = textureLoader.load(config.tunnelTexture || 'assets/sample3.jpg');
-    tunnelTex.wrapS = THREE.RepeatWrapping;
-    tunnelTex.wrapT = THREE.RepeatWrapping;
-    tunnelTex.minFilter = THREE.LinearFilter;
-    tunnelTex.magFilter = THREE.LinearFilter;
-
     var geo = new THREE.CylinderGeometry(3, 3, 40, 12, 20, true);
     var mat = new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
         uTime: { value: 0.0 },
-        uSwirlSpeed: { value: swirlSpeed },
-        uTunnelTex: { value: tunnelTex }
+        uSwirlSpeed: { value: swirlSpeed }
       },
       vertexShader: TUNNEL_VERT,
       fragmentShader: TUNNEL_FRAG,
@@ -612,6 +605,7 @@
   }
 
   // ─── Mouse Parallax ──────────────────────────────────────────
+  var parallaxEnabled = true;
   var mouseNorm = { x: 0, y: 0 };
   var parallaxOffset = { x: 0, y: 0 };
   var MAX_PARALLAX = 0.5;
@@ -632,6 +626,7 @@
   }
 
   function updateParallax() {
+    if (!parallaxEnabled) return;
     parallaxOffset.x += (mouseNorm.x * MAX_PARALLAX - parallaxOffset.x) * PARALLAX_LERP;
     parallaxOffset.y += (mouseNorm.y * MAX_PARALLAX - parallaxOffset.y) * PARALLAX_LERP;
   }
@@ -720,6 +715,32 @@
 
     renderOneFrame();
   }
+
+  // ─── Public API ──────────────────────────────────────────────
+  var tsunoApi = {
+    mesh: null,
+    getState: function () { return 'idle'; },
+    setState: function () {}
+  };
+
+  window.JJ_Portal = {
+    scene: scene,
+    camera: camera,
+    renderer: renderer,
+    renderTarget: renderTarget,
+    displayCanvas: displayCanvas,
+    displayCtx: displayCtx,
+    resW: resW,
+    resH: resH,
+    tsuno: tsunoApi,
+    setParallaxEnabled: function (enabled) {
+      parallaxEnabled = enabled;
+      if (!enabled) {
+        parallaxOffset.x = 0;
+        parallaxOffset.y = 0;
+      }
+    }
+  };
 
   // ─── Reduced Motion: Static Frame ─────────────────────────────
   if (prefersReducedMotion) {
