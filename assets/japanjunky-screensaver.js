@@ -28,14 +28,16 @@
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Resolution ──────────────────────────────────────────────
-  // Scale render height to viewport so pixels stay small at any zoom.
-  // Config value is a floor; we go higher if the viewport demands it.
+  // Use physical viewport dims (counter CSS adaptive zoom on html).
+  // window.innerWidth/Height reports the zoomed-down CSS viewport,
+  // so multiply by the zoom factor to get real screen pixels.
+  var cssZoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+  var physW = Math.round((window.innerWidth || 1280) * cssZoom);
+  var physH = Math.round((window.innerHeight || 720) * cssZoom);
+
   var configRes = parseInt(config.resolution, 10) || 240;
-  var viewH = window.innerHeight || 720;
-  var resH = Math.max(configRes, Math.round(viewH * 0.45));
-  var viewportAspect = (window.innerWidth && window.innerHeight)
-    ? window.innerWidth / window.innerHeight
-    : 4 / 3;
+  var resH = Math.max(configRes, Math.round(physH * 0.45));
+  var viewportAspect = physW / physH;
   var resW = Math.round(resH * viewportAspect);
 
   // ─── Renderer ────────────────────────────────────────────────
@@ -567,12 +569,18 @@
   displayCanvas.id = 'jj-screensaver-display';
   displayCanvas.setAttribute('aria-hidden', 'true');
   displayCanvas.tabIndex = -1;
+  // Size to physical viewport, counter-scale to neutralize CSS zoom.
+  // Without this, adaptive zoom (html { zoom: 1.5 }) double-scales
+  // the already-stretched low-res canvas, making pixels too chunky.
   displayCanvas.style.cssText = [
     'position:fixed', 'top:0', 'left:0',
-    'width:100vw', 'height:100vh',
+    'width:' + physW + 'px',
+    'height:' + physH + 'px',
     'z-index:0', 'pointer-events:none',
     'image-rendering:pixelated',
-    'image-rendering:crisp-edges'
+    'image-rendering:crisp-edges',
+    'transform-origin:top left',
+    'transform:scale(' + (1 / cssZoom) + ')'
   ].join(';');
   canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
 
