@@ -360,12 +360,18 @@
     '}'
   ].join('\n');
 
-  var ghosts = [];
-  var ghostConfigs = [
-    { z: 8, radius: 2.0, speed: 0.3, tint: [0.9, 0.15, 0.05], alpha: 0.5, phase: 0 },
-    { z: 16, radius: 1.8, speed: -0.2, tint: [0.95, 0.85, 0.7], alpha: 0.4, phase: 2.1 },
-    { z: 24, radius: 2.2, speed: 0.25, tint: [0.85, 0.55, 0.1], alpha: 0.45, phase: 4.2 }
-  ];
+  // ─── Tsuno Daishi — Shopkeeper ──────────────────────────────
+  var tsunoMesh = null;
+  var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
+  var tsunoTransition = { progress: 0, startPos: null, endPos: null };
+
+  // Idle position: ~30% from left in viewport, vertically centered
+  var TSUNO_IDLE_POS = { x: -1.5, y: 0, z: 8 };
+  var TSUNO_ORBIT_RADIUS = 2.0;
+  var TSUNO_ORBIT_SPEED = 0.2;
+  var TSUNO_ORBIT_Z = 16;
+  var TSUNO_TRANSITION_DURATION = 1.5; // seconds
+
   var ghostGeo = new THREE.PlaneGeometry(1.2, 3.5);
 
   var ghostUrl = config.ghostTexture;
@@ -373,34 +379,115 @@
     textureLoader.load(ghostUrl, function (tex) {
       tex.minFilter = THREE.NearestFilter;
       tex.magFilter = THREE.NearestFilter;
-      for (var gi = 0; gi < ghostConfigs.length; gi++) {
-        var gc = ghostConfigs[gi];
-        var mat = new THREE.ShaderMaterial({
-          uniforms: {
-            uResolution: { value: parseFloat(resH) },
-            uTexture: { value: tex },
-            uTime: { value: 0.0 },
-            uTint: { value: new THREE.Vector3(gc.tint[0], gc.tint[1], gc.tint[2]) },
-            uAlpha: { value: gc.alpha }
-          },
-          vertexShader: GLOW_VERT,
-          fragmentShader: GHOST_FRAG,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          side: THREE.DoubleSide
-        });
-        var ghost = new THREE.Mesh(ghostGeo, mat);
-        ghost.position.z = gc.z;
-        ghost.userData = {
-          baseZ: gc.z,
-          radius: gc.radius,
-          speed: gc.speed,
-          phase: gc.phase
-        };
-        scene.add(ghost);
-        ghosts.push(ghost);
+
+      var mat = new THREE.ShaderMaterial({
+        uniforms: {
+          uResolution: { value: parseFloat(resH) },
+          uTexture: { value: tex },
+          uTime: { value: 0.0 },
+          uTint: { value: new THREE.Vector3(0.9, 0.15, 0.05) },
+          uAlpha: { value: 0.5 }
+        },
+        vertexShader: GLOW_VERT,
+        fragmentShader: GHOST_FRAG,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+
+      tsunoMesh = new THREE.Mesh(ghostGeo, mat);
+      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+      scene.add(tsunoMesh);
+
+      // Update the pre-created tsuno API with real references
+      if (window.JJ_Portal && window.JJ_Portal.tsuno) {
+        window.JJ_Portal.tsuno.mesh = tsunoMesh;
+        window.JJ_Portal.tsuno.getState = function () { return tsunoState; };
+        window.JJ_Portal.tsuno.setState = function (state) { setTsunoState(state); };
       }
     });
+  }
+
+  function setTsunoState(newState) {
+    if (!tsunoMesh || tsunoState === newState) return;
+
+    tsunoState = newState;
+    tsunoTransition.progress = 0;
+
+    if (newState === 'transitioning-out') {
+      tsunoTransition.startPos = {
+        x: tsunoMesh.position.x,
+        y: tsunoMesh.position.y,
+        z: tsunoMesh.position.z
+      };
+      tsunoTransition.endPos = { x: 0, y: 0, z: TSUNO_ORBIT_Z };
+    } else if (newState === 'returning') {
+      tsunoTransition.startPos = {
+        x: tsunoMesh.position.x,
+        y: tsunoMesh.position.y,
+        z: tsunoMesh.position.z
+      };
+      tsunoTransition.endPos = {
+        x: TSUNO_IDLE_POS.x,
+        y: TSUNO_IDLE_POS.y,
+        z: TSUNO_IDLE_POS.z
+      };
+    }
+  }
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function updateTsuno(t, dt) {
+    if (!tsunoMesh) return;
+
+    tsunoMesh.material.uniforms.uTime.value = t;
+
+    if (tsunoState === 'idle') {
+      // Gentle bob at idle position
+      tsunoMesh.position.x = TSUNO_IDLE_POS.x;
+      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5) * 0.15;
+      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      tsunoMesh.lookAt(camera.position);
+
+    } else if (tsunoState === 'transitioning-out') {
+      tsunoTransition.progress += dt / TSUNO_TRANSITION_DURATION;
+      if (tsunoTransition.progress >= 1.0) {
+        tsunoTransition.progress = 1.0;
+        tsunoState = 'orbiting';
+      }
+      var ease = easeInOutCubic(tsunoTransition.progress);
+      var sp = tsunoTransition.startPos;
+      var ep = tsunoTransition.endPos;
+      tsunoMesh.position.x = sp.x + (ep.x - sp.x) * ease;
+      tsunoMesh.position.y = sp.y + (ep.y - sp.y) * ease;
+      tsunoMesh.position.z = sp.z + (ep.z - sp.z) * ease;
+      // Face toward vortex center during transition
+      tsunoMesh.lookAt(0, 0, 30);
+
+    } else if (tsunoState === 'orbiting') {
+      var angle = t * TSUNO_ORBIT_SPEED;
+      tsunoMesh.position.x = Math.cos(angle) * TSUNO_ORBIT_RADIUS;
+      tsunoMesh.position.y = Math.sin(angle) * TSUNO_ORBIT_RADIUS;
+      tsunoMesh.position.z = TSUNO_ORBIT_Z + Math.sin(t * 0.3) * 1.5;
+      // Face the user (camera) while orbiting
+      tsunoMesh.lookAt(camera.position);
+
+    } else if (tsunoState === 'returning') {
+      tsunoTransition.progress += dt / TSUNO_TRANSITION_DURATION;
+      if (tsunoTransition.progress >= 1.0) {
+        tsunoTransition.progress = 1.0;
+        tsunoState = 'idle';
+      }
+      var ease = easeInOutCubic(tsunoTransition.progress);
+      var sp = tsunoTransition.startPos;
+      var ep = tsunoTransition.endPos;
+      tsunoMesh.position.x = sp.x + (ep.x - sp.x) * ease;
+      tsunoMesh.position.y = sp.y + (ep.y - sp.y) * ease;
+      tsunoMesh.position.z = sp.z + (ep.z - sp.z) * ease;
+      tsunoMesh.lookAt(camera.position);
+    }
   }
 
   // ─── PS1 Textured Material ───────────────────────────────────
@@ -691,17 +778,8 @@
       vortexBackdrop.rotation.z = t * 0.15;
     }
 
-    // Orbit ghost figures
-    for (var gi = 0; gi < ghosts.length; gi++) {
-      var ghost = ghosts[gi];
-      var gd = ghost.userData;
-      var ghostAngle = gd.phase + t * gd.speed;
-      ghost.position.x = Math.cos(ghostAngle) * gd.radius;
-      ghost.position.y = Math.sin(ghostAngle) * gd.radius;
-      ghost.position.z = gd.baseZ + Math.sin(t * 0.3 + gd.phase) * 2.5;
-      ghost.lookAt(camera.position);
-      ghost.material.uniforms.uTime.value = t;
-    }
+    // Update Tsuno Daishi
+    updateTsuno(t, targetInterval / 1000);
 
     // Spawn and animate flying objects
     spawnObject(time);
