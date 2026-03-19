@@ -29,9 +29,9 @@
   {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
-  {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-catalog-panel.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
-  {{ 'japanjunky-wm.css' | asset_url | stylesheet_tag }}
 
   <script>
     window.JJ_CURSOR_SETS = {
@@ -135,45 +135,42 @@
   pointer-events:none;
 "></canvas>
 
-  {%- comment -%} OS Shell: header as fixed chrome {%- endcomment -%}
-  <div class="jj-shell-header jj-crt-on">
-    {% sections 'header-group' %}
-  </div>
-
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
-  {%- comment -%} Desktop layer: window manager moves windows here {%- endcomment -%}
-  <div class="jj-desktop" id="jj-desktop"></div>
+  {%- comment -%} Interaction overlay for 3D viewer drag-to-rotate {%- endcomment -%}
+  <div class="jj-viewer-interaction" id="jj-viewer-interaction"></div>
 
-  {%- comment -%} Page content: will be wrapped in window chrome by JS {%- endcomment -%}
-  {%- case request.page_type -%}
-    {%- when 'cart' -%}{%- assign jj_win_title = 'CART.EXE' -%}
-    {%- when 'search' -%}{%- assign jj_win_title = 'SEARCH.EXE' -%}
-    {%- when '404' -%}{%- assign jj_win_title = 'ERROR.EXE' -%}
-    {%- else -%}{%- assign jj_win_title = 'CATALOG.EXE' -%}
-  {%- endcase -%}
-
-  <div id="jj-window-source" style="display:none;">
-    <main id="MainContent" class="jj-main" role="main"
-          data-jj-window="catalog"
-          data-jj-window-title="{{ jj_win_title }}"
-          data-jj-window-icon=">"
-          data-jj-window-persistent="true"
-          data-jj-window-statusbar="true">
+  {%- comment -%} Catalog panel: fixed right 40% {%- endcomment -%}
+  <div class="jj-catalog-panel" id="jj-catalog-panel">
+    <div class="jj-catalog-panel__header">
+      {% sections 'header-group' %}
+    </div>
+    <main id="MainContent" class="jj-catalog-panel__body" role="main">
       {{ content_for_layout }}
     </main>
+    <div class="jj-catalog-panel__status">
+      <span id="jj-panel-status">READY</span>
+    </div>
   </div>
 
-  {%- comment -%} Taskbar (fixed at bottom, managed by WM) {%- endcomment -%}
-  {% sections 'footer-group' %}
+  {%- comment -%} Product info overlay: bottom-left HUD {%- endcomment -%}
+  <div class="jj-product-info" id="jj-product-info" style="display:none;">
+    <div class="jj-product-info__header" id="jj-pi-header">C:\catalog\item.dat</div>
+    <div class="jj-product-info__artist" id="jj-pi-artist"></div>
+    <div class="jj-product-info__title" id="jj-pi-title"></div>
+    <div class="jj-product-info__price" id="jj-pi-price"></div>
+    <div class="jj-product-info__meta" id="jj-pi-meta"></div>
+    <div class="jj-product-info__desc" id="jj-pi-desc"></div>
+    <div class="jj-product-info__variants" id="jj-pi-variants"></div>
+    <div class="jj-product-info__actions" id="jj-pi-actions">
+      <button class="jj-action-btn" id="jj-pi-add-to-cart" disabled>[Add to Cart]</button>
+      <input type="hidden" id="jj-pi-variant-id" value="">
+    </div>
+  </div>
 
-  <script>
-    window.JJ_WM_CONFIG = {
-      pageType: {{ request.page_type | json }},
-      windowTitle: {{ jj_win_title | json }}
-    };
-  </script>
+  {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
+  {% sections 'footer-group' %}
 
   <script>
     window.JJ_SCREENSAVER_CONFIG = {
@@ -182,10 +179,8 @@
       fps: {{ settings.screensaver_fps | default: 24 }},
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
-      tunnelTexture: {{ 'sample3.jpg' | asset_url | json }},
       swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
-      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
-      textures: []
+      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }}
     };
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
@@ -193,13 +188,12 @@
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-parallax.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-product-select.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-filter.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-search.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-catalog-panel.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-wm.js' | asset_url }}" defer></script>
 </body>
 </html>
