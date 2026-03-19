@@ -44,7 +44,7 @@
     var prevMouse = { x: 0, y: 0 };
 
     // Model position in scene — centered in left 60% viewer area
-    var MODEL_POS = { x: -0.5, y: 0, z: 8 };
+    var MODEL_POS = { x: 1.0, y: 0, z: 8 };
 
     // PS1 vertex snapping shader
     var PS1_VERT = [
@@ -76,9 +76,9 @@
 
       var geometry;
       if (data.type3d === 'box') {
-        geometry = new THREE.BoxGeometry(2.0, 2.8, 0.3);
+        geometry = new THREE.BoxGeometry(2.0, 2.0, 0.3);
       } else {
-        geometry = new THREE.PlaneGeometry(2.0, 2.8);
+        geometry = new THREE.PlaneGeometry(2.0, 2.0);
       }
 
       // Load front texture
@@ -141,7 +141,7 @@
 
         // If back texture, add a second plane slightly behind
         if (backTex) {
-          var backGeo = new THREE.PlaneGeometry(2.0, 2.8);
+          var backGeo = new THREE.PlaneGeometry(2.0, 2.0);
           var backPlaneMat = new THREE.ShaderMaterial({
             uniforms: {
               uResolution: { value: parseFloat(portal.resH) },
