@@ -186,16 +186,3 @@ h4 { font-size: 13px; }
   .jj-blink { animation: none; }
 }
 
-/* --- Resolution-Adaptive Zoom ---
-   Scale up on larger monitors to maintain compact terminal density.
-   Target effective viewport ≈ 1200-1300px across all resolutions.
-   Laptops (< 1600px) stay at native zoom. */
-@media (min-width: 1600px) {
-  html { zoom: 1.5; --jj-zoom: 1.5; }
-}
-@media (min-width: 2400px) {
-  html { zoom: 2.0; --jj-zoom: 2; }
-}
-@media (min-width: 3200px) {
-  html { zoom: 2.5; --jj-zoom: 2.5; }
-}
