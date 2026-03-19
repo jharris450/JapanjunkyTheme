@@ -43,8 +43,8 @@
     var isRotating = false;
     var prevMouse = { x: 0, y: 0 };
 
-    // Model position in scene (left-center, where Tsuno Daishi was)
-    var MODEL_POS = { x: -1.5, y: 0, z: 8 };
+    // Model position in scene — centered in left 60% viewer area
+    var MODEL_POS = { x: -3.5, y: 0, z: 8 };
 
     // PS1 vertex snapping shader
     var PS1_VERT = [
@@ -223,11 +223,9 @@
       interactionOverlay.addEventListener('mousedown', function (e) {
         if (!currentModel) return;
 
-        // Raycast to check if clicking on the model
-        var z = cssZoom();
-        var rect = interactionOverlay.getBoundingClientRect();
-        var mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        var my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        // Raycast using full-viewport NDC (camera spans entire viewport)
+        var mx = (e.clientX / window.innerWidth) * 2 - 1;
+        var my = -(e.clientY / window.innerHeight) * 2 + 1;
 
         raycaster.setFromCamera({ x: mx, y: my }, camera);
 
