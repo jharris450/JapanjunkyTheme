@@ -1,0 +1,150 @@
+/* ============================================
+   JAPANJUNKY PRODUCT INFO OVERLAY
+   Bottom-left HUD — game inventory style
+   ============================================ */
+
+.jj-product-info {
+  position: fixed;
+  left: 16px;
+  bottom: 48px; /* 32px taskbar + 16px gap */
+  max-width: 30vw;
+  max-height: 50vh;
+  z-index: 100;
+  background: rgba(10, 10, 10, 0.92);
+  border: 1px solid #333;
+  padding: 8px 12px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  overflow-y: auto;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.jj-product-info__header {
+  font-size: 10px;
+  color: #555;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #222;
+  padding-bottom: 4px;
+}
+
+.jj-product-info__artist {
+  font-size: 14px;
+  color: var(--jj-primary, #e8313a);
+  text-transform: uppercase;
+  line-height: 1.3;
+  min-height: 18px;
+}
+
+.jj-product-info__title {
+  font-size: 12px;
+  color: var(--jj-text, #e0d5c0);
+  line-height: 1.3;
+  margin-bottom: 4px;
+  min-height: 16px;
+}
+
+.jj-product-info__price {
+  font-size: 14px;
+  color: var(--jj-secondary, #f5d742);
+  margin-bottom: 6px;
+  min-height: 18px;
+}
+
+.jj-product-info__meta {
+  font-size: 10px;
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.jj-product-info__meta .jj-meta-label {
+  color: #555;
+  text-transform: uppercase;
+}
+
+.jj-product-info__meta .jj-meta-value {
+  color: #999;
+}
+
+.jj-product-info__desc {
+  font-size: 10px;
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.jj-product-info__variants {
+  margin-bottom: 8px;
+}
+
+.jj-product-info__variants select {
+  background: #000;
+  border: 1px solid #333;
+  color: var(--jj-text, #e0d5c0);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+  width: 100%;
+}
+
+.jj-product-info__variants select:focus {
+  border-color: var(--jj-accent, #4aa4e0);
+  outline: none;
+}
+
+.jj-product-info__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.jj-product-info__actions .jj-action-btn {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: var(--jj-accent, #4aa4e0);
+  background: #0a0a0a;
+  border: 1px solid #333;
+  padding: 4px 8px;
+  cursor: default;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.jj-product-info__actions .jj-action-btn:hover {
+  border-color: var(--jj-accent, #4aa4e0);
+  text-shadow: 0 0 4px rgba(74, 164, 224, 0.4);
+}
+
+.jj-product-info__actions .jj-action-btn:disabled {
+  color: #555;
+  border-color: #222;
+}
+
+/* Typing cursor for typewriter animation */
+.jj-pi-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--jj-text, #e0d5c0);
+  animation: jj-pi-blink 1.06s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes jj-pi-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* CRT-on flash for overlay appearance */
+.jj-product-info--entering {
+  animation: jj-crt-on 0.4s ease-out forwards;
+}
+
+/* --- High Contrast --- */
+@media (prefers-contrast: more) {
+  .jj-product-info {
+    background: #000;
+    border-width: 2px;
+  }
+}
