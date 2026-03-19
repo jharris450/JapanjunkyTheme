@@ -133,7 +133,7 @@ Positioned at bottom-left, overlaying the 3D viewer area. Dark panel with border
 - Add to Cart button (Win95/CRT button aesthetic)
 
 **Behavior:**
-- Appears with CRT-on flash when product is selected
+- Appears with CRT-on flash when product is selected. Text content reveals via the existing sequential typewriter animation with block cursor (carried over from `japanjunky-product-select.js`).
 - Changing variant updates the model texture in real-time (swaps product image)
 - Disappears when product is deselected
 
@@ -205,8 +205,8 @@ window.JJ_Portal = {
 - Renders product list from Shopify Liquid-generated markup (reuses `{{ content_for_layout }}`)
 - Manages selection state
 - Emits `jj:product-selected` and `jj:product-deselected` custom events
-- Handles keyboard navigation (arrow keys, Enter)
-- Filter toggle UI
+- Handles keyboard navigation (arrow keys, Enter, Escape)
+- Filter toggle UI (filtering only, no sort)
 
 ### Layout Changes (theme.liquid)
 
