@@ -496,10 +496,11 @@
       var headerH = headerEl ? headerEl.offsetHeight : 0;
       var taskbarH = 32;
       var availH = vh - headerH - taskbarH;
-      var w = Math.min(Math.round(vw * 0.7), 1200);
-      var h = Math.min(Math.round(availH * 0.85), 800);
+      var w = Math.min(Math.round(vw * 0.55), 900);
+      var h = Math.min(Math.round(availH * 0.7), 600);
       var l = Math.round((vw - w) / 2);
       var t = headerH + Math.round((availH - h) / 2);
+      console.log('[JJ_WM] window init:', { vw: vw, vh: vh, headerH: headerH, w: w, h: h, l: l, t: t });
 
       state.el.style.left = l + 'px';
       state.el.style.top = t + 'px';
