@@ -28,17 +28,13 @@
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Resolution ──────────────────────────────────────────────
-  // Use physical viewport dims (counter CSS adaptive zoom on html).
-  // window.innerWidth/Height reports the zoomed-down CSS viewport,
-  // so multiply by the zoom factor to get real screen pixels.
-  var cssZoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
-  var physW = Math.round((window.innerWidth || 1280) * cssZoom);
-  var physH = Math.round((window.innerHeight || 720) * cssZoom);
-
   var configRes = parseInt(config.resolution, 10) || 240;
-  var resH = Math.max(configRes, Math.round(physH * 0.45));
-  var viewportAspect = physW / physH;
-  var resW = Math.round(resH * viewportAspect);
+  var resH = configRes;
+  var resW = Math.round(resH * (4 / 3));
+  console.log('[JJ_SS] screen:', screen.width + 'x' + screen.height,
+    'inner:', window.innerWidth + 'x' + window.innerHeight,
+    'zoom:', getComputedStyle(document.documentElement).zoom,
+    'render:', resW + 'x' + resH);
 
   // ─── Renderer ────────────────────────────────────────────────
   var renderer;
@@ -569,18 +565,12 @@
   displayCanvas.id = 'jj-screensaver-display';
   displayCanvas.setAttribute('aria-hidden', 'true');
   displayCanvas.tabIndex = -1;
-  // Size to physical viewport, counter-scale to neutralize CSS zoom.
-  // Without this, adaptive zoom (html { zoom: 1.5 }) double-scales
-  // the already-stretched low-res canvas, making pixels too chunky.
   displayCanvas.style.cssText = [
     'position:fixed', 'top:0', 'left:0',
-    'width:' + physW + 'px',
-    'height:' + physH + 'px',
+    'width:100vw', 'height:100vh',
     'z-index:0', 'pointer-events:none',
     'image-rendering:pixelated',
-    'image-rendering:crisp-edges',
-    'transform-origin:top left',
-    'transform:scale(' + (1 / cssZoom) + ')'
+    'image-rendering:crisp-edges'
   ].join(';');
   canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
 

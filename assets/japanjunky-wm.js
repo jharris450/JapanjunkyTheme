@@ -500,6 +500,9 @@
       var h = Math.min(Math.round(availH * 0.75), 700);
       var l = Math.round((vw - w) / 2);
       var t = headerH + Math.round((availH - h) / 2);
+      console.log('[JJ_WM] vw:', vw, 'vh:', vh, 'headerH:', headerH,
+        'availH:', availH, 'w:', w, 'h:', h, 'l:', l, 't:', t,
+        'zoom:', getComputedStyle(document.documentElement).zoom);
 
       state.el.style.left = l + 'px';
       state.el.style.top = t + 'px';
