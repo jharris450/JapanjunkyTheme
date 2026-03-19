@@ -31,6 +31,7 @@
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-homepage.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-wm.css' | asset_url | stylesheet_tag }}
 
   <script>
     window.JJ_CURSOR_SETS = {
@@ -133,17 +134,44 @@
   z-index:0;image-rendering:pixelated;image-rendering:crisp-edges;
   pointer-events:none;
 "></canvas>
-  <div class="jj-page-wrapper jj-crt-frame jj-crt-on">
+
+  {%- comment -%} OS Shell: header as fixed chrome {%- endcomment -%}
+  <div class="jj-shell-header jj-crt-frame jj-crt-on">
     {% sections 'header-group' %}
-
-    <main id="MainContent" class="jj-main" role="main">
-      {{ content_for_layout }}
-    </main>
-
-    {% sections 'footer-group' %}
   </div>
 
-  {%- if request.page_type == 'index' -%}
+  {%- comment -%} Desktop layer: window manager moves windows here {%- endcomment -%}
+  <div class="jj-desktop" id="jj-desktop"></div>
+
+  {%- comment -%} Page content: will be wrapped in window chrome by JS {%- endcomment -%}
+  {%- case request.page_type -%}
+    {%- when 'cart' -%}{%- assign jj_win_title = 'CART.EXE' -%}
+    {%- when 'search' -%}{%- assign jj_win_title = 'SEARCH.EXE' -%}
+    {%- when '404' -%}{%- assign jj_win_title = 'ERROR.EXE' -%}
+    {%- else -%}{%- assign jj_win_title = 'CATALOG.EXE' -%}
+  {%- endcase -%}
+
+  <div id="jj-window-source" style="display:none;">
+    <main id="MainContent" class="jj-main" role="main"
+          data-jj-window="catalog"
+          data-jj-window-title="{{ jj_win_title }}"
+          data-jj-window-icon=">"
+          data-jj-window-persistent="true"
+          data-jj-window-statusbar="true">
+      {{ content_for_layout }}
+    </main>
+  </div>
+
+  {%- comment -%} Taskbar (fixed at bottom, managed by WM) {%- endcomment -%}
+  {% sections 'footer-group' %}
+
+  <script>
+    window.JJ_WM_CONFIG = {
+      pageType: {{ request.page_type | json }},
+      windowTitle: {{ jj_win_title | json }}
+    };
+  </script>
+
   <script>
     window.JJ_SCREENSAVER_CONFIG = {
       enabled: {{ settings.screensaver_enabled | default: true }},
@@ -151,6 +179,7 @@
       fps: {{ settings.screensaver_fps | default: 24 }},
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
+      tunnelTexture: {{ 'sample3.jpg' | asset_url | json }},
       swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
       ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
       textures: []
@@ -159,7 +188,6 @@
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
-  {%- endif -%}
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-parallax.js' | asset_url }}" defer></script>
@@ -169,5 +197,6 @@
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-wm.js' | asset_url }}" defer></script>
 </body>
 </html>

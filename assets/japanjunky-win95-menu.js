@@ -101,4 +101,26 @@
       }
     });
   }
+
+  // ─── Window Manager Integration ───────────────────────────
+  // If a start menu link points to the current page, restore/focus the window
+  // instead of triggering a page reload.
+  var menuLinks = document.querySelectorAll('.jj-start-menu__item[href], .jj-start-submenu__item[href]');
+  for (var i = 0; i < menuLinks.length; i++) {
+    (function (link) {
+      link.addEventListener('click', function (e) {
+        if (link.pathname === window.location.pathname && window.JJ_WM) {
+          e.preventDefault();
+          window.JJ_WM.open('catalog');
+          // Close start menu
+          if (startMenu) {
+            startMenu.classList.remove('jj-start-menu--open');
+            startBtn.classList.remove('jj-start-btn--active');
+            startBtn.setAttribute('aria-expanded', 'false');
+          }
+        }
+        // Otherwise, let normal navigation happen
+      });
+    })(menuLinks[i]);
+  }
 })();
