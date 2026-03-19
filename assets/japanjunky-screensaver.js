@@ -29,7 +29,10 @@
 
   // ─── Resolution ──────────────────────────────────────────────
   var resH = parseInt(config.resolution, 10) || 240;
-  var resW = Math.round(resH * (4 / 3)); // 4:3 fixed aspect
+  var viewportAspect = (window.innerWidth && window.innerHeight)
+    ? window.innerWidth / window.innerHeight
+    : 4 / 3;
+  var resW = Math.round(resH * viewportAspect); // match viewport aspect
 
   // ─── Renderer ────────────────────────────────────────────────
   var renderer;
@@ -69,63 +72,46 @@
   var TUNNEL_FRAG = [
     'uniform float uTime;',
     'uniform float uSwirlSpeed;',
+    'uniform sampler2D uTunnelTex;',
     'varying vec2 vUv;',
     '',
-    'vec3 flamePalette(float t) {',
-    '  t = fract(t);',
-    '  vec3 c0 = vec3(0.1, 0.02, 0.0);',
-    '  vec3 c1 = vec3(0.7, 0.05, 0.0);',
-    '  vec3 c2 = vec3(0.95, 0.2, 0.05);',
-    '  vec3 c3 = vec3(0.95, 0.85, 0.7);',
-    '  vec3 c4 = vec3(0.85, 0.55, 0.1);',
-    '  float s = t * 5.0;',
-    '  vec3 c = mix(c0, c1, clamp(s, 0.0, 1.0));',
-    '  c = mix(c, c2, clamp(s - 1.0, 0.0, 1.0));',
-    '  c = mix(c, c3, clamp(s - 2.0, 0.0, 1.0));',
-    '  c = mix(c, c4, clamp(s - 3.0, 0.0, 1.0));',
-    '  c = mix(c, c0, clamp(s - 4.0, 0.0, 1.0));',
-    '  return c;',
-    '}',
-    '',
     'void main() {',
-    '  float angle = vUv.x * 6.2832;',
+    '  float angle = vUv.x;',
     '  float depth = vUv.y;',
     '',
-    '  float spiral = angle - depth * 8.0 - uTime * uSwirlSpeed;',
+    '  float twist = angle - uTime * uSwirlSpeed * 0.08;',
+    '  float pull = depth + uTime * 0.15;',
     '',
-    '  float pattern = sin(spiral * 3.0);',
-    '  pattern += sin(spiral * 5.0 + angle * 2.0) * 0.3;',
-    '  pattern += sin(spiral * 7.0 - depth * 6.0 + uTime * 0.4) * 0.15;',
-    '  pattern += sin(angle * 8.0 + depth * 10.0 - uTime * 0.7) * 0.1;',
+    '  vec2 uv = vec2(fract(twist), fract(pull * 2.0));',
     '',
-    '  float mask = smoothstep(-0.12, 0.12, pattern);',
+    '  vec3 color = texture2D(uTunnelTex, uv).rgb;',
     '',
-    '  vec3 red = vec3(0.75, 0.08, 0.0);',
-    '  vec3 cream = vec3(0.95, 0.85, 0.7);',
-    '  vec3 color = mix(red, cream, mask);',
+    '  float falloff = smoothstep(0.0, 0.12, depth) * smoothstep(1.0, 0.6, depth);',
+    '  color *= 0.55 + 0.45 * falloff;',
     '',
-    '  vec3 gold = vec3(0.85, 0.55, 0.1);',
-    '  float edge = 1.0 - smoothstep(0.0, 0.25, abs(pattern));',
-    '  color = mix(color, gold, edge * 0.35);',
+    '  float glow = smoothstep(0.75, 1.0, depth);',
+    '  color += vec3(0.95, 0.75, 0.5) * glow * 0.3;',
     '',
-    '  float val = 0.8 + 0.2 * sin(depth * 4.0 - uTime * 1.5);',
-    '',
-    '  float falloff = smoothstep(0.0, 0.15, depth) * smoothstep(1.0, 0.65, depth);',
-    '  val *= 0.5 + 0.5 * falloff;',
-    '  val += smoothstep(0.75, 1.0, depth) * 0.25;',
-    '',
-    '  color *= val;',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
 
+  var textureLoader = new THREE.TextureLoader();
+
   function buildTunnel() {
+    var tunnelTex = textureLoader.load(config.tunnelTexture || 'assets/sample3.jpg');
+    tunnelTex.wrapS = THREE.RepeatWrapping;
+    tunnelTex.wrapT = THREE.RepeatWrapping;
+    tunnelTex.minFilter = THREE.LinearFilter;
+    tunnelTex.magFilter = THREE.LinearFilter;
+
     var geo = new THREE.CylinderGeometry(3, 3, 40, 12, 20, true);
     var mat = new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
         uTime: { value: 0.0 },
-        uSwirlSpeed: { value: swirlSpeed }
+        uSwirlSpeed: { value: swirlSpeed },
+        uTunnelTex: { value: tunnelTex }
       },
       vertexShader: TUNNEL_VERT,
       fragmentShader: TUNNEL_FRAG,
@@ -320,9 +306,6 @@
     scene.add(ringMesh);
     portalRings.push(ringMesh);
   }
-
-  // ─── Texture Loader (shared) ─────────────────────────────
-  var textureLoader = new THREE.TextureLoader();
 
   // ─── Vortex Swirl Backdrop ─────────────────────────────────
   var BACKDROP_FRAG = [

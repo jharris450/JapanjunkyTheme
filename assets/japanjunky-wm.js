@@ -489,13 +489,17 @@
     for (var i = 0; i < sources.length; i++) {
       var state = injectChrome(sources[i]);
 
-      // Position the first window centered at ~80% viewport
+      // Position the window centered, accounting for header and taskbar
       var vw = window.innerWidth;
       var vh = window.innerHeight;
-      var w = Math.round(vw * 0.8);
-      var h = Math.round((vh - 32) * 0.8); // minus taskbar
+      var headerEl = document.querySelector('.jj-shell-header');
+      var headerH = headerEl ? headerEl.offsetHeight : 0;
+      var taskbarH = 32;
+      var availH = vh - headerH - taskbarH;
+      var w = Math.min(Math.round(vw * 0.7), 1200);
+      var h = Math.min(Math.round(availH * 0.85), 800);
       var l = Math.round((vw - w) / 2);
-      var t = Math.round(((vh - 32) - h) / 2);
+      var t = headerH + Math.round((availH - h) / 2);
 
       state.el.style.left = l + 'px';
       state.el.style.top = t + 'px';
