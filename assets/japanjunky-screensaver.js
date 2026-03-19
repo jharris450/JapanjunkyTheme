@@ -569,9 +569,15 @@
   displayCanvas.id = 'jj-screensaver-display';
   displayCanvas.setAttribute('aria-hidden', 'true');
   displayCanvas.tabIndex = -1;
+  // Size to effective viewport (divide by CSS zoom so it doesn't overflow).
+  // 100vw/vh are pre-zoom CSS px — at zoom 1.5 they'd render 1.5× the viewport.
+  var cssZoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+  var canvasW = Math.round(window.innerWidth / cssZoom);
+  var canvasH = Math.round(window.innerHeight / cssZoom);
   displayCanvas.style.cssText = [
     'position:fixed', 'top:0', 'left:0',
-    'width:100vw', 'height:100vh',
+    'width:' + canvasW + 'px',
+    'height:' + canvasH + 'px',
     'z-index:0', 'pointer-events:none',
     'image-rendering:pixelated',
     'image-rendering:crisp-edges'
