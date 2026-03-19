@@ -6,14 +6,15 @@
 (function () {
   'use strict';
 
-  var sidebar = document.querySelector('.jj-left-sidebar');
-  var tbody = document.getElementById('jj-product-tbody');
+  var sidebar = document.querySelector('.jj-catalog-filters');
+  var tbody = document.getElementById('jj-inventory-list');
   var filterBar = document.getElementById('jj-filter-bar');
   var filterTags = document.getElementById('jj-filter-tags');
   var filterClear = document.getElementById('jj-filter-clear');
   var footerCount = document.getElementById('jj-footer-count');
   var footerSep = document.getElementById('jj-footer-sep');
   var footerShowing = document.getElementById('jj-footer-showing');
+  var panelStatus = document.getElementById('jj-panel-status');
 
   if (!sidebar || !tbody) return;
 
@@ -55,7 +56,7 @@
   // ── Apply filters ──
 
   function applyFilters() {
-    var rows = tbody.querySelectorAll('tr[data-product-handle]');
+    var rows = tbody.querySelectorAll('.jj-inventory-row[data-product-handle]');
     var totalRows = rows.length;
     var visibleCount = 0;
 
@@ -146,6 +147,14 @@
   // ── Footer count ──
 
   function updateFooterCount(visible, total, isFiltered) {
+    if (panelStatus) {
+      if (isFiltered) {
+        panelStatus.textContent = visible + ' OF ' + total + ' ITEMS';
+      } else {
+        panelStatus.textContent = total + ' ITEMS';
+      }
+    }
+
     if (!footerCount) return;
 
     if (isFiltered) {
@@ -162,13 +171,11 @@
   // ── Detail pane check ──
 
   function checkDetailPane() {
-    var selectedRow = tbody.querySelector('tr.jj-row-selected');
+    var selectedRow = tbody.querySelector('.jj-inventory-row.jj-row-selected');
     if (selectedRow && selectedRow.classList.contains('jj-row--hidden')) {
-      // Click the first visible row, or clear the pane
-      var firstVisible = tbody.querySelector('tr[data-product-handle]:not(.jj-row--hidden)');
-      if (firstVisible) {
-        firstVisible.click();
-      }
+      // Currently selected product was filtered out — deselect it
+      selectedRow.classList.remove('jj-row-selected');
+      document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
     }
   }
 
@@ -251,23 +258,12 @@
       if (searchInput) {
         searchInput.value = '';
       }
-      var allRows = tbody.querySelectorAll('tr[data-search-match]');
+      var allRows = tbody.querySelectorAll('.jj-inventory-row[data-search-match]');
       for (var j = 0; j < allRows.length; j++) {
         allRows[j].removeAttribute('data-search-match');
       }
 
       applyFilters();
-    });
-  }
-
-  // ── Sort integration: reapply filters after sort changes ──
-
-  var sortSelect = document.getElementById('jj-sort-select');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', function () {
-      // Sort handler in product-select.js fires first (same event).
-      // Use setTimeout to let it finish re-ordering rows, then reapply.
-      setTimeout(applyFilters, 0);
     });
   }
 
