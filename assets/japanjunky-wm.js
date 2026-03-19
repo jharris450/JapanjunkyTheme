@@ -489,9 +489,12 @@
     for (var i = 0; i < sources.length; i++) {
       var state = injectChrome(sources[i]);
 
-      // Position the window centered, accounting for header and taskbar
-      var vw = window.innerWidth;
-      var vh = window.innerHeight;
+      // Position the window centered, accounting for header, taskbar, and CSS zoom.
+      // window.innerWidth/Height report pre-zoom values, but CSS px are scaled
+      // by zoom for rendering. Divide by zoom to get the effective usable space.
+      var cssZoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+      var vw = Math.round(window.innerWidth / cssZoom);
+      var vh = Math.round(window.innerHeight / cssZoom);
       var headerEl = document.querySelector('.jj-shell-header');
       var headerH = headerEl ? headerEl.offsetHeight : 0;
       var taskbarH = 32;
@@ -502,7 +505,7 @@
       var t = headerH + Math.round((availH - h) / 2);
       console.log('[JJ_WM] vw:', vw, 'vh:', vh, 'headerH:', headerH,
         'availH:', availH, 'w:', w, 'h:', h, 'l:', l, 't:', t,
-        'zoom:', getComputedStyle(document.documentElement).zoom);
+        'zoom:', cssZoom);
 
       state.el.style.left = l + 'px';
       state.el.style.top = t + 'px';
