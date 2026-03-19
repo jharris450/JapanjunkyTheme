@@ -1,97 +1,38 @@
 {%- assign featured = section.settings.collection | default: collections['all'] -%}
 
-{%- comment -%} THREE-COLUMN CATALOG {%- endcomment -%}
-<div class="jj-catalog-layout">
-
-  {%- comment -%} LEFT SIDEBAR {%- endcomment -%}
-  <div class="jj-left-sidebar">
-    <div class="jj-left-sidebar__filters">
-      {% render 'category-list', section: section %}
-    </div>
-    {% render 'member-login-box' %}
+{%- comment -%} COLLAPSIBLE FILTERS {%- endcomment -%}
+<div class="jj-catalog-filters" id="jj-catalog-filters">
+  <button class="jj-catalog-filters__toggle" id="jj-filter-toggle" type="button">
+    FILTERS
+  </button>
+  <div class="jj-catalog-filters__body" id="jj-filter-body" style="display:none;">
+    {% render 'category-list', section: section %}
   </div>
-
-  {%- comment -%} CENTER: PRODUCT TABLE {%- endcomment -%}
-  <div class="jj-center-content">
-    <div class="jj-filter-bar" id="jj-filter-bar" style="display:none;">
-      <span class="jj-filter-bar__prompt">&gt;</span>
-      <span class="jj-filter-bar__tags" id="jj-filter-tags"></span>
-      <button class="jj-filter-bar__clear" id="jj-filter-clear">[clear all]</button>
-    </div>
-    <div class="jj-product-table-wrap" id="jj-product-table-wrap">
-      <table class="jj-product-table" id="jj-product-table">
-        <colgroup>
-          <col style="width:80px;">
-          <col style="width:70px;">
-          <col style="width:70px;">
-          <col style="width:70px;">
-          <col style="width:70px;">
-          <col>
-          <col style="width:84px;">
-        </colgroup>
-        <thead>
-          <tr>
-            <th></th>
-            <th>CODE</th>
-            <th>GENRE</th>
-            <th>COND</th>
-            <th>FORMAT</th>
-            <th>TITLE &amp; DESCRIPTION</th>
-            <th style="text-align:right;">PRICE</th>
-          </tr>
-        </thead>
-        <tbody id="jj-product-tbody">
-          {%- assign row_index = 0 -%}
-          {%- for product in featured.products limit: section.settings.products_to_show -%}
-            {%- for variant in product.variants -%}
-              {%- if variant.available -%}
-                {% render 'product-table-row', product: product, variant: variant, index: row_index %}
-                {%- assign row_index = row_index | plus: 1 -%}
-              {%- endif -%}
-            {%- endfor -%}
-          {%- else -%}
-            {%- for i in (1..12) -%}
-              {% render 'product-table-row', product: blank, index: forloop.index0 %}
-            {%- endfor -%}
-          {%- endfor -%}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="jj-table-footer">
-      <div class="jj-table-footer__left">
-        <span id="jj-footer-count">{{ featured.products_count | default: 0 }} items</span>
-        <span id="jj-footer-sep" style="color:#444;">|</span>
-        <span id="jj-footer-showing" style="color:#555;">
-          showing 1-{{ section.settings.products_to_show }}
-        </span>
-      </div>
-      <div class="jj-table-footer__right">
-        <span style="color:#666;">sort:</span>
-        <select class="jj-table-sort-select" id="jj-sort-select">
-          <option value="manual">Default</option>
-          <option value="price-ascending">Price &#8593;</option>
-          <option value="price-descending">Price &#8595;</option>
-          <option value="title-ascending">Name A-Z</option>
-          <option value="title-descending">Name Z-A</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  {%- comment -%} RIGHT SIDEBAR: ITEM DETAILS {%- endcomment -%}
-  <div class="jj-right-sidebar" id="jj-detail-pane">
-    {% render 'product-detail-pane' %}
-  </div>
-
 </div>
 
-{%- comment -%} MARQUEE BAR {%- endcomment -%}
-{%- if section.settings.marquee_text != blank -%}
-  <div class="jj-marquee-bar">
-    <span class="jj-marquee-text">{{ section.settings.marquee_text }}</span>
-  </div>
-{%- endif -%}
+{%- comment -%} FILTER TAGS BAR {%- endcomment -%}
+<div class="jj-filter-bar" id="jj-filter-bar" style="display:none;">
+  <span class="jj-filter-bar__prompt">&gt;</span>
+  <span class="jj-filter-bar__tags" id="jj-filter-tags"></span>
+  <button class="jj-filter-bar__clear" id="jj-filter-clear">[clear all]</button>
+</div>
+
+{%- comment -%} INVENTORY LIST {%- endcomment -%}
+<div class="jj-inventory-list" id="jj-inventory-list" role="listbox" aria-label="Product inventory">
+  {%- assign row_index = 0 -%}
+  {%- for product in featured.products limit: section.settings.products_to_show -%}
+    {%- for variant in product.variants -%}
+      {%- if variant.available -%}
+        {% render 'product-inventory-row', product: product, variant: variant, index: row_index %}
+        {%- assign row_index = row_index | plus: 1 -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- else -%}
+    <div class="jj-inventory-list__empty" style="padding:16px 8px;color:#555;font-size:11px;">
+      NO ITEMS FOUND
+    </div>
+  {%- endfor -%}
+</div>
 
 {% schema %}
 {
@@ -110,12 +51,6 @@
       "max": 50,
       "step": 2,
       "default": 20
-    },
-    {
-      "type": "textarea",
-      "id": "marquee_text",
-      "label": "Marquee scrolling text",
-      "default": "★★★ JAPANJUNKY ★★★ FREE SHIPPING ON ORDERS OVER $50 ★★★ USE CODE AMBER95 FOR 10% OFF ★★★ BEST VIEWED WITH NETSCAPE NAVIGATOR 3.0 AT 800x600 ★★★"
     }
   ],
   "presets": [

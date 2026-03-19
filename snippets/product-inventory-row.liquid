@@ -1,0 +1,94 @@
+{%- comment -%}
+  Inventory row for the catalog panel — simplified single-column layout.
+  Renders: thumbnail + title/artist + price.
+  All data attributes preserved for filter/selection JS.
+  Usage: {% render 'product-inventory-row', product: product, variant: variant, index: row_index %}
+{%- endcomment -%}
+
+{%- if product != blank -%}
+  {%- assign m_artist = product.metafields.custom.artist | default: '' -%}
+  {%- assign m_code = product.metafields.custom.code | default: '' -%}
+  {%- assign m_year = product.metafields.custom.year | default: '' -%}
+  {%- assign m_label = product.metafields.custom.label | default: '' -%}
+  {%- assign m_format = product.metafields.custom.format | default: '' -%}
+  {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
+  {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
+  {%- assign m_genre = product.metafields.custom.genre | default: '' -%}
+
+  {%- assign p_condition = variant.option1 | default: 'N/A' -%}
+  {%- assign cond_lower = p_condition | downcase | strip -%}
+
+  {%- assign p_format_lower = m_format | downcase -%}
+  {%- assign p_format = '' -%}
+  {%- if p_format_lower contains 'vinyl' or p_format_lower contains 'lp' or p_format_lower contains 'record' -%}
+    {%- assign p_format = 'vinyl' -%}
+  {%- elsif p_format_lower contains 'cd' or p_format_lower contains 'compact disc' -%}
+    {%- assign p_format = 'cd' -%}
+  {%- elsif p_format_lower contains 'cassette' or p_format_lower contains 'tape' -%}
+    {%- assign p_format = 'cassette' -%}
+  {%- elsif p_format_lower contains 'minidisc' or p_format_lower contains 'mini disc' or p_format_lower contains 'md' -%}
+    {%- assign p_format = 'minidisc' -%}
+  {%- elsif p_format_lower contains 'hardware' or p_format_lower contains 'player' or p_format_lower contains 'walkman' or p_format_lower contains 'stereo' -%}
+    {%- assign p_format = 'hardware' -%}
+  {%- endif -%}
+
+  {%- comment -%} Check for 3d-box tag {%- endcomment -%}
+  {%- assign p_3d_type = 'plane' -%}
+  {%- for tag in product.tags -%}
+    {%- if tag == '3d-box' -%}
+      {%- assign p_3d_type = 'box' -%}
+    {%- endif -%}
+  {%- endfor -%}
+
+  {%- comment -%} Second image for back face {%- endcomment -%}
+  {%- assign second_image_url = '' -%}
+  {%- if product.images.size > 1 -%}
+    {%- assign second_image_url = product.images[1] | image_url: width: 480 -%}
+  {%- endif -%}
+
+  <div class="jj-inventory-row"
+       data-index="{{ index }}"
+       data-product-handle="{{ product.handle }}"
+       data-product-id="{{ product.id }}"
+       data-product-collections="{{ product.collections | map: 'handle' | join: ',' }}"
+       data-product-title="{{ product.title | escape }}"
+       data-product-artist="{{ m_artist | escape }}"
+       data-product-vendor="{{ product.vendor | escape }}"
+       data-product-type="{{ product.type | escape }}"
+       data-product-price="{{ variant.price | money }}"
+       data-product-code="{{ m_code | escape }}"
+       data-product-condition="{{ cond_lower }}"
+       data-product-format="{{ p_format }}"
+       data-product-format-label="{{ m_format | escape }}"
+       data-product-year="{{ m_year | escape }}"
+       data-product-label="{{ m_label | escape }}"
+       data-product-jp-name="{{ m_jp_name | escape }}"
+       data-product-jp-title="{{ m_jp_title | escape }}"
+       data-product-image="{%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 }}{%- endif -%}"
+       data-product-image-back="{{ second_image_url }}"
+       data-product-3d-type="{{ p_3d_type }}"
+       data-variant-id="{{ variant.id }}"
+       data-product-available="{{ variant.available }}"
+       tabindex="0"
+       role="option"
+  >
+    <div class="jj-inventory-row__thumb">
+      {%- if product.featured_image -%}
+        <img
+          src="{{ product.featured_image | image_url: width: 144 }}"
+          alt="{{ product.featured_image.alt | escape | default: product.title | escape }}"
+          width="40"
+          height="40"
+          loading="lazy"
+        >
+      {%- else -%}
+        <span style="font-size:10px;color:var(--jj-secondary);display:flex;align-items:center;justify-content:center;height:100%;">&#9670;</span>
+      {%- endif -%}
+    </div>
+    <div class="jj-inventory-row__info">
+      <div class="jj-inventory-row__title">{{ product.title }}</div>
+      <div class="jj-inventory-row__artist">{{ m_artist | default: product.vendor | default: '---' }}</div>
+    </div>
+    <div class="jj-inventory-row__price">{{ variant.price | money }}</div>
+  </div>
+{%- endif -%}
