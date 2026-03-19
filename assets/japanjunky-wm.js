@@ -409,8 +409,11 @@
     var state = windows[dragState.appId];
     if (!state) { onDragEnd(); return; }
 
-    var newLeft = e.clientX - dragState.offsetX;
-    var newTop = e.clientY - dragState.offsetY;
+    // clientX/Y and getBoundingClientRect are in visual (zoomed) coords,
+    // but style.left/top are CSS px that get multiplied by zoom. Divide.
+    var z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    var newLeft = (e.clientX - dragState.offsetX) / z;
+    var newTop = (e.clientY - dragState.offsetY) / z;
 
     state.el.style.left = newLeft + 'px';
     state.el.style.top = newTop + 'px';

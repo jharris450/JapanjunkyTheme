@@ -28,12 +28,16 @@
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Resolution ──────────────────────────────────────────────
+  // Match viewport aspect so the 3D scene isn't stretched/distorted.
   var configRes = parseInt(config.resolution, 10) || 240;
   var resH = configRes;
-  var resW = Math.round(resH * (4 / 3));
+  var viewportAspect = (window.innerWidth && window.innerHeight)
+    ? window.innerWidth / window.innerHeight : 4 / 3;
+  var resW = Math.round(resH * viewportAspect);
   console.log('[JJ_SS] screen:', screen.width + 'x' + screen.height,
     'inner:', window.innerWidth + 'x' + window.innerHeight,
     'zoom:', getComputedStyle(document.documentElement).zoom,
+    'aspect:', viewportAspect.toFixed(2),
     'render:', resW + 'x' + resH);
 
   // ─── Renderer ────────────────────────────────────────────────
