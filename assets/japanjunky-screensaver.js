@@ -649,9 +649,10 @@
     resumeIfNeeded();
   });
 
-  // Scroll sentinel — pause when user scrolls past the fold
+  // Scroll sentinel — pause when user scrolls past the fold.
+  // Use position:fixed so CSS zoom on html can't push it off-viewport.
   var sentinel = document.createElement('div');
-  sentinel.style.cssText = 'position:absolute;top:100vh;width:1px;height:1px;pointer-events:none;';
+  sentinel.style.cssText = 'position:fixed;bottom:0;width:1px;height:1px;pointer-events:none;';
   document.body.appendChild(sentinel);
 
   if (window.IntersectionObserver) {
