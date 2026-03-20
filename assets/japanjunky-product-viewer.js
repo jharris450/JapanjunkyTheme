@@ -232,6 +232,7 @@
         var intersects = raycaster.intersectObject(currentModel, true);
         if (intersects.length > 0) {
           isRotating = true;
+          var z = cssZoom();
           prevMouse.x = e.clientX / z;
           prevMouse.y = e.clientY / z;
           interactionOverlay.classList.add('jj-viewer-interaction--dragging');

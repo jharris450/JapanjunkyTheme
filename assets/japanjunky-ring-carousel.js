@@ -246,6 +246,14 @@
     // Wrap around
     if (newIndex < 0) newIndex = filteredProducts.length - 1;
     if (newIndex >= filteredProducts.length) newIndex = 0;
+    // Deselect previous product when rotating away
+    if (selectedProduct) {
+      var prev = filteredProducts[centerIndex];
+      if (!prev || prev.handle !== filteredProducts[newIndex].handle ||
+          prev.variantId !== filteredProducts[newIndex].variantId) {
+        deselectCurrent();
+      }
+    }
     centerIndex = newIndex;
     positionCovers();
     startSelectTimer();
