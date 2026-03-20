@@ -1,0 +1,295 @@
+/* ============================================
+   JAPANJUNKY RING CAROUSEL
+   Full-viewport horizontal arc of album covers
+   ============================================ */
+
+/* --- Ring Container --- */
+.jj-ring {
+  position: fixed;
+  left: 0;
+  bottom: 32px; /* above taskbar */
+  width: 100vw;
+  height: 40vh;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* --- Filter/Search Bar --- */
+.jj-ring__bar {
+  width: 100%;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  background: rgba(10, 10, 10, 0.85);
+  border-bottom: 1px solid #222;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+}
+
+.jj-ring__search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.jj-ring__search-prompt {
+  color: var(--jj-secondary, #f5d742);
+  font-size: 11px;
+}
+
+.jj-ring__search {
+  width: 140px;
+  height: 22px;
+  padding: 0 4px;
+  background: #000;
+  border: 1px solid #333;
+  color: var(--jj-text, #e0d5c0);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.jj-ring__search:focus {
+  border-color: var(--jj-accent, #4aa4e0);
+  outline: none;
+}
+
+.jj-ring__filter-btn {
+  font-family: inherit;
+  font-size: 11px;
+  color: #888;
+  background: none;
+  border: 1px solid #333;
+  padding: 2px 6px;
+  cursor: default;
+  position: relative;
+}
+
+.jj-ring__filter-btn:hover {
+  color: var(--jj-text, #e0d5c0);
+  border-color: #555;
+}
+
+.jj-ring__filter-btn--active {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+}
+
+.jj-ring__filter-badge {
+  font-size: 9px;
+  color: var(--jj-primary, #e8313a);
+  margin-left: 2px;
+}
+
+.jj-ring__clear-btn {
+  font-family: inherit;
+  font-size: 10px;
+  color: #555;
+  background: none;
+  border: none;
+  cursor: default;
+  display: none;
+}
+
+.jj-ring__clear-btn--visible {
+  display: inline;
+}
+
+.jj-ring__clear-btn:hover {
+  color: var(--jj-primary, #e8313a);
+}
+
+.jj-ring__count {
+  margin-left: auto;
+  color: #555;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* --- Filter Dropdown --- */
+.jj-ring__dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid #333;
+  padding: 4px 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.jj-ring__dropdown--open {
+  display: block;
+}
+
+.jj-ring__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  color: #888;
+  cursor: default;
+}
+
+.jj-ring__dropdown-item:hover {
+  background: #111;
+  color: var(--jj-text, #e0d5c0);
+}
+
+.jj-ring__dropdown-item--active {
+  color: var(--jj-secondary, #f5d742);
+}
+
+.jj-ring__dropdown-check {
+  width: 10px;
+  text-align: center;
+}
+
+/* --- Arc Stage --- */
+.jj-ring__stage {
+  flex: 1;
+  width: 100%;
+  perspective: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: auto;
+  position: relative;
+}
+
+/* --- Cover Elements --- */
+.jj-ring__cover {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease-out, opacity 0.3s;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.jj-ring__cover-img-wrap {
+  width: 180px;
+  height: 180px;
+  overflow: hidden;
+  border: 1px solid #333;
+  background: #050505;
+  flex-shrink: 0;
+}
+
+.jj-ring__cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.jj-ring__cover-label {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 10px;
+  color: #888;
+  margin-top: 4px;
+  text-align: center;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Selected cover glow */
+.jj-ring__cover--selected .jj-ring__cover-img-wrap {
+  border-color: var(--jj-primary, #e8313a);
+  box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
+}
+
+.jj-ring__cover--selected .jj-ring__cover-label {
+  color: var(--jj-text, #e0d5c0);
+}
+
+/* Format-specific border on selected */
+.jj-ring__cover--selected[data-format="vinyl"] .jj-ring__cover-img-wrap {
+  border-color: var(--jj-amber, #ffaa00);
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.3);
+}
+
+.jj-ring__cover--selected[data-format="cd"] .jj-ring__cover-img-wrap {
+  border-color: var(--jj-cyan, #00e5e5);
+  box-shadow: 0 0 8px rgba(0, 229, 229, 0.3);
+}
+
+.jj-ring__cover--selected[data-format="cassette"] .jj-ring__cover-img-wrap {
+  border-color: var(--jj-green, #33ff33);
+  box-shadow: 0 0 8px rgba(51, 255, 51, 0.3);
+}
+
+.jj-ring__cover--selected[data-format="minidisc"] .jj-ring__cover-img-wrap {
+  border-color: var(--jj-magenta, #e040e0);
+  box-shadow: 0 0 8px rgba(224, 64, 224, 0.3);
+}
+
+.jj-ring__cover--selected[data-format="hardware"] .jj-ring__cover-img-wrap {
+  border-color: var(--jj-white, #e0e0e0);
+  box-shadow: 0 0 8px rgba(224, 224, 224, 0.3);
+}
+
+/* --- Empty State --- */
+.jj-ring__empty {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .jj-ring__cover {
+    transition: none;
+  }
+}
+
+/* --- High Contrast --- */
+@media (prefers-contrast: more) {
+  .jj-ring__cover--selected .jj-ring__cover-img-wrap {
+    border-width: 2px;
+    border-color: #fff;
+  }
+}
+
+/* --- Viewer Interaction Overlay (moved from catalog-panel.css) --- */
+.jj-viewer-interaction {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 60vh;
+  z-index: 75;
+  pointer-events: none;
+}
+
+.jj-viewer-interaction--active {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.jj-viewer-interaction--dragging {
+  cursor: grabbing;
+}
