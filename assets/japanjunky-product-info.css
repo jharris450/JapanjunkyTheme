@@ -6,7 +6,7 @@
 .jj-product-info {
   position: fixed;
   left: 16px;
-  bottom: 48px; /* 32px taskbar + 16px gap */
+  bottom: calc(40vh + 8px); /* above ring carousel top edge */
   max-width: 30vw;
   max-height: 50vh;
   z-index: 100;

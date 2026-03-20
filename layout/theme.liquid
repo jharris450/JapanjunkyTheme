@@ -29,7 +29,7 @@
   {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
-  {{ 'japanjunky-catalog-panel.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
 
@@ -133,18 +133,38 @@
   {%- comment -%} Interaction overlay for 3D viewer drag-to-rotate {%- endcomment -%}
   <div class="jj-viewer-interaction" id="jj-viewer-interaction"></div>
 
-  {%- comment -%} Catalog panel: fixed right 40% {%- endcomment -%}
-  <div class="jj-catalog-panel" id="jj-catalog-panel">
-    <div class="jj-catalog-panel__header">
-      {% sections 'header-group' %}
+  {%- comment -%} Ring carousel: full-viewport album cover arc {%- endcomment -%}
+  <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Product catalog">
+    <div class="jj-ring__bar">
+      <div class="jj-ring__search-wrap">
+        <span class="jj-ring__search-prompt">&gt;</span>
+        <input class="jj-ring__search" id="jj-ring-search" type="text" placeholder="SEARCH..." autocomplete="off">
+      </div>
+      <button class="jj-ring__filter-btn" data-filter-group="format" type="button">
+        [FORMAT]<span class="jj-ring__filter-badge"></span>
+        <div class="jj-ring__dropdown" id="jj-ring-dropdown-format"></div>
+      </button>
+      <button class="jj-ring__filter-btn" data-filter-group="decade" type="button">
+        [DECADE]<span class="jj-ring__filter-badge"></span>
+        <div class="jj-ring__dropdown" id="jj-ring-dropdown-decade"></div>
+      </button>
+      <button class="jj-ring__filter-btn" data-filter-group="condition" type="button">
+        [CONDITION]<span class="jj-ring__filter-badge"></span>
+        <div class="jj-ring__dropdown" id="jj-ring-dropdown-condition"></div>
+      </button>
+      <button class="jj-ring__clear-btn" id="jj-ring-clear" type="button">[CLEAR]</button>
+      <span class="jj-ring__count" id="jj-ring-count"></span>
     </div>
-    <main id="MainContent" class="jj-catalog-panel__body" role="main">
-      {{ content_for_layout }}
-    </main>
-    <div class="jj-catalog-panel__status">
-      <span id="jj-panel-status">READY</span>
-    </div>
+    <div class="jj-ring__stage" id="jj-ring-stage"></div>
   </div>
+
+  {%- comment -%} Header group (navigation, store links) {%- endcomment -%}
+  {% sections 'header-group' %}
+
+  {%- comment -%} Shopify content_for_layout — homepage outputs JJ_PRODUCTS JSON, other pages render normally {%- endcomment -%}
+  <main id="MainContent" role="main"{% if template == 'index' %} style="display:none;"{% endif %}>
+    {{ content_for_layout }}
+  </main>
 
   {%- comment -%} Product info overlay: bottom-left HUD {%- endcomment -%}
   <div class="jj-product-info" id="jj-product-info" style="display:none;">
@@ -180,9 +200,7 @@
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-filter.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-search.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-catalog-panel.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>

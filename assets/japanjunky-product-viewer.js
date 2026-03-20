@@ -44,7 +44,7 @@
     var prevMouse = { x: 0, y: 0 };
 
     // Model position in scene — centered in left 60% viewer area
-    var MODEL_POS = { x: 1.0, y: 0, z: 8 };
+    var MODEL_POS = { x: 1.0, y: 1.5, z: 8 };
 
     // PS1 vertex snapping shader
     var PS1_VERT = [
