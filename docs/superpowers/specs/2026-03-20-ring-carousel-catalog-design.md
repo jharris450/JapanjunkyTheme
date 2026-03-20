@@ -14,9 +14,13 @@ Inspired by Tomb Raider: Angel of Darkness, Silent Hill, and Resident Evil inven
 |-------|---------|---------|
 | Three.js canvas | 0 | Portal background, Tsuno Daishi, product model |
 | Ring carousel | 50 | Full-width horizontal arc of album covers + filter/search bar |
+| Viewer interaction | 75 | Left side drag-to-rotate overlay (above ring, below product info) |
 | Product info | 100 | Left side HUD below 3D model |
-| Viewer interaction | 100 | Left side drag-to-rotate overlay |
 | CRT overlay + taskbar | 9997+ | Scanlines, aperture grille, taskbar |
+
+### Viewer Interaction Overlay
+
+The `jj-viewer-interaction` overlay covers the upper ~60% of the viewport (above the ring area). When a product is selected, it enables `pointer-events: auto` for drag-to-rotate. It must not overlap the ring carousel's bottom ~40% to avoid intercepting scroll wheel events meant for the ring. Dimensions: `position: fixed; top: 0; left: 0; width: 100vw; height: 60vh;`
 
 ### Removed Components
 
@@ -36,7 +40,7 @@ Inspired by Tomb Raider: Angel of Darkness, Silent Hill, and Resident Evil inven
 ### Cover Elements
 
 Each product is a div containing:
-- `<img>` element with album art (480px source, displayed at cover size)
+- `<img>` element with album art. Only the 7 visible covers + 2 buffer covers on each side load images eagerly. All other covers use `loading="lazy"` and a dark placeholder until they enter the visible ring window.
 - Small truncated title label below the image
 
 Covers are positioned using CSS 3D transforms:
@@ -74,7 +78,13 @@ Cover size: selected ~180x180px (square, matching 2.0x2.0 LP model). Others scal
 - Click any cover: rotate it to center
 - Scroll wheel on ring area: rotate carousel
 
-**Selection delay:** Centering a cover starts a 300ms timer. If the cover is still centered after 300ms, it auto-selects (dispatches `jj:product-selected`). Rapid scrolling through items does not trigger model loads. Enter or direct click bypasses the delay and selects immediately.
+**Touch:**
+- Swipe left/right on ring area: rotate carousel
+- Tap any cover: rotate to center + immediate select
+
+**Selection delay:** Centering a cover starts a 300ms timer. If the cover is still centered after 300ms, it auto-selects (dispatches `jj:product-selected`). Rapid scrolling through items does not trigger model loads. Enter or direct click bypasses the delay and selects immediately. Escape while the timer is running cancels the timer without selecting.
+
+**Scroll wheel:** Only captured when cursor is over the ring container (bottom ~40%). Filter dropdowns, when open, block scroll-to-rotate within their bounds.
 
 ## Filter / Search Bar
 
@@ -91,10 +101,19 @@ Thin horizontal bar (~36px tall) floating just above the arc of covers. Semi-tra
 
 ### Behavior
 
-- Filtering removes items from the ring data array
-- Ring re-centers on previously selected item if it survives the filter; otherwise jumps to first match
-- Search: client-side matching on title + artist, debounced 100ms, filters ring in real-time
-- Core filter logic unchanged: OR within group, AND across groups
+The ring carousel JS owns all filter and search logic internally, operating on the `window.JJ_PRODUCTS` array in memory. The old DOM-based `japanjunky-filter.js` and `japanjunky-search.js` are **removed entirely** — their logic is absorbed into the ring carousel module.
+
+**Filtering pipeline:**
+1. Ring maintains a `filteredProducts` array derived from `window.JJ_PRODUCTS`
+2. Active filters stored as `{ format: Set, decade: Set, condition: Set }`
+3. Logic: OR within each group, AND across groups (same as before)
+4. Search query is an additional AND filter matching title + artist (case-insensitive, debounced 100ms)
+5. When filters change, `filteredProducts` is recomputed and the ring re-renders
+6. Ring re-centers on previously selected item if it survives the filter; otherwise jumps to first match
+
+**Filter UI:** The filter toggle buttons in the bar render dropdown lists of checkboxes dynamically from the distinct values in `window.JJ_PRODUCTS`. No server-rendered filter sidebar needed.
+
+**Search glitch animation:** Deferred. The old search glitch effect (character scramble + pixelation) was tied to DOM table cells and does not translate to the 3D carousel. May be revisited as a cover-flip or static-noise effect in a future iteration.
 
 ## Product Info & 3D Model
 
@@ -104,7 +123,7 @@ Unchanged from current implementation. Lives in Three.js scene. On `jj:product-s
 
 ### Product Info Overlay
 
-Fixed position, left side, above the ring layer. Roughly left 40%, sitting between the 3D model above and the ring below.
+Fixed position, left side, above the ring layer. Positioned at `left: 16px; bottom: calc(40vh + 8px); max-width: 30vw; z-index: 100`. This places it just above the ring's top edge, below the 3D model area.
 
 Contents (unchanged):
 - Header: `C:\catalog\HANDLE.dat`
@@ -160,10 +179,37 @@ window.JJ_PRODUCTS = [
 ];
 ```
 
-### Event Contract (unchanged)
+### Event Contract
 
-- `jj:product-selected` — detail contains all product data fields + element reference
-- `jj:product-deselected` — detail is `{}`
+Events remain `jj:product-selected` and `jj:product-deselected` on `document`. The ring carousel maps JSON fields to the existing event detail shape consumed by `japanjunky-product-viewer.js`:
+
+```javascript
+// jj:product-selected detail shape (matches existing consumer expectations)
+{
+  handle: "product-slug",
+  productId: "123456",          // mapped from JJ_PRODUCTS.id
+  title: "Album Title",
+  artist: "Artist Name",
+  vendor: "Vendor",
+  code: "ABC-123",
+  condition: "near mint",
+  format: "vinyl",
+  formatLabel: "12\" Vinyl LP",
+  year: "1985",
+  label: "Label Name",
+  jpName: "Japanese Name",
+  jpTitle: "Japanese Title",
+  imageUrl: "https://...",       // mapped from JJ_PRODUCTS.image
+  imageBackUrl: "https://...",   // mapped from JJ_PRODUCTS.imageBack
+  type3d: "box",
+  variantId: "789",
+  available: true,
+  price: "$29.99",
+  el: coverElement              // the DOM cover element
+}
+```
+
+`jj:product-deselected` detail is `{}`.
 
 ### Module Communication
 
@@ -171,16 +217,10 @@ window.JJ_PRODUCTS = [
 Ring Carousel JS
   ├── manages cover lifecycle, rotation state, selection delay
   ├── consumes window.JJ_PRODUCTS
+  ├── owns filter logic (OR within group, AND across groups)
+  ├── owns search logic (title + artist match, debounced 100ms)
   ├── dispatches jj:product-selected / jj:product-deselected
-  └── calls window.JJ_applyFilters() integration
-
-Filter JS
-  ├── updated selectors for ring items
-  └── exposes window.JJ_applyFilters()
-
-Search JS
-  ├── updated to target ring search input
-  └── calls window.JJ_applyFilters()
+  └── maps JJ_PRODUCTS fields to existing event detail shape
 
 Product Viewer JS (unchanged listener)
   ├── listens jj:product-selected → create model, show info
@@ -203,12 +243,10 @@ Screensaver JS (unchanged)
 
 | File | Changes |
 |------|---------|
-| `layout/theme.liquid` | Remove `jj-catalog-panel` div, add ring carousel container, update CSS/JS imports |
-| `sections/jj-homepage-body.liquid` | Output product data as JSON array instead of rendering inventory rows |
-| `assets/japanjunky-filter.js` | Update selectors for ring structure, expose filtering API |
-| `assets/japanjunky-search.js` | Update selectors for ring search input |
+| `layout/theme.liquid` | Remove `jj-catalog-panel` div, add ring carousel container, update CSS/JS imports, resize viewer interaction overlay to upper 60vh |
+| `sections/jj-homepage-body.liquid` | Output product data as JSON array instead of rendering inventory rows. `{{ content_for_layout }}` stays in theme.liquid but wraps the ring container instead of the old panel. Non-homepage pages render normally inside this wrapper. |
 | `assets/japanjunky-product-viewer.js` | Adjust model position (shift up, ring occupies bottom) |
-| `assets/japanjunky-product-info.css` | Reposition above ring layer, left-aligned below model |
+| `assets/japanjunky-product-info.css` | Reposition to `bottom: calc(40vh + 8px)`, left-aligned below model |
 
 ### Removed / Deprecated
 
@@ -216,6 +254,8 @@ Screensaver JS (unchanged)
 |------|--------|
 | `assets/japanjunky-catalog-panel.css` | Replaced by ring carousel CSS |
 | `assets/japanjunky-catalog-panel.js` | Replaced by ring carousel JS |
+| `assets/japanjunky-filter.js` | Filter logic absorbed into ring carousel JS |
+| `assets/japanjunky-search.js` | Search logic absorbed into ring carousel JS |
 | `snippets/product-inventory-row.liquid` | Ring builds from JSON, not server-rendered rows |
 
 ### Unchanged
@@ -235,4 +275,16 @@ All styling follows the existing CRT terminal aesthetic:
 - CRT-style animations only (no bounce/slide/elastic)
 - Color palette: black bg, red primary, gold secondary, cyan accent, cream text
 - Semi-transparent dark backgrounds with subtle border glow on selected state
-- Format-specific accent colors on selected cover border (amber=vinyl, cyan=CD, green=cassette, magenta=minidisc, white=hardware)
+- Format-specific accent colors on selected cover border:
+  - Vinyl: `var(--jj-amber, #ffaa00)`
+  - CD: `var(--jj-cyan, #00e5e5)`
+  - Cassette: `var(--jj-green, #33ff33)`
+  - MiniDisc: `var(--jj-magenta, #e040e0)`
+  - Hardware: `var(--jj-white, #e0e0e0)`
+
+## Accessibility
+
+- Ring container: `role="listbox"`, `aria-roledescription="carousel"`, `aria-label="Product catalog"`
+- Each cover: `role="option"`, `aria-selected` on center item
+- Keyboard fully navigable (ArrowLeft/Right, Enter, Escape)
+- Filter dropdowns accessible via Tab, Space to toggle checkboxes
