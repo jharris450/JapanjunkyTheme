@@ -365,8 +365,8 @@
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
   var tsunoTransition = { progress: 0, startPos: null, endPos: null };
 
-  // Idle position: centered in left 60% viewer area, slightly forward
-  var TSUNO_IDLE_POS = { x: 1.0, y: 1.5, z: 6 };
+  // Idle position: centered in left 65% viewer area (ring on right), slightly forward
+  var TSUNO_IDLE_POS = { x: -1.0, y: 0.5, z: 6 };
   var TSUNO_ORBIT_RADIUS = 2.0;
   var TSUNO_ORBIT_SPEED = 0.2;
   var TSUNO_ORBIT_Z = 16;

@@ -21,13 +21,13 @@
 
   // ─── Arc Config ────────────────────────────────────────────────
   var ARC = [
-    { offset: 0,  rotateY: 0,    scale: 1.0,  opacity: 1.0  },
-    { offset: 1,  rotateY: 30,   scale: 0.75, opacity: 0.85 },
-    { offset: -1, rotateY: -30,  scale: 0.75, opacity: 0.85 },
-    { offset: 2,  rotateY: 55,   scale: 0.55, opacity: 0.6  },
-    { offset: -2, rotateY: -55,  scale: 0.55, opacity: 0.6  },
-    { offset: 3,  rotateY: 75,   scale: 0.4,  opacity: 0.35 },
-    { offset: -3, rotateY: -75,  scale: 0.4,  opacity: 0.35 }
+    { offset: 0,  rotateX: 0,    scale: 1.0,  opacity: 1.0  },
+    { offset: 1,  rotateX: -30,  scale: 0.75, opacity: 0.85 },  // below center
+    { offset: -1, rotateX: 30,   scale: 0.75, opacity: 0.85 },  // above center
+    { offset: 2,  rotateX: -55,  scale: 0.55, opacity: 0.6  },
+    { offset: -2, rotateX: 55,   scale: 0.55, opacity: 0.6  },
+    { offset: 3,  rotateX: -75,  scale: 0.4,  opacity: 0.35 },
+    { offset: -3, rotateX: 75,   scale: 0.4,  opacity: 0.35 }
   ];
   var VISIBLE_RANGE = 3; // covers visible on each side of center
   var TRANSLATE_Z = 280; // depth push in perspective
@@ -194,7 +194,7 @@
         img.removeAttribute('data-src');
       }
 
-      el.style.transform = 'rotateY(' + slot.rotateY + 'deg) translateZ(' + TRANSLATE_Z + 'px) scale(' + slot.scale + ')';
+      el.style.transform = 'rotateX(' + slot.rotateX + 'deg) translateZ(' + TRANSLATE_Z + 'px) scale(' + slot.scale + ')';
       el.style.opacity = slot.opacity;
       el.style.zIndex = 10 - Math.abs(slot.offset);
 
@@ -337,10 +337,10 @@
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-    if (e.key === 'ArrowRight') {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault();
       rotateRight();
-    } else if (e.key === 'ArrowLeft') {
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault();
       rotateLeft();
     } else if (e.key === 'Enter') {
@@ -412,14 +412,14 @@
     if (e.touches.length !== 1 || touchLocked) return;
     var dx = e.touches[0].clientX - touchStartX;
     var dy = e.touches[0].clientY - touchStartY;
-    // Only register horizontal swipes, one rotation per gesture
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    // Only register vertical swipes, one rotation per gesture
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
       touchMoved = true;
       touchLocked = true; // one rotation per swipe gesture
-      if (dx > 0) {
-        rotateLeft();
+      if (dy > 0) {
+        rotateRight(); // swipe down → next item
       } else {
-        rotateRight();
+        rotateLeft();  // swipe up → previous item
       }
     }
   }, { passive: true });

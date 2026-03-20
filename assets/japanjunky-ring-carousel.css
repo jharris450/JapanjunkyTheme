@@ -1,20 +1,18 @@
 /* ============================================
    JAPANJUNKY RING CAROUSEL
-   Full-viewport horizontal arc of album covers
+   Vertical arc of album covers — right side
    ============================================ */
 
 /* --- Ring Container --- */
 .jj-ring {
   position: fixed;
-  left: 0;
-  bottom: 32px; /* above taskbar */
-  width: 100vw;
-  height: 40vh;
+  right: 0;
+  top: 0;
+  width: 35vw;
+  height: calc(100vh - 32px); /* above taskbar */
   z-index: 50;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
   pointer-events: none;
 }
 
@@ -274,13 +272,13 @@
   }
 }
 
-/* --- Viewer Interaction Overlay (moved from catalog-panel.css) --- */
+/* --- Viewer Interaction Overlay (left of ring) --- */
 .jj-viewer-interaction {
   position: fixed;
   left: 0;
   top: 0;
-  width: 100vw;
-  height: 60vh;
+  width: 65vw;
+  height: calc(100vh - 32px);
   z-index: 75;
   pointer-events: none;
 }
