@@ -1,38 +1,79 @@
 {%- assign featured = section.settings.collection | default: collections['all'] -%}
 
-{%- comment -%} COLLAPSIBLE FILTERS {%- endcomment -%}
-<div class="jj-catalog-filters" id="jj-catalog-filters">
-  <button class="jj-catalog-filters__toggle" id="jj-filter-toggle" type="button">
-    FILTERS
-  </button>
-  <div class="jj-catalog-filters__body" id="jj-filter-body" style="display:none;">
-    {% render 'category-list', section: section %}
-  </div>
-</div>
-
-{%- comment -%} FILTER TAGS BAR {%- endcomment -%}
-<div class="jj-filter-bar" id="jj-filter-bar" style="display:none;">
-  <span class="jj-filter-bar__prompt">&gt;</span>
-  <span class="jj-filter-bar__tags" id="jj-filter-tags"></span>
-  <button class="jj-filter-bar__clear" id="jj-filter-clear">[clear all]</button>
-</div>
-
-{%- comment -%} INVENTORY LIST {%- endcomment -%}
-<div class="jj-inventory-list" id="jj-inventory-list" role="listbox" aria-label="Product inventory">
-  {%- assign row_index = 0 -%}
+{%- comment -%} Ring carousel data — consumed by japanjunky-ring-carousel.js {%- endcomment -%}
+<script>
+window.JJ_PRODUCTS = [
+  {%- assign first_item = true -%}
   {%- for product in featured.products limit: section.settings.products_to_show -%}
     {%- for variant in product.variants -%}
       {%- if variant.available -%}
-        {% render 'product-inventory-row', product: product, variant: variant, index: row_index %}
-        {%- assign row_index = row_index | plus: 1 -%}
+        {%- comment -%} Metafields {%- endcomment -%}
+        {%- assign m_artist = product.metafields.custom.artist | default: '' -%}
+        {%- assign m_code = product.metafields.custom.code | default: '' -%}
+        {%- assign m_year = product.metafields.custom.year | default: '' -%}
+        {%- assign m_label = product.metafields.custom.label | default: '' -%}
+        {%- assign m_format = product.metafields.custom.format | default: '' -%}
+        {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
+        {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
+
+        {%- comment -%} Normalize format {%- endcomment -%}
+        {%- assign p_format_lower = m_format | downcase -%}
+        {%- assign p_format = '' -%}
+        {%- if p_format_lower contains 'vinyl' or p_format_lower contains 'lp' or p_format_lower contains 'record' -%}
+          {%- assign p_format = 'vinyl' -%}
+        {%- elsif p_format_lower contains 'cd' or p_format_lower contains 'compact disc' -%}
+          {%- assign p_format = 'cd' -%}
+        {%- elsif p_format_lower contains 'cassette' or p_format_lower contains 'tape' -%}
+          {%- assign p_format = 'cassette' -%}
+        {%- elsif p_format_lower contains 'minidisc' or p_format_lower contains 'mini disc' or p_format_lower contains 'md' -%}
+          {%- assign p_format = 'minidisc' -%}
+        {%- elsif p_format_lower contains 'hardware' or p_format_lower contains 'player' or p_format_lower contains 'walkman' or p_format_lower contains 'stereo' -%}
+          {%- assign p_format = 'hardware' -%}
+        {%- endif -%}
+
+        {%- comment -%} Normalize condition {%- endcomment -%}
+        {%- assign p_condition = variant.option1 | default: 'N/A' | downcase | strip -%}
+
+        {%- comment -%} 3D type {%- endcomment -%}
+        {%- assign p_3d_type = 'plane' -%}
+        {%- for tag in product.tags -%}
+          {%- if tag == '3d-box' -%}{%- assign p_3d_type = 'box' -%}{%- endif -%}
+        {%- endfor -%}
+
+        {%- comment -%} Images {%- endcomment -%}
+        {%- assign second_image_url = '' -%}
+        {%- if product.images.size > 1 -%}
+          {%- assign second_image_url = product.images[1] | image_url: width: 480 -%}
+        {%- endif -%}
+
+        {%- unless first_item -%},{%- endunless -%}
+        {%- assign first_item = false -%}
+        {
+          "handle": {{ product.handle | json }},
+          "id": {{ product.id | json }},
+          "title": {{ product.title | json }},
+          "artist": {{ m_artist | json }},
+          "vendor": {{ product.vendor | json }},
+          "code": {{ m_code | json }},
+          "condition": {{ p_condition | json }},
+          "format": {{ p_format | json }},
+          "formatLabel": {{ m_format | json }},
+          "year": {{ m_year | json }},
+          "label": {{ m_label | json }},
+          "jpName": {{ m_jp_name | json }},
+          "jpTitle": {{ m_jp_title | json }},
+          "image": {%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 | json }}{%- else -%}""{%- endif -%},
+          "imageBack": {{ second_image_url | json }},
+          "type3d": {{ p_3d_type | json }},
+          "variantId": {{ variant.id | json }},
+          "available": {{ variant.available }},
+          "price": {{ variant.price | money | json }}
+        }
       {%- endif -%}
     {%- endfor -%}
-  {%- else -%}
-    <div class="jj-inventory-list__empty" style="padding:16px 8px;color:#555;font-size:11px;">
-      NO ITEMS FOUND
-    </div>
   {%- endfor -%}
-</div>
+];
+</script>
 
 {% schema %}
 {
