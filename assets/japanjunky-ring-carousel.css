@@ -158,11 +158,10 @@
   text-align: center;
 }
 
-/* --- Arc Stage --- */
+/* --- Arc Stage (vertical increscent) --- */
 .jj-ring__stage {
   flex: 1;
   width: 100%;
-  perspective: 800px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +175,6 @@
   position: absolute;
   width: 180px;
   height: 180px;
-  transform-style: preserve-3d;
   transition: transform 0.4s ease-out, opacity 0.3s;
   cursor: default;
   display: flex;

@@ -19,18 +19,21 @@
   var countEl = document.getElementById('jj-ring-count');
   if (!ring || !stage) return;
 
-  // ─── Arc Config ────────────────────────────────────────────────
+  // ─── Arc Config (vertical increscent) ──────────────────────────
+  // Covers stacked vertically along an increscent curve (opens left).
+  // x: horizontal offset (positive = right, further from viewer)
+  // y: vertical offset from center (positive = down)
+  // Center cover is largest; covers shrink + shift right toward edges.
   var ARC = [
-    { offset: 0,  rotateY: 0,    scale: 1.0,  opacity: 1.0  },
-    { offset: 1,  rotateY: 18,   scale: 0.8,  opacity: 0.85 },
-    { offset: -1, rotateY: -18,  scale: 0.8,  opacity: 0.85 },
-    { offset: 2,  rotateY: 35,   scale: 0.6,  opacity: 0.6  },
-    { offset: -2, rotateY: -35,  scale: 0.6,  opacity: 0.6  },
-    { offset: 3,  rotateY: 50,   scale: 0.45, opacity: 0.35 },
-    { offset: -3, rotateY: -50,  scale: 0.45, opacity: 0.35 }
+    { offset: 0,  x: 0,    y: 0,    scale: 1.15, opacity: 1.0  },
+    { offset: 1,  x: 18,   y: 75,   scale: 0.88, opacity: 0.85 },
+    { offset: -1, x: 18,   y: -75,  scale: 0.88, opacity: 0.85 },
+    { offset: 2,  x: 55,   y: 145,  scale: 0.72, opacity: 0.6  },
+    { offset: -2, x: 55,   y: -145, scale: 0.72, opacity: 0.6  },
+    { offset: 3,  x: 110,  y: 210,  scale: 0.58, opacity: 0.35 },
+    { offset: -3, x: 110,  y: -210, scale: 0.58, opacity: 0.35 }
   ];
   var VISIBLE_RANGE = 3; // covers visible on each side of center
-  var TRANSLATE_Z = 280; // depth push in perspective
 
   // Per-cover random jitter (applied once on creation)
   var coverJitter = {}; // keyed by product handle+variantId
@@ -205,7 +208,7 @@
       }
 
       var jit = getJitter(filteredProducts[dIdx]);
-      el.style.transform = 'rotateY(' + (slot.rotateY + jit.rotate) + 'deg) translateZ(' + TRANSLATE_Z + 'px) scale(' + slot.scale + ') translate(' + jit.tx + 'px, ' + jit.ty + 'px)';
+      el.style.transform = 'translate(' + (slot.x + jit.tx) + 'px, ' + (slot.y + jit.ty) + 'px) scale(' + slot.scale + ') rotate(' + jit.rotate + 'deg)';
       el.style.opacity = slot.opacity;
       el.style.zIndex = 10 - Math.abs(slot.offset);
 
@@ -397,7 +400,7 @@
     wheelCooldown = true;
     setTimeout(function () { wheelCooldown = false; }, 150);
 
-    var delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+    var delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
     if (delta > 0) {
       rotateRight();
     } else if (delta < 0) {
@@ -424,12 +427,12 @@
     if (e.touches.length !== 1 || touchLocked) return;
     var dx = e.touches[0].clientX - touchStartX;
     var dy = e.touches[0].clientY - touchStartY;
-    // Only register horizontal swipes, one rotation per gesture
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    // Only register vertical swipes, one rotation per gesture
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
       e.preventDefault();
       touchMoved = true;
       touchLocked = true;
-      if (dx > 0) {
+      if (dy > 0) {
         rotateRight();
       } else {
         rotateLeft();
