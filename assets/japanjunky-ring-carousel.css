@@ -252,6 +252,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  overflow: visible;
 }
 
 #jj-viewer-canvas {
@@ -261,6 +262,7 @@
   max-height: 400px;
   position: relative;
   z-index: 1;
+  margin-bottom: -30px;
   pointer-events: auto;
   cursor: grab;
 }
