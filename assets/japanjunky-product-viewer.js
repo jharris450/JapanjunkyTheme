@@ -496,16 +496,31 @@
 
   var productZone = document.getElementById('jj-product-zone');
 
+  var selectedCoverEl = null;
+
   function positionCanvasOverBox() {
     if (!infoPanel || !canvas || !productZone) return;
     var zoneRect = productZone.getBoundingClientRect();
     var boxRect = infoPanel.getBoundingClientRect();
     var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    var cw = 550; // canvas width
 
-    // Position canvas top-right of the info box, extending above it
+    // Center canvas horizontally on the box's top-right corner
+    var leftPx = (boxRect.right - zoneRect.left) / zoom - cw / 2;
+
+    // Align vertically with the selected catalogue cover, or default above box
+    var topPx;
+    if (selectedCoverEl) {
+      var coverRect = selectedCoverEl.getBoundingClientRect();
+      var coverCenterY = (coverRect.top + coverRect.height / 2 - zoneRect.top) / zoom;
+      topPx = coverCenterY - cw / 2;
+    } else {
+      topPx = (boxRect.top - zoneRect.top) / zoom - cw / 2;
+    }
+
     canvas.style.position = 'absolute';
-    canvas.style.left = ((boxRect.right - zoneRect.left) / zoom - 550 + 100) + 'px';
-    canvas.style.top = ((boxRect.top - zoneRect.top) / zoom - 360) + 'px';
+    canvas.style.left = leftPx + 'px';
+    canvas.style.top = topPx + 'px';
   }
 
   // ─── Product Info Panel ───────────────────────────────────────
@@ -534,6 +549,7 @@
 
   function showProductInfo(data) {
     if (!infoPanel) return;
+    selectedCoverEl = data.el || null;
 
     // Title — will be typed
     if (piTitle) piTitle.textContent = '';
