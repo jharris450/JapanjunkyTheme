@@ -492,9 +492,24 @@
     next();
   }
 
+  // ─── Canvas ↔ Info Box Positioning ────────────────────────────
+
+  var productZone = document.getElementById('jj-product-zone');
+
+  function positionCanvasOverBox() {
+    if (!infoPanel || !canvas || !productZone) return;
+    var zoneRect = productZone.getBoundingClientRect();
+    var boxRect = infoPanel.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+
+    // Position canvas top-right of the info box, extending above it
+    canvas.style.position = 'absolute';
+    canvas.style.left = ((boxRect.right - zoneRect.left) / zoom - 220 + 10) + 'px';
+    canvas.style.top = ((boxRect.top - zoneRect.top) / zoom - 80) + 'px';
+  }
+
   // ─── Product Info Panel ───────────────────────────────────────
 
-  var piHeader = document.getElementById('jj-pi-header');
   var piTitle = document.getElementById('jj-pi-title');
   var piJpTitle = document.getElementById('jj-pi-jp-title');
   var piArtist = document.getElementById('jj-pi-artist');
@@ -565,9 +580,9 @@
       piView.style.display = '';
     }
 
-    // Show header (above canvas) and info panel (below canvas)
-    if (piHeader) piHeader.style.display = '';
+    // Show info panel and position canvas over its top-right
     infoPanel.style.display = '';
+    positionCanvasOverBox();
     infoPanel.classList.remove('jj-product-info--entering');
     void infoPanel.offsetHeight;
     infoPanel.classList.add('jj-product-info--entering');
@@ -581,7 +596,6 @@
 
   function hideProductInfo() {
     clearType();
-    if (piHeader) piHeader.style.display = 'none';
     if (infoPanel) infoPanel.style.display = 'none';
     if (piView) piView.style.display = 'none';
   }

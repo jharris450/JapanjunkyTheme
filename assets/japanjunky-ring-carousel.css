@@ -249,23 +249,14 @@
   z-index: 50;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  padding-left: 16px;
   pointer-events: none;
   overflow: visible;
 }
 
-#jj-viewer-canvas {
-  width: 100%;
-  flex: 0 1 auto;
-  height: 40vh;
-  max-height: 400px;
-  position: relative;
-  z-index: 1;
-  margin-bottom: -30px;
-  pointer-events: auto;
-  cursor: grab;
-}
+/* Canvas sizing now handled by japanjunky-product-info.css */
 
 #jj-viewer-canvas.jj-viewer--dragging {
   cursor: grabbing;
