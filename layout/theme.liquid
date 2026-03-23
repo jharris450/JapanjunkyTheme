@@ -130,8 +130,20 @@
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
-  {%- comment -%} Interaction overlay for 3D viewer drag-to-rotate {%- endcomment -%}
-  <div class="jj-viewer-interaction" id="jj-viewer-interaction"></div>
+  {%- comment -%} Left zone: product viewer + info {%- endcomment -%}
+  <div class="jj-product-zone" id="jj-product-zone">
+    <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
+    <div class="jj-product-info" id="jj-product-info" style="display:none;">
+      <div class="jj-product-info__title" id="jj-pi-title"></div>
+      <div class="jj-product-info__meta" id="jj-pi-meta"></div>
+      <div class="jj-product-info__price" id="jj-pi-price"></div>
+      <div class="jj-product-info__actions" id="jj-pi-actions">
+        <button class="jj-action-btn" id="jj-pi-add-to-cart" disabled>[Add to Cart]</button>
+        <a class="jj-action-btn" id="jj-pi-view" href="#" style="display:none;">[View]</a>
+        <input type="hidden" id="jj-pi-variant-id" value="">
+      </div>
+    </div>
+  </div>
 
   {%- comment -%} Ring carousel: full-viewport album cover arc {%- endcomment -%}
   <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Product catalog">
@@ -166,22 +178,7 @@
     {{ content_for_layout }}
   </main>
 
-  {%- comment -%} Product info overlay: bottom-left HUD {%- endcomment -%}
-  <div class="jj-product-info" id="jj-product-info" style="display:none;">
-    <div class="jj-product-info__header" id="jj-pi-header">C:\catalog\item.dat</div>
-    <div class="jj-product-info__artist" id="jj-pi-artist"></div>
-    <div class="jj-product-info__title" id="jj-pi-title"></div>
-    <div class="jj-product-info__price" id="jj-pi-price"></div>
-    <div class="jj-product-info__meta" id="jj-pi-meta"></div>
-    <div class="jj-product-info__desc" id="jj-pi-desc"></div>
-    <div class="jj-product-info__variants" id="jj-pi-variants"></div>
-    <div class="jj-product-info__actions" id="jj-pi-actions">
-      <button class="jj-action-btn" id="jj-pi-add-to-cart" disabled>[Add to Cart]</button>
-      <input type="hidden" id="jj-pi-variant-id" value="">
-    </div>
-  </div>
-
-  {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
+{%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
   <script>
