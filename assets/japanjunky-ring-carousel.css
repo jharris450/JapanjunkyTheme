@@ -256,7 +256,9 @@
 
 #jj-viewer-canvas {
   width: 100%;
-  flex: 1;
+  flex: 0 1 auto;
+  height: 50vh;
+  max-height: 500px;
   pointer-events: auto;
   cursor: grab;
 }
