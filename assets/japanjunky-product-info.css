@@ -18,8 +18,8 @@
 /* Canvas: absolutely positioned within product-zone, overlapping the box top-right */
 #jj-viewer-canvas {
   position: absolute;
-  width: 450px;
-  height: 450px;
+  width: 550px;
+  height: 550px;
   z-index: 2;
   pointer-events: auto;
   cursor: grab;
