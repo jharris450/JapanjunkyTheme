@@ -84,7 +84,18 @@
   var drag = {
     active: false,
     prevX: 0,
-    prevY: 0
+    prevY: 0,
+    velY: 0,       // angular velocity for flick spin (Y axis)
+    velX: 0,       // angular velocity for flick spin (X axis)
+    lastTime: 0
+  };
+
+  // ─── Flick Momentum ────────────────────────────────────────────
+  var flick = {
+    active: false,
+    velY: 0,
+    velX: 0,
+    friction: 0.96  // per-frame decay
   };
 
   var raycaster = new THREE.Raycaster();
@@ -291,6 +302,20 @@
 
     if (drag.active) {
       // During drag, don't apply idle or spring — user controls rotation
+    } else if (flick.active) {
+      // Flick momentum: spin with friction decay
+      idle.time += dt; // keep idle clock ticking for smooth spring transition
+      currentModel.rotation.y += flick.velY;
+      currentModel.rotation.x += flick.velX;
+      flick.velY *= flick.friction;
+      flick.velX *= flick.friction;
+      // Once slow enough, transition to spring → idle
+      if (Math.abs(flick.velY) < 0.001 && Math.abs(flick.velX) < 0.001) {
+        flick.active = false;
+        spring.active = true;
+        spring.velX = 0;
+        spring.velZ = 0;
+      }
     } else if (spring.active) {
       // Spring is pulling back to idle orientation
       updateSpring(dt);
@@ -361,6 +386,10 @@
       drag.active = true;
       drag.prevX = e.clientX;
       drag.prevY = e.clientY;
+      drag.velY = 0;
+      drag.velX = 0;
+      drag.lastTime = performance.now();
+      flick.active = false;
       canvas.classList.add('jj-viewer--dragging');
       e.preventDefault();
     }
@@ -368,24 +397,42 @@
 
   window.addEventListener('mousemove', function (e) {
     if (!drag.active || !currentModel) return;
+    var now = performance.now();
+    var elapsed = now - drag.lastTime;
+    if (elapsed < 1) elapsed = 1;
+
     var dx = e.clientX - drag.prevX;
     var dy = e.clientY - drag.prevY;
 
     currentModel.rotation.y += dx * 0.01;
     currentModel.rotation.x += dy * 0.01;
 
+    // Track instantaneous velocity for flick
+    drag.velY = (dx * 0.01) * (16 / elapsed); // normalise to ~60fps
+    drag.velX = (dy * 0.01) * (16 / elapsed);
+
     drag.prevX = e.clientX;
     drag.prevY = e.clientY;
+    drag.lastTime = now;
   });
 
   window.addEventListener('mouseup', function () {
     if (drag.active) {
       drag.active = false;
       canvas.classList.remove('jj-viewer--dragging');
-      // Activate spring to pull back to idle
-      spring.active = true;
-      spring.velX = 0;
-      spring.velZ = 0;
+
+      // If released with velocity, start flick spin
+      var speed = Math.abs(drag.velY) + Math.abs(drag.velX);
+      if (speed > 0.005) {
+        flick.active = true;
+        flick.velY = drag.velY;
+        flick.velX = drag.velX;
+      } else {
+        // No flick — spring back to idle
+        spring.active = true;
+        spring.velX = 0;
+        spring.velZ = 0;
+      }
     }
   });
 
