@@ -132,9 +132,14 @@
 
   {%- comment -%} Left zone: product viewer + info {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
-    <div class="jj-product-info__title" id="jj-pi-title" style="display:none;"></div>
+    <div class="jj-product-info__header" id="jj-pi-header" style="display:none;">
+      <div class="jj-product-info__title" id="jj-pi-title"></div>
+      <div class="jj-product-info__jp-title" id="jj-pi-jp-title"></div>
+    </div>
     <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
     <div class="jj-product-info" id="jj-product-info" style="display:none;">
+      <div class="jj-product-info__artist" id="jj-pi-artist"></div>
+      <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>
       <div class="jj-product-info__meta" id="jj-pi-meta"></div>
       <div class="jj-product-info__price" id="jj-pi-price"></div>
       <div class="jj-product-info__actions" id="jj-pi-actions">

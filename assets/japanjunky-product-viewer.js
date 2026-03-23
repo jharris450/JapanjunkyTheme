@@ -447,7 +447,11 @@
 
   // ─── Product Info Panel ───────────────────────────────────────
 
+  var piHeader = document.getElementById('jj-pi-header');
   var piTitle = document.getElementById('jj-pi-title');
+  var piJpTitle = document.getElementById('jj-pi-jp-title');
+  var piArtist = document.getElementById('jj-pi-artist');
+  var piJpName = document.getElementById('jj-pi-jp-name');
   var piMeta = document.getElementById('jj-pi-meta');
   var piPrice = document.getElementById('jj-pi-price');
   var piAddToCart = document.getElementById('jj-pi-add-to-cart');
@@ -460,9 +464,10 @@
     return div.innerHTML;
   }
 
-  function buildMetaTag(label, value) {
-    return '<span class="jj-meta-tag"><span class="jj-meta-tag--label">' +
-           escapeHtml(label) + ':</span> ' + escapeHtml(value) + '</span>';
+  function buildMetaRow(label, value) {
+    return '<div class="jj-meta-row"><span class="jj-meta-row__label">' +
+           escapeHtml(label) + ':</span> <span class="jj-meta-row__value">' +
+           escapeHtml(value) + '</span></div>';
   }
 
   function showProductInfo(data) {
@@ -471,15 +476,30 @@
     // Title — will be typed
     if (piTitle) piTitle.textContent = '';
 
-    // Meta tags — horizontal
+    // JP title (below product title, above canvas)
+    if (piJpTitle) {
+      piJpTitle.textContent = data.jpTitle || '';
+      piJpTitle.style.display = data.jpTitle ? '' : 'none';
+    }
+
+    // Artist
+    if (piArtist) piArtist.textContent = data.artist || '';
+
+    // JP name (below artist)
+    if (piJpName) {
+      piJpName.textContent = data.jpName || '';
+      piJpName.style.display = data.jpName ? '' : 'none';
+    }
+
+    // Meta tags — stacked rows
     if (piMeta) {
-      var tags = [];
-      if (data.artist) tags.push(buildMetaTag('Artist', data.artist));
-      if (data.formatLabel) tags.push(buildMetaTag('Format', data.formatLabel));
-      if (data.year) tags.push(buildMetaTag('Year', data.year));
-      if (data.label) tags.push(buildMetaTag('Label', data.label));
-      if (data.condition) tags.push(buildMetaTag('Condition', data.condition));
-      piMeta.innerHTML = tags.join('');
+      var rows = [];
+      if (data.formatLabel) rows.push(buildMetaRow('Format', data.formatLabel));
+      if (data.year) rows.push(buildMetaRow('Year', data.year));
+      if (data.label) rows.push(buildMetaRow('Label', data.label));
+      if (data.condition) rows.push(buildMetaRow('Condition', data.condition));
+      if (data.code) rows.push(buildMetaRow('Code', data.code));
+      piMeta.innerHTML = rows.join('');
     }
 
     // Price — will be typed
@@ -498,8 +518,8 @@
       piView.style.display = '';
     }
 
-    // Show title (now above canvas) and info panel (below canvas)
-    if (piTitle) piTitle.style.display = '';
+    // Show header (above canvas) and info panel (below canvas)
+    if (piHeader) piHeader.style.display = '';
     infoPanel.style.display = '';
     infoPanel.classList.remove('jj-product-info--entering');
     void infoPanel.offsetHeight;
@@ -514,7 +534,7 @@
 
   function hideProductInfo() {
     clearType();
-    if (piTitle) piTitle.style.display = 'none';
+    if (piHeader) piHeader.style.display = 'none';
     if (infoPanel) infoPanel.style.display = 'none';
     if (piView) piView.style.display = 'none';
   }

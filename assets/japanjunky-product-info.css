@@ -1,57 +1,95 @@
 /* ============================================
    JAPANJUNKY PRODUCT INFO
-   Inline panel below 3D viewer in left zone
+   Header above viewer, detail panel below
    ============================================ */
 
+/* --- Shared backdrop for readability over 3D scene --- */
+.jj-product-info__header,
 .jj-product-info {
+  background: rgba(0, 0, 0, 0.75);
   width: 100%;
   max-width: 400px;
-  padding: 12px 16px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   pointer-events: auto;
 }
 
-/* Title sits above the 3D viewer canvas, outside .jj-product-info */
+/* --- Header: title + JP title, above canvas --- */
+.jj-product-info__header {
+  padding: 8px 16px 6px;
+}
+
 .jj-product-info__title {
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 14px;
-  color: var(--jj-accent, #4aa4e0);
+  color: var(--jj-text, #e0d5c0);
   line-height: 1.3;
   min-height: 18px;
-  padding: 8px 16px 0;
-  width: 100%;
-  max-width: 400px;
-  pointer-events: auto;
+  text-shadow: 0 0 6px rgba(224, 213, 192, 0.5);
 }
 
+.jj-product-info__jp-title {
+  font-size: 12px;
+  color: var(--jj-muted, #666);
+  line-height: 1.4;
+  padding-top: 2px;
+}
+.jj-product-info__jp-title:empty {
+  display: none;
+}
+
+/* --- Info panel: artist, meta, price, actions — below canvas --- */
+.jj-product-info {
+  padding: 10px 16px 12px;
+}
+
+/* Artist */
+.jj-product-info__artist {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--jj-primary, #e04040);
+  line-height: 1.3;
+  text-shadow: 0 0 8px rgba(224, 64, 64, 0.4);
+}
+
+.jj-product-info__jp-name {
+  font-size: 12px;
+  color: var(--jj-muted, #666);
+  line-height: 1.4;
+  padding-top: 2px;
+  margin-bottom: 8px;
+}
+.jj-product-info__jp-name:empty {
+  display: none;
+}
+
+/* Meta — stacked rows */
 .jj-product-info__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.4;
   margin-bottom: 8px;
 }
 
-.jj-product-info__meta .jj-meta-tag {
-  color: #999;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid #333;
-  padding: 1px 6px;
-  white-space: nowrap;
+.jj-meta-row {
+  padding: 1px 0;
 }
 
-.jj-product-info__meta .jj-meta-tag--label {
-  color: #555;
-  text-transform: uppercase;
+.jj-meta-row__label {
+  color: #666;
 }
 
+.jj-meta-row__value {
+  color: var(--jj-text, #e0d5c0);
+}
+
+/* Price */
 .jj-product-info__price {
   font-size: 14px;
   color: var(--jj-secondary, #f5d742);
   margin-bottom: 8px;
   min-height: 18px;
+  text-shadow: 0 0 6px rgba(245, 215, 66, 0.4);
 }
 
+/* Actions */
 .jj-product-info__actions {
   display: flex;
   gap: 4px;
@@ -61,7 +99,7 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-accent, #4aa4e0);
-  background: #0a0a0a;
+  background: rgba(0, 0, 0, 0.6);
   border: 1px solid #333;
   padding: 4px 8px;
   cursor: default;
