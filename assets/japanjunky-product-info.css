@@ -11,12 +11,17 @@
   pointer-events: auto;
 }
 
+/* Title sits above the 3D viewer canvas, outside .jj-product-info */
 .jj-product-info__title {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 14px;
   color: var(--jj-accent, #4aa4e0);
   line-height: 1.3;
   min-height: 18px;
-  margin-bottom: 6px;
+  padding: 8px 16px 0;
+  width: 100%;
+  max-width: 400px;
+  pointer-events: auto;
 }
 
 .jj-product-info__meta {

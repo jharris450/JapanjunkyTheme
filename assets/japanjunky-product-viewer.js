@@ -498,7 +498,8 @@
       piView.style.display = '';
     }
 
-    // Show panel
+    // Show title (now above canvas) and info panel (below canvas)
+    if (piTitle) piTitle.style.display = '';
     infoPanel.style.display = '';
     infoPanel.classList.remove('jj-product-info--entering');
     void infoPanel.offsetHeight;
@@ -513,6 +514,7 @@
 
   function hideProductInfo() {
     clearType();
+    if (piTitle) piTitle.style.display = 'none';
     if (infoPanel) infoPanel.style.display = 'none';
     if (piView) piView.style.display = 'none';
   }
