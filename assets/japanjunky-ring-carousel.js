@@ -1,6 +1,6 @@
 /**
  * japanjunky-ring-carousel.js
- * Full-viewport horizontal arc carousel of album covers.
+ * Radial crescent carousel of album covers.
  * Absorbs filter + search logic from removed japanjunky-filter.js / japanjunky-search.js.
  *
  * Consumes: window.JJ_PRODUCTS (from jj-homepage-body.liquid)
@@ -21,16 +21,31 @@
 
   // ─── Arc Config ────────────────────────────────────────────────
   var ARC = [
-    { offset: 0,  rotateX: 0,    scale: 1.0,  opacity: 1.0  },
-    { offset: 1,  rotateX: -30,  scale: 0.75, opacity: 0.85 },  // below center
-    { offset: -1, rotateX: 30,   scale: 0.75, opacity: 0.85 },  // above center
-    { offset: 2,  rotateX: -55,  scale: 0.55, opacity: 0.6  },
-    { offset: -2, rotateX: 55,   scale: 0.55, opacity: 0.6  },
-    { offset: 3,  rotateX: -75,  scale: 0.4,  opacity: 0.35 },
-    { offset: -3, rotateX: 75,   scale: 0.4,  opacity: 0.35 }
+    { offset: 0,  rotateY: 0,    scale: 1.0,  opacity: 1.0  },
+    { offset: 1,  rotateY: 18,   scale: 0.8,  opacity: 0.85 },
+    { offset: -1, rotateY: -18,  scale: 0.8,  opacity: 0.85 },
+    { offset: 2,  rotateY: 35,   scale: 0.6,  opacity: 0.6  },
+    { offset: -2, rotateY: -35,  scale: 0.6,  opacity: 0.6  },
+    { offset: 3,  rotateY: 50,   scale: 0.45, opacity: 0.35 },
+    { offset: -3, rotateY: -50,  scale: 0.45, opacity: 0.35 }
   ];
   var VISIBLE_RANGE = 3; // covers visible on each side of center
   var TRANSLATE_Z = 280; // depth push in perspective
+
+  // Per-cover random jitter (applied once on creation)
+  var coverJitter = {}; // keyed by product handle+variantId
+
+  function getJitter(product) {
+    var key = product.handle + ':' + product.variantId;
+    if (!coverJitter[key]) {
+      coverJitter[key] = {
+        rotate: (Math.random() - 0.5) * 5, // ±2.5deg
+        tx: (Math.random() - 0.5) * 6,     // ±3px
+        ty: (Math.random() - 0.5) * 6      // ±3px
+      };
+    }
+    return coverJitter[key];
+  }
 
   // ─── State ─────────────────────────────────────────────────────
   var filteredProducts = allProducts.slice(); // currently visible after filters
@@ -146,12 +161,7 @@
       imgWrap.appendChild(img);
     }
 
-    var label = document.createElement('div');
-    label.className = 'jj-ring__cover-label';
-    label.textContent = product.title || 'Untitled';
-
     div.appendChild(imgWrap);
-    div.appendChild(label);
 
     return div;
   }
@@ -194,7 +204,8 @@
         img.removeAttribute('data-src');
       }
 
-      el.style.transform = 'rotateX(' + slot.rotateX + 'deg) translateZ(' + TRANSLATE_Z + 'px) scale(' + slot.scale + ')';
+      var jit = getJitter(filteredProducts[dIdx]);
+      el.style.transform = 'rotateY(' + (slot.rotateY + jit.rotate) + 'deg) translateZ(' + TRANSLATE_Z + 'px) scale(' + slot.scale + ') translate(' + jit.tx + 'px, ' + jit.ty + 'px)';
       el.style.opacity = slot.opacity;
       el.style.zIndex = 10 - Math.abs(slot.offset);
 
@@ -386,9 +397,10 @@
     wheelCooldown = true;
     setTimeout(function () { wheelCooldown = false; }, 150);
 
-    if (e.deltaY > 0 || e.deltaX > 0) {
+    var delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+    if (delta > 0) {
       rotateRight();
-    } else if (e.deltaY < 0 || e.deltaX < 0) {
+    } else if (delta < 0) {
       rotateLeft();
     }
   }, { passive: false });
@@ -412,14 +424,14 @@
     if (e.touches.length !== 1 || touchLocked) return;
     var dx = e.touches[0].clientX - touchStartX;
     var dy = e.touches[0].clientY - touchStartY;
-    // Only register vertical swipes, one rotation per gesture
-    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+    // Only register horizontal swipes, one rotation per gesture
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
       touchMoved = true;
-      touchLocked = true; // one rotation per swipe gesture
-      if (dy > 0) {
-        rotateRight(); // swipe down → next item
+      touchLocked = true;
+      if (dx > 0) {
+        rotateRight();
       } else {
-        rotateLeft();  // swipe up → previous item
+        rotateLeft();
       }
     }
   }, { passive: true });
