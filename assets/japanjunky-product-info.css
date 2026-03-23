@@ -12,14 +12,14 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   pointer-events: auto;
   padding: 10px 16px 12px;
-  margin-top: 140px; /* push box down to leave room for canvas overlap */
+  margin-top: 180px; /* push box down to leave room for canvas overlap */
 }
 
 /* Canvas: absolutely positioned within product-zone, overlapping the box top-right */
 #jj-viewer-canvas {
   position: absolute;
-  width: 220px;
-  height: 220px;
+  width: 300px;
+  height: 300px;
   z-index: 2;
   pointer-events: auto;
   cursor: grab;

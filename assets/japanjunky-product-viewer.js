@@ -504,8 +504,8 @@
 
     // Position canvas top-right of the info box, extending above it
     canvas.style.position = 'absolute';
-    canvas.style.left = ((boxRect.right - zoneRect.left) / zoom - 220 + 10) + 'px';
-    canvas.style.top = ((boxRect.top - zoneRect.top) / zoom - 80) + 'px';
+    canvas.style.left = ((boxRect.right - zoneRect.left) / zoom - 300 + 10) + 'px';
+    canvas.style.top = ((boxRect.top - zoneRect.top) / zoom - 120) + 'px';
   }
 
   // ─── Product Info Panel ───────────────────────────────────────
