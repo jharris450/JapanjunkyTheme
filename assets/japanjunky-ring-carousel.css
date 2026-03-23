@@ -1,6 +1,6 @@
 /* ============================================
    JAPANJUNKY RING CAROUSEL
-   Vertical arc of album covers — right side
+   Radial crescent of album covers — right side
    ============================================ */
 
 /* --- Ring Container --- */
@@ -8,7 +8,7 @@
   position: fixed;
   right: 0;
   top: 0;
-  width: 35vw;
+  width: 40vw;
   height: calc(100vh - 32px); /* above taskbar */
   z-index: 50;
   display: flex;
@@ -201,26 +201,10 @@
   display: block;
 }
 
-.jj-ring__cover-label {
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 10px;
-  color: #888;
-  margin-top: 4px;
-  text-align: center;
-  max-width: 180px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Selected cover glow */
 .jj-ring__cover--selected .jj-ring__cover-img-wrap {
   border-color: var(--jj-primary, #e8313a);
   box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
-}
-
-.jj-ring__cover--selected .jj-ring__cover-label {
-  color: var(--jj-text, #e0d5c0);
 }
 
 /* Format-specific border on selected */
@@ -257,6 +241,32 @@
   text-align: center;
 }
 
+/* --- Product Zone (left side) --- */
+.jj-product-zone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 60vw;
+  height: calc(100vh - 32px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+#jj-viewer-canvas {
+  width: 100%;
+  flex: 1;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+#jj-viewer-canvas.jj-viewer--dragging {
+  cursor: grabbing;
+}
+
 /* --- Reduced Motion --- */
 @media (prefers-reduced-motion: reduce) {
   .jj-ring__cover {
@@ -272,22 +282,3 @@
   }
 }
 
-/* --- Viewer Interaction Overlay (left of ring) --- */
-.jj-viewer-interaction {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 65vw;
-  height: calc(100vh - 32px);
-  z-index: 75;
-  pointer-events: none;
-}
-
-.jj-viewer-interaction--active {
-  pointer-events: auto;
-  cursor: grab;
-}
-
-.jj-viewer-interaction--dragging {
-  cursor: grabbing;
-}
