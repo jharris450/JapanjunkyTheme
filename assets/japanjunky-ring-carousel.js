@@ -426,6 +426,7 @@
     var dy = e.touches[0].clientY - touchStartY;
     // Only register horizontal swipes, one rotation per gesture
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      e.preventDefault();
       touchMoved = true;
       touchLocked = true;
       if (dx > 0) {
@@ -434,7 +435,7 @@
         rotateLeft();
       }
     }
-  }, { passive: true });
+  }, { passive: false });
 
   stage.addEventListener('touchend', function (e) {
     touchLocked = false;
