@@ -221,19 +221,33 @@
     return tex;
   }
 
+  function disposeTextures(mat) {
+    if (!mat) return;
+    if (mat.uniforms && mat.uniforms.uTexture && mat.uniforms.uTexture.value) {
+      mat.uniforms.uTexture.value.dispose();
+    }
+  }
+
   function removeModel() {
+    // Reset drag state in case model is removed mid-drag
+    drag.active = false;
+    canvas.classList.remove('jj-viewer--dragging');
+
     if (currentModel) {
       scene.remove(currentModel);
       if (currentModel.geometry) currentModel.geometry.dispose();
       if (Array.isArray(currentModel.material)) {
         for (var i = 0; i < currentModel.material.length; i++) {
+          disposeTextures(currentModel.material[i]);
           currentModel.material[i].dispose();
         }
       } else if (currentModel.material) {
+        disposeTextures(currentModel.material);
         currentModel.material.dispose();
       }
       var children = currentModel.children.slice();
       for (var j = 0; j < children.length; j++) {
+        if (children[j].material) disposeTextures(children[j].material);
         if (children[j].geometry) children[j].geometry.dispose();
         if (children[j].material) children[j].material.dispose();
       }
@@ -480,7 +494,7 @@
 
     // View button
     if (piView) {
-      piView.href = '/products/' + data.handle;
+      piView.href = '/products/' + encodeURIComponent(data.handle);
       piView.style.display = '';
     }
 
