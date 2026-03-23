@@ -26,12 +26,12 @@
   // Center cover is largest; covers shrink + shift right toward edges.
   var ARC = [
     { offset: 0,  x: 0,    y: 0,    scale: 1.15, opacity: 1.0  },
-    { offset: 1,  x: 18,   y: 75,   scale: 0.88, opacity: 0.85 },
-    { offset: -1, x: 18,   y: -75,  scale: 0.88, opacity: 0.85 },
-    { offset: 2,  x: 55,   y: 145,  scale: 0.72, opacity: 0.6  },
-    { offset: -2, x: 55,   y: -145, scale: 0.72, opacity: 0.6  },
-    { offset: 3,  x: 110,  y: 210,  scale: 0.58, opacity: 0.35 },
-    { offset: -3, x: 110,  y: -210, scale: 0.58, opacity: 0.35 }
+    { offset: 1,  x: -18,  y: 75,   scale: 0.88, opacity: 0.85 },
+    { offset: -1, x: -18,  y: -75,  scale: 0.88, opacity: 0.85 },
+    { offset: 2,  x: -55,  y: 145,  scale: 0.72, opacity: 0.6  },
+    { offset: -2, x: -55,  y: -145, scale: 0.72, opacity: 0.6  },
+    { offset: 3,  x: -110, y: 210,  scale: 0.58, opacity: 0.35 },
+    { offset: -3, x: -110, y: -210, scale: 0.58, opacity: 0.35 }
   ];
   var VISIBLE_RANGE = 3; // covers visible on each side of center
 
