@@ -24,7 +24,6 @@
   var JP_TEXT = 'いらっしゃいませ';
   var EN_TEXT = 'Welcome!';
   var GLITCH_CHARS = '\u2591\u2592\u2593\u2588\u2573\u00A4\u00A7#@%&0123456789';
-  var REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var phase = 'waiting'; // waiting|appear|typeJP|holdJP|scramble|revealEN|holdEN|dissolve|done
   var timer = null;
@@ -164,12 +163,9 @@
   }
 
   // ─── Phase Machine ──────────────────────────────────────────
-  var rmFadeTimer = null;
-
   function clearTimers() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (frameInterval) { clearInterval(frameInterval); frameInterval = null; }
-    if (rmFadeTimer) { clearTimeout(rmFadeTimer); rmFadeTimer = null; }
   }
 
   function runPhase(newPhase) {
@@ -211,19 +207,6 @@
     }
   }
 
-  // ─── Reduced Motion Path ────────────────────────────────────
-  function runReducedMotion() {
-    textEl.textContent = EN_TEXT;
-    bubble.style.opacity = '1';
-    timer = setTimeout(function () {
-      bubble.style.transition = 'opacity 0.5s';
-      bubble.style.opacity = '0';
-      rmFadeTimer = setTimeout(function () {
-        if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
-      }, 600);
-    }, 3000);
-  }
-
   // ─── Early dissolve on product select ───────────────────────
   document.addEventListener('jj:product-selected', function () {
     if (phase !== 'done' && !dissolved) {
@@ -232,9 +215,7 @@
   });
 
   // ─── Init ───────────────────────────────────────────────────
-  if (REDUCED_MOTION) {
-    timer = setTimeout(runReducedMotion, 1500);
-  } else {
-    timer = setTimeout(function () { runPhase('appear'); }, 1500);
-  }
+  // Always run the full animated sequence — the CRT aesthetic is core to the experience.
+  // Individual CSS animations already respect prefers-reduced-motion via japanjunky-crt.css.
+  timer = setTimeout(function () { runPhase('appear'); }, 1500);
 })();
