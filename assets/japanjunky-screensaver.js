@@ -475,8 +475,8 @@
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
 
-    // Draw black pixel-art bubble body (black = visible in ghost shader)
-    ctx.fillStyle = '#000';
+    // Draw bubble border (medium gray = dimmer than text in ghost shader)
+    ctx.fillStyle = '#666';
 
     // Top border (inset by step at corners)
     ctx.fillRect(step, 0, w - step * 2, b);
@@ -507,13 +507,13 @@
     ctx.fillRect(tailX + tailW - 3, h - 6, b, 3);
     ctx.fillRect(tailX - 6, h - 3, b + 3, b);
 
-    // Dark fill inside bubble (dark gray = partially visible, adds subtle fill)
-    ctx.fillStyle = '#bbb';
+    // Subtle fill inside bubble (nearly invisible in shader)
+    ctx.fillStyle = '#ddd';
     ctx.fillRect(b, step, w - b * 2, h - tailH - step * 2);
 
-    // Text (black = fully visible)
+    // Text (black = max brightness in ghost shader)
     ctx.fillStyle = '#000';
-    ctx.font = '20px "Fixedsys Excelsior 3.01", monospace';
+    ctx.font = 'bold 22px "Fixedsys Excelsior 3.01", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(text || '', w / 2, (h - tailH) / 2);
