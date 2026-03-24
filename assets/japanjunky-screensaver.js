@@ -374,10 +374,8 @@
   var TSUNO_TRANSITION_DURATION = 1.5; // seconds
   var tsunoOrbitAngleOffset = 0; // syncs orbit start to transition end
 
-  // Talk-bounce state (controlled by bubble script via JJ_Portal.setTalking)
+  // Talk-bounce state — disabled (kept for API compat, no visual effect)
   var tsunoTalking = false;
-  var tsunoTalkAmp = 0.15;   // current bob amplitude (lerps between 0.15 and 0.6)
-  var tsunoTalkFreq = 0.5;   // current bob frequency (lerps between 0.5 and 6.0)
 
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
@@ -414,6 +412,122 @@
         window.JJ_Portal.tsuno.setState = function (state) { setTsunoState(state); };
       }
     });
+  }
+
+  // ─── Speech Bubble (3D, same shader as Tsuno) ──────────────
+  var BUBBLE_FRAG = [
+    'uniform sampler2D uTexture;',
+    'uniform vec3 uTint;',
+    'uniform float uAlpha;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec4 texColor = texture2D(uTexture, vUv);',
+    '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
+    '  float mask = 1.0 - lum;',
+    '  vec3 color = uTint * mask * uAlpha;',
+    '  gl_FragColor = vec4(color, 1.0);',
+    '}'
+  ].join('\n');
+
+  var bubbleCanvas = document.createElement('canvas');
+  bubbleCanvas.width = 256;
+  bubbleCanvas.height = 64;
+  var bubbleCtx = bubbleCanvas.getContext('2d');
+
+  var bubbleTex = new THREE.CanvasTexture(bubbleCanvas);
+  bubbleTex.minFilter = THREE.NearestFilter;
+  bubbleTex.magFilter = THREE.NearestFilter;
+
+  var bubbleGeo = new THREE.PlaneGeometry(3.2, 0.8);
+  var bubbleMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uResolution: { value: parseFloat(resH) },
+      uTexture: { value: bubbleTex },
+      uTint: { value: new THREE.Vector3(1.0, 0.2, 0.08) },
+      uAlpha: { value: 0.8 }
+    },
+    vertexShader: GLOW_VERT,
+    fragmentShader: BUBBLE_FRAG,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  var bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+  bubbleMesh.visible = false;
+  scene.add(bubbleMesh);
+
+  // Bubble offset from Tsuno (3D units)
+  var BUBBLE_OFFSET = { x: -2.0, y: 2.0, z: 0 };
+
+  function drawBubble(text) {
+    var ctx = bubbleCtx;
+    var w = bubbleCanvas.width;
+    var h = bubbleCanvas.height;
+    var b = 3; // border thickness
+    var step = 4; // corner step size
+    var tailW = 8;
+    var tailH = 10;
+    var tailX = 20;
+
+    // Clear to white (white = transparent in ghost shader)
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw black pixel-art bubble body (black = visible in ghost shader)
+    ctx.fillStyle = '#000';
+
+    // Top border (inset by step at corners)
+    ctx.fillRect(step, 0, w - step * 2, b);
+    // Bottom border (inset by step at corners)
+    ctx.fillRect(step, h - tailH - b, w - step * 2, b);
+    // Left border (inset by step at corners)
+    ctx.fillRect(0, step, b, h - tailH - step * 2);
+    // Right border (inset by step at corners)
+    ctx.fillRect(w - b, step, b, h - tailH - step * 2);
+
+    // Corner steps (top-left)
+    ctx.fillRect(step - b, b, b, step - b);
+    ctx.fillRect(b, step - b, step - b, b);
+    // Corner steps (top-right)
+    ctx.fillRect(w - step, b, b, step - b);
+    ctx.fillRect(w - step, step - b, step - b, b);
+    // Corner steps (bottom-left)
+    ctx.fillRect(step - b, h - tailH - step, b, step - b);
+    ctx.fillRect(b, h - tailH - step, step - b, b);
+    // Corner steps (bottom-right)
+    ctx.fillRect(w - step, h - tailH - step, b, step - b);
+    ctx.fillRect(w - step, h - tailH - step, step - b, b);
+
+    // Pixel-art tail (bottom-left, stepping down-left)
+    ctx.fillRect(tailX, h - tailH, b, tailH - 6);
+    ctx.fillRect(tailX + tailW, h - tailH, b, tailH - 6);
+    ctx.fillRect(tailX - 3, h - 6, b, 3);
+    ctx.fillRect(tailX + tailW - 3, h - 6, b, 3);
+    ctx.fillRect(tailX - 6, h - 3, b + 3, b);
+
+    // Dark fill inside bubble (dark gray = partially visible, adds subtle fill)
+    ctx.fillStyle = '#bbb';
+    ctx.fillRect(b, step, w - b * 2, h - tailH - step * 2);
+
+    // Text (black = fully visible)
+    ctx.fillStyle = '#000';
+    ctx.font = '20px "Fixedsys Excelsior 3.01", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text || '', w / 2, (h - tailH) / 2);
+
+    bubbleTex.needsUpdate = true;
+  }
+
+  function updateBubblePosition() {
+    if (!tsunoMesh || !bubbleMesh.visible) return;
+    // Negative x offset = toward catalogue (screen-right)
+    bubbleMesh.position.x = tsunoMesh.position.x + BUBBLE_OFFSET.x;
+    bubbleMesh.position.y = tsunoMesh.position.y + BUBBLE_OFFSET.y;
+    bubbleMesh.position.z = tsunoMesh.position.z + BUBBLE_OFFSET.z;
+    bubbleMesh.lookAt(camera.position);
   }
 
   function setTsunoState(newState) {
@@ -454,15 +568,9 @@
     tsunoMesh.material.uniforms.uTime.value = t;
 
     if (tsunoState === 'idle') {
-      // Gentle bob at idle position, facing the catalogue (screen-right = negative x)
+      // Gentle bob at idle position
       tsunoMesh.position.x = TSUNO_IDLE_POS.x;
-      // Lerp bob params toward target
-      var targetAmp = tsunoTalking ? 0.6 : 0.15;
-      var targetFreq = tsunoTalking ? 6.0 : 0.5;
-      var lerpRate = 1.0 - Math.pow(0.05, dt); // ~0.5s settle
-      tsunoTalkAmp += (targetAmp - tsunoTalkAmp) * lerpRate;
-      tsunoTalkFreq += (targetFreq - tsunoTalkFreq) * lerpRate;
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * tsunoTalkFreq * 2 * Math.PI) * tsunoTalkAmp;
+      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5 * 2 * Math.PI) * 0.15;
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
       tsunoMesh.lookAt(camera.position);
 
@@ -797,6 +905,7 @@
 
     // Update Tsuno Daishi
     updateTsuno(t, targetInterval / 1000);
+    updateBubblePosition();
 
     // Spawn and animate flying objects
     spawnObject(time);
@@ -838,14 +947,11 @@
     setTalking: function (talking) {
       tsunoTalking = !!talking;
     },
-    getTsunoScreenPos: function () {
-      if (!tsunoMesh) return null;
-      var v = tsunoMesh.position.clone();
-      v.project(camera);
-      // NDC → pixel coords on the display canvas
-      var x = (v.x + 1) / 2 * canvasW;
-      var y = (-v.y + 1) / 2 * canvasH;
-      return { x: x, y: y };
+    setBubbleText: function (text) {
+      drawBubble(text);
+    },
+    setBubbleVisible: function (visible) {
+      bubbleMesh.visible = !!visible;
     }
   };
 

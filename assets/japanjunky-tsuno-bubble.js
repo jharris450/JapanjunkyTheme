@@ -1,9 +1,9 @@
 /**
  * japanjunky-tsuno-bubble.js
- * Tsuno Daishi greeting chat bubble.
- * Phases: appear → typing "..." → type JP → hold → scramble → reveal EN → hold → dissolve
+ * Tsuno Daishi greeting chat bubble (rendered in 3D scene).
+ * Phases: appear → typing "..." → type JP → hold → scramble → reveal EN → hold
  *
- * Depends on: JJ_Portal (optional, for talk-bounce)
+ * Depends on: JJ_Portal (setBubbleText, setBubbleVisible)
  * Listens:    jj:product-selected (early dissolve)
  */
 (function () {
@@ -14,34 +14,41 @@
                  document.getElementById('jj-screensaver-display');
   if (!ssCanvas) return;
 
-  var bubble = document.getElementById('jj-tsuno-bubble');
-  if (!bubble) return;
-
-  var textEl = bubble.querySelector('.jj-tsuno-bubble__text');
-  if (!textEl) return;
-
   // ─── Config ─────────────────────────────────────────────────
   var JP_TEXT = 'いらっしゃいませ';
   var EN_TEXT = 'Welcome!';
   var GLITCH_CHARS = '\u2591\u2592\u2593\u2588\u2573\u00A4\u00A7#@%&0123456789';
 
-  var phase = 'waiting'; // waiting|appear|typing|typeJP|holdJP|scramble|holdEN|dissolve|done
+  var phase = 'waiting'; // waiting|appear|typing|typeJP|holdJP|scramble|holdEN|done
   var timer = null;
   var frameInterval = null;
   var dissolved = false;
+  var currentText = '';
 
-  // ─── Portal helpers (graceful if unavailable) ───────────────
-  function setTalking(val) {
-    if (window.JJ_Portal && window.JJ_Portal.setTalking) {
-      window.JJ_Portal.setTalking(val);
+  // ─── Portal helpers (wait for JJ_Portal to be available) ───
+  function portalReady() {
+    return window.JJ_Portal && window.JJ_Portal.setBubbleText;
+  }
+
+  function setBubbleText(text) {
+    currentText = text;
+    if (portalReady()) {
+      window.JJ_Portal.setBubbleText(text);
+    }
+  }
+
+  function setBubbleVisible(visible) {
+    if (portalReady()) {
+      window.JJ_Portal.setBubbleVisible(visible);
     }
   }
 
   // ─── Audio ──────────────────────────────────────────────────
+  var audioDom = document.getElementById('jj-tsuno-bubble');
   var audio = null;
   try {
     audio = new Audio();
-    audio.src = bubble.getAttribute('data-audio-src') || '';
+    audio.src = (audioDom && audioDom.getAttribute('data-audio-src')) || '';
     audio.preload = 'auto';
   } catch (e) { audio = null; }
 
@@ -50,15 +57,15 @@
     try { audio.play().catch(function () {}); } catch (e) { /* autoplay blocked */ }
   }
 
-  // ─── Typewriter (jittered, same style as product viewer) ────
+  // ─── Typewriter (jittered) ─────────────────────────────────
   function typeText(text, msPerChar, cb) {
     var idx = 0;
-    textEl.textContent = '';
+    setBubbleText('');
     function tick() {
       if (phase === 'done' || dissolved) return;
       if (idx < text.length) {
         idx++;
-        textEl.textContent = text.substring(0, idx);
+        setBubbleText(text.substring(0, idx));
         var jitter = msPerChar * (0.6 + Math.random() * 0.8);
         timer = setTimeout(tick, jitter);
       } else {
@@ -75,11 +82,10 @@
     for (var si = 0; si < len; si++) settled.push(false);
     var settleOrder = [];
     for (var i = 0; i < len; i++) settleOrder.push(i);
-    // Settle left-to-right with small random variance
     var nextSettle = 0;
     var totalFrames = 0;
-    var scrambleFrames = 8;  // ~400ms of pure scramble before first settle
-    var settlePause = 1;     // frames between each character settling (~60ms at 50ms/frame)
+    var scrambleFrames = 8;
+    var settlePause = 1;
     var framesSinceLastSettle = 0;
 
     frameInterval = setInterval(function () {
@@ -91,7 +97,6 @@
 
       totalFrames++;
 
-      // Build display string
       var display = '';
       for (var c = 0; c < len; c++) {
         if (settled[c]) {
@@ -100,9 +105,8 @@
           display += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
         }
       }
-      textEl.textContent = display;
+      setBubbleText(display);
 
-      // After initial scramble period, start settling characters
       if (totalFrames > scrambleFrames) {
         framesSinceLastSettle++;
         if (framesSinceLastSettle >= settlePause && nextSettle < len) {
@@ -112,61 +116,27 @@
         }
       }
 
-      // All settled
       if (nextSettle >= len) {
         clearInterval(frameInterval);
         frameInterval = null;
-        textEl.textContent = toText;
+        setBubbleText(toText);
         if (cb) cb();
       }
     }, 50);
   }
 
-  // ─── Pixel Dissolve ─────────────────────────────────────────
+  // ─── Dissolve (hide 3D bubble) ─────────────────────────────
   function dissolve() {
     if (dissolved) return;
     dissolved = true;
     clearTimers();
-    setTalking(false);
-
-    // Get bubble dimensions
-    var rect = bubble.getBoundingClientRect();
-    var cellSize = 6;
-    var cols = Math.ceil(rect.width / cellSize);
-    var rows = Math.ceil(rect.height / cellSize);
-
-    // Hide original content, speech tail, and border
-    textEl.style.visibility = 'hidden';
-    bubble.style.border = 'none';
-    bubble.classList.add('jj-tsuno-bubble--dissolving');
-
-    // Build grid
-    var grid = document.createElement('div');
-    grid.className = 'jj-pixel-dissolve-grid';
-    grid.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
-    grid.style.gridTemplateRows = 'repeat(' + rows + ', 1fr)';
-
-    for (var i = 0; i < cols * rows; i++) {
-      var cell = document.createElement('div');
-      cell.style.setProperty('--d', Math.floor(Math.random() * 300) + 'ms');
-      cell.style.setProperty('--dx', (Math.random() * 16 - 8) + 'px');
-      cell.style.setProperty('--dy', (Math.random() * 16 - 8) + 'px');
-      grid.appendChild(cell);
-    }
-
-    bubble.appendChild(grid);
-
-    // Remove bubble after animation completes
-    setTimeout(function () {
-      if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
-    }, 550);
+    setBubbleVisible(false);
   }
 
   // ─── Phase Machine ──────────────────────────────────────────
   function clearTimers() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (frameInterval) { clearInterval(frameInterval); frameInterval = null; }
-    if (trackRaf) { cancelAnimationFrame(trackRaf); trackRaf = null; }
   }
 
   function runPhase(newPhase) {
@@ -175,15 +145,15 @@
 
     switch (phase) {
       case 'appear':
-        bubble.classList.add('jj-tsuno-bubble--entering');
-        setTalking(true);
+        setBubbleText('');
+        setBubbleVisible(true);
         timer = setTimeout(function () { runPhase('typing'); }, 400);
         break;
 
       case 'typing':
         typeText('...', 200, function () {
           timer = setTimeout(function () {
-            textEl.textContent = '';
+            setBubbleText('');
             runPhase('typeJP');
           }, 600);
         });
@@ -207,7 +177,6 @@
         break;
 
       case 'holdEN':
-        setTalking(false);
         break;
 
       case 'dissolve':
@@ -223,27 +192,14 @@
     }
   });
 
-  // ─── Follow Tsuno's screen position ─────────────────────────
-  var BUBBLE_OFFSET_X = 30;   // px to the right of Tsuno's center
-  var BUBBLE_OFFSET_Y = -140; // px above Tsuno's center (negative = up)
-  var trackRaf = null;
-
-  function trackTsuno() {
-    if (dissolved) return;
-    var portal = window.JJ_Portal;
-    if (portal && portal.getTsunoScreenPos) {
-      var pos = portal.getTsunoScreenPos();
-      if (pos) {
-        bubble.style.left = (pos.x + BUBBLE_OFFSET_X) + 'px';
-        bubble.style.top = (pos.y + BUBBLE_OFFSET_Y) + 'px';
-      }
-    }
-    trackRaf = requestAnimationFrame(trackTsuno);
-  }
-
   // ─── Init ───────────────────────────────────────────────────
-  // Always run the full animated sequence — the CRT aesthetic is core to the experience.
-  // Individual CSS animations already respect prefers-reduced-motion via japanjunky-crt.css.
-  trackTsuno();
-  timer = setTimeout(function () { runPhase('appear'); }, 1500);
+  // Wait for JJ_Portal to be available, then start
+  function waitAndStart() {
+    if (portalReady()) {
+      timer = setTimeout(function () { runPhase('appear'); }, 1500);
+    } else {
+      setTimeout(waitAndStart, 100);
+    }
+  }
+  waitAndStart();
 })();
