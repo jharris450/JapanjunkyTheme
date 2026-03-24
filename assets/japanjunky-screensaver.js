@@ -366,7 +366,7 @@
   var tsunoTransition = { progress: 0, startPos: null, endPos: null };
 
   // Idle position: between product graphic and meta card area
-  var TSUNO_IDLE_POS = { x: 0.3, y: -0.2, z: 6 };
+  var TSUNO_IDLE_POS = { x: -0.025, y: -0.2, z: 6 };
   var TSUNO_ORBIT_RADIUS = 2.0;
   var TSUNO_ORBIT_SPEED = 0.2;
   var TSUNO_ORBIT_Z = 16;
