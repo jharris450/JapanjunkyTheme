@@ -372,8 +372,9 @@
   var TSUNO_ORBIT_SPEED = 0.2;
   var TSUNO_ORBIT_Z = 16;
   var TSUNO_TRANSITION_DURATION = 1.5; // seconds
+  var tsunoOrbitAngleOffset = 0; // syncs orbit start to transition end
 
-  var ghostGeo = new THREE.PlaneGeometry(1.2, 3.5);
+  var ghostGeo = new THREE.PlaneGeometry(1.8, 5.0);
 
   var ghostUrl = config.ghostTexture;
   if (ghostUrl) {
@@ -421,7 +422,8 @@
         y: tsunoMesh.position.y,
         z: tsunoMesh.position.z
       };
-      tsunoTransition.endPos = { x: 0, y: 0, z: TSUNO_ORBIT_Z };
+      // End exactly where orbit angle 0 starts, so there's no snap
+      tsunoTransition.endPos = { x: TSUNO_ORBIT_RADIUS, y: 0, z: TSUNO_ORBIT_Z };
     } else if (newState === 'returning') {
       tsunoTransition.startPos = {
         x: tsunoMesh.position.x,
@@ -446,17 +448,19 @@
     tsunoMesh.material.uniforms.uTime.value = t;
 
     if (tsunoState === 'idle') {
-      // Gentle bob at idle position
+      // Gentle bob at idle position, facing the catalogue (screen-right = negative x)
       tsunoMesh.position.x = TSUNO_IDLE_POS.x;
       tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5) * 0.15;
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
-      tsunoMesh.lookAt(camera.position);
+      tsunoMesh.lookAt(TSUNO_IDLE_POS.x - 10, tsunoMesh.position.y, TSUNO_IDLE_POS.z);
 
     } else if (tsunoState === 'transitioning-out') {
       tsunoTransition.progress += dt / TSUNO_TRANSITION_DURATION;
       if (tsunoTransition.progress >= 1.0) {
         tsunoTransition.progress = 1.0;
         tsunoState = 'orbiting';
+        // Sync orbit so it starts at angle 0 (exactly where transition ended)
+        tsunoOrbitAngleOffset = -t * TSUNO_ORBIT_SPEED;
       }
       var ease = easeInOutCubic(tsunoTransition.progress);
       var sp = tsunoTransition.startPos;
@@ -464,11 +468,11 @@
       tsunoMesh.position.x = sp.x + (ep.x - sp.x) * ease;
       tsunoMesh.position.y = sp.y + (ep.y - sp.y) * ease;
       tsunoMesh.position.z = sp.z + (ep.z - sp.z) * ease;
-      // Face toward vortex center during transition
+      // Gradually face toward vortex center during transition
       tsunoMesh.lookAt(0, 0, 30);
 
     } else if (tsunoState === 'orbiting') {
-      var angle = t * TSUNO_ORBIT_SPEED;
+      var angle = t * TSUNO_ORBIT_SPEED + tsunoOrbitAngleOffset;
       tsunoMesh.position.x = Math.cos(angle) * TSUNO_ORBIT_RADIUS;
       tsunoMesh.position.y = Math.sin(angle) * TSUNO_ORBIT_RADIUS;
       tsunoMesh.position.z = TSUNO_ORBIT_Z + Math.sin(t * 0.3) * 1.5;
