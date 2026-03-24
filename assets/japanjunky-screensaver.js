@@ -278,7 +278,7 @@
     '  float dist = length(uv) * 2.0;',
     '  float ring = smoothstep(0.6, 0.78, dist) * smoothstep(1.0, 0.88, dist);',
     '  vec3 color = flamePalette(uHue);',
-    '  gl_FragColor = vec4(color * 1.5, ring);',
+    '  gl_FragColor = vec4(color * 1.0, ring);',
     '}'
   ].join('\n');
 
@@ -313,7 +313,7 @@
     '',
     'void main() {',
     '  vec4 texColor = texture2D(uTexture, vUv);',
-    '  vec3 color = texColor.rgb * 0.35;',
+    '  vec3 color = texColor.rgb * 0.2;',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
@@ -385,8 +385,8 @@
           uResolution: { value: parseFloat(resH) },
           uTexture: { value: tex },
           uTime: { value: 0.0 },
-          uTint: { value: new THREE.Vector3(0.9, 0.15, 0.05) },
-          uAlpha: { value: 0.5 }
+          uTint: { value: new THREE.Vector3(1.0, 0.2, 0.08) },
+          uAlpha: { value: 0.8 }
         },
         vertexShader: GLOW_VERT,
         fragmentShader: GHOST_FRAG,
