@@ -9,8 +9,8 @@
   left: 45%;
   max-width: 200px;
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid #333;
+  background: rgba(0, 0, 0, 0.9);
+  border: 3px solid var(--jj-text, #e0d5c0);
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 14px;
   color: var(--jj-text, #e0d5c0);
@@ -20,16 +20,32 @@
   white-space: nowrap;
 }
 
-/* Speech tail pointing left toward Tsuno */
+/* Pixel-art speech tail stepping down-left toward Tsuno */
 .jj-tsuno-bubble::after {
   content: '';
   position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 6px solid transparent;
-  border-right-color: rgba(0, 0, 0, 0.85);
-  border-left: none;
+  bottom: -9px;
+  left: 15px;
+  width: 3px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.9);
+  box-shadow:
+    /* Mask bubble border to create opening */
+    0 -3px 0 0 rgba(0, 0, 0, 0.9),
+    3px -3px 0 0 rgba(0, 0, 0, 0.9),
+    /* Tail opening side borders */
+    -3px -3px 0 0 var(--jj-text, #e0d5c0),
+    6px -3px 0 0 var(--jj-text, #e0d5c0),
+    /* First step */
+    -3px 0 0 0 var(--jj-text, #e0d5c0),
+    3px 0 0 0 var(--jj-text, #e0d5c0),
+    /* Second step (shifted left) */
+    -6px 3px 0 0 var(--jj-text, #e0d5c0),
+    -3px 3px 0 0 rgba(0, 0, 0, 0.9),
+    0 3px 0 0 var(--jj-text, #e0d5c0),
+    /* Bottom tip */
+    -6px 6px 0 0 var(--jj-text, #e0d5c0),
+    -3px 6px 0 0 var(--jj-text, #e0d5c0);
 }
 
 /* CRT-on entrance */
@@ -48,7 +64,7 @@
 }
 
 .jj-pixel-dissolve-grid > div {
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   animation: jj-pixel-dissolve 0.2s ease-in forwards;
   animation-delay: var(--d, 0ms);
 }

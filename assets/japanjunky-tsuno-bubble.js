@@ -1,7 +1,7 @@
 /**
  * japanjunky-tsuno-bubble.js
  * Tsuno Daishi greeting chat bubble.
- * Phases: appear → type JP → hold → scramble → reveal EN → hold → dissolve
+ * Phases: appear → typing "..." → type JP → hold → scramble → reveal EN → hold → dissolve
  *
  * Depends on: JJ_Portal (optional, for talk-bounce)
  * Listens:    jj:product-selected (early dissolve)
@@ -25,7 +25,7 @@
   var EN_TEXT = 'Welcome!';
   var GLITCH_CHARS = '\u2591\u2592\u2593\u2588\u2573\u00A4\u00A7#@%&0123456789';
 
-  var phase = 'waiting'; // waiting|appear|typeJP|holdJP|scramble|revealEN|holdEN|dissolve|done
+  var phase = 'waiting'; // waiting|appear|typing|typeJP|holdJP|scramble|holdEN|dissolve|done
   var timer = null;
   var frameInterval = null;
   var dissolved = false;
@@ -176,11 +176,20 @@
       case 'appear':
         bubble.classList.add('jj-tsuno-bubble--entering');
         setTalking(true);
-        playAudio();
-        timer = setTimeout(function () { runPhase('typeJP'); }, 400);
+        timer = setTimeout(function () { runPhase('typing'); }, 400);
+        break;
+
+      case 'typing':
+        typeText('...', 200, function () {
+          timer = setTimeout(function () {
+            textEl.textContent = '';
+            runPhase('typeJP');
+          }, 600);
+        });
         break;
 
       case 'typeJP':
+        playAudio();
         typeText(JP_TEXT, 80, function () {
           runPhase('holdJP');
         });
