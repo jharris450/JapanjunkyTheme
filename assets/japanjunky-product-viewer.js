@@ -547,9 +547,20 @@
            escapeHtml(value) + '</span></div>';
   }
 
+  var infoPanelShown = false;
+
   function showProductInfo(data) {
     if (!infoPanel) return;
     selectedCoverEl = data.el || null;
+
+    // Artist — will be typed
+    if (piArtist) piArtist.textContent = '';
+
+    // JP name (below artist)
+    if (piJpName) {
+      piJpName.textContent = data.jpName || '';
+      piJpName.style.display = data.jpName ? '' : 'none';
+    }
 
     // Title — will be typed
     if (piTitle) piTitle.textContent = '';
@@ -558,15 +569,6 @@
     if (piJpTitle) {
       piJpTitle.textContent = data.jpTitle || '';
       piJpTitle.style.display = data.jpTitle ? '' : 'none';
-    }
-
-    // Artist
-    if (piArtist) piArtist.textContent = data.artist || '';
-
-    // JP name (below artist)
-    if (piJpName) {
-      piJpName.textContent = data.jpName || '';
-      piJpName.style.display = data.jpName ? '' : 'none';
     }
 
     // Meta tags — stacked rows
@@ -599,12 +601,16 @@
     // Show info panel and position canvas over its top-right
     infoPanel.style.display = '';
     positionCanvasOverBox();
-    infoPanel.classList.remove('jj-product-info--entering');
-    void infoPanel.offsetHeight;
-    infoPanel.classList.add('jj-product-info--entering');
 
-    // Typewriter: title then price
+    // Only play CRT-on entrance animation the first time
+    if (!infoPanelShown) {
+      infoPanel.classList.add('jj-product-info--entering');
+      infoPanelShown = true;
+    }
+
+    // Typewriter: artist → title → price
     typeSequence([
+      { el: piArtist, text: (data.artist || data.vendor || '---').toUpperCase(), ms: 38 },
       { el: piTitle, text: data.title || '---', ms: 28 },
       { el: piPrice, text: data.price || '---', ms: 22 }
     ]);
@@ -612,8 +618,12 @@
 
   function hideProductInfo() {
     clearType();
-    if (infoPanel) infoPanel.style.display = 'none';
+    if (infoPanel) {
+      infoPanel.style.display = 'none';
+      infoPanel.classList.remove('jj-product-info--entering');
+    }
     if (piView) piView.style.display = 'none';
+    infoPanelShown = false;
   }
 
   // ─── Add to Cart ──────────────────────────────────────────────
