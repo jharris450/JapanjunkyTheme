@@ -5,16 +5,16 @@
 
 .jj-tsuno-bubble {
   position: absolute;
-  bottom: 55%;
+  bottom: 65%;
   left: 45%;
   max-width: 200px;
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.9);
-  border: 3px solid var(--jj-text, #e0d5c0);
+  background: rgba(255, 51, 20, 0.12);
+  border: 3px solid rgba(255, 51, 20, 0.8);
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 14px;
-  color: var(--jj-text, #e0d5c0);
-  text-shadow: 0 0 6px rgba(224, 213, 192, 0.3);
+  color: rgba(255, 51, 20, 0.8);
+  text-shadow: 0 0 8px rgba(255, 51, 20, 0.5);
   pointer-events: none;
   opacity: 0;
   white-space: nowrap;
@@ -28,24 +28,24 @@
   left: 15px;
   width: 3px;
   height: 3px;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(255, 51, 20, 0.12);
   box-shadow:
     /* Mask bubble border to create opening */
-    0 -3px 0 0 rgba(0, 0, 0, 0.9),
-    3px -3px 0 0 rgba(0, 0, 0, 0.9),
+    0 -3px 0 0 rgba(255, 51, 20, 0.12),
+    3px -3px 0 0 rgba(255, 51, 20, 0.12),
     /* Tail opening side borders */
-    -3px -3px 0 0 var(--jj-text, #e0d5c0),
-    6px -3px 0 0 var(--jj-text, #e0d5c0),
+    -3px -3px 0 0 rgba(255, 51, 20, 0.8),
+    6px -3px 0 0 rgba(255, 51, 20, 0.8),
     /* First step */
-    -3px 0 0 0 var(--jj-text, #e0d5c0),
-    3px 0 0 0 var(--jj-text, #e0d5c0),
+    -3px 0 0 0 rgba(255, 51, 20, 0.8),
+    3px 0 0 0 rgba(255, 51, 20, 0.8),
     /* Second step (shifted left) */
-    -6px 3px 0 0 var(--jj-text, #e0d5c0),
-    -3px 3px 0 0 rgba(0, 0, 0, 0.9),
-    0 3px 0 0 var(--jj-text, #e0d5c0),
+    -6px 3px 0 0 rgba(255, 51, 20, 0.8),
+    -3px 3px 0 0 rgba(255, 51, 20, 0.12),
+    0 3px 0 0 rgba(255, 51, 20, 0.8),
     /* Bottom tip */
-    -6px 6px 0 0 var(--jj-text, #e0d5c0),
-    -3px 6px 0 0 var(--jj-text, #e0d5c0);
+    -6px 6px 0 0 rgba(255, 51, 20, 0.8),
+    -3px 6px 0 0 rgba(255, 51, 20, 0.8);
 }
 
 /* CRT-on entrance */
@@ -64,7 +64,7 @@
 }
 
 .jj-pixel-dissolve-grid > div {
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(255, 51, 20, 0.12);
   animation: jj-pixel-dissolve 0.2s ease-in forwards;
   animation-delay: var(--d, 0ms);
 }

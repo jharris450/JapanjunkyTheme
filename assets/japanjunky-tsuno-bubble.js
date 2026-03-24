@@ -207,7 +207,6 @@
 
       case 'holdEN':
         setTalking(false);
-        timer = setTimeout(function () { runPhase('dissolve'); }, 3000);
         break;
 
       case 'dissolve':
