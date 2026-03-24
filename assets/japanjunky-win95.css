@@ -233,7 +233,7 @@
   left: 100%;
   top: -2px;
   width: 180px;
-  max-width: calc(50vw - 10px);
+  max-width: calc(33.33vw - 6.67px);
   background: #0a0a0a;
   border: 1px solid #444;
   padding: 4px 0;
