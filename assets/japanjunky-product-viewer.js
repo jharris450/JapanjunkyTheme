@@ -461,7 +461,9 @@
       if (idx < text.length) {
         idx++;
         textNode.textContent = text.substring(0, idx);
-        typeTimer = setTimeout(step, msPerChar);
+        // Jittered delay: ±40% of base speed for a human feel
+        var jitter = msPerChar * (0.6 + Math.random() * 0.8);
+        typeTimer = setTimeout(step, jitter);
       } else {
         cursor.remove();
         if (cb) cb();
@@ -486,7 +488,7 @@
       var f = fields[i];
       i++;
       typeField(f.el, f.text, f.ms, function () {
-        typeTimer = setTimeout(next, 150);
+        typeTimer = setTimeout(next, 80);
       });
     }
     next();
@@ -610,9 +612,9 @@
 
     // Typewriter: artist → title → price
     typeSequence([
-      { el: piArtist, text: (data.artist || data.vendor || '---').toUpperCase(), ms: 38 },
-      { el: piTitle, text: data.title || '---', ms: 28 },
-      { el: piPrice, text: data.price || '---', ms: 22 }
+      { el: piArtist, text: (data.artist || data.vendor || '---').toUpperCase(), ms: 25 },
+      { el: piTitle, text: data.title || '---', ms: 18 },
+      { el: piPrice, text: data.price || '---', ms: 14 }
     ]);
   }
 
