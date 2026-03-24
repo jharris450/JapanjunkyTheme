@@ -166,6 +166,7 @@
   function clearTimers() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (frameInterval) { clearInterval(frameInterval); frameInterval = null; }
+    if (trackRaf) { cancelAnimationFrame(trackRaf); trackRaf = null; }
   }
 
   function runPhase(newPhase) {
@@ -222,8 +223,27 @@
     }
   });
 
+  // ─── Follow Tsuno's screen position ─────────────────────────
+  var BUBBLE_OFFSET_X = 30;   // px to the right of Tsuno's center
+  var BUBBLE_OFFSET_Y = -60;  // px above Tsuno's center (negative = up)
+  var trackRaf = null;
+
+  function trackTsuno() {
+    if (dissolved) return;
+    var portal = window.JJ_Portal;
+    if (portal && portal.getTsunoScreenPos) {
+      var pos = portal.getTsunoScreenPos();
+      if (pos) {
+        bubble.style.left = (pos.x + BUBBLE_OFFSET_X) + 'px';
+        bubble.style.top = (pos.y + BUBBLE_OFFSET_Y) + 'px';
+      }
+    }
+    trackRaf = requestAnimationFrame(trackTsuno);
+  }
+
   // ─── Init ───────────────────────────────────────────────────
   // Always run the full animated sequence — the CRT aesthetic is core to the experience.
   // Individual CSS animations already respect prefers-reduced-motion via japanjunky-crt.css.
+  trackTsuno();
   timer = setTimeout(function () { runPhase('appear'); }, 1500);
 })();

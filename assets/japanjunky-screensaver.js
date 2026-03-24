@@ -837,6 +837,15 @@
     },
     setTalking: function (talking) {
       tsunoTalking = !!talking;
+    },
+    getTsunoScreenPos: function () {
+      if (!tsunoMesh) return null;
+      var v = tsunoMesh.position.clone();
+      v.project(camera);
+      // NDC → pixel coords on the display canvas
+      var x = (v.x + 1) / 2 * canvasW;
+      var y = (-v.y + 1) / 2 * canvasH;
+      return { x: x, y: y };
     }
   };
 
