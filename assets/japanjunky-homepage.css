@@ -858,8 +858,8 @@ tr[data-product-format="hardware"] .jj-cell-format { color: var(--jj-white); }
   .jj-product-table { table-layout: auto; }
 
   .jj-right-sidebar {
-    width: 33.33vw;
-    right: -33.33vw;
+    width: 40vw;
+    right: -40vw;
   }
 
   .jj-right-sidebar.jj-detail-open {

@@ -12,7 +12,7 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   pointer-events: auto;
   padding: 10px 16px 12px;
-  margin-top: 180px; /* push box down to leave room for canvas overlap */
+  margin-top: auto; /* push box to bottom of product zone, canvas overlaps above */
 }
 
 /* Canvas: absolutely positioned within product-zone, overlapping the box top-right */

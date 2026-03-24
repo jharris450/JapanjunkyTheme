@@ -8,8 +8,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 33.33vw;
-  height: calc(33.33vh - 10.67px); /* minus taskbar (divided by 3 for zoom: 3) */
+  width: 40vw;
+  height: calc(40vh - 12.8px); /* minus taskbar (divided by 2.5 for zoom) */
   z-index: 100;
   pointer-events: none;
 }
@@ -35,8 +35,8 @@
 .jj-window--maximized {
   top: 0 !important;
   left: 0 !important;
-  width: 33.33vw !important;
-  height: calc(33.33vh - 10.67px) !important;
+  width: 40vw !important;
+  height: calc(40vh - 12.8px) !important;
 }
 
 .jj-window--dragging {
