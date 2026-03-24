@@ -225,7 +225,7 @@
 
   // ─── Follow Tsuno's screen position ─────────────────────────
   var BUBBLE_OFFSET_X = 30;   // px to the right of Tsuno's center
-  var BUBBLE_OFFSET_Y = -60;  // px above Tsuno's center (negative = up)
+  var BUBBLE_OFFSET_Y = -140; // px above Tsuno's center (negative = up)
   var trackRaf = null;
 
   function trackTsuno() {
