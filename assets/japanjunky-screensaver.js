@@ -374,6 +374,11 @@
   var TSUNO_TRANSITION_DURATION = 1.5; // seconds
   var tsunoOrbitAngleOffset = 0; // syncs orbit start to transition end
 
+  // Talk-bounce state (controlled by bubble script via JJ_Portal.setTalking)
+  var tsunoTalking = false;
+  var tsunoTalkAmp = 0.15;   // current bob amplitude (lerps between 0.15 and 0.6)
+  var tsunoTalkFreq = 0.5;   // current bob frequency (lerps between 0.5 and 6.0)
+
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
   var ghostUrl = config.ghostTexture;
@@ -451,7 +456,13 @@
     if (tsunoState === 'idle') {
       // Gentle bob at idle position, facing the catalogue (screen-right = negative x)
       tsunoMesh.position.x = TSUNO_IDLE_POS.x;
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5) * 0.15;
+      // Lerp bob params toward target
+      var targetAmp = tsunoTalking ? 0.6 : 0.15;
+      var targetFreq = tsunoTalking ? 6.0 : 0.5;
+      var lerpRate = 1.0 - Math.pow(0.05, dt); // ~0.5s settle
+      tsunoTalkAmp += (targetAmp - tsunoTalkAmp) * lerpRate;
+      tsunoTalkFreq += (targetFreq - tsunoTalkFreq) * lerpRate;
+      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * tsunoTalkFreq * 2 * Math.PI) * tsunoTalkAmp;
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
       tsunoMesh.lookAt(camera.position);
 
@@ -823,6 +834,9 @@
         parallaxOffset.x = 0;
         parallaxOffset.y = 0;
       }
+    },
+    setTalking: function (talking) {
+      tsunoTalking = !!talking;
     }
   };
 
