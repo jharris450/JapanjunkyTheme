@@ -31,6 +31,7 @@
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-tsuno-bubble.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
 
   <script>
@@ -146,6 +147,11 @@
         <input type="hidden" id="jj-pi-variant-id" value="">
       </div>
     </div>
+    {%- comment -%} Tsuno Daishi greeting bubble {%- endcomment -%}
+    <div id="jj-tsuno-bubble" class="jj-tsuno-bubble" aria-hidden="true"
+         data-audio-src="{{ 'tsuno-irasshaimase.mp3' | asset_url }}">
+      <span class="jj-tsuno-bubble__text"></span>
+    </div>
   </div>
 
   {%- comment -%} Ring carousel: full-viewport album cover arc {%- endcomment -%}
@@ -202,6 +208,7 @@
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-tsuno-bubble.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
