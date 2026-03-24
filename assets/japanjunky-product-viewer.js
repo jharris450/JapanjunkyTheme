@@ -617,15 +617,9 @@
   }
 
   function hideProductInfo() {
+    // Just stop any in-progress typewriter. Keep all content visible —
+    // showProductInfo will overwrite it when the next product arrives.
     clearType();
-    // Don't hide or re-animate the box — it stays in place once shown.
-    // Only clear the text content so the next selection types fresh.
-    if (piArtist) piArtist.textContent = '';
-    if (piTitle) piTitle.textContent = '';
-    if (piPrice) piPrice.textContent = '';
-    if (piJpName) piJpName.textContent = '';
-    if (piJpTitle) piJpTitle.textContent = '';
-    if (piMeta) piMeta.innerHTML = '';
   }
 
   // ─── Add to Cart ──────────────────────────────────────────────
