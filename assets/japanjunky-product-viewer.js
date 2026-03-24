@@ -618,12 +618,14 @@
 
   function hideProductInfo() {
     clearType();
-    if (infoPanel) {
-      infoPanel.style.display = 'none';
-      infoPanel.classList.remove('jj-product-info--entering');
-    }
-    if (piView) piView.style.display = 'none';
-    infoPanelShown = false;
+    // Don't hide or re-animate the box — it stays in place once shown.
+    // Only clear the text content so the next selection types fresh.
+    if (piArtist) piArtist.textContent = '';
+    if (piTitle) piTitle.textContent = '';
+    if (piPrice) piPrice.textContent = '';
+    if (piJpName) piJpName.textContent = '';
+    if (piJpTitle) piJpTitle.textContent = '';
+    if (piMeta) piMeta.innerHTML = '';
   }
 
   // ─── Add to Cart ──────────────────────────────────────────────
