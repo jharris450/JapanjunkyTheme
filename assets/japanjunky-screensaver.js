@@ -374,7 +374,7 @@
   var TSUNO_TRANSITION_DURATION = 1.5; // seconds
   var tsunoOrbitAngleOffset = 0; // syncs orbit start to transition end
 
-  var ghostGeo = new THREE.PlaneGeometry(1.8, 5.0);
+  var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
   var ghostUrl = config.ghostTexture;
   if (ghostUrl) {
@@ -398,6 +398,7 @@
       });
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
+      tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
       tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
       scene.add(tsunoMesh);
 
@@ -452,7 +453,7 @@
       tsunoMesh.position.x = TSUNO_IDLE_POS.x;
       tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5) * 0.15;
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
-      tsunoMesh.lookAt(TSUNO_IDLE_POS.x - 10, tsunoMesh.position.y, TSUNO_IDLE_POS.z);
+      tsunoMesh.lookAt(camera.position);
 
     } else if (tsunoState === 'transitioning-out') {
       tsunoTransition.progress += dt / TSUNO_TRANSITION_DURATION;
