@@ -13,6 +13,7 @@
   pointer-events: auto;
   padding: 10px 16px 12px;
   margin-top: auto; /* push box to bottom of product zone, canvas overlaps above */
+  margin-bottom: 16px; /* gap above taskbar */
 }
 
 /* Canvas: absolutely positioned within product-zone, overlapping the box top-right */
