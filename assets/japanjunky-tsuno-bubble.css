@@ -1,0 +1,73 @@
+/* ============================================
+   JAPANJUNKY TSUNO BUBBLE
+   Chat bubble overlay for Tsuno Daishi greeting
+   ============================================ */
+
+.jj-tsuno-bubble {
+  position: absolute;
+  bottom: 55%;
+  left: 45%;
+  max-width: 200px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #333;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 14px;
+  color: var(--jj-text, #e0d5c0);
+  text-shadow: 0 0 6px rgba(224, 213, 192, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+}
+
+/* Speech tail pointing left toward Tsuno */
+.jj-tsuno-bubble::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(0, 0, 0, 0.85);
+  border-left: none;
+}
+
+/* CRT-on entrance */
+.jj-tsuno-bubble--entering {
+  animation: jj-crt-on 0.4s ease-out forwards;
+}
+
+/* Pixel dissolve grid */
+.jj-pixel-dissolve-grid {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.jj-pixel-dissolve-grid > div {
+  background: rgba(0, 0, 0, 0.85);
+  animation: jj-pixel-dissolve 0.2s ease-in forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes jj-pixel-dissolve {
+  0%   { opacity: 1; transform: scale(1) translate(0, 0); }
+  100% { opacity: 0; transform: scale(0) translate(var(--dx, 0px), var(--dy, 0px)); }
+}
+
+/* Hide speech tail during dissolve */
+.jj-tsuno-bubble--dissolving::after { display: none; }
+
+/* Mobile: hide bubble */
+@media (max-width: 960px) {
+  .jj-tsuno-bubble { display: none; }
+}
+
+/* Reduced motion: no animations */
+@media (prefers-reduced-motion: reduce) {
+  .jj-tsuno-bubble--entering { animation: none; opacity: 1; }
+  .jj-pixel-dissolve-grid > div { animation: none; }
+}
