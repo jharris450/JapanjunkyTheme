@@ -544,15 +544,41 @@
 
     bubbleTex.needsUpdate = true;
 
-    // Draw text on separate canvas (white bg, black text)
+    // Draw text on separate canvas with CRT phosphor glow
     var tc = textCtx;
     tc.fillStyle = '#fff';
     tc.fillRect(0, 0, w, h);
-    tc.fillStyle = '#000';
+
+    var tx = w / 2;
+    var ty = (h - tailH) / 2;
+    var str = text || '';
     tc.font = 'bold 22px "Fixedsys Excelsior 3.01", monospace';
     tc.textAlign = 'center';
     tc.textBaseline = 'middle';
-    tc.fillText(text || '', w / 2, (h - tailH) / 2);
+
+    // Layered glow passes (wide → narrow blur, light → dark)
+    tc.shadowOffsetX = 0;
+    tc.shadowOffsetY = 0;
+
+    tc.shadowColor = 'rgba(0,0,0,0.15)';
+    tc.shadowBlur = 20;
+    tc.fillStyle = '#fff';
+    tc.fillText(str, tx, ty);
+
+    tc.shadowColor = 'rgba(0,0,0,0.3)';
+    tc.shadowBlur = 10;
+    tc.fillStyle = '#fff';
+    tc.fillText(str, tx, ty);
+
+    tc.shadowColor = 'rgba(0,0,0,0.5)';
+    tc.shadowBlur = 4;
+    tc.fillStyle = '#fff';
+    tc.fillText(str, tx, ty);
+
+    // Solid text on top (no shadow)
+    tc.shadowBlur = 0;
+    tc.fillStyle = '#000';
+    tc.fillText(str, tx, ty);
 
     textTex.needsUpdate = true;
   }
