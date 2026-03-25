@@ -377,6 +377,150 @@
   // Talk-bounce state — disabled (kept for API compat, no visual effect)
   var tsunoTalking = false;
 
+  // ─── Tsuno Personality System ─────────────────────────────
+  var TSUNO_MOODS = {
+    //        0=Sun       1=Mon       2=Tue      3=Wed          4=Thu       5=Fri       6=Sat
+    names:   ['shy',     'curious',  'lazy',    'mischievous', 'watchful', 'energetic','dreamy'],
+    // Movement speed multiplier
+    speed:   [0.6,        1.0,        0.5,       1.4,           0.8,        1.3,        0.6],
+    // Behavior change interval range [min, max] in seconds
+    interval:[[15,25],    [12,20],    [18,30],   [10,18],       [14,22],    [8,15],     [16,28]],
+    // Mouse sensitivity (0 = ignore, 1 = normal)
+    mouseSensitivity: [0.3, 1.0, 0.2, 0.8, 1.0, 0.7, 0.15],
+    // Reaction style: 'shy' | 'curious' | 'lazy' | 'playful'
+    reactionStyle: ['shy', 'curious', 'lazy', 'playful', 'curious', 'playful', 'shy'],
+    // Visual: glow alpha multiplier
+    glowMult: [0.6, 1.1, 0.7, 1.0, 1.0, 1.2, 0.8],
+    // Visual: tint vec3 [r, g, b]
+    tint: [
+      [0.85, 0.15, 0.15],  // shy — faint red
+      [1.0,  0.25, 0.1],   // curious — warm orange
+      [0.9,  0.18, 0.08],  // lazy — muted base
+      [1.0,  0.35, 0.05],  // mischievous — amber
+      [1.0,  0.2,  0.08],  // watchful — base tint
+      [1.0,  0.3,  0.1],   // energetic — bright warm
+      [0.8,  0.15, 0.2]    // dreamy — cooler purple-ish
+    ],
+    // Visual: bob amplitude
+    bobAmp:  [0.08, 0.18, 0.1,  0.2,  0.15, 0.25, 0.12],
+    // Visual: bob frequency (Hz)
+    bobFreq: [0.35, 0.5,  0.4,  0.7,  0.45, 0.8,  0.3],
+    // Visual: sway amplitude (x-axis oscillation)
+    swayAmp: [0.03, 0.06, 0.04, 0.08, 0.0,  0.05, 0.15],
+    // Visual: base tilt (radians, positive = lean right)
+    baseTilt:[0.12, -0.09,0.0,  0.0,  0.0,  0.0, -0.05],
+    // Behavior weights [hang, peek, loom, patrol, perch, sink, circle, retreat]
+    weights: [
+      [0.5, 3,   0.2, 0.5, 1,   1,   1,   3  ],  // shy
+      [1,   1,   3,   1,   3,   1,   1,   0.2],  // curious
+      [3,   0.5, 0.5, 0.3, 1,   2,   0.5, 1  ],  // lazy
+      [0.3, 3,   1,   3,   1,   1,   1,   0.5],  // mischievous
+      [2,   1,   1,   1,   3,   0.5, 1,   0.3],  // watchful
+      [0.5, 1,   1,   3,   1,   0.5, 3,   1  ],  // energetic
+      [1,   1,   0.3, 0.5, 1,   1,   3,   2  ]   // dreamy
+    ]
+  };
+
+  function getTsunoMood() {
+    return new Date().getDay(); // 0=Sun..6=Sat, indexes into TSUNO_MOODS arrays
+  }
+
+  // Behavior IDs: 0=hang, 1=peek, 2=loom, 3=patrol, 4=perch, 5=sink, 6=circle, 7=retreat
+  var TSUNO_BEHAVIORS = [
+    { name: 'hang',    pos: function () { return { x: 4.0, y: 0.0, z: 6 }; } },
+    { name: 'peek',    pos: function () {
+      var zDist = 5 - camera.position.z; // z:5 minus camera z
+      var halfW = Math.tan(camera.fov * Math.PI / 360) * zDist * (camera.aspect || viewportAspect);
+      return { x: halfW - 0.5, y: 0.5, z: 5 };
+    }},
+    { name: 'loom',    pos: function () { return { x: 1.5, y: 0.5, z: 2.5 }; } },
+    { name: 'patrol',  pos: function () { return { x: 6.0, y: 0.3, z: 10 }; },
+      animated: true, endX: -4.0 },
+    { name: 'perch',   pos: function () { return { x: 5.0, y: -1.0, z: 6 }; } },
+    { name: 'sink',    pos: function () {
+      // Sink transitions to current pos (not bottom); the drop is animated in updateTsunoIdle
+      var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
+      var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
+      var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
+      return { x: cx, y: cy, z: cz };
+    },
+      // Bottom y is computed at runtime in the behavior animation
+      bottomY: function () {
+        var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
+        var zDist = cz - camera.position.z;
+        var halfH = Math.tan(camera.fov * Math.PI / 360) * zDist;
+        return -halfH - 1.0;
+      }
+    },
+    { name: 'circle',  pos: function () {
+      var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
+      var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
+      var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
+      return { x: cx, y: cy, z: cz };
+    }, orbital: true, radius: 1.0 },
+    { name: 'retreat',  pos: function () { return { x: 2.0, y: 0.0, z: 22 }; } }
+  ];
+
+  function pickNextBehavior(moodIdx, currentIdx) {
+    var weights = TSUNO_MOODS.weights[moodIdx];
+    // Halve weight of current behavior to reduce immediate repeats
+    var adjusted = [];
+    var total = 0;
+    for (var i = 0; i < weights.length; i++) {
+      adjusted[i] = (i === currentIdx) ? weights[i] * 0.5 : weights[i];
+      total += adjusted[i];
+    }
+    var roll = Math.random() * total;
+    var acc = 0;
+    for (var j = 0; j < adjusted.length; j++) {
+      acc += adjusted[j];
+      if (roll <= acc) return j;
+    }
+    return 0; // fallback
+  }
+
+  // ─── Personality State ────────────────────────────────────
+  var tsunoMoodIdx = getTsunoMood();
+  var tsunoBehaviorIdx = 0;         // current behavior index
+  var tsunoBehaviorStart = 0;       // wall-clock time (s) when current behavior began
+  var tsunoBehaviorDuration = 0;    // how long to linger (s)
+  var tsunoTransitioning = false;   // true = easing to new behavior position
+  var tsunoTransStart = 0;          // transition start time
+  var tsunoTransDuration = 1.5;     // transition ease duration (s), scaled by mood speed
+  var tsunoTransFrom = { x: 4, y: 0, z: 6 };
+  var tsunoTransTo = { x: 4, y: 0, z: 6 };
+  // Moment cues
+  var tsunoPulseStart = -1;         // arrival pulse start time (-1 = inactive)
+  var tsunoShakeStart = -1;         // startle shake start time (-1 = inactive)
+  // Patrol animation
+  var tsunoPatrolProgress = 0;      // 0..1 progress for patrol sweep
+
+  function getNextInterval() {
+    var range = TSUNO_MOODS.interval[tsunoMoodIdx];
+    return range[0] + Math.random() * (range[1] - range[0]);
+  }
+
+  function startBehavior(t, behaviorIdx) {
+    tsunoBehaviorIdx = behaviorIdx;
+    tsunoBehaviorStart = t;
+    tsunoBehaviorDuration = getNextInterval();
+    tsunoPatrolProgress = 0;
+
+    // Start transition from current position to behavior target
+    if (tsunoMesh) {
+      tsunoTransitioning = true;
+      tsunoTransStart = t;
+      tsunoTransDuration = 1.5 / TSUNO_MOODS.speed[tsunoMoodIdx];
+      tsunoTransFrom.x = tsunoMesh.position.x;
+      tsunoTransFrom.y = tsunoMesh.position.y;
+      tsunoTransFrom.z = tsunoMesh.position.z;
+      var target = TSUNO_BEHAVIORS[behaviorIdx].pos();
+      tsunoTransTo.x = target.x;
+      tsunoTransTo.y = target.y;
+      tsunoTransTo.z = target.z;
+    }
+  }
+
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
   var ghostUrl = config.ghostTexture;
