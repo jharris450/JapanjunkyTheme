@@ -642,6 +642,95 @@
     tsunoMesh.rotateZ(baseTilt);
   }
 
+  // ─── Tsuno Mouse Interaction ──────────────────────────────
+  var tsunoAwarenessAlpha = 0;       // extra alpha from awareness
+  var tsunoProxReacting = false;     // currently in proximity reaction
+  var tsunoProxCooldown = 0;         // cooldown timestamp to prevent rapid re-triggers
+  var tsunoFlashStart = -1;          // awareness flash start time (-1 = inactive)
+  var tsunoWasClose = false;         // was cursor close last frame (for edge detection)
+
+  function updateTsunoMouse(mouse) {
+    if (!tsunoMesh || tsunoState !== 'idle') return;
+    var mood = tsunoMoodIdx;
+    var sensitivity = TSUNO_MOODS.mouseSensitivity[mood];
+
+    // ── Layer 1: Passive Awareness ──
+    // Lean toward cursor (post-lookAt tilt is applied in updateTsunoIdle)
+    // Here we just modulate the tilt based on mouse
+    var mouseTilt = mouse.x * 0.15 * sensitivity; // up to ~8.5 degrees
+    tsunoMesh.rotateZ(mouseTilt);
+
+    // Glow brightens when cursor is on canvas side
+    tsunoAwarenessAlpha = Math.abs(mouse.x) * 0.1 * sensitivity;
+    tsunoMesh.material.uniforms.uAlpha.value += tsunoAwarenessAlpha;
+
+    // ── Layer 2: Proximity Reactions ──
+    var pos3 = tsunoMesh.position.clone();
+    pos3.project(camera);
+    var screenX = (pos3.x * 0.5 + 0.5) * window.innerWidth;
+    var screenY = (-pos3.y * 0.5 + 0.5) * window.innerHeight;
+    var cursorX = (mouse.x * 0.5 + 0.5) * window.innerWidth;
+    var cursorY = (mouse.y * 0.5 + 0.5) * window.innerHeight;
+    var dist = Math.sqrt((screenX - cursorX) * (screenX - cursorX) +
+                         (screenY - cursorY) * (screenY - cursorY));
+
+    var t = performance.now() * 0.001;
+    var style = TSUNO_MOODS.reactionStyle[mood];
+
+    // Awareness flash: trigger on entering close zone (edge detection)
+    var isClose = dist < 150;
+    if (isClose && !tsunoWasClose) {
+      tsunoFlashStart = t;
+    }
+    tsunoWasClose = isClose;
+
+    // Apply flash alpha (0.15 spike over 0.15s, ease back)
+    if (tsunoFlashStart >= 0) {
+      var fp = (t - tsunoFlashStart) / 0.15;
+      if (fp >= 1.0) {
+        tsunoFlashStart = -1;
+      } else {
+        tsunoMesh.material.uniforms.uAlpha.value += 0.15 * (1.0 - fp);
+      }
+    }
+
+    if (dist < 60 && t > tsunoProxCooldown) {
+      // Very close reaction
+      tsunoProxCooldown = t + 2.0; // 2s cooldown
+      if (style === 'curious') {
+        // Scale up slightly, brighten
+        tsunoMesh.scale.set(-1.08, 1.08, 1);
+        tsunoMesh.material.uniforms.uAlpha.value += 0.15;
+      } else if (style === 'playful') {
+        // Dart to a new position
+        var dartIdx = pickNextBehavior(mood, tsunoBehaviorIdx);
+        startBehavior(t, dartIdx);
+      } else if (style === 'shy') {
+        // Startle shake then retreat
+        tsunoShakeStart = t;
+        startBehavior(t, 7); // 7 = retreat
+      } else if (style === 'lazy') {
+        // Reluctant drift — pick a new behavior (usually hang or sink for lazy mood)
+        var lazyIdx = pickNextBehavior(mood, tsunoBehaviorIdx);
+        startBehavior(t, lazyIdx);
+      }
+    } else if (dist < 150 && t > tsunoProxCooldown) {
+      // Close reaction
+      if (style === 'curious') {
+        // Lean in, glow
+        tsunoMesh.rotateZ(-0.08);
+        tsunoMesh.material.uniforms.uAlpha.value += 0.1;
+      } else if (style === 'playful') {
+        // Wiggle
+        tsunoMesh.position.x += Math.sin(t * 12) * 0.03;
+      } else if (style === 'shy') {
+        // Gentle drift away
+        tsunoMesh.position.x += 0.05 * sensitivity;
+      }
+      // lazy: barely reacts (no action needed)
+    }
+  }
+
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
   var ghostUrl = config.ghostTexture;
@@ -1233,6 +1322,11 @@
     // Update Tsuno Daishi
     updateTsuno(t, targetInterval / 1000);
     updateBubblePosition();
+
+    // Tsuno mouse interaction (idle only, desktop only, when mouse interaction is enabled)
+    if (tsunoState === 'idle' && !isMobile && config.mouseInteraction !== false) {
+      updateTsunoMouse(mouseNorm);
+    }
 
     // Spawn and animate flying objects
     spawnObject(time);
