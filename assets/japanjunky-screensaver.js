@@ -765,6 +765,9 @@
         window.JJ_Portal.tsuno.getState = function () { return tsunoState; };
         window.JJ_Portal.tsuno.setState = function (state) { setTsunoState(state); };
       }
+
+      // Start first idle behavior
+      startBehavior(performance.now() * 0.001, pickNextBehavior(tsunoMoodIdx, -1));
     });
   }
 
