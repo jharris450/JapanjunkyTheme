@@ -508,8 +508,7 @@
     tsunoPatrolProgress = 0;
 
     // Start transition from current position to behavior target
-    if (tsunoMesh) {
-      tsunoTransitioning = true;
+    tsunoTransitioning = true;
       tsunoTransStart = t;
       tsunoTransDuration = 1.5 / TSUNO_MOODS.speed[tsunoMoodIdx];
       tsunoTransFrom.x = tsunoMesh.position.x;
@@ -519,7 +518,6 @@
       tsunoTransTo.x = target.x;
       tsunoTransTo.y = target.y;
       tsunoTransTo.z = target.z;
-    }
   }
 
   function updateTsunoIdle(t) {
@@ -562,7 +560,7 @@
     } else {
       // ── At-position idle animations per behavior ──
       var beh = TSUNO_BEHAVIORS[tsunoBehaviorIdx];
-      var target = beh.pos();
+      var target = tsunoTransTo; // stable reference captured once at behavior start
 
       if (beh.orbital) {
         // Circle: small orbit around target position
@@ -584,7 +582,7 @@
         var sinkBottom = beh.bottomY();
         var sinkElapsed = t - tsunoBehaviorStart - tsunoTransDuration;
         var sinkDur = tsunoBehaviorDuration - tsunoTransDuration;
-        var sinkPhase = Math.max(0, sinkElapsed / sinkDur);
+        var sinkPhase = Math.min(1.0, Math.max(0, sinkElapsed / sinkDur));
         if (sinkPhase < 0.4) {
           // Sinking down
           var downEase = easeInOutCubic(sinkPhase / 0.4);
@@ -644,7 +642,6 @@
 
   // ─── Tsuno Mouse Interaction ──────────────────────────────
   var tsunoAwarenessAlpha = 0;       // extra alpha from awareness
-  var tsunoProxReacting = false;     // currently in proximity reaction
   var tsunoProxCooldown = 0;         // cooldown timestamp to prevent rapid re-triggers
   var tsunoFlashStart = -1;          // awareness flash start time (-1 = inactive)
   var tsunoWasClose = false;         // was cursor close last frame (for edge detection)
