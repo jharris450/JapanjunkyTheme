@@ -439,7 +439,19 @@
   bubbleTex.minFilter = THREE.NearestFilter;
   bubbleTex.magFilter = THREE.NearestFilter;
 
+  // Separate canvas for text only (rendered with white tint for readability)
+  var textCanvas = document.createElement('canvas');
+  textCanvas.width = 256;
+  textCanvas.height = 64;
+  var textCtx = textCanvas.getContext('2d');
+
+  var textTex = new THREE.CanvasTexture(textCanvas);
+  textTex.minFilter = THREE.NearestFilter;
+  textTex.magFilter = THREE.NearestFilter;
+
   var bubbleGeo = new THREE.PlaneGeometry(3.2, 0.8);
+
+  // Frame mesh — same tint as Tsuno
   var bubbleMat = new THREE.ShaderMaterial({
     uniforms: {
       uResolution: { value: parseFloat(resH) },
@@ -457,6 +469,25 @@
   var bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
   bubbleMesh.visible = false;
   scene.add(bubbleMesh);
+
+  // Text mesh — white tint for visibility
+  var textMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uResolution: { value: parseFloat(resH) },
+      uTexture: { value: textTex },
+      uTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+      uAlpha: { value: 0.9 }
+    },
+    vertexShader: GLOW_VERT,
+    fragmentShader: BUBBLE_FRAG,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  var textMesh = new THREE.Mesh(bubbleGeo, textMat);
+  textMesh.visible = false;
+  scene.add(textMesh);
 
   // Bubble offset from Tsuno (3D units)
   var BUBBLE_OFFSET = { x: -2.0, y: 2.0, z: 0 };
@@ -511,23 +542,31 @@
     ctx.fillStyle = '#ddd';
     ctx.fillRect(b, step, w - b * 2, h - tailH - step * 2);
 
-    // Text (black = max brightness in ghost shader)
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 22px "Fixedsys Excelsior 3.01", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text || '', w / 2, (h - tailH) / 2);
-
     bubbleTex.needsUpdate = true;
+
+    // Draw text on separate canvas (white bg, black text)
+    var tc = textCtx;
+    tc.fillStyle = '#fff';
+    tc.fillRect(0, 0, w, h);
+    tc.fillStyle = '#000';
+    tc.font = 'bold 22px "Fixedsys Excelsior 3.01", monospace';
+    tc.textAlign = 'center';
+    tc.textBaseline = 'middle';
+    tc.fillText(text || '', w / 2, (h - tailH) / 2);
+
+    textTex.needsUpdate = true;
   }
 
   function updateBubblePosition() {
     if (!tsunoMesh || !bubbleMesh.visible) return;
-    // Negative x offset = toward catalogue (screen-right)
-    bubbleMesh.position.x = tsunoMesh.position.x + BUBBLE_OFFSET.x;
-    bubbleMesh.position.y = tsunoMesh.position.y + BUBBLE_OFFSET.y;
-    bubbleMesh.position.z = tsunoMesh.position.z + BUBBLE_OFFSET.z;
+    var bx = tsunoMesh.position.x + BUBBLE_OFFSET.x;
+    var by = tsunoMesh.position.y + BUBBLE_OFFSET.y;
+    var bz = tsunoMesh.position.z + BUBBLE_OFFSET.z;
+    bubbleMesh.position.set(bx, by, bz);
     bubbleMesh.lookAt(camera.position);
+    // Text slightly in front to avoid z-fighting
+    textMesh.position.set(bx, by, bz - 0.01);
+    textMesh.lookAt(camera.position);
   }
 
   function setTsunoState(newState) {
@@ -952,6 +991,7 @@
     },
     setBubbleVisible: function (visible) {
       bubbleMesh.visible = !!visible;
+      textMesh.visible = !!visible;
     }
   };
 
