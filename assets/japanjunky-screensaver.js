@@ -501,6 +501,7 @@
   }
 
   function startBehavior(t, behaviorIdx) {
+    if (!tsunoMesh) return; // guard: mesh not yet loaded
     tsunoBehaviorIdx = behaviorIdx;
     tsunoBehaviorStart = t;
     tsunoBehaviorDuration = getNextInterval();
@@ -519,6 +520,126 @@
       tsunoTransTo.y = target.y;
       tsunoTransTo.z = target.z;
     }
+  }
+
+  function updateTsunoIdle(t) {
+    if (!tsunoMesh) return;
+
+    // Reset scale each frame (preserving horizontal flip); pulse/mouse may override below
+    tsunoMesh.scale.set(-1, 1, 1);
+
+    if (prefersReducedMotion) {
+      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+      tsunoMesh.lookAt(camera.position);
+      return;
+    }
+
+    var mood = tsunoMoodIdx;
+    var speed = TSUNO_MOODS.speed[mood];
+    var bobAmp = TSUNO_MOODS.bobAmp[mood];
+    var bobFreq = TSUNO_MOODS.bobFreq[mood];
+    var swayAmp = TSUNO_MOODS.swayAmp[mood];
+    var baseTilt = TSUNO_MOODS.baseTilt[mood];
+
+    // ── Check if it's time to pick a new behavior ──
+    if (!tsunoTransitioning && (t - tsunoBehaviorStart) >= tsunoBehaviorDuration) {
+      var nextIdx = pickNextBehavior(mood, tsunoBehaviorIdx);
+      startBehavior(t, nextIdx);
+    }
+
+    // ── Transition easing to new position ──
+    if (tsunoTransitioning) {
+      var tp = (t - tsunoTransStart) / tsunoTransDuration;
+      if (tp >= 1.0) {
+        tp = 1.0;
+        tsunoTransitioning = false;
+        tsunoPulseStart = t; // trigger arrival pulse
+      }
+      var ease = easeInOutCubic(tp);
+      tsunoMesh.position.x = tsunoTransFrom.x + (tsunoTransTo.x - tsunoTransFrom.x) * ease;
+      tsunoMesh.position.y = tsunoTransFrom.y + (tsunoTransTo.y - tsunoTransFrom.y) * ease;
+      tsunoMesh.position.z = tsunoTransFrom.z + (tsunoTransTo.z - tsunoTransFrom.z) * ease;
+    } else {
+      // ── At-position idle animations per behavior ──
+      var beh = TSUNO_BEHAVIORS[tsunoBehaviorIdx];
+      var target = beh.pos();
+
+      if (beh.orbital) {
+        // Circle: small orbit around target position
+        var cAngle = t * 0.4 * speed;
+        tsunoMesh.position.x = target.x + Math.cos(cAngle) * beh.radius;
+        tsunoMesh.position.y = target.y + Math.sin(cAngle) * beh.radius;
+        tsunoMesh.position.z = target.z;
+      } else if (beh.animated) {
+        // Patrol: sweep from startX to endX (time-based, not frame-based)
+        var patrolElapsed = t - tsunoBehaviorStart - tsunoTransDuration;
+        var patrolTotal = tsunoBehaviorDuration - tsunoTransDuration;
+        tsunoPatrolProgress = Math.min(1.0, Math.max(0, patrolElapsed / patrolTotal) * speed);
+        var sweepEase = easeInOutCubic(tsunoPatrolProgress);
+        tsunoMesh.position.x = target.x + (beh.endX - target.x) * sweepEase;
+        tsunoMesh.position.y = target.y;
+        tsunoMesh.position.z = target.z;
+      } else if (beh.name === 'sink') {
+        // Sink: drop down from current y, pause at bottom, rise back
+        var sinkBottom = beh.bottomY();
+        var sinkElapsed = t - tsunoBehaviorStart - tsunoTransDuration;
+        var sinkDur = tsunoBehaviorDuration - tsunoTransDuration;
+        var sinkPhase = Math.max(0, sinkElapsed / sinkDur);
+        if (sinkPhase < 0.4) {
+          // Sinking down
+          var downEase = easeInOutCubic(sinkPhase / 0.4);
+          tsunoMesh.position.y = target.y + (sinkBottom - target.y) * downEase;
+        } else if (sinkPhase < 0.6) {
+          // Holding at bottom
+          tsunoMesh.position.y = sinkBottom;
+        } else {
+          // Rising back
+          var upEase = easeInOutCubic((sinkPhase - 0.6) / 0.4);
+          tsunoMesh.position.y = sinkBottom + (target.y - sinkBottom) * upEase;
+        }
+        tsunoMesh.position.x = target.x;
+        tsunoMesh.position.z = target.z;
+      } else {
+        // Static behaviors (hang, peek, loom, perch, retreat): bob + sway at target
+        tsunoMesh.position.x = target.x + Math.sin(t * 0.3) * swayAmp;
+        tsunoMesh.position.y = target.y + Math.sin(t * bobFreq * 2 * Math.PI) * bobAmp;
+        tsunoMesh.position.z = target.z;
+      }
+    }
+
+    // ── Apply mood visuals ──
+    var tintArr = TSUNO_MOODS.tint[mood];
+    tsunoMesh.material.uniforms.uTint.value.set(tintArr[0], tintArr[1], tintArr[2]);
+    var alpha = 0.8 * TSUNO_MOODS.glowMult[mood];
+
+    // Arrival pulse (scale bump over 0.3s)
+    if (tsunoPulseStart >= 0) {
+      var pp = (t - tsunoPulseStart) / 0.3;
+      if (pp >= 1.0) {
+        tsunoPulseStart = -1;
+        tsunoMesh.scale.set(-1, 1, 1);
+      } else {
+        var bump = 1.0 + 0.05 * Math.sin(pp * Math.PI);
+        tsunoMesh.scale.set(-bump, bump, 1);
+      }
+    }
+
+    // Startle shake (position.x jitter over 0.2s)
+    if (tsunoShakeStart >= 0) {
+      var sp = (t - tsunoShakeStart) / 0.2;
+      if (sp >= 1.0) {
+        tsunoShakeStart = -1;
+      } else {
+        tsunoMesh.position.x += Math.sin(sp * Math.PI * 6) * 0.05 * (1 - sp);
+      }
+    }
+
+    // Alpha with any awareness flash applied
+    tsunoMesh.material.uniforms.uAlpha.value = alpha;
+
+    // Face camera then apply tilt
+    tsunoMesh.lookAt(camera.position);
+    tsunoMesh.rotateZ(baseTilt);
   }
 
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
@@ -777,11 +898,7 @@
     tsunoMesh.material.uniforms.uTime.value = t;
 
     if (tsunoState === 'idle') {
-      // Gentle bob at idle position
-      tsunoMesh.position.x = TSUNO_IDLE_POS.x;
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * 0.5 * 2 * Math.PI) * 0.15;
-      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
-      tsunoMesh.lookAt(camera.position);
+      updateTsunoIdle(t);
 
     } else if (tsunoState === 'transitioning-out') {
       tsunoTransition.progress += dt / TSUNO_TRANSITION_DURATION;
@@ -813,6 +930,7 @@
       if (tsunoTransition.progress >= 1.0) {
         tsunoTransition.progress = 1.0;
         tsunoState = 'idle';
+        startBehavior(t, pickNextBehavior(tsunoMoodIdx, -1));
       }
       var ease = easeInOutCubic(tsunoTransition.progress);
       var sp = tsunoTransition.startPos;
