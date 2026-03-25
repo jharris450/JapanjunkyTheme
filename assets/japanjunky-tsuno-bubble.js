@@ -46,6 +46,8 @@
   // ─── Audio ──────────────────────────────────────────────────
   var audioDom = document.getElementById('jj-tsuno-bubble');
   var audio = null;
+  var audioUnlocked = false;
+  var audioPending = false;          // true = playAudio() was called before unlock
   try {
     audio = new Audio();
     audio.src = (audioDom && audioDom.getAttribute('data-audio-src')) || '';
@@ -54,8 +56,25 @@
 
   function playAudio() {
     if (!audio || !audio.src) return;
+    if (!audioUnlocked) { audioPending = true; return; }
     try { audio.play().catch(function () {}); } catch (e) { /* autoplay blocked */ }
   }
+
+  // Unlock audio on first user gesture (click / tap / key)
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    if (audioPending && audio) {
+      audioPending = false;
+      try { audio.play().catch(function () {}); } catch (e) {}
+    }
+    ['click', 'touchstart', 'keydown'].forEach(function (evt) {
+      document.removeEventListener(evt, unlockAudio, true);
+    });
+  }
+  ['click', 'touchstart', 'keydown'].forEach(function (evt) {
+    document.addEventListener(evt, unlockAudio, true);
+  });
 
   // ─── Typewriter (jittered) ─────────────────────────────────
   function typeText(text, msPerChar, cb) {
