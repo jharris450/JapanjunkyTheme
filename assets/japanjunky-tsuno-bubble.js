@@ -56,8 +56,13 @@
 
   function playAudio() {
     if (!audio || !audio.src) return;
-    if (!audioUnlocked) { audioPending = true; return; }
-    try { audio.play().catch(function () {}); } catch (e) { /* autoplay blocked */ }
+    try {
+      var p = audio.play();
+      if (p && p.then) {
+        p.then(function () { audioUnlocked = true; })
+         .catch(function () { audioPending = true; });   // blocked → wait for gesture
+      }
+    } catch (e) { audioPending = true; }
   }
 
   // Unlock audio on first user gesture (click / tap / key)
