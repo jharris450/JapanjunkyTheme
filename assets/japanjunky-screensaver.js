@@ -1401,41 +1401,105 @@
     });
   }
 
-  // Load GIFs as animated textures using canvas rendering
-  // Browser animates the GIF in a visible <img>, we draw each frame to a canvas
+  // Load and decode GIFs using gifuct-js for frame-by-frame animation
   function loadFragmentGifs() {
     for (var gi = 0; gi < fragmentManifest.length; gi++) {
       (function (entry) {
-        var img = new Image();
-        img.crossOrigin = 'anonymous';
-        // Append to DOM so browser animates the GIF
-        img.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;pointer-events:none;';
-        document.body.appendChild(img);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', entry.url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function () {
+          if (xhr.status !== 200) return;
+          var gif = gifuct.parseGIF(xhr.response);
+          var frames = gifuct.decompressFrames(gif, true);
+          if (frames.length === 0) return;
 
-        var canvas = document.createElement('canvas');
-        canvas.width = entry.w;
-        canvas.height = entry.h;
-        var ctx = canvas.getContext('2d');
+          var gifW = gif.lsd.width;
+          var gifH = gif.lsd.height;
 
-        img.onload = function () {
-          var tex = new THREE.CanvasTexture(canvas);
+          // Build full-frame canvases for each frame (handles disposal + partial updates)
+          var frameCanvases = [];
+          var compCanvas = document.createElement('canvas');
+          compCanvas.width = gifW;
+          compCanvas.height = gifH;
+          var compCtx = compCanvas.getContext('2d');
+          var patchCanvas = document.createElement('canvas');
+          var patchCtx = patchCanvas.getContext('2d');
+
+          for (var fi = 0; fi < frames.length; fi++) {
+            var frame = frames[fi];
+            var dims = frame.dims;
+
+            // Handle disposal before drawing new frame
+            if (fi > 0) {
+              var prevDisposal = frames[fi - 1].disposalType;
+              if (prevDisposal === 2) {
+                // Restore to background (clear)
+                compCtx.clearRect(0, 0, gifW, gifH);
+              }
+              // disposalType 3 (restore to previous) not commonly used, ignore
+            }
+
+            // Draw this frame's patch
+            patchCanvas.width = dims.width;
+            patchCanvas.height = dims.height;
+            var imageData = new ImageData(frame.patch, dims.width, dims.height);
+            patchCtx.putImageData(imageData, 0, 0);
+            compCtx.drawImage(patchCanvas, dims.left, dims.top);
+
+            // Snapshot current composite into a stored canvas
+            var snapCanvas = document.createElement('canvas');
+            snapCanvas.width = gifW;
+            snapCanvas.height = gifH;
+            snapCanvas.getContext('2d').drawImage(compCanvas, 0, 0);
+            frameCanvases.push(snapCanvas);
+          }
+
+          // Create the display canvas and texture
+          var displayCanvas = document.createElement('canvas');
+          displayCanvas.width = gifW;
+          displayCanvas.height = gifH;
+          var displayCtx = displayCanvas.getContext('2d');
+          displayCtx.drawImage(frameCanvases[0], 0, 0);
+
+          var tex = new THREE.CanvasTexture(displayCanvas);
           tex.minFilter = THREE.NearestFilter;
           tex.magFilter = THREE.NearestFilter;
+
           fragmentTextures.push({
             tex: tex,
-            meta: { w: entry.w, h: entry.h },
+            meta: { w: gifW, h: gifH },
             url: entry.url,
-            img: img,
-            canvas: canvas,
-            ctx: ctx
+            frameCanvases: frameCanvases,
+            frameDelays: frames.map(function (f) { return f.delay || 100; }),
+            displayCanvas: displayCanvas,
+            displayCtx: displayCtx,
+            currentFrame: 0,
+            elapsed: 0
           });
         };
-        img.src = entry.url;
+        xhr.send();
       })(fragmentManifest[gi]);
     }
   }
 
   loadFragmentGifs();
+
+  // Advance GIF animations independently (called from main animate loop)
+  function tickFragmentGifs(dt) {
+    var dtMs = dt * 1000;
+    for (var ti = 0; ti < fragmentTextures.length; ti++) {
+      var entry = fragmentTextures[ti];
+      entry.elapsed += dtMs;
+      if (entry.elapsed >= entry.frameDelays[entry.currentFrame]) {
+        entry.elapsed -= entry.frameDelays[entry.currentFrame];
+        entry.currentFrame = (entry.currentFrame + 1) % entry.frameCanvases.length;
+        entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
+        entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
+        entry.tex.needsUpdate = true;
+      }
+    }
+  }
 
   // ─── Memory Fragment Spawn Logic ──────────────────────────────
   function countFragmentsInLayer(layerIdx) {
@@ -1533,6 +1597,7 @@
 
   // ─── Memory Fragment Animation Loop ───────────────────────────
   function animateFragments(time, dt) {
+    tickFragmentGifs(dt);
     var t = time * 0.001;
     var i = fragmentPool.length;
 
@@ -1559,13 +1624,7 @@
       mesh.lookAt(camera.position);
       mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
 
-      // Redraw current GIF frame from the animated <img> to the canvas texture
-      var texEntry = fragmentTextures[mesh.userData.texIdx];
-      if (texEntry) {
-        texEntry.ctx.clearRect(0, 0, texEntry.canvas.width, texEntry.canvas.height);
-        texEntry.ctx.drawImage(texEntry.img, 0, 0, texEntry.canvas.width, texEntry.canvas.height);
-        texEntry.tex.needsUpdate = true;
-      }
+      // GIF frame updates handled by tickFragmentGifs()
 
       // Despawn (fragments fly toward camera, despawn when past it)
       if (mesh.position.z < SPAWN_Z) {
