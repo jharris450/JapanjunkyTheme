@@ -1340,6 +1340,280 @@
     });
   }
 
+  // ─── Memory Fragment Layer Config & State ─────────────────────
+  var FRAG_LAYERS = [
+    // Background: slow, small, near walls
+    {
+      spawnInterval: 2000,
+      spawnRadiusMin: TUNNEL_RADIUS * 0.5,
+      spawnRadiusMax: TUNNEL_RADIUS * 0.7,
+      velZMin: 0.05, velZMax: 0.1,
+      accel: 0.0005,
+      scaleMin: 0.3, scaleMax: 0.5,
+      driftAmp: 0.1,
+      wobbleAmp: 0.087,
+      alphaMult: 0.6,
+      maxCount: 5,
+      lastSpawn: 0,
+      nextInterval: 2000
+    },
+    // Mid: medium speed and size
+    {
+      spawnInterval: 3000,
+      spawnRadiusMin: TUNNEL_RADIUS * 0.3,
+      spawnRadiusMax: TUNNEL_RADIUS * 0.5,
+      velZMin: 0.15, velZMax: 0.25,
+      accel: 0.001,
+      scaleMin: 0.5, scaleMax: 0.8,
+      driftAmp: 0.2,
+      wobbleAmp: 0.175,
+      alphaMult: 0.8,
+      maxCount: 3,
+      lastSpawn: 0,
+      nextInterval: 3000
+    },
+    // Foreground: fast, large, near center
+    {
+      spawnInterval: 5000,
+      spawnRadiusMin: 0,
+      spawnRadiusMax: TUNNEL_RADIUS * 0.3,
+      velZMin: 0.3, velZMax: 0.5,
+      accel: 0.002,
+      scaleMin: 0.8, scaleMax: 1.2,
+      driftAmp: 0.3,
+      wobbleAmp: 0.262,
+      alphaMult: 1.0,
+      maxCount: 2,
+      lastSpawn: 0,
+      nextInterval: 5000
+    }
+  ];
+
+  var fragmentGeo = new THREE.PlaneGeometry(1, 1);
+  var fragmentPool = [];        // active fragments
+  var fragmentRecyclePool = []; // despawned, ready to reuse
+  var fragmentTextures = [];    // { tex: THREE.Texture, meta: {frames,cols,rows,fps,w,h}, url: string }
+  var fragmentManifest = config.fragments || [];
+  var fragmentMaskConfig = config.fragmentMasks || { count: 8, columns: 4, rows: 2 };
+  var fragmentRecycleCount = 0; // counts recycles for texture rotation
+
+  // ─── Memory Fragment Texture Loading ──────────────────────────
+  // Load mask atlas
+  if (config.fragmentMasks && config.fragmentMasks.url) {
+    textureLoader.load(config.fragmentMasks.url, function (tex) {
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      fragmentMaskTex = tex;
+      fragmentMaskConfig.columns = config.fragmentMasks.columns || 4;
+      fragmentMaskConfig.rows = config.fragmentMasks.rows || 2;
+      fragmentMaskConfig.count = config.fragmentMasks.count || 8;
+    });
+  }
+
+  var fragmentLoadedUrls = {}; // track which URLs are already loaded/loading
+
+  function loadFragmentBatch(count) {
+    if (fragmentManifest.length === 0) return;
+    var loaded = 0;
+    var shuffled = [];
+    for (var si = 0; si < fragmentManifest.length; si++) {
+      shuffled.push(si);
+    }
+    // Fisher-Yates shuffle
+    for (var fi = shuffled.length - 1; fi > 0; fi--) {
+      var ri = Math.floor(Math.random() * (fi + 1));
+      var tmp = shuffled[fi];
+      shuffled[fi] = shuffled[ri];
+      shuffled[ri] = tmp;
+    }
+    for (var li = 0; li < shuffled.length && loaded < count; li++) {
+      var entry = fragmentManifest[shuffled[li]];
+      if (fragmentLoadedUrls[entry.url]) continue;
+      fragmentLoadedUrls[entry.url] = true;
+      loaded++;
+      (function (e) {
+        textureLoader.load(e.url, function (tex) {
+          tex.minFilter = THREE.NearestFilter;
+          tex.magFilter = THREE.NearestFilter;
+          fragmentTextures.push({
+            tex: tex,
+            meta: { frames: e.frames, cols: e.cols, rows: e.rows, fps: e.fps, w: e.w, h: e.h },
+            url: e.url
+          });
+        });
+      })(entry);
+    }
+  }
+
+  // Initial batch load
+  loadFragmentBatch(Math.min(20, fragmentManifest.length));
+
+  function rotateFragmentTexture() {
+    if (fragmentManifest.length <= fragmentTextures.length) return; // all loaded
+    if (fragmentTextures.length === 0) return;
+    // Evict oldest
+    var evicted = fragmentTextures.shift();
+    evicted.tex.dispose();
+    delete fragmentLoadedUrls[evicted.url];
+    // Load one new
+    loadFragmentBatch(1);
+  }
+
+  // ─── Memory Fragment Spawn Logic ──────────────────────────────
+  function countFragmentsInLayer(layerIdx) {
+    var count = 0;
+    for (var ci = 0; ci < fragmentPool.length; ci++) {
+      if (fragmentPool[ci].userData.layerIdx === layerIdx) count++;
+    }
+    return count;
+  }
+
+  function spawnFragment(time) {
+    if (fragmentTextures.length === 0 || !fragmentMaskTex) return;
+
+    for (var li = 0; li < FRAG_LAYERS.length; li++) {
+      var layer = FRAG_LAYERS[li];
+      if (time - layer.lastSpawn < layer.nextInterval) continue;
+      if (countFragmentsInLayer(li) >= layer.maxCount) continue;
+
+      layer.lastSpawn = time;
+      // Jitter next interval +-30%
+      layer.nextInterval = layer.spawnInterval * (0.7 + Math.random() * 0.6);
+
+      // Pick random texture from cache
+      var texIdx = Math.floor(Math.random() * fragmentTextures.length);
+      var texEntry = fragmentTextures[texIdx];
+      var meta = texEntry.meta;
+
+      // Vivid (20%) or ghost-tinted (80%)
+      var isVivid = Math.random() < 0.2;
+
+      // Spawn position
+      var angle = Math.random() * Math.PI * 2;
+      var r = layer.spawnRadiusMin + Math.random() * (layer.spawnRadiusMax - layer.spawnRadiusMin);
+      var sx = Math.cos(angle) * r;
+      var sy = Math.sin(angle) * r;
+
+      // Scale from aspect ratio + layer size
+      var maxDim = Math.max(meta.w, meta.h);
+      var layerScale = layer.scaleMin + Math.random() * (layer.scaleMax - layer.scaleMin);
+      var meshScaleX = layerScale * (meta.w / maxDim);
+      var meshScaleY = layerScale * (meta.h / maxDim);
+
+      // Try to recycle
+      var mesh;
+      if (fragmentRecyclePool.length > 0) {
+        mesh = fragmentRecyclePool.pop();
+        mesh.material.uniforms.uSpriteSheet.value = texEntry.tex;
+        mesh.material.uniforms.uSheetCols.value = meta.cols;
+        mesh.material.uniforms.uSheetRows.value = meta.rows;
+        mesh.material.uniforms.uFrameIndex.value = 0.0;
+        mesh.material.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
+        mesh.material.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
+        mesh.material.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
+        mesh.material.uniforms.uFragTint.value.set(
+          isVivid ? 1.0 : 1.0,
+          isVivid ? 1.0 : 0.7,
+          isVivid ? 1.0 : 0.4
+        );
+        mesh.material.uniforms.uFragAlpha.value = (isVivid ? 0.85 : (0.4 + Math.random() * 0.3)) * layer.alphaMult;
+        scene.add(mesh);
+      } else {
+        var mat = makeFragmentMaterial(texEntry.tex, meta);
+        mat.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
+        mat.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
+        mat.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
+        mat.uniforms.uFragTint.value.set(
+          isVivid ? 1.0 : 1.0,
+          isVivid ? 1.0 : 0.7,
+          isVivid ? 1.0 : 0.4
+        );
+        mat.uniforms.uFragAlpha.value = (isVivid ? 0.85 : (0.4 + Math.random() * 0.3)) * layer.alphaMult;
+        mesh = new THREE.Mesh(fragmentGeo, mat);
+        scene.add(mesh);
+      }
+
+      mesh.position.set(sx, sy, SPAWN_Z);
+      mesh.scale.set(meshScaleX, meshScaleY, 1);
+
+      mesh.userData = {
+        layerIdx: li,
+        velZ: layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin),
+        accel: layer.accel,
+        driftFreqX: 0.3 + Math.random() * 0.4,
+        driftFreqY: 0.25 + Math.random() * 0.35,
+        driftAmp: layer.driftAmp,
+        driftPhase: Math.random() * Math.PI * 2,
+        baseX: sx,
+        baseY: sy,
+        wobbleFreq: 0.3 + Math.random() * 0.5,
+        wobbleAmp: layer.wobbleAmp,
+        frameFps: meta.fps || 10,
+        frameCount: meta.frames,
+        frameAccum: 0,
+        currentFrame: 0
+      };
+
+      fragmentPool.push(mesh);
+    }
+  }
+
+  // ─── Memory Fragment Animation Loop ───────────────────────────
+  function animateFragments(time, dt) {
+    var t = time * 0.001;
+    var i = fragmentPool.length;
+
+    while (i--) {
+      var mesh = fragmentPool[i];
+      var ud = mesh.userData;
+
+      // Z movement (frame-based)
+      ud.velZ += ud.accel;
+      mesh.position.z += ud.velZ;
+
+      // Lateral drift (sinusoidal)
+      var driftX = Math.sin(t * ud.driftFreqX + ud.driftPhase) * ud.driftAmp;
+      var driftY = Math.sin(t * ud.driftFreqY + ud.driftPhase * 1.3) * ud.driftAmp;
+      mesh.position.x = ud.baseX + driftX;
+      mesh.position.y = ud.baseY + driftY;
+
+      // Clamp to tunnel radius
+      var dist = Math.sqrt(mesh.position.x * mesh.position.x + mesh.position.y * mesh.position.y);
+      if (dist > TUNNEL_RADIUS) {
+        var clampScale = TUNNEL_RADIUS / dist;
+        mesh.position.x *= clampScale;
+        mesh.position.y *= clampScale;
+      }
+
+      // Billboard facing + wobble
+      mesh.lookAt(camera.position);
+      mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
+
+      // Sprite sheet frame stepping (time-based)
+      ud.frameAccum += dt;
+      var frameDuration = 1.0 / ud.frameFps;
+      if (ud.frameAccum >= frameDuration) {
+        ud.frameAccum -= frameDuration;
+        ud.currentFrame = (ud.currentFrame + 1) % ud.frameCount;
+      }
+      mesh.material.uniforms.uFrameIndex.value = ud.currentFrame;
+
+      // Despawn
+      if (mesh.position.z > DESPAWN_Z) {
+        scene.remove(mesh);
+        fragmentPool.splice(i, 1);
+        fragmentRecyclePool.push(mesh);
+
+        // Texture rotation every 10 recycles
+        fragmentRecycleCount++;
+        if (fragmentRecycleCount >= 10) {
+          fragmentRecycleCount = 0;
+          rotateFragmentTexture();
+        }
+      }
+    }
+  }
+
   // ─── Offscreen Render Target ──────────────────────────────────
   var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
     minFilter: THREE.NearestFilter,
