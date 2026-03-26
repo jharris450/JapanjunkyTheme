@@ -1491,7 +1491,7 @@
             meta: { w: gifW, h: gifH },
             url: entry.url,
             frameCanvases: frameCanvases,
-            frameDelays: frames.map(function (f) { return f.delay || 100; }),
+            frameDelays: frames.map(function (f) { return Math.max(f.delay || 100, 33); }),
             displayCanvas: displayCanvas,
             displayCtx: displayCtx,
             currentFrame: 0,
