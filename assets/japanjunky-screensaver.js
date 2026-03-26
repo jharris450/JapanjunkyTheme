@@ -790,9 +790,25 @@
       return;
     }
 
+    // Handle transition easing to judging position
+    if (tsunoTransitioning) {
+      var tp = (t - tsunoTransStart) / tsunoTransDuration;
+      if (tp >= 1.0) {
+        tp = 1.0;
+        tsunoTransitioning = false;
+      }
+      var ease = easeInOutCubic(tp);
+      tsunoMesh.position.x = tsunoTransFrom.x + (tsunoTransTo.x - tsunoTransFrom.x) * ease;
+      tsunoMesh.position.y = tsunoTransFrom.y + (tsunoTransTo.y - tsunoTransFrom.y) * ease;
+      tsunoMesh.position.z = tsunoTransFrom.z + (tsunoTransTo.z - tsunoTransFrom.z) * ease;
+      tsunoMesh.lookAt(camera.position);
+      return;
+    }
+
     // Flip left/right at intervals during judging (scale.x toggles sign)
-    var flipInterval = tsunoJudgeDuration / (tsunoJudgeFlips + 1);
-    var expectedFlips = Math.floor(elapsed / flipInterval);
+    var judgeElapsed = elapsed - tsunoTransDuration; // time since arriving
+    var flipInterval = (tsunoJudgeDuration - tsunoTransDuration) / (tsunoJudgeFlips + 1);
+    var expectedFlips = Math.floor(judgeElapsed / flipInterval);
     if (expectedFlips > tsunoJudgeFlipIdx && expectedFlips <= tsunoJudgeFlips) {
       tsunoJudgeFlipIdx = expectedFlips;
       // Toggle horizontal flip
@@ -800,13 +816,11 @@
     }
 
     // Subtle judging bob (slower, smaller than idle — contemplative)
-    if (!tsunoTransitioning) {
-      tsunoMesh.position.y = tsunoTransTo.y + Math.sin(t * 1.5) * 0.06;
-      // Slight tilt as if thinking
-      var thinkTilt = Math.sin(t * 0.8) * 0.1;
-      tsunoMesh.lookAt(camera.position);
-      tsunoMesh.rotateZ(thinkTilt);
-    }
+    tsunoMesh.position.y = tsunoTransTo.y + Math.sin(t * 1.5) * 0.06;
+    // Slight tilt as if thinking
+    var thinkTilt = Math.sin(t * 0.8) * 0.1;
+    tsunoMesh.lookAt(camera.position);
+    tsunoMesh.rotateZ(thinkTilt);
   }
 
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
