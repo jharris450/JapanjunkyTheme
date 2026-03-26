@@ -542,12 +542,6 @@
         'reducedMotion=' + prefersReducedMotion);
     }
 
-    if (prefersReducedMotion) {
-      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
-      tsunoMesh.lookAt(camera.position);
-      return;
-    }
-
     // Judging animation manages its own scale (flips); skip normal scale reset
     if (tsunoJudging) {
       updateTsunoJudging(t);
