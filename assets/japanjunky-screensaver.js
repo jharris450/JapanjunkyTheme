@@ -520,27 +520,10 @@
     tsunoTransTo.x = target.x;
     tsunoTransTo.y = target.y;
     tsunoTransTo.z = target.z;
-    console.log('[tsuno] startBehavior:', TSUNO_BEHAVIORS[behaviorIdx].name,
-      'from:', tsunoTransFrom.x.toFixed(1), tsunoTransFrom.y.toFixed(1), tsunoTransFrom.z.toFixed(1),
-      'to:', tsunoTransTo.x.toFixed(1), tsunoTransTo.y.toFixed(1), tsunoTransTo.z.toFixed(1),
-      'duration:', tsunoTransDuration.toFixed(1) + 's',
-      'linger:', tsunoBehaviorDuration.toFixed(1) + 's');
   }
 
-  var _tsunoLogNext = 0;
   function updateTsunoIdle(t) {
     if (!tsunoMesh) return;
-    // Debug: log state once per second
-    if (t > _tsunoLogNext) {
-      _tsunoLogNext = t + 1;
-      console.log('[tsuno] idle t=' + t.toFixed(1),
-        'state=' + tsunoState,
-        'transitioning=' + tsunoTransitioning,
-        'behavior=' + TSUNO_BEHAVIORS[tsunoBehaviorIdx].name,
-        'pos=' + tsunoMesh.position.x.toFixed(1) + ',' + tsunoMesh.position.y.toFixed(1) + ',' + tsunoMesh.position.z.toFixed(1),
-        'judging=' + tsunoJudging,
-        'reducedMotion=' + prefersReducedMotion);
-    }
 
     // Judging animation manages its own scale (flips); skip normal scale reset
     if (tsunoJudging) {
@@ -561,7 +544,6 @@
     // ── Check if it's time to pick a new behavior ──
     if (!tsunoTransitioning && (t - tsunoBehaviorStart) >= tsunoBehaviorDuration) {
       var nextIdx = pickNextBehavior(mood, tsunoBehaviorIdx);
-      console.log('[tsuno] timer expired, picking new behavior:', TSUNO_BEHAVIORS[nextIdx].name, 'after', (t - tsunoBehaviorStart).toFixed(1) + 's');
       startBehavior(t, nextIdx);
     }
 
