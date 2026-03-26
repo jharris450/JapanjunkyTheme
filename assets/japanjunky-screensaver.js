@@ -1284,11 +1284,8 @@
   ].join('\n');
 
   var FRAG_FRAG = [
-    'uniform sampler2D uSpriteSheet;',
+    'uniform sampler2D uGifTex;',
     'uniform sampler2D uMaskAtlas;',
-    'uniform float uFrameIndex;',
-    'uniform float uSheetCols;',
-    'uniform float uSheetRows;',
     'uniform float uMaskIndex;',
     'uniform float uMaskCols;',
     'uniform float uMaskRows;',
@@ -1297,18 +1294,12 @@
     'varying vec2 vUv;',
     '',
     'void main() {',
-    '  float frame = floor(uFrameIndex);',
-    '  float col = mod(frame, uSheetCols);',
-    '  float row = floor(frame / uSheetCols);',
-    '  vec2 cellSize = vec2(1.0 / uSheetCols, 1.0 / uSheetRows);',
-    '  vec2 spriteUV = vec2(col, row) * cellSize + vUv * cellSize;',
-    '',
     '  float mCol = mod(uMaskIndex, uMaskCols);',
     '  float mRow = floor(uMaskIndex / uMaskCols);',
     '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
     '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
     '',
-    '  vec4 sprite = texture2D(uSpriteSheet, spriteUV);',
+    '  vec4 sprite = texture2D(uGifTex, vUv);',
     '  float mask = texture2D(uMaskAtlas, maskUV).a;',
     '  gl_FragColor = vec4(sprite.rgb * uFragTint, sprite.a * mask * uFragAlpha);',
     '}'
@@ -1316,15 +1307,12 @@
 
   var fragmentMaskTex = null;
 
-  function makeFragmentMaterial(spriteTex, meta) {
+  function makeFragmentMaterial(gifTex) {
     return new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
-        uSpriteSheet: { value: spriteTex },
+        uGifTex: { value: gifTex },
         uMaskAtlas: { value: fragmentMaskTex },
-        uFrameIndex: { value: 0.0 },
-        uSheetCols: { value: meta.cols },
-        uSheetRows: { value: meta.rows },
         uMaskIndex: { value: 0.0 },
         uMaskCols: { value: 4.0 },
         uMaskRows: { value: 2.0 },
