@@ -1284,8 +1284,11 @@
   ].join('\n');
 
   var FRAG_FRAG = [
-    'uniform sampler2D uGifTex;',
+    'uniform sampler2D uSpriteSheet;',
     'uniform sampler2D uMaskAtlas;',
+    'uniform float uFrameIndex;',
+    'uniform float uSheetCols;',
+    'uniform float uSheetRows;',
     'uniform float uMaskIndex;',
     'uniform float uMaskCols;',
     'uniform float uMaskRows;',
@@ -1294,25 +1297,34 @@
     'varying vec2 vUv;',
     '',
     'void main() {',
+    '  float frame = floor(uFrameIndex);',
+    '  float col = mod(frame, uSheetCols);',
+    '  float row = floor(frame / uSheetCols);',
+    '  vec2 cellSize = vec2(1.0 / uSheetCols, 1.0 / uSheetRows);',
+    '  vec2 spriteUV = vec2(col, row) * cellSize + vUv * cellSize;',
+    '',
     '  float mCol = mod(uMaskIndex, uMaskCols);',
     '  float mRow = floor(uMaskIndex / uMaskCols);',
     '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
     '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
     '',
-    '  vec4 sprite = texture2D(uGifTex, vUv);',
+    '  vec4 sprite = texture2D(uSpriteSheet, spriteUV);',
     '  float mask = texture2D(uMaskAtlas, maskUV).a;',
     '  gl_FragColor = vec4(sprite.rgb * uFragTint, sprite.a * mask * uFragAlpha);',
     '}'
   ].join('\n');
 
-  var fragmentMaskTex = null; // loaded in Task 3
+  var fragmentMaskTex = null;
 
-  function makeFragmentMaterial(gifTex) {
+  function makeFragmentMaterial(spriteTex, meta) {
     return new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
-        uGifTex: { value: gifTex },
+        uSpriteSheet: { value: spriteTex },
         uMaskAtlas: { value: fragmentMaskTex },
+        uFrameIndex: { value: 0.0 },
+        uSheetCols: { value: meta.cols },
+        uSheetRows: { value: meta.rows },
         uMaskIndex: { value: 0.0 },
         uMaskCols: { value: 4.0 },
         uMaskRows: { value: 2.0 },
@@ -1401,21 +1413,33 @@
     });
   }
 
-  // Load GIFs as animated textures — browser handles GIF frame animation
+  // Load GIFs as animated textures using canvas rendering
+  // Browser animates the GIF in a visible <img>, we draw each frame to a canvas
   function loadFragmentGifs() {
     for (var gi = 0; gi < fragmentManifest.length; gi++) {
       (function (entry) {
         var img = new Image();
         img.crossOrigin = 'anonymous';
+        // Append to DOM so browser animates the GIF
+        img.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;pointer-events:none;';
+        document.body.appendChild(img);
+
+        var canvas = document.createElement('canvas');
+        canvas.width = entry.w;
+        canvas.height = entry.h;
+        var ctx = canvas.getContext('2d');
+
         img.onload = function () {
-          var tex = new THREE.Texture(img);
+          var tex = new THREE.CanvasTexture(canvas);
           tex.minFilter = THREE.NearestFilter;
           tex.magFilter = THREE.NearestFilter;
-          tex.needsUpdate = true;
           fragmentTextures.push({
             tex: tex,
             meta: { w: entry.w, h: entry.h },
-            url: entry.url
+            url: entry.url,
+            img: img,
+            canvas: canvas,
+            ctx: ctx
           });
         };
         img.src = entry.url;
@@ -1501,6 +1525,7 @@
 
       mesh.userData = {
         layerIdx: li,
+        texIdx: texIdx,
         velZ: -(layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin)),
         accel: -layer.accel,
         driftFreqX: 0.3 + Math.random() * 0.4,
@@ -1546,8 +1571,13 @@
       mesh.lookAt(camera.position);
       mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
 
-      // Update GIF texture — browser animates the GIF, we re-upload each frame
-      mesh.material.uniforms.uGifTex.value.needsUpdate = true;
+      // Redraw current GIF frame from the animated <img> to the canvas texture
+      var texEntry = fragmentTextures[mesh.userData.texIdx];
+      if (texEntry) {
+        texEntry.ctx.clearRect(0, 0, texEntry.canvas.width, texEntry.canvas.height);
+        texEntry.ctx.drawImage(texEntry.img, 0, 0, texEntry.canvas.width, texEntry.canvas.height);
+        texEntry.tex.needsUpdate = true;
+      }
 
       // Despawn (fragments fly toward camera, despawn when past it)
       if (mesh.position.z < SPAWN_Z) {
