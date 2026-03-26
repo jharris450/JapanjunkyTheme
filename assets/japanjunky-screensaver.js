@@ -1484,6 +1484,7 @@
           var tex = new THREE.CanvasTexture(displayCanvas);
           tex.minFilter = THREE.NearestFilter;
           tex.magFilter = THREE.NearestFilter;
+          tex.generateMipmaps = false;
 
           fragmentTextures.push({
             tex: tex,
@@ -1504,19 +1505,21 @@
 
   loadFragmentGifs();
 
-  // Advance GIF animations independently (called from main animate loop)
+  // Advance GIF animations — only when fragments are visible on screen
   function tickFragmentGifs(dt) {
+    if (fragmentPool.length === 0) return; // no active fragments, skip GPU work
     var dtMs = dt * 1000;
     for (var ti = 0; ti < fragmentTextures.length; ti++) {
       var entry = fragmentTextures[ti];
       entry.elapsed += dtMs;
-      if (entry.elapsed >= entry.frameDelays[entry.currentFrame]) {
+      // Advance through multiple frames if needed (catches up after long dt)
+      while (entry.elapsed >= entry.frameDelays[entry.currentFrame]) {
         entry.elapsed -= entry.frameDelays[entry.currentFrame];
         entry.currentFrame = (entry.currentFrame + 1) % entry.frameCanvases.length;
-        entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
-        entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
-        entry.tex.needsUpdate = true;
       }
+      entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
+      entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
+      entry.tex.needsUpdate = true;
     }
   }
 
