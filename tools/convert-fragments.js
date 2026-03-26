@@ -5,24 +5,28 @@
  * Converts a directory of GIF files into sprite sheet PNGs + metadata JSON
  * for the JapanJunky memory fragments system.
  *
- * Usage: node convert-fragments.js <input-dir> <output-dir>
+ * Usage: node convert-fragments.js <input-dir> <output-dir> [max-frames]
  *
- * Requires: ffmpeg, ffprobe, ImageMagick v7 (magick command)
+ * Requires: sharp, gif-frames (npm packages)
+ *
+ * max-frames defaults to 24. Frames are evenly sampled from the source GIF
+ * to keep sprite sheets small while preserving animation feel.
  */
 
 var fs = require('fs');
 var path = require('path');
-var child_process = require('child_process');
-var os = require('os');
+var gifFrames = require('gif-frames');
+var sharp = require('sharp');
 
 var args = process.argv.slice(2);
 if (args.length < 2) {
-  console.error('Usage: node convert-fragments.js <input-dir> <output-dir>');
+  console.error('Usage: node convert-fragments.js <input-dir> <output-dir> [max-frames]');
   process.exit(1);
 }
 
 var inputDir = args[0];
 var outputDir = args[1];
+var maxFrames = parseInt(args[2], 10) || 24;
 
 if (!fs.existsSync(inputDir)) {
   console.error('Input directory does not exist: ' + inputDir);
@@ -43,133 +47,153 @@ if (gifs.length === 0) {
   process.exit(1);
 }
 
-console.log('Found ' + gifs.length + ' GIF files');
+console.log('Found ' + gifs.length + ' GIF files (max ' + maxFrames + ' frames per sheet)');
 
-var liquidLines = [];
+/**
+ * Sample N evenly-spaced indices from a range of total.
+ */
+function sampleIndices(total, n) {
+  if (n >= total) {
+    var all = [];
+    for (var i = 0; i < total; i++) all.push(i);
+    return all;
+  }
+  var indices = [];
+  for (var i = 0; i < n; i++) {
+    indices.push(Math.round(i * (total - 1) / (n - 1)));
+  }
+  return indices;
+}
 
-gifs.forEach(function (gifName, idx) {
+/**
+ * Process a single GIF file into a sprite sheet.
+ */
+async function processGif(gifName, idx) {
   var gifPath = path.join(inputDir, gifName);
   var baseName = gifName.replace(/\.gif$/i, '').replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
   var fragName = 'frag-' + baseName;
 
   console.log('[' + (idx + 1) + '/' + gifs.length + '] Processing: ' + gifName);
 
-  // Create temp dir for frames
-  var tmpDir = path.join(os.tmpdir(), 'frag-' + baseName + '-' + Date.now());
-  fs.mkdirSync(tmpDir, { recursive: true });
+  // 1. Extract all frames
+  var allFrameData = await gifFrames({
+    url: gifPath,
+    frames: 'all',
+    outputType: 'png',
+    cumulative: true
+  });
 
-  try {
-    // 1. Extract frames
-    child_process.execSync(
-      'ffmpeg -i "' + gifPath + '" -vsync 0 "' + path.join(tmpDir, 'frame_%04d.png') + '"',
-      { stdio: 'pipe' }
-    );
-
-    // 2. Count frames
-    var frames = fs.readdirSync(tmpDir).filter(function (f) {
-      return /^frame_\d+\.png$/.test(f);
-    });
-    var frameCount = frames.length;
-
-    if (frameCount === 0) {
-      console.error('  No frames extracted, skipping');
-      return;
-    }
-
-    // 3. Get dimensions from first frame
-    var identifyOut = child_process.execSync(
-      'magick identify -format "%w %h" "' + path.join(tmpDir, 'frame_0001.png') + '"',
-      { encoding: 'utf8' }
-    ).trim();
-    var dims = identifyOut.split(' ');
-    var frameW = parseInt(dims[0], 10);
-    var frameH = parseInt(dims[1], 10);
-
-    // 4. Get FPS from per-frame delays (GIFs define delay per frame, not a stream rate)
-    var fps = 10; // default fallback
-    try {
-      var probeOut = child_process.execSync(
-        'ffprobe -v quiet -print_format json -show_entries frame=duration_time "' + gifPath + '"',
-        { encoding: 'utf8' }
-      );
-      var probeData = JSON.parse(probeOut);
-      if (probeData.frames && probeData.frames.length > 0) {
-        var totalDuration = 0;
-        var validFrames = 0;
-        for (var pi = 0; pi < probeData.frames.length; pi++) {
-          var dur = parseFloat(probeData.frames[pi].duration_time);
-          if (dur > 0) {
-            totalDuration += dur;
-            validFrames++;
-          }
-        }
-        if (validFrames > 0) {
-          var avgDuration = totalDuration / validFrames;
-          var probeFps = Math.round(1.0 / avgDuration);
-          if (probeFps > 0 && probeFps < 60) {
-            fps = probeFps;
-          }
-        }
-      }
-    } catch (e) {
-      // fallback to default fps
-    }
-
-    // 5. Compute grid (aim for roughly square)
-    var cols = Math.ceil(Math.sqrt(frameCount));
-    var rows = Math.ceil(frameCount / cols);
-
-    // 6. Assemble sprite sheet
-    var sheetPath = path.join(outputDir, fragName + '.png');
-    child_process.execSync(
-      'magick montage "' + path.join(tmpDir, 'frame_*.png') + '"' +
-      ' -tile ' + cols + 'x' + rows +
-      ' -geometry ' + frameW + 'x' + frameH + '+0+0' +
-      ' -background transparent' +
-      ' "' + sheetPath + '"',
-      { stdio: 'pipe' }
-    );
-
-    // 7. Write metadata JSON
-    var metaPath = path.join(outputDir, fragName + '.json');
-    var meta = {
-      name: baseName,
-      frameCount: frameCount,
-      columns: cols,
-      rows: rows,
-      fps: fps,
-      width: frameW,
-      height: frameH
-    };
-    fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-
-    // 8. Append Liquid config line
-    liquidLines.push(
-      "        { url: {{ '" + fragName + ".png' | asset_url | json }}, " +
-      "frames: " + frameCount + ", cols: " + cols + ", rows: " + rows + ", " +
-      "fps: " + fps + ", w: " + frameW + ", h: " + frameH + " }"
-    );
-
-    console.log('  -> ' + fragName + '.png (' + cols + 'x' + rows + ' grid, ' +
-      frameCount + ' frames, ' + fps + ' fps, ' + frameW + 'x' + frameH + ')');
-
-  } finally {
-    // Cleanup temp frames
-    try {
-      var tmpFiles = fs.readdirSync(tmpDir);
-      tmpFiles.forEach(function (f) { fs.unlinkSync(path.join(tmpDir, f)); });
-      fs.rmdirSync(tmpDir);
-    } catch (e) { /* best effort */ }
+  var totalFrames = allFrameData.length;
+  if (totalFrames === 0) {
+    console.error('  No frames extracted, skipping');
+    return null;
   }
-});
 
-// Write Liquid config snippet
-var liquidPath = path.join(outputDir, 'fragments-config.liquid');
-var liquidContent = '      fragments: [\n' + liquidLines.join(',\n') + '\n      ]';
-fs.writeFileSync(liquidPath, liquidContent);
+  var frameW = allFrameData[0].frameInfo.width;
+  var frameH = allFrameData[0].frameInfo.height;
 
-console.log('\nDone! ' + liquidLines.length + ' sprite sheets generated.');
-console.log('Liquid config snippet saved to: ' + liquidPath);
-console.log('\nNext steps:');
-console.log('1. Upload all frag-*.png files to Shopify assets/');
-console.log('2. Copy contents of fragments-config.liquid into theme.liquid JJ_SCREENSAVER_CONFIG');
+  // 2. Compute FPS from GIF delays (in centiseconds)
+  var delays = allFrameData.map(function (d) { return d.frameInfo.delay; });
+  var avgDelay = delays.reduce(function (a, b) { return a + b; }, 0) / delays.length;
+  var sourceFps = avgDelay > 0 ? (100 / avgDelay) : 10;
+
+  // 3. Sample frames
+  var indices = sampleIndices(totalFrames, maxFrames);
+  var frameCount = indices.length;
+
+  // Compute effective FPS after sampling
+  var sampleRatio = totalFrames / frameCount;
+  var fps = Math.max(1, Math.round(sourceFps / sampleRatio));
+
+  console.log('  Source: ' + totalFrames + ' frames @ ~' + Math.round(sourceFps) + 'fps');
+  console.log('  Sampled: ' + frameCount + ' frames @ ' + fps + 'fps');
+
+  // 4. Read sampled frame PNGs into buffers
+  var frameBuffers = [];
+  for (var i = 0; i < indices.length; i++) {
+    var frameData = allFrameData[indices[i]];
+    var chunks = [];
+    await new Promise(function (resolve, reject) {
+      var stream = frameData.getImage();
+      stream.on('data', function (chunk) { chunks.push(chunk); });
+      stream.on('end', resolve);
+      stream.on('error', reject);
+    });
+    frameBuffers.push(Buffer.concat(chunks));
+  }
+
+  // 5. Compute grid layout (aim for roughly square)
+  var cols = Math.ceil(Math.sqrt(frameCount));
+  var rows = Math.ceil(frameCount / cols);
+
+  // 6. Assemble sprite sheet using sharp
+  var sheetW = cols * frameW;
+  var sheetH = rows * frameH;
+
+  // Build composite operations
+  var composites = [];
+  for (var i = 0; i < frameBuffers.length; i++) {
+    var col = i % cols;
+    var row = Math.floor(i / cols);
+    composites.push({
+      input: frameBuffers[i],
+      left: col * frameW,
+      top: row * frameH
+    });
+  }
+
+  var sheetPath = path.join(outputDir, fragName + '.png');
+  await sharp({
+    create: {
+      width: sheetW,
+      height: sheetH,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    }
+  })
+    .composite(composites)
+    .png()
+    .toFile(sheetPath);
+
+  // 7. Write metadata JSON
+  var metaPath = path.join(outputDir, fragName + '.json');
+  var meta = {
+    name: baseName,
+    frameCount: frameCount,
+    columns: cols,
+    rows: rows,
+    fps: fps,
+    width: frameW,
+    height: frameH
+  };
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+
+  console.log('  -> ' + fragName + '.png (' + cols + 'x' + rows + ' grid, ' +
+    frameCount + ' frames, ' + fps + 'fps, ' + frameW + 'x' + frameH + ')');
+
+  // 8. Return Liquid config line
+  return "        { url: {{ '" + fragName + ".png' | asset_url | json }}, " +
+    "frames: " + frameCount + ", cols: " + cols + ", rows: " + rows + ", " +
+    "fps: " + fps + ", w: " + frameW + ", h: " + frameH + " }";
+}
+
+// Main
+(async function () {
+  var liquidLines = [];
+
+  for (var i = 0; i < gifs.length; i++) {
+    var line = await processGif(gifs[i], i);
+    if (line) liquidLines.push(line);
+  }
+
+  // Write Liquid config snippet
+  var liquidPath = path.join(outputDir, 'fragments-config.liquid');
+  var liquidContent = '      fragments: [\n' + liquidLines.join(',\n') + '\n      ]';
+  fs.writeFileSync(liquidPath, liquidContent);
+
+  console.log('\nDone! ' + liquidLines.length + ' sprite sheets generated.');
+  console.log('Liquid config snippet saved to: ' + liquidPath);
+  console.log('\nNext steps:');
+  console.log('1. Upload all frag-*.png files to Shopify assets/');
+  console.log('2. Copy contents of fragments-config.liquid into theme.liquid JJ_SCREENSAVER_CONFIG');
+})();

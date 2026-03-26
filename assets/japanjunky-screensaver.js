@@ -103,6 +103,7 @@
   ].join('\n');
 
   var textureLoader = new THREE.TextureLoader();
+  textureLoader.crossOrigin = 'anonymous';
 
   function buildTunnel() {
     var geo = new THREE.CylinderGeometry(3, 3, 40, 12, 20, true);
@@ -1296,16 +1297,17 @@
     'varying vec2 vUv;',
     '',
     'void main() {',
+    '  vec2 uv = vec2(vUv.x, 1.0 - vUv.y);',
     '  float frame = floor(uFrameIndex);',
     '  float col = mod(frame, uSheetCols);',
     '  float row = floor(frame / uSheetCols);',
     '  vec2 cellSize = vec2(1.0 / uSheetCols, 1.0 / uSheetRows);',
-    '  vec2 spriteUV = vec2(col, row) * cellSize + vUv * cellSize;',
+    '  vec2 spriteUV = vec2(col, row) * cellSize + uv * cellSize;',
     '',
     '  float mCol = mod(uMaskIndex, uMaskCols);',
     '  float mRow = floor(uMaskIndex / uMaskCols);',
     '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
-    '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
+    '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + uv * mCellSize;',
     '',
     '  vec4 sprite = texture2D(uSpriteSheet, spriteUV);',
     '  float mask = texture2D(uMaskAtlas, maskUV).a;',
