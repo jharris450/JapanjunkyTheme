@@ -1533,13 +1533,13 @@
         scene.add(mesh);
       }
 
-      mesh.position.set(sx, sy, SPAWN_Z);
+      mesh.position.set(sx, sy, DESPAWN_Z);
       mesh.scale.set(meshScaleX, meshScaleY, 1);
 
       mesh.userData = {
         layerIdx: li,
-        velZ: layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin),
-        accel: layer.accel,
+        velZ: -(layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin)),
+        accel: -layer.accel,
         driftFreqX: 0.3 + Math.random() * 0.4,
         driftFreqY: 0.25 + Math.random() * 0.35,
         driftAmp: layer.driftAmp,
@@ -1598,8 +1598,8 @@
       }
       mesh.material.uniforms.uFrameIndex.value = ud.currentFrame;
 
-      // Despawn
-      if (mesh.position.z > DESPAWN_Z) {
+      // Despawn (fragments fly toward camera, despawn when past it)
+      if (mesh.position.z < SPAWN_Z) {
         scene.remove(mesh);
         fragmentPool.splice(i, 1);
         fragmentRecyclePool.push(mesh);
