@@ -364,6 +364,7 @@
   // ─── Tsuno Daishi — Shopkeeper ──────────────────────────────
   var tsunoMesh = null;
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
+  var tsunoActivated = false; // true after first product selection — personality system engages
   var tsunoTransition = { progress: 0, startPos: null, endPos: null };
 
   // Idle position: left side of viewport, inline with selected product
@@ -526,6 +527,18 @@
   function updateTsunoIdle(t) {
     if (!tsunoMesh) return;
 
+    // Before first product selection: simple idle bob at fixed position
+    if (!tsunoActivated) {
+      tsunoMesh.scale.set(-1, 1, 1);
+      var bobY = Math.sin(t * 0.8 * 2 * Math.PI) * 0.03;
+      tsunoMesh.position.x = TSUNO_IDLE_POS.x;
+      tsunoMesh.position.y = TSUNO_IDLE_POS.y + bobY;
+      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      tsunoMesh.material.uniforms.uAlpha.value = 0.8;
+      tsunoMesh.lookAt(camera.position);
+      return;
+    }
+
     // Judging animation manages its own scale (flips); skip normal scale reset
     if (tsunoJudging) {
       updateTsunoJudging(t);
@@ -536,7 +549,6 @@
     tsunoMesh.scale.set(-1, 1, 1);
 
     var mood = tsunoMoodIdx;
-    var speed = TSUNO_MOODS.speed[mood];
     var bobAmp = TSUNO_MOODS.bobAmp[mood];
     var bobFreq = TSUNO_MOODS.bobFreq[mood];
     var swayAmp = TSUNO_MOODS.swayAmp[mood];
@@ -747,6 +759,13 @@
   function tsunoOnProductSelected() {
     if (!tsunoMesh || tsunoState !== 'idle') return;
 
+    // First product selection activates personality system
+    if (!tsunoActivated) {
+      tsunoActivated = true;
+      var t = performance.now() * 0.001;
+      startBehavior(t, pickNextBehavior(tsunoMoodIdx, 0));
+    }
+
     var mood = tsunoMoodIdx;
     var roll = Math.random();
 
@@ -864,8 +883,8 @@
         };
       }
 
-      // Start first idle behavior — exclude hang (0) so first action is visibly different
-      startBehavior(performance.now() * 0.001, pickNextBehavior(tsunoMoodIdx, 0));
+      // Place Tsuno at idle position — personality system activates on first product selection
+      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
     });
   }
 
