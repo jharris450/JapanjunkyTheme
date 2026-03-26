@@ -410,14 +410,16 @@
     // Visual: base tilt (radians, positive = lean right)
     baseTilt:[0.12, -0.09,0.0,  0.0,  0.0,  0.0, -0.05],
     // Behavior weights [hang, peek, loom, patrol, perch, sink, circle, retreat]
+    // Behavior weights [hang, peek, loom, patrol, perch, sink, circle, retreat]
+    // hang is kept low so Tsuno moves around noticeably
     weights: [
-      [0.5, 3,   0.2, 0.5, 1,   1,   1,   3  ],  // shy
-      [1,   1,   3,   1,   3,   1,   1,   0.2],  // curious
-      [3,   0.5, 0.5, 0.3, 1,   2,   0.5, 1  ],  // lazy
-      [0.3, 3,   1,   3,   1,   1,   1,   0.5],  // mischievous
-      [2,   1,   1,   1,   3,   0.5, 1,   0.3],  // watchful
-      [0.5, 1,   1,   3,   1,   0.5, 3,   1  ],  // energetic
-      [1,   1,   0.3, 0.5, 1,   1,   3,   2  ]   // dreamy
+      [0.3, 3,   0.2, 0.5, 1,   1,   1,   3  ],  // shy
+      [0.5, 1,   3,   1,   3,   1,   1,   0.2],  // curious
+      [1,   0.5, 0.5, 0.5, 1,   2,   1,   1  ],  // lazy
+      [0.2, 3,   1,   3,   1,   1,   1,   0.5],  // mischievous
+      [1,   1,   1,   1,   3,   0.5, 1,   0.3],  // watchful
+      [0.3, 1,   1,   3,   1,   0.5, 3,   1  ],  // energetic
+      [0.5, 1,   0.3, 0.5, 1,   1,   3,   2  ]   // dreamy
     ]
   };
 
@@ -867,8 +869,8 @@
         };
       }
 
-      // Start first idle behavior
-      startBehavior(performance.now() * 0.001, pickNextBehavior(tsunoMoodIdx, -1));
+      // Start first idle behavior — exclude hang (0) so first action is visibly different
+      startBehavior(performance.now() * 0.001, pickNextBehavior(tsunoMoodIdx, 0));
     });
   }
 
