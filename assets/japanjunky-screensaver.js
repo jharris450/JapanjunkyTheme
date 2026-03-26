@@ -1354,7 +1354,7 @@
       scaleMin: 0.3, scaleMax: 0.5,
       driftAmp: 0.1,
       wobbleAmp: 0.087,
-      alphaMult: 0.6,
+      alphaMult: 0.85,
       maxCount: 5,
       lastSpawn: 0,
       nextInterval: 2000
@@ -1369,7 +1369,7 @@
       scaleMin: 0.5, scaleMax: 0.8,
       driftAmp: 0.2,
       wobbleAmp: 0.175,
-      alphaMult: 0.8,
+      alphaMult: 0.95,
       maxCount: 3,
       lastSpawn: 0,
       nextInterval: 3000
@@ -1487,8 +1487,8 @@
       var texEntry = fragmentTextures[texIdx];
       var meta = texEntry.meta;
 
-      // Vivid (20%) or ghost-tinted (80%)
-      var isVivid = Math.random() < 0.2;
+      // Vivid (60%) or ghost-tinted (40%)
+      var isVivid = Math.random() < 0.6;
 
       // Spawn position
       var angle = Math.random() * Math.PI * 2;
@@ -1515,10 +1515,10 @@
         mesh.material.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
         mesh.material.uniforms.uFragTint.value.set(
           isVivid ? 1.0 : 1.0,
-          isVivid ? 1.0 : 0.7,
-          isVivid ? 1.0 : 0.4
+          isVivid ? 1.0 : 0.85,
+          isVivid ? 1.0 : 0.7
         );
-        mesh.material.uniforms.uFragAlpha.value = (isVivid ? 0.85 : (0.4 + Math.random() * 0.3)) * layer.alphaMult;
+        mesh.material.uniforms.uFragAlpha.value = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
         scene.add(mesh);
       } else {
         var mat = makeFragmentMaterial(texEntry.tex, meta);
