@@ -1267,6 +1267,79 @@
     }
   }
 
+  // ─── Memory Fragments ──────────────────────────────────────────
+  var FRAG_VERT = [
+    'uniform float uResolution;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
+  var FRAG_FRAG = [
+    'uniform sampler2D uSpriteSheet;',
+    'uniform sampler2D uMaskAtlas;',
+    'uniform float uFrameIndex;',
+    'uniform float uSheetCols;',
+    'uniform float uSheetRows;',
+    'uniform float uMaskIndex;',
+    'uniform float uMaskCols;',
+    'uniform float uMaskRows;',
+    'uniform vec3 uFragTint;',
+    'uniform float uFragAlpha;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  float frame = floor(uFrameIndex);',
+    '  float col = mod(frame, uSheetCols);',
+    '  float row = floor(frame / uSheetCols);',
+    '  vec2 cellSize = vec2(1.0 / uSheetCols, 1.0 / uSheetRows);',
+    '  vec2 spriteUV = vec2(col, row) * cellSize + vUv * cellSize;',
+    '',
+    '  float mCol = mod(uMaskIndex, uMaskCols);',
+    '  float mRow = floor(uMaskIndex / uMaskCols);',
+    '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
+    '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
+    '',
+    '  vec4 sprite = texture2D(uSpriteSheet, spriteUV);',
+    '  float mask = texture2D(uMaskAtlas, maskUV).a;',
+    '  gl_FragColor = vec4(sprite.rgb * uFragTint, sprite.a * mask * uFragAlpha);',
+    '}'
+  ].join('\n');
+
+  var fragmentMaskTex = null; // loaded in Task 3
+
+  function makeFragmentMaterial(spriteTex, meta) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: parseFloat(resH) },
+        uSpriteSheet: { value: spriteTex },
+        uMaskAtlas: { value: fragmentMaskTex },
+        uFrameIndex: { value: 0.0 },
+        uSheetCols: { value: meta.cols },
+        uSheetRows: { value: meta.rows },
+        uMaskIndex: { value: 0.0 },
+        uMaskCols: { value: 4.0 },
+        uMaskRows: { value: 2.0 },
+        uFragTint: { value: new THREE.Vector3(1.0, 0.7, 0.4) },
+        uFragAlpha: { value: 0.6 }
+      },
+      vertexShader: FRAG_VERT,
+      fragmentShader: FRAG_FRAG,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    });
+  }
+
   // ─── Offscreen Render Target ──────────────────────────────────
   var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
     minFilter: THREE.NearestFilter,
