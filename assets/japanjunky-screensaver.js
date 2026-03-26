@@ -1337,7 +1337,7 @@
       transparent: true,
       depthWrite: false,
       depthTest: true,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
       side: THREE.DoubleSide
     });
   }
@@ -1346,48 +1346,51 @@
   var FRAG_LAYERS = [
     // Background: slow, small, near walls
     {
-      spawnInterval: 2000,
-      spawnRadiusMin: TUNNEL_RADIUS * 0.5,
-      spawnRadiusMax: TUNNEL_RADIUS * 0.7,
-      velZMin: 0.05, velZMax: 0.1,
-      accel: 0.0005,
-      scaleMin: 0.3, scaleMax: 0.5,
+      spawnInterval: 2500,
+      spawnRadiusMin: TUNNEL_RADIUS * 0.3,
+      spawnRadiusMax: TUNNEL_RADIUS * 0.5,
+      velZMin: 0.03, velZMax: 0.06,
+      accel: 0.0003,
+      scaleMin: 0.4, scaleMax: 0.6,
       driftAmp: 0.1,
       wobbleAmp: 0.087,
-      alphaMult: 0.85,
+      expandRate: 2.0,
+      alphaMult: 0.9,
       maxCount: 5,
       lastSpawn: 0,
-      nextInterval: 2000
+      nextInterval: 2500
     },
     // Mid: medium speed and size
     {
-      spawnInterval: 3000,
-      spawnRadiusMin: TUNNEL_RADIUS * 0.3,
-      spawnRadiusMax: TUNNEL_RADIUS * 0.5,
-      velZMin: 0.15, velZMax: 0.25,
-      accel: 0.001,
-      scaleMin: 0.5, scaleMax: 0.8,
-      driftAmp: 0.2,
+      spawnInterval: 3500,
+      spawnRadiusMin: TUNNEL_RADIUS * 0.2,
+      spawnRadiusMax: TUNNEL_RADIUS * 0.4,
+      velZMin: 0.08, velZMax: 0.14,
+      accel: 0.0005,
+      scaleMin: 0.6, scaleMax: 1.0,
+      driftAmp: 0.15,
       wobbleAmp: 0.175,
-      alphaMult: 0.95,
+      expandRate: 2.5,
+      alphaMult: 1.0,
       maxCount: 3,
       lastSpawn: 0,
-      nextInterval: 3000
+      nextInterval: 3500
     },
-    // Foreground: fast, large, near center
+    // Foreground: fast, large, closer to center
     {
-      spawnInterval: 5000,
-      spawnRadiusMin: 0,
+      spawnInterval: 6000,
+      spawnRadiusMin: TUNNEL_RADIUS * 0.1,
       spawnRadiusMax: TUNNEL_RADIUS * 0.3,
-      velZMin: 0.3, velZMax: 0.5,
-      accel: 0.002,
-      scaleMin: 0.8, scaleMax: 1.2,
-      driftAmp: 0.3,
+      velZMin: 0.15, velZMax: 0.25,
+      accel: 0.001,
+      scaleMin: 0.9, scaleMax: 1.4,
+      driftAmp: 0.2,
       wobbleAmp: 0.262,
+      expandRate: 3.5,
       alphaMult: 1.0,
       maxCount: 2,
       lastSpawn: 0,
-      nextInterval: 5000
+      nextInterval: 6000
     }
   ];
 
@@ -1548,6 +1551,7 @@
         driftPhase: Math.random() * Math.PI * 2,
         baseX: sx,
         baseY: sy,
+        expandRate: layer.expandRate || 2.0,
         wobbleFreq: 0.3 + Math.random() * 0.5,
         wobbleAmp: layer.wobbleAmp,
         frameFps: meta.fps || 10,
@@ -1573,19 +1577,16 @@
       ud.velZ += ud.accel;
       mesh.position.z += ud.velZ;
 
-      // Lateral drift (sinusoidal)
+      // Radial expansion — fragments fly outward toward screen edges as they approach
+      var zProgress = 1.0 - (mesh.position.z - SPAWN_Z) / (DESPAWN_Z - SPAWN_Z);
+      // zProgress: 0 at far end (DESPAWN_Z), 1 near camera (SPAWN_Z)
+      var expand = 1.0 + zProgress * zProgress * ud.expandRate;
+
+      // Lateral drift (sinusoidal) + expansion
       var driftX = Math.sin(t * ud.driftFreqX + ud.driftPhase) * ud.driftAmp;
       var driftY = Math.sin(t * ud.driftFreqY + ud.driftPhase * 1.3) * ud.driftAmp;
-      mesh.position.x = ud.baseX + driftX;
-      mesh.position.y = ud.baseY + driftY;
-
-      // Clamp to tunnel radius
-      var dist = Math.sqrt(mesh.position.x * mesh.position.x + mesh.position.y * mesh.position.y);
-      if (dist > TUNNEL_RADIUS) {
-        var clampScale = TUNNEL_RADIUS / dist;
-        mesh.position.x *= clampScale;
-        mesh.position.y *= clampScale;
-      }
+      mesh.position.x = (ud.baseX + driftX) * expand;
+      mesh.position.y = (ud.baseY + driftY) * expand;
 
       // Billboard facing + wobble
       mesh.lookAt(camera.position);
