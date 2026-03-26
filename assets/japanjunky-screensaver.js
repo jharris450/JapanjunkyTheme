@@ -523,14 +523,20 @@
   function updateTsunoIdle(t) {
     if (!tsunoMesh) return;
 
-    // Reset scale each frame (preserving horizontal flip); pulse/mouse may override below
-    tsunoMesh.scale.set(-1, 1, 1);
-
     if (prefersReducedMotion) {
       tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
       tsunoMesh.lookAt(camera.position);
       return;
     }
+
+    // Judging animation manages its own scale (flips); skip normal scale reset
+    if (tsunoJudging) {
+      updateTsunoJudging(t);
+      return;
+    }
+
+    // Reset scale each frame (preserving horizontal flip); pulse/mouse may override below
+    tsunoMesh.scale.set(-1, 1, 1);
 
     var mood = tsunoMoodIdx;
     var speed = TSUNO_MOODS.speed[mood];
@@ -728,6 +734,81 @@
     }
   }
 
+  // ─── Tsuno Product Reaction ───────────────────────────────
+  // When a product is selected, Tsuno sometimes reacts (moves close, judges)
+  // and sometimes ignores it entirely. Mood influences the odds.
+  var tsunoJudging = false;          // true = currently in judging animation
+  var tsunoJudgeStart = -1;          // wall-clock time judging began
+  var tsunoJudgeDuration = 0;        // total judging duration
+  var tsunoJudgeFlips = 0;           // how many flips to do
+  var tsunoJudgeFlipIdx = 0;         // current flip count
+
+  // Odds of reacting to product selection by mood
+  // shy=low, curious=high, lazy=low, mischievous=mid, watchful=high, energetic=high, dreamy=low
+  var TSUNO_REACT_ODDS = [0.25, 0.85, 0.2, 0.5, 0.9, 0.75, 0.2];
+
+  function tsunoOnProductSelected() {
+    if (!tsunoMesh || tsunoState !== 'idle') return;
+
+    var mood = tsunoMoodIdx;
+    var roll = Math.random();
+
+    // Sometimes Tsuno doesn't care
+    if (roll > TSUNO_REACT_ODDS[mood]) return;
+
+    // Move close to user/meta box and judge
+    var t = performance.now() * 0.001;
+    tsunoJudging = true;
+    tsunoJudgeStart = t;
+    tsunoJudgeDuration = 3.0 + Math.random() * 2.0; // 3-5 seconds of judging
+    tsunoJudgeFlips = 2 + Math.floor(Math.random() * 4); // 2-5 flips
+    tsunoJudgeFlipIdx = 0;
+
+    // Move to a close position near the meta box (right side, close to camera)
+    tsunoTransitioning = true;
+    tsunoTransStart = t;
+    tsunoTransDuration = 0.8 / TSUNO_MOODS.speed[mood];
+    tsunoTransFrom.x = tsunoMesh.position.x;
+    tsunoTransFrom.y = tsunoMesh.position.y;
+    tsunoTransFrom.z = tsunoMesh.position.z;
+    // Close to camera, slightly right and up — as if peering at the product info
+    tsunoTransTo.x = 3.5 + Math.random() * 1.5;
+    tsunoTransTo.y = -0.5 + Math.random() * 1.0;
+    tsunoTransTo.z = 3.0;
+  }
+
+  function updateTsunoJudging(t) {
+    if (!tsunoJudging || !tsunoMesh) return;
+
+    var elapsed = t - tsunoJudgeStart;
+
+    // Judging is done — pick next idle behavior
+    if (elapsed >= tsunoJudgeDuration) {
+      tsunoJudging = false;
+      tsunoMesh.scale.set(-1, 1, 1); // reset flip
+      startBehavior(t, pickNextBehavior(tsunoMoodIdx, -1));
+      return;
+    }
+
+    // Flip left/right at intervals during judging (scale.x toggles sign)
+    var flipInterval = tsunoJudgeDuration / (tsunoJudgeFlips + 1);
+    var expectedFlips = Math.floor(elapsed / flipInterval);
+    if (expectedFlips > tsunoJudgeFlipIdx && expectedFlips <= tsunoJudgeFlips) {
+      tsunoJudgeFlipIdx = expectedFlips;
+      // Toggle horizontal flip
+      tsunoMesh.scale.x = tsunoMesh.scale.x > 0 ? -1 : 1;
+    }
+
+    // Subtle judging bob (slower, smaller than idle — contemplative)
+    if (!tsunoTransitioning) {
+      tsunoMesh.position.y = tsunoTransTo.y + Math.sin(t * 1.5) * 0.06;
+      // Slight tilt as if thinking
+      var thinkTilt = Math.sin(t * 0.8) * 0.1;
+      tsunoMesh.lookAt(camera.position);
+      tsunoMesh.rotateZ(thinkTilt);
+    }
+  }
+
   var ghostGeo = new THREE.PlaneGeometry(1.8, 5.25);
 
   var ghostUrl = config.ghostTexture;
@@ -761,6 +842,15 @@
         window.JJ_Portal.tsuno.mesh = tsunoMesh;
         window.JJ_Portal.tsuno.getState = function () { return tsunoState; };
         window.JJ_Portal.tsuno.setState = function (state) { setTsunoState(state); };
+        window.JJ_Portal.tsuno.onProductSelected = function () { tsunoOnProductSelected(); };
+        window.JJ_Portal.tsuno.onProductDeselected = function () {
+          if (tsunoJudging) {
+            tsunoJudging = false;
+            tsunoMesh.scale.set(-1, 1, 1);
+            var t = performance.now() * 0.001;
+            startBehavior(t, pickNextBehavior(tsunoMoodIdx, -1));
+          }
+        };
       }
 
       // Start first idle behavior

@@ -677,8 +677,8 @@
   function coordSelect() {
     var portal = window.JJ_Portal;
     if (!portal) return;
-    if (portal.tsuno && portal.tsuno.getState() !== 'orbiting') {
-      portal.tsuno.setState('transitioning-out');
+    if (portal.tsuno && portal.tsuno.onProductSelected) {
+      portal.tsuno.onProductSelected();
     }
     if (portal.setParallaxEnabled) portal.setParallaxEnabled(false);
   }
@@ -686,8 +686,8 @@
   function coordDeselect() {
     var portal = window.JJ_Portal;
     if (!portal) return;
-    if (portal.tsuno && portal.tsuno.getState() !== 'idle') {
-      portal.tsuno.setState('returning');
+    if (portal.tsuno && portal.tsuno.onProductDeselected) {
+      portal.tsuno.onProductDeselected();
     }
     if (portal.setParallaxEnabled) portal.setParallaxEnabled(true);
   }
