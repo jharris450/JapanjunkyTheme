@@ -1511,15 +1511,19 @@
     var dtMs = dt * 1000;
     for (var ti = 0; ti < fragmentTextures.length; ti++) {
       var entry = fragmentTextures[ti];
+      var prevFrame = entry.currentFrame;
       entry.elapsed += dtMs;
       // Advance through multiple frames if needed (catches up after long dt)
       while (entry.elapsed >= entry.frameDelays[entry.currentFrame]) {
         entry.elapsed -= entry.frameDelays[entry.currentFrame];
         entry.currentFrame = (entry.currentFrame + 1) % entry.frameCanvases.length;
       }
-      entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
-      entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
-      entry.tex.needsUpdate = true;
+      // Only redraw + upload texture when frame actually changed
+      if (entry.currentFrame !== prevFrame) {
+        entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
+        entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
+        entry.tex.needsUpdate = true;
+      }
     }
   }
 
