@@ -1779,6 +1779,10 @@
     spawnObject(time);
     animateObjects(time);
 
+    // Spawn and animate memory fragments
+    spawnFragment(time);
+    animateFragments(time, targetInterval / 1000);
+
     // Update parallax
     updateParallax();
     var lookX = LOOK_TARGET.x + parallaxOffset.x;

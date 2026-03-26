@@ -198,7 +198,18 @@
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
       swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
-      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }}
+      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
+      fragmentMasks: {
+        url: {{ 'frag-masks.png' | asset_url | json }},
+        count: 8,
+        columns: 4,
+        rows: 2
+      },
+      fragments: [
+        /*** Add entries here after running convert-fragments.js:
+        { url: {{ 'frag-example.png' | asset_url | json }}, frames: 24, cols: 6, rows: 4, fps: 10, w: 128, h: 96 },
+        ***/
+      ]
     };
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
