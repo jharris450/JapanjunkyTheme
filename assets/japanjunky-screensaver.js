@@ -1284,11 +1284,8 @@
   ].join('\n');
 
   var FRAG_FRAG = [
-    'uniform sampler2D uSpriteSheet;',
+    'uniform sampler2D uGifTex;',
     'uniform sampler2D uMaskAtlas;',
-    'uniform float uFrameIndex;',
-    'uniform float uSheetCols;',
-    'uniform float uSheetRows;',
     'uniform float uMaskIndex;',
     'uniform float uMaskCols;',
     'uniform float uMaskRows;',
@@ -1297,18 +1294,12 @@
     'varying vec2 vUv;',
     '',
     'void main() {',
-    '  float frame = floor(uFrameIndex);',
-    '  float col = mod(frame, uSheetCols);',
-    '  float row = floor(frame / uSheetCols);',
-    '  vec2 cellSize = vec2(1.0 / uSheetCols, 1.0 / uSheetRows);',
-    '  vec2 spriteUV = vec2(col, row) * cellSize + vUv * cellSize;',
-    '',
     '  float mCol = mod(uMaskIndex, uMaskCols);',
     '  float mRow = floor(uMaskIndex / uMaskCols);',
     '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
     '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
     '',
-    '  vec4 sprite = texture2D(uSpriteSheet, spriteUV);',
+    '  vec4 sprite = texture2D(uGifTex, vUv);',
     '  float mask = texture2D(uMaskAtlas, maskUV).a;',
     '  gl_FragColor = vec4(sprite.rgb * uFragTint, sprite.a * mask * uFragAlpha);',
     '}'
@@ -1316,20 +1307,17 @@
 
   var fragmentMaskTex = null; // loaded in Task 3
 
-  function makeFragmentMaterial(spriteTex, meta) {
+  function makeFragmentMaterial(gifTex) {
     return new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
-        uSpriteSheet: { value: spriteTex },
+        uGifTex: { value: gifTex },
         uMaskAtlas: { value: fragmentMaskTex },
-        uFrameIndex: { value: 0.0 },
-        uSheetCols: { value: meta.cols },
-        uSheetRows: { value: meta.rows },
         uMaskIndex: { value: 0.0 },
         uMaskCols: { value: 4.0 },
         uMaskRows: { value: 2.0 },
-        uFragTint: { value: new THREE.Vector3(1.0, 0.7, 0.4) },
-        uFragAlpha: { value: 0.6 }
+        uFragTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+        uFragAlpha: { value: 1.0 }
       },
       vertexShader: FRAG_VERT,
       fragmentShader: FRAG_FRAG,
@@ -1396,10 +1384,9 @@
   var fragmentGeo = new THREE.PlaneGeometry(1, 1);
   var fragmentPool = [];        // active fragments
   var fragmentRecyclePool = []; // despawned, ready to reuse
-  var fragmentTextures = [];    // { tex: THREE.Texture, meta: {frames,cols,rows,fps,w,h}, url: string }
+  var fragmentTextures = [];    // { tex: THREE.Texture, meta: {w,h}, url: string }
   var fragmentManifest = config.fragments || [];
   var fragmentMaskConfig = config.fragmentMasks || { count: 8, columns: 4, rows: 2 };
-  var fragmentRecycleCount = 0; // counts recycles for texture rotation
 
   // ─── Memory Fragment Texture Loading ──────────────────────────
   // Load mask atlas
@@ -1414,54 +1401,29 @@
     });
   }
 
-  var fragmentLoadedUrls = {}; // track which URLs are already loaded/loading
-
-  function loadFragmentBatch(count) {
-    if (fragmentManifest.length === 0) return;
-    var loaded = 0;
-    var shuffled = [];
-    for (var si = 0; si < fragmentManifest.length; si++) {
-      shuffled.push(si);
-    }
-    // Fisher-Yates shuffle
-    for (var fi = shuffled.length - 1; fi > 0; fi--) {
-      var ri = Math.floor(Math.random() * (fi + 1));
-      var tmp = shuffled[fi];
-      shuffled[fi] = shuffled[ri];
-      shuffled[ri] = tmp;
-    }
-    for (var li = 0; li < shuffled.length && loaded < count; li++) {
-      var entry = fragmentManifest[shuffled[li]];
-      if (fragmentLoadedUrls[entry.url]) continue;
-      fragmentLoadedUrls[entry.url] = true;
-      loaded++;
-      (function (e) {
-        textureLoader.load(e.url, function (tex) {
+  // Load GIFs as animated textures — browser handles GIF frame animation
+  function loadFragmentGifs() {
+    for (var gi = 0; gi < fragmentManifest.length; gi++) {
+      (function (entry) {
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          var tex = new THREE.Texture(img);
           tex.minFilter = THREE.NearestFilter;
           tex.magFilter = THREE.NearestFilter;
+          tex.needsUpdate = true;
           fragmentTextures.push({
             tex: tex,
-            meta: { frames: e.frames, cols: e.cols, rows: e.rows, fps: e.fps, w: e.w, h: e.h },
-            url: e.url
+            meta: { w: entry.w, h: entry.h },
+            url: entry.url
           });
-        });
-      })(entry);
+        };
+        img.src = entry.url;
+      })(fragmentManifest[gi]);
     }
   }
 
-  // Initial batch load
-  loadFragmentBatch(Math.min(20, fragmentManifest.length));
-
-  function rotateFragmentTexture() {
-    if (fragmentManifest.length <= fragmentTextures.length) return; // all loaded
-    if (fragmentTextures.length === 0) return;
-    // Evict oldest
-    var evicted = fragmentTextures.shift();
-    evicted.tex.dispose();
-    delete fragmentLoadedUrls[evicted.url];
-    // Load one new
-    loadFragmentBatch(1);
-  }
+  loadFragmentGifs();
 
   // ─── Memory Fragment Spawn Logic ──────────────────────────────
   function countFragmentsInLayer(layerIdx) {
@@ -1508,10 +1470,7 @@
       var mesh;
       if (fragmentRecyclePool.length > 0) {
         mesh = fragmentRecyclePool.pop();
-        mesh.material.uniforms.uSpriteSheet.value = texEntry.tex;
-        mesh.material.uniforms.uSheetCols.value = meta.cols;
-        mesh.material.uniforms.uSheetRows.value = meta.rows;
-        mesh.material.uniforms.uFrameIndex.value = 0.0;
+        mesh.material.uniforms.uGifTex.value = texEntry.tex;
         mesh.material.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
         mesh.material.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
         mesh.material.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
@@ -1523,16 +1482,16 @@
         mesh.material.uniforms.uFragAlpha.value = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
         scene.add(mesh);
       } else {
-        var mat = makeFragmentMaterial(texEntry.tex, meta);
+        var mat = makeFragmentMaterial(texEntry.tex);
         mat.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
         mat.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
         mat.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
         mat.uniforms.uFragTint.value.set(
           isVivid ? 1.0 : 1.0,
-          isVivid ? 1.0 : 0.7,
-          isVivid ? 1.0 : 0.4
+          isVivid ? 1.0 : 0.85,
+          isVivid ? 1.0 : 0.7
         );
-        mat.uniforms.uFragAlpha.value = (isVivid ? 0.85 : (0.4 + Math.random() * 0.3)) * layer.alphaMult;
+        mat.uniforms.uFragAlpha.value = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
         mesh = new THREE.Mesh(fragmentGeo, mat);
         scene.add(mesh);
       }
@@ -1552,11 +1511,7 @@
         baseY: sy,
         expandRate: layer.expandRate || 2.0,
         wobbleFreq: 0.3 + Math.random() * 0.5,
-        wobbleAmp: layer.wobbleAmp,
-        frameFps: meta.fps || 10,
-        frameCount: meta.frames,
-        frameAccum: 0,
-        currentFrame: 0
+        wobbleAmp: layer.wobbleAmp
       };
 
       fragmentPool.push(mesh);
@@ -1591,27 +1546,14 @@
       mesh.lookAt(camera.position);
       mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
 
-      // Sprite sheet frame stepping (time-based)
-      ud.frameAccum += dt;
-      var frameDuration = 1.0 / ud.frameFps;
-      if (ud.frameAccum >= frameDuration) {
-        ud.frameAccum -= frameDuration;
-        ud.currentFrame = (ud.currentFrame + 1) % ud.frameCount;
-      }
-      mesh.material.uniforms.uFrameIndex.value = ud.currentFrame;
+      // Update GIF texture — browser animates the GIF, we re-upload each frame
+      mesh.material.uniforms.uGifTex.value.needsUpdate = true;
 
       // Despawn (fragments fly toward camera, despawn when past it)
       if (mesh.position.z < SPAWN_Z) {
         scene.remove(mesh);
         fragmentPool.splice(i, 1);
         fragmentRecyclePool.push(mesh);
-
-        // Texture rotation every 10 recycles
-        fragmentRecycleCount++;
-        if (fragmentRecycleCount >= 10) {
-          fragmentRecycleCount = 0;
-          rotateFragmentTexture();
-        }
       }
     }
   }
