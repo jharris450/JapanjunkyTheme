@@ -1,0 +1,66 @@
+/* ===== SPLASH PORTAL SCREEN ===== */
+
+/* Homepage hidden during splash */
+#jj-homepage.jj-splash-active {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#jj-homepage.jj-splash-fadein {
+  opacity: 1;
+  transition: opacity 0.4s ease-out;
+  pointer-events: auto;
+}
+
+/* ENTER button */
+.jj-splash-enter {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 14px;
+  color: var(--jj-text, #f0e6d2);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--jj-primary, #e8313a);
+  padding: 6px 20px;
+  cursor: default;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px rgba(232, 49, 58, 0.4);
+  box-shadow: 0 0 12px rgba(232, 49, 58, 0.15);
+  opacity: 0;
+  transition: opacity 1s ease-in;
+}
+
+.jj-splash-enter--visible {
+  opacity: 1;
+}
+
+.jj-splash-enter--fadeout {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+}
+
+.jj-splash-enter:hover {
+  border-color: var(--jj-accent, #00d4ff);
+  color: var(--jj-accent, #00d4ff);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+}
+
+.jj-splash-enter:focus-visible {
+  outline: 1px solid var(--jj-accent, #00d4ff);
+  outline-offset: 2px;
+}
+
+/* Reduced motion / high contrast: splash hidden entirely */
+@media (prefers-reduced-motion: reduce) {
+  .jj-splash-enter { display: none !important; }
+}
+
+@media (prefers-contrast: more) {
+  .jj-splash-enter { display: none !important; }
+}
