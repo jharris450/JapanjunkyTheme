@@ -147,7 +147,7 @@
     '',
     '    // Vignette closing to black (Phase 3)',
     '    float vignettePhase = smoothstep(0.5, 1.0, uTransition);',
-    '    float vignette = 1.0 - smoothstep(0.0, 0.5 - vignettePhase * 0.5, dist);',
+    '    float vignette = 1.0 - smoothstep(0.0, max(0.001, 0.5 - vignettePhase * 0.5), dist);',
     '    color *= 1.0 - vignette;',
     '  }',
     '',
@@ -293,6 +293,7 @@
       updateTransition(t);
     }
 
+    if (!running) return; // completeSplash() may have disposed renderer
     renderOneFrame();
   }
 
@@ -337,6 +338,8 @@
     window.removeEventListener('touchmove', onTouchRipple);
 
     // Dispose WebGL resources
+    var ghostTex = mirrorMat.uniforms.uGhostTex.value;
+    if (ghostTex) ghostTex.dispose();
     renderTarget.dispose();
     renderer.dispose();
     mirrorGeo.dispose();
@@ -371,6 +374,7 @@
 
   // ─── Skip splash (accessibility, error, or session) ────────
   function skipSplash() {
+    try { sessionStorage.setItem('jj-entered', '1'); } catch (e) {}
     delete window.JJ_SPLASH_ACTIVE;
     var hp = document.getElementById('jj-homepage');
     if (hp) {
