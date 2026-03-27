@@ -1754,46 +1754,14 @@
   }
 
   // ─── Performance Safeguards ───────────────────────────────────
-  var pauseReasons = { hidden: false, scrolled: false };
-
-  function isPaused() {
-    return pauseReasons.hidden || pauseReasons.scrolled;
-  }
-
-  // Reset lastFrame after unpause so we don't get a huge dt spike
-  function resetFrameTime() {
-    lastFrame = performance.now();
-  }
+  // rAF natively pauses when the tab is hidden; we only skip rendering
+  // when document.hidden is true to avoid a dt spike on resume.
+  var tabHidden = false;
 
   document.addEventListener('visibilitychange', function () {
-    var wasPaused = isPaused();
-    pauseReasons.hidden = document.hidden;
-    if (wasPaused && !isPaused()) resetFrameTime();
+    tabHidden = document.hidden;
+    if (!tabHidden) lastFrame = performance.now();
   });
-
-  // Scroll sentinel — pause when user scrolls past the fold.
-  // Use position:fixed so CSS zoom on html can't push it off-viewport.
-  var sentinel = document.createElement('div');
-  sentinel.style.cssText = 'position:fixed;bottom:0;width:1px;height:1px;pointer-events:none;';
-  document.body.appendChild(sentinel);
-
-  if (window.IntersectionObserver) {
-    // The initial observer callback fires before layout, reporting
-    // isIntersecting: false. Only trust it after the sentinel has been
-    // confirmed visible at least once (i.e. the page actually loaded).
-    var sentinelSeen = false;
-    var scrollObserver = new IntersectionObserver(function (entries) {
-      var isVisible = entries[0].isIntersecting;
-      if (!sentinelSeen) {
-        if (isVisible) sentinelSeen = true;
-        return; // ignore until first confirmed-visible callback
-      }
-      var wasPaused = isPaused();
-      pauseReasons.scrolled = !isVisible;
-      if (wasPaused && !isPaused()) resetFrameTime();
-    }, { threshold: 0 });
-    scrollObserver.observe(sentinel);
-  }
 
   // ─── Animation Loop ──────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
@@ -1802,10 +1770,8 @@
   var lastFrame = 0;
 
   function animate(time) {
-    // Always schedule next frame — never let the loop die.
-    // rAF already pauses when tab is hidden; isPaused() only skips rendering.
     requestAnimationFrame(animate);
-    if (isPaused()) return;
+    if (tabHidden) return;
 
     var interval = productViewing ? throttledInterval : targetInterval;
     if (time - lastFrame < interval) return;
