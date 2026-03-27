@@ -1754,14 +1754,36 @@
   }
 
   // ─── Performance Safeguards ───────────────────────────────────
-  // rAF natively pauses when the tab is hidden; we only skip rendering
-  // when document.hidden is true to avoid a dt spike on resume.
-  var tabHidden = false;
+  var pauseReasons = { hidden: false, scrolled: false };
+
+  function isPaused() {
+    return pauseReasons.hidden || pauseReasons.scrolled;
+  }
+
+  function resumeIfNeeded() {
+    if (!isPaused()) {
+      lastFrame = performance.now();
+      requestAnimationFrame(animate);
+    }
+  }
 
   document.addEventListener('visibilitychange', function () {
-    tabHidden = document.hidden;
-    if (!tabHidden) lastFrame = performance.now();
+    pauseReasons.hidden = document.hidden;
+    resumeIfNeeded();
   });
+
+  // Scroll sentinel — pause when user scrolls past the fold.
+  var sentinel = document.createElement('div');
+  sentinel.style.cssText = 'position:fixed;bottom:0;width:1px;height:1px;pointer-events:none;';
+  document.body.appendChild(sentinel);
+
+  if (window.IntersectionObserver) {
+    var scrollObserver = new IntersectionObserver(function (entries) {
+      pauseReasons.scrolled = !entries[0].isIntersecting;
+      resumeIfNeeded();
+    }, { threshold: 0 });
+    scrollObserver.observe(sentinel);
+  }
 
   // ─── Animation Loop ──────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
@@ -1771,7 +1793,7 @@
 
   function animate(time) {
     requestAnimationFrame(animate);
-    if (tabHidden) return;
+    if (isPaused()) return;
 
     var interval = productViewing ? throttledInterval : targetInterval;
     if (time - lastFrame < interval) return;
