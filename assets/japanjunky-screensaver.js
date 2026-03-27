@@ -1599,6 +1599,7 @@
         scene.add(mesh);
       }
 
+      mesh.layers.set(1); // render on fragment layer (no dither)
       mesh.position.set(sx, sy, DESPAWN_Z);
       mesh.scale.set(meshScaleX, meshScaleY, 1);
 
@@ -1700,9 +1701,25 @@
   ].join(';');
   canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
 
+  // Fragment overlay — composited on top of dithered background
+  var fragImageData = displayCtx.createImageData(resW, resH);
+  var fragBuffer = new Uint8Array(resW * resH * 4);
+  var fragCanvas = document.createElement('canvas');
+  fragCanvas.width = resW;
+  fragCanvas.height = resH;
+  var fragCtx = fragCanvas.getContext('2d');
+
+  // Camera sees both layers by default
+  camera.layers.enable(0);
+  camera.layers.enable(1);
+
   // ─── Render one frame (reusable) ─────────────────────────────
   function renderOneFrame() {
+    // Pass 1 — main scene (layer 0): dithered
+    camera.layers.set(0);
+    renderer.setClearColor(0x000000, 1);
     renderer.setRenderTarget(renderTarget);
+    renderer.clear();
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
 
@@ -1725,6 +1742,36 @@
     }
 
     displayCtx.putImageData(displayImageData, 0, 0);
+
+    // Pass 2 — fragments (layer 1): clean, composited on top
+    if (fragmentPool.length > 0) {
+      camera.layers.set(1);
+      renderer.setClearColor(0x000000, 0); // transparent clear
+      renderer.setRenderTarget(renderTarget);
+      renderer.clear();
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+
+      renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, fragBuffer);
+
+      var fsrc = fragBuffer;
+      var fdst = fragImageData.data;
+      for (var frow = 0; frow < resH; frow++) {
+        var fSrcRow = (resH - 1 - frow) * resW * 4;
+        var fDstRow = frow * resW * 4;
+        for (var fcol = 0; fcol < resW * 4; fcol++) {
+          fdst[fDstRow + fcol] = fsrc[fSrcRow + fcol];
+        }
+      }
+
+      fragCtx.clearRect(0, 0, resW, resH);
+      fragCtx.putImageData(fragImageData, 0, 0);
+      displayCtx.drawImage(fragCanvas, 0, 0);
+    }
+
+    // Restore camera to see both layers
+    camera.layers.enable(0);
+    camera.layers.enable(1);
   }
 
   // ─── Mouse Parallax ──────────────────────────────────────────
