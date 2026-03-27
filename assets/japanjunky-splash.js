@@ -13,9 +13,9 @@
 
   // ─── Gate checks ───────────────────────────────────────────
   var config = window.JJ_SPLASH_CONFIG;
-  if (!config) return;                          // not on index, or splash disabled
-  if (!window.JJ_SPLASH_ACTIVE) return;         // already entered this session
-  if (typeof THREE === 'undefined') return;
+  if (!config) { console.log('[SPLASH] skip: no config'); return; }
+  if (!window.JJ_SPLASH_ACTIVE) { console.log('[SPLASH] skip: not active'); return; }
+  if (typeof THREE === 'undefined') { console.log('[SPLASH] skip: no THREE'); return; }
 
   // Accessibility: skip splash entirely
   var prefersReducedMotion = window.matchMedia
@@ -23,6 +23,7 @@
   var prefersHighContrast = window.matchMedia
     && window.matchMedia('(prefers-contrast: more)').matches;
   if (prefersReducedMotion || prefersHighContrast) {
+    console.log('[SPLASH] skip: a11y', prefersReducedMotion, prefersHighContrast);
     skipSplash();
     return;
   }
@@ -38,7 +39,7 @@
   var splashCanvas = document.getElementById('jj-splash');
   var enterBtn = document.getElementById('jj-splash-enter');
   var homepageDiv = document.getElementById('jj-homepage');
-  if (!splashCanvas || !enterBtn || !homepageDiv) { skipSplash(); return; }
+  if (!splashCanvas || !enterBtn || !homepageDiv) { console.log('[SPLASH] skip: missing DOM', !!splashCanvas, !!enterBtn, !!homepageDiv); skipSplash(); return; }
 
   // Hide homepage during splash
   homepageDiv.classList.add('jj-splash-active');
@@ -48,9 +49,11 @@
   try {
     renderer = new THREE.WebGLRenderer({ canvas: splashCanvas, antialias: false });
   } catch (e) {
+    console.log('[SPLASH] skip: WebGL failed', e);
     skipSplash();
     return;
   }
+  console.log('[SPLASH] renderer created OK');
   renderer.setSize(resW, resH, false);
   renderer.setClearColor(0x000000, 1);
 
