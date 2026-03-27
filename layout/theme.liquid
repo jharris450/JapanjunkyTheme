@@ -190,6 +190,24 @@
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
+  {% if settings.splash_enabled %}
+  <script>
+    {% if request.page_type == 'index' %}
+    try {
+      if (!sessionStorage.getItem('jj-entered')) {
+        window.JJ_SPLASH_ACTIVE = true;
+      }
+    } catch (e) {}
+    window.JJ_SPLASH_CONFIG = {
+      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
+      swirlSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
+      resolution: {{ settings.screensaver_resolution | default: 240 }},
+      fps: {{ settings.screensaver_fps | default: 24 }}
+    };
+    {% endif %}
+  </script>
+  {% endif %}
+
   <script>
     window.JJ_SCREENSAVER_CONFIG = {
       enabled: {{ settings.screensaver_enabled | default: true }},
