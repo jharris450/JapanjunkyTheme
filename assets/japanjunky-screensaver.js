@@ -549,6 +549,7 @@
     tsunoMesh.scale.set(-1, 1, 1);
 
     var mood = tsunoMoodIdx;
+    var speed = TSUNO_MOODS.speed[mood];
     var bobAmp = TSUNO_MOODS.bobAmp[mood];
     var bobFreq = TSUNO_MOODS.bobFreq[mood];
     var swayAmp = TSUNO_MOODS.swayAmp[mood];
