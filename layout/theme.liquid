@@ -33,6 +33,9 @@
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-tsuno-bubble.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
+  {% if settings.splash_enabled %}
+  {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
+  {% endif %}
 
   <script>
     window.JJ_CURSOR_SETS = {
@@ -122,6 +125,15 @@
 </head>
 
 <body class="jj-body">
+{% if settings.splash_enabled %}
+<canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
+<button id="jj-splash-enter" class="jj-splash-enter" style="display:none;">[ENTER]</button>
+{% endif %}
+
+{% if settings.splash_enabled %}
+<div id="jj-homepage">
+{% endif %}
+
 <canvas id="jj-screensaver" aria-hidden="true" tabindex="-1" style="
   position:fixed;top:0;left:0;width:40vw;height:40vh;
   z-index:0;image-rendering:pixelated;image-rendering:crisp-edges;
@@ -190,6 +202,10 @@
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
+{% if settings.splash_enabled %}
+</div>
+{% endif %}
+
   {% if settings.splash_enabled %}
   <script>
     {% if request.page_type == 'index' %}
@@ -242,5 +258,8 @@
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
+  {% if settings.splash_enabled %}
+  <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
+  {% endif %}
 </body>
 </html>
