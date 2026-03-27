@@ -196,14 +196,14 @@
     try {
       if (!sessionStorage.getItem('jj-entered')) {
         window.JJ_SPLASH_ACTIVE = true;
+        window.JJ_SPLASH_CONFIG = {
+          ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
+          swirlSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
+          resolution: {{ settings.screensaver_resolution | default: 240 }},
+          fps: {{ settings.screensaver_fps | default: 24 }}
+        };
       }
     } catch (e) {}
-    window.JJ_SPLASH_CONFIG = {
-      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
-      swirlSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
-      resolution: {{ settings.screensaver_resolution | default: 240 }},
-      fps: {{ settings.screensaver_fps | default: 24 }}
-    };
     {% endif %}
   </script>
   {% endif %}
