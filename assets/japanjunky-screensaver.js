@@ -1760,16 +1760,15 @@
     return pauseReasons.hidden || pauseReasons.scrolled;
   }
 
-  function resumeIfNeeded() {
-    if (!isPaused()) {
-      lastFrame = performance.now();
-      requestAnimationFrame(animate);
-    }
+  // Reset lastFrame after unpause so we don't get a huge dt spike
+  function resetFrameTime() {
+    lastFrame = performance.now();
   }
 
   document.addEventListener('visibilitychange', function () {
+    var wasPaused = isPaused();
     pauseReasons.hidden = document.hidden;
-    resumeIfNeeded();
+    if (wasPaused && !isPaused()) resetFrameTime();
   });
 
   // Scroll sentinel — pause when user scrolls past the fold.
@@ -1780,21 +1779,27 @@
 
   if (window.IntersectionObserver) {
     var scrollObserver = new IntersectionObserver(function (entries) {
+      var wasPaused = isPaused();
       pauseReasons.scrolled = !entries[0].isIntersecting;
-      resumeIfNeeded();
+      if (wasPaused && !isPaused()) resetFrameTime();
     }, { threshold: 0 });
     scrollObserver.observe(sentinel);
   }
 
   // ─── Animation Loop ──────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
+  var throttledInterval = 1000 / 8; // 8fps during product viewing
+  var productViewing = false;
   var lastFrame = 0;
 
   function animate(time) {
-    if (isPaused()) return;
+    // Always schedule next frame — never let the loop die.
+    // rAF already pauses when tab is hidden; isPaused() only skips rendering.
     requestAnimationFrame(animate);
+    if (isPaused()) return;
 
-    if (time - lastFrame < targetInterval) return;
+    var interval = productViewing ? throttledInterval : targetInterval;
+    if (time - lastFrame < interval) return;
     lastFrame = time;
 
     // Update shader time uniforms
@@ -1862,6 +1867,9 @@
         parallaxOffset.x = 0;
         parallaxOffset.y = 0;
       }
+    },
+    setProductViewing: function (viewing) {
+      productViewing = !!viewing;
     },
     setTalking: function (talking) {
       tsunoTalking = !!talking;

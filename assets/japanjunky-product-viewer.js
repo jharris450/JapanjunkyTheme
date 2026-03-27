@@ -681,6 +681,7 @@
       portal.tsuno.onProductSelected();
     }
     if (portal.setParallaxEnabled) portal.setParallaxEnabled(false);
+    if (portal.setProductViewing) portal.setProductViewing(true);
   }
 
   function coordDeselect() {
@@ -690,6 +691,7 @@
       portal.tsuno.onProductDeselected();
     }
     if (portal.setParallaxEnabled) portal.setParallaxEnabled(true);
+    if (portal.setProductViewing) portal.setProductViewing(false);
   }
 
   // ─── Event Listeners ─────────────────────────────────────────
