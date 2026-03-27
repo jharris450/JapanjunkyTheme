@@ -125,7 +125,7 @@
 </head>
 
 <body class="jj-body">
-{% if settings.splash_enabled and request.page_type == 'index' %}
+{% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
 <button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
 <div id="jj-homepage">
@@ -199,13 +199,13 @@
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
-{% if settings.splash_enabled and request.page_type == 'index' %}
+{% if settings.splash_enabled and template == 'index' %}
 </div>
 {% endif %}
 
   {% if settings.splash_enabled %}
   <script>
-    {% if request.page_type == 'index' %}
+    {% if template == 'index' %}
     try {
       if (!sessionStorage.getItem('jj-entered')) {
         window.JJ_SPLASH_ACTIVE = true;
