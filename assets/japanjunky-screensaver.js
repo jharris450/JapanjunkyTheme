@@ -11,6 +11,7 @@
 (function () {
   'use strict';
 
+  function init() {
   var config = window.JJ_SCREENSAVER_CONFIG || {};
   if (config.enabled === false) return;
   if (typeof THREE === 'undefined') return;
@@ -1946,4 +1947,12 @@
     requestAnimationFrame(animate);
   }
 
+  } // end init()
+
+  // If splash is active, defer initialization; otherwise start immediately
+  if (window.JJ_SPLASH_ACTIVE) {
+    window.JJ_Portal_Init = init;
+  } else {
+    init();
+  }
 })();
