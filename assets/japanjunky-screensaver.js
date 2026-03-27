@@ -1788,7 +1788,7 @@
 
   // ─── Animation Loop ──────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
-  var throttledInterval = 1000 / 8; // 8fps during product viewing
+  var throttledInterval = 1000 / 18; // 18fps during product viewing
   var productViewing = false;
   var lastFrame = 0;
 
