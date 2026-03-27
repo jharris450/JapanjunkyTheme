@@ -1778,9 +1778,18 @@
   document.body.appendChild(sentinel);
 
   if (window.IntersectionObserver) {
+    // The initial observer callback fires before layout, reporting
+    // isIntersecting: false. Only trust it after the sentinel has been
+    // confirmed visible at least once (i.e. the page actually loaded).
+    var sentinelSeen = false;
     var scrollObserver = new IntersectionObserver(function (entries) {
+      var isVisible = entries[0].isIntersecting;
+      if (!sentinelSeen) {
+        if (isVisible) sentinelSeen = true;
+        return; // ignore until first confirmed-visible callback
+      }
       var wasPaused = isPaused();
-      pauseReasons.scrolled = !entries[0].isIntersecting;
+      pauseReasons.scrolled = !isVisible;
       if (wasPaused && !isPaused()) resetFrameTime();
     }, { threshold: 0 });
     scrollObserver.observe(sentinel);
