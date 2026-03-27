@@ -125,12 +125,9 @@
 </head>
 
 <body class="jj-body">
-{% if settings.splash_enabled %}
+{% if settings.splash_enabled and request.page_type == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
-<button id="jj-splash-enter" class="jj-splash-enter" style="display:none;">[ENTER]</button>
-{% endif %}
-
-{% if settings.splash_enabled %}
+<button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
 <div id="jj-homepage">
 {% endif %}
 
@@ -202,7 +199,7 @@
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
-{% if settings.splash_enabled %}
+{% if settings.splash_enabled and request.page_type == 'index' %}
 </div>
 {% endif %}
 
