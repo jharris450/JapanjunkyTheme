@@ -1,16 +1,9 @@
 /* ===== SPLASH PORTAL SCREEN ===== */
 
-/* Homepage hidden during splash */
+/* Homepage hidden during splash (canvas covers it at z-index:10) */
 #jj-homepage.jj-splash-active {
   opacity: 0;
   pointer-events: none;
-}
-
-/* Cross-fade: homepage fades in underneath the fading splash canvas */
-#jj-homepage.jj-splash-active.jj-splash-fadein {
-  opacity: 1;
-  transition: opacity 2.0s ease-in-out;
-  pointer-events: auto;
 }
 
 /* ENTER button */

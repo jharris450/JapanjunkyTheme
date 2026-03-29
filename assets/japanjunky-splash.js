@@ -308,8 +308,8 @@
     enterBtn.classList.remove('jj-splash-enter--visible');
     enterBtn.classList.add('jj-splash-enter--fadeout');
 
-    // Cross-fade: reveal homepage underneath while splash canvas fades out
-    homepageDiv.classList.add('jj-splash-fadein');
+    // Reveal homepage instantly behind the opaque canvas, then fade canvas out
+    homepageDiv.classList.remove('jj-splash-active');
     displayCanvas.style.transition = 'opacity ' + TRANSITION_DURATION + 's ease-in-out';
     displayCanvas.style.opacity = '0';
   }
@@ -353,8 +353,8 @@
     displayCanvas = null;
     displayCtx = null;
 
-    // Clean up homepage transition classes
-    homepageDiv.classList.remove('jj-splash-active', 'jj-splash-fadein');
+    // Ensure splash-active is removed (should already be from startTransition)
+    homepageDiv.classList.remove('jj-splash-active');
 
     // Clear flag
     delete window.JJ_SPLASH_ACTIVE;
