@@ -239,6 +239,10 @@
   ].join(';');
   document.body.insertBefore(displayCanvas, document.body.firstChild);
 
+  // Canvas now covers viewport — reveal homepage behind it so the browser
+  // loads images and JS components can initialize at full opacity
+  homepageDiv.classList.remove('jj-splash-active');
+
   // ─── Render one frame ──────────────────────────────────────
   function renderOneFrame() {
     renderer.setRenderTarget(renderTarget);
@@ -308,8 +312,7 @@
     enterBtn.classList.remove('jj-splash-enter--visible');
     enterBtn.classList.add('jj-splash-enter--fadeout');
 
-    // Reveal homepage instantly behind the opaque canvas, then fade canvas out
-    homepageDiv.classList.remove('jj-splash-active');
+    // Fade out canvas — homepage is already at opacity:1 behind it
     displayCanvas.style.transition = 'opacity ' + TRANSITION_DURATION + 's ease-in-out';
     displayCanvas.style.opacity = '0';
   }
