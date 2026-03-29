@@ -311,10 +311,6 @@
     // Fade out button
     enterBtn.classList.remove('jj-splash-enter--visible');
     enterBtn.classList.add('jj-splash-enter--fadeout');
-
-    // Fade out canvas — homepage is already at opacity:1 behind it
-    displayCanvas.style.transition = 'opacity ' + TRANSITION_DURATION + 's ease-in-out';
-    displayCanvas.style.opacity = '0';
   }
 
   function updateTransition(t) {
@@ -323,11 +319,12 @@
 
     mirrorMat.uniforms.uTransition.value = progress;
 
-    // Stop render loop when shader is done, delay DOM cleanup
-    // so CSS transitions finish without being cut short
+    // Drive canvas opacity from JS — smoothstep ease-in-out
+    var ease = progress * progress * (3.0 - 2.0 * progress);
+    displayCanvas.style.opacity = String(1.0 - ease);
+
     if (progress >= 1.0) {
-      running = false;
-      setTimeout(completeSplash, 300);
+      completeSplash();
     }
   }
 
