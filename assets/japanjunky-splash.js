@@ -293,7 +293,7 @@
   }
 
   // ─── Transition ────────────────────────────────────────────
-  var TRANSITION_DURATION = 1.5; // seconds
+  var TRANSITION_DURATION = 2.0; // seconds
 
   function startTransition() {
     if (transitioning) return;
@@ -320,9 +320,11 @@
 
     mirrorMat.uniforms.uTransition.value = progress;
 
-    // Phase 3 complete — hand off
+    // Stop render loop when shader is done, delay DOM cleanup
+    // so CSS transitions finish without being cut short
     if (progress >= 1.0) {
-      completeSplash();
+      running = false;
+      setTimeout(completeSplash, 300);
     }
   }
 
