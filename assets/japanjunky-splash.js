@@ -13,9 +13,9 @@
 
   // ─── Gate checks ───────────────────────────────────────────
   var config = window.JJ_SPLASH_CONFIG;
-  if (!config) { console.log('[SPLASH] skip: no config'); return; }
-  if (!window.JJ_SPLASH_ACTIVE) { console.log('[SPLASH] skip: not active'); return; }
-  if (typeof THREE === 'undefined') { console.log('[SPLASH] skip: no THREE'); return; }
+  if (!config) return;
+  if (!window.JJ_SPLASH_ACTIVE) return;
+  if (typeof THREE === 'undefined') return;
 
   // Accessibility: skip splash entirely
   var prefersReducedMotion = window.matchMedia
@@ -23,7 +23,6 @@
   var prefersHighContrast = window.matchMedia
     && window.matchMedia('(prefers-contrast: more)').matches;
   if (prefersReducedMotion || prefersHighContrast) {
-    console.log('[SPLASH] skip: a11y', prefersReducedMotion, prefersHighContrast);
     skipSplash();
     return;
   }
@@ -39,7 +38,7 @@
   var splashCanvas = document.getElementById('jj-splash');
   var enterBtn = document.getElementById('jj-splash-enter');
   var homepageDiv = document.getElementById('jj-homepage');
-  if (!splashCanvas || !enterBtn || !homepageDiv) { console.log('[SPLASH] skip: missing DOM', !!splashCanvas, !!enterBtn, !!homepageDiv); skipSplash(); return; }
+  if (!splashCanvas || !enterBtn || !homepageDiv) { skipSplash(); return; }
 
   // Hide homepage during splash
   homepageDiv.classList.add('jj-splash-active');
@@ -49,11 +48,9 @@
   try {
     renderer = new THREE.WebGLRenderer({ canvas: splashCanvas, antialias: false });
   } catch (e) {
-    console.log('[SPLASH] skip: WebGL failed', e);
     skipSplash();
     return;
   }
-  console.log('[SPLASH] renderer created OK');
   renderer.setSize(resW, resH, false);
   renderer.setClearColor(0x000000, 1);
 
@@ -142,16 +139,10 @@
     '    color += vec3(1.0, 0.2, 0.08) * ghostMask * (1.0 - uTransition);',
     '  }',
     '',
-    '  // ── Transition: pull-through + vignette ──',
+    '  // ── Transition: gentle brightening ──',
     '  if (uTransition > 0.0) {',
-    '    // Radial zoom pull (Phase 2)',
-    '    float pullPhase = smoothstep(0.2, 0.75, uTransition);',
-    '    color *= 1.0 + pullPhase * 0.5;',
-    '',
-    '    // Vignette closing to black (Phase 3)',
-    '    float vignettePhase = smoothstep(0.5, 1.0, uTransition);',
-    '    float vignette = 1.0 - smoothstep(0.0, max(0.001, 0.5 - vignettePhase * 0.5), dist);',
-    '    color *= 1.0 - vignette;',
+    '    float pullPhase = smoothstep(0.0, 0.6, uTransition);',
+    '    color *= 1.0 + pullPhase * 0.3;',
     '  }',
     '',
     '  gl_FragColor = vec4(color, 1.0);',
@@ -208,10 +199,11 @@
   }
 
   if (!isMobile) {
-    window.addEventListener('mousemove', onMouseRipple);
+    enterBtn.addEventListener('mouseenter', onMouseRipple);
+    enterBtn.addEventListener('mousemove', onMouseRipple);
   }
-  window.addEventListener('touchstart', onTouchRipple, { passive: true });
-  window.addEventListener('touchmove', onTouchRipple, { passive: true });
+  enterBtn.addEventListener('touchstart', onTouchRipple, { passive: true });
+  enterBtn.addEventListener('touchmove', onTouchRipple, { passive: true });
 
   // ─── Offscreen Render Target ───────────────────────────────
   var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
@@ -301,20 +293,25 @@
   }
 
   // ─── Transition ────────────────────────────────────────────
-  var TRANSITION_DURATION = 2.0; // seconds
+  var TRANSITION_DURATION = 1.5; // seconds
 
   function startTransition() {
     if (transitioning) return;
     transitioning = true;
     transitionStart = performance.now() * 0.001;
 
-    // Phase 1: Ripple burst from center
+    // Ripple burst from center
     mirrorMat.uniforms.uRippleOrigin.value.set(0.5, 0.5);
     mirrorMat.uniforms.uRippleTime.value = transitionStart;
 
     // Fade out button
     enterBtn.classList.remove('jj-splash-enter--visible');
     enterBtn.classList.add('jj-splash-enter--fadeout');
+
+    // Cross-fade: reveal homepage underneath while splash canvas fades out
+    homepageDiv.classList.add('jj-splash-fadein');
+    displayCanvas.style.transition = 'opacity ' + TRANSITION_DURATION + 's ease-in-out';
+    displayCanvas.style.opacity = '0';
   }
 
   function updateTransition(t) {
@@ -335,11 +332,6 @@
     // Mark session
     try { sessionStorage.setItem('jj-entered', '1'); } catch (e) {}
 
-    // Remove event listeners
-    if (!isMobile) window.removeEventListener('mousemove', onMouseRipple);
-    window.removeEventListener('touchstart', onTouchRipple);
-    window.removeEventListener('touchmove', onTouchRipple);
-
     // Dispose WebGL resources
     var ghostTex = mirrorMat.uniforms.uGhostTex.value;
     if (ghostTex) ghostTex.dispose();
@@ -359,6 +351,9 @@
     displayCanvas = null;
     displayCtx = null;
 
+    // Clean up homepage transition classes
+    homepageDiv.classList.remove('jj-splash-active', 'jj-splash-fadein');
+
     // Clear flag
     delete window.JJ_SPLASH_ACTIVE;
 
@@ -367,12 +362,6 @@
       window.JJ_Portal_Init();
       delete window.JJ_Portal_Init;
     }
-
-    // Reveal homepage with fade
-    homepageDiv.classList.remove('jj-splash-active');
-    // Force reflow before adding transition class
-    void homepageDiv.offsetHeight;
-    homepageDiv.classList.add('jj-splash-fadein');
   }
 
   // ─── Skip splash (accessibility, error, or session) ────────
@@ -380,15 +369,11 @@
     try { sessionStorage.setItem('jj-entered', '1'); } catch (e) {}
     delete window.JJ_SPLASH_ACTIVE;
     var hp = document.getElementById('jj-homepage');
-    if (hp) {
-      hp.classList.remove('jj-splash-active');
-      hp.classList.add('jj-splash-fadein');
-    }
+    if (hp) hp.classList.remove('jj-splash-active');
     var btn = document.getElementById('jj-splash-enter');
     if (btn) btn.style.display = 'none';
     var sc = document.getElementById('jj-splash');
     if (sc) sc.style.display = 'none';
-    // Start screensaver immediately
     if (window.JJ_Portal_Init) {
       window.JJ_Portal_Init();
       delete window.JJ_Portal_Init;

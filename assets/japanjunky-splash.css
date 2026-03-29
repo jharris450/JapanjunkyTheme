@@ -6,9 +6,10 @@
   pointer-events: none;
 }
 
-#jj-homepage.jj-splash-fadein {
+/* Cross-fade: homepage fades in underneath the fading splash canvas */
+#jj-homepage.jj-splash-active.jj-splash-fadein {
   opacity: 1;
-  transition: opacity 0.4s ease-out;
+  transition: opacity 1.5s ease-in-out;
   pointer-events: auto;
 }
 
