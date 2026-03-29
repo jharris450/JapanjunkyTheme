@@ -356,8 +356,9 @@
     displayCanvas = null;
     displayCtx = null;
 
-    // Ensure splash-active is removed (should already be from startTransition)
+    // Remove splash classes and stacking containment
     homepageDiv.classList.remove('jj-splash-active');
+    homepageDiv.style.isolation = '';
 
     // Clear flag
     delete window.JJ_SPLASH_ACTIVE;

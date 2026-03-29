@@ -1,5 +1,10 @@
 /* ===== SPLASH PORTAL SCREEN ===== */
 
+/* Contain homepage stacking context so children can't escape above the splash canvas */
+#jj-homepage {
+  isolation: isolate;
+}
+
 /* Homepage hidden during splash (canvas covers it at z-index:10) */
 #jj-homepage.jj-splash-active {
   opacity: 0;
