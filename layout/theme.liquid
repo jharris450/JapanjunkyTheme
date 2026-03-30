@@ -128,7 +128,8 @@
 {% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
 <button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
-<div id="jj-homepage">
+<div id="jj-homepage" style="opacity:0;">
+<script>try{if(sessionStorage.getItem('jj-entered')){document.getElementById('jj-homepage').style.opacity='';}}catch(e){}</script>
 {% endif %}
 
 <canvas id="jj-screensaver" aria-hidden="true" tabindex="-1" style="

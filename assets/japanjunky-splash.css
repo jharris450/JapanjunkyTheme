@@ -5,11 +5,8 @@
   isolation: isolate;
 }
 
-/* Homepage hidden during splash (canvas covers it at z-index:100000) */
-#jj-homepage.jj-splash-active {
-  opacity: 0;
-  pointer-events: none;
-}
+/* Homepage hidden during splash via inline style="opacity:0;" in theme.liquid.
+   Splash JS sets opacity:1 once the display canvas covers the viewport. */
 
 /* ENTER button */
 .jj-splash-enter {

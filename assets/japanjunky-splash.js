@@ -40,8 +40,7 @@
   var homepageDiv = document.getElementById('jj-homepage');
   if (!splashCanvas || !enterBtn || !homepageDiv) { skipSplash(); return; }
 
-  // Hide homepage during splash
-  homepageDiv.classList.add('jj-splash-active');
+  // Homepage starts hidden via inline style="opacity:0;" in theme.liquid
 
   // ─── WebGL Renderer ────────────────────────────────────────
   var renderer;
@@ -241,7 +240,7 @@
 
   // Canvas now covers viewport — reveal homepage behind it so the browser
   // loads images and JS components can initialize at full opacity
-  homepageDiv.classList.remove('jj-splash-active');
+  homepageDiv.style.opacity = '1';
 
   // ─── Render one frame ──────────────────────────────────────
   function renderOneFrame() {
@@ -304,6 +303,13 @@
     transitioning = true;
     transitionStart = performance.now() * 0.001;
 
+    // Start screensaver now so its background renders behind the fading splash.
+    // By the time the 2s fade reveals the homepage, the vortex is already running.
+    if (window.JJ_Portal_Init) {
+      window.JJ_Portal_Init();
+      delete window.JJ_Portal_Init;
+    }
+
     // Ripple burst from center
     mirrorMat.uniforms.uRippleOrigin.value.set(0.5, 0.5);
     mirrorMat.uniforms.uRippleTime.value = transitionStart;
@@ -353,22 +359,11 @@
     displayCanvas = null;
     displayCtx = null;
 
-    // Remove splash classes and stacking containment
-    homepageDiv.classList.remove('jj-splash-active');
+    // Remove stacking containment
     homepageDiv.style.isolation = 'auto';
 
     // Clear flag
     delete window.JJ_SPLASH_ACTIVE;
-
-    // Defer screensaver init — let the browser repaint the homepage first
-    // before the heavy WebGL shader compilation blocks the main thread
-    if (window.JJ_Portal_Init) {
-      var portalInit = window.JJ_Portal_Init;
-      delete window.JJ_Portal_Init;
-      requestAnimationFrame(function () {
-        setTimeout(portalInit, 0);
-      });
-    }
   }
 
   // ─── Skip splash (accessibility, error, or session) ────────
@@ -376,7 +371,7 @@
     try { sessionStorage.setItem('jj-entered', '1'); } catch (e) {}
     delete window.JJ_SPLASH_ACTIVE;
     var hp = document.getElementById('jj-homepage');
-    if (hp) hp.classList.remove('jj-splash-active');
+    if (hp) hp.style.opacity = '';
     var btn = document.getElementById('jj-splash-enter');
     if (btn) btn.style.display = 'none';
     var sc = document.getElementById('jj-splash');
