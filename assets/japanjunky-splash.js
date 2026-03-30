@@ -233,7 +233,7 @@
     'position:fixed', 'top:0', 'left:0',
     'width:' + canvasW + 'px',
     'height:' + canvasH + 'px',
-    'z-index:10', 'pointer-events:none',
+    'z-index:100000', 'pointer-events:none',
     'image-rendering:pixelated',
     'image-rendering:crisp-edges'
   ].join(';');
@@ -355,15 +355,19 @@
 
     // Remove splash classes and stacking containment
     homepageDiv.classList.remove('jj-splash-active');
-    homepageDiv.style.isolation = '';
+    homepageDiv.style.isolation = 'auto';
 
     // Clear flag
     delete window.JJ_SPLASH_ACTIVE;
 
-    // Initialize screensaver (now safe — our context is gone)
+    // Defer screensaver init — let the browser repaint the homepage first
+    // before the heavy WebGL shader compilation blocks the main thread
     if (window.JJ_Portal_Init) {
-      window.JJ_Portal_Init();
+      var portalInit = window.JJ_Portal_Init;
       delete window.JJ_Portal_Init;
+      requestAnimationFrame(function () {
+        setTimeout(portalInit, 0);
+      });
     }
   }
 
