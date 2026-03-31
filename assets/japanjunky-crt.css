@@ -40,6 +40,14 @@
   border-radius: 0 !important;
 }
 
+/* --- CRT Barrel Distortion (curved tube face) --- */
+/* Real CRTs have a convex glass surface — content bows outward
+   from center and the screen edges curve inward. clip-path
+   bypasses the border-radius:0 rule (different property). */
+html {
+  clip-path: inset(0 round 10px);
+}
+
 /* ===== SONY BVM-D20F1U CRT SIMULATION ===== */
 /*
  * Full-screen CRT filter modeled on a Sony BVM-D20F1U:
@@ -387,5 +395,9 @@
   .jj-crt-frame::after,
   .jj-body::before {
     display: none;
+  }
+
+  html {
+    clip-path: none;
   }
 }
