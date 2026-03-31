@@ -41,11 +41,28 @@
 }
 
 /* --- CRT Barrel Distortion (curved tube face) --- */
-/* Real CRTs have a convex glass surface — content bows outward
-   from center and the screen edges curve inward. clip-path
-   bypasses the border-radius:0 rule (different property). */
-html {
-  clip-path: inset(0 round 10px);
+/* Sony BVM-D20F1U: the Trinitron tube face is slightly convex.
+   A thick off-screen border with inner border-radius fills the
+   viewport corners with black to simulate the curved glass edge.
+   Inset box-shadow darkens the perimeter like real phosphor
+   brightness falloff. Faint diagonal gradient = glass reflection. */
+.jj-body::after {
+  content: '';
+  position: fixed;
+  top: -20px;
+  right: -20px;
+  bottom: -20px;
+  left: -20px;
+  z-index: 10001;
+  pointer-events: none;
+  border-radius: 30px !important;
+  border: 20px solid #000;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(
+    -30deg,
+    rgba(255, 255, 255, 0.015) 0%,
+    transparent 45%
+  );
 }
 
 /* ===== SONY BVM-D20F1U CRT SIMULATION ===== */
@@ -393,11 +410,8 @@ html {
   .jj-crt-overlay::after,
   .jj-crt-frame::before,
   .jj-crt-frame::after,
-  .jj-body::before {
+  .jj-body::before,
+  .jj-body::after {
     display: none;
-  }
-
-  html {
-    clip-path: none;
   }
 }
