@@ -47,34 +47,45 @@
    The glass-to-phosphor gap (~8-12mm) creates visible depth:
    phosphors appear recessed behind the glass surface.
 
-   Three-layer shadow stack simulates this depth:
-     1. Tight edge shadow (2px spread) = glass lip casting onto phosphors
-     2. Medium shadow (40px blur) = penumbra from glass curvature
-     3. Deep ambient shadow (120px blur) = tube depth occlusion
+   Four-layer shadow stack:
+     1. Tube mask edge (0 blur, 3px spread) = thin dark frame where
+        phosphor area ends, visible along all edges
+     2. Glass lip shadow (12px blur, 3px spread) = hard shadow cast
+        by glass surface onto recessed phosphors
+     3. Penumbra (50px blur) = mid-range depth shadow
+     4. Tube ambient occlusion (140px blur) = deep soft glow
 
-   Inner border-radius 18px = more pronounced 14" tube curvature.
+   Edge gradients on all 4 sides simulate the glass curving away
+   from the viewer — edges are darker because the tube face is
+   thicker there and the beam hits at steeper angles.
+
+   Inner border-radius 22px = pronounced 14" tube curvature.
    Diagonal gradient = specular highlight on convex glass surface. */
 .jj-body::after {
   content: '';
   position: fixed;
-  top: -24px;
-  right: -24px;
-  bottom: -24px;
-  left: -24px;
+  top: -28px;
+  right: -28px;
+  bottom: -28px;
+  left: -28px;
   z-index: 10001;
   pointer-events: none;
-  border-radius: 42px !important;
-  border: 24px solid #000;
+  border-radius: 50px !important;
+  border: 28px solid #000;
   box-shadow:
-    inset 0 0 120px rgba(0, 0, 0, 0.4),
-    inset 0 0 40px rgba(0, 0, 0, 0.3),
-    inset 0 0 10px 2px rgba(0, 0, 0, 0.5);
-  background: linear-gradient(
-    -30deg,
-    rgba(255, 255, 255, 0.04) 0%,
-    rgba(255, 255, 255, 0.01) 30%,
-    transparent 50%
-  );
+    inset 0 0 0 3px rgba(0, 0, 0, 0.85),
+    inset 0 0 12px 3px rgba(0, 0, 0, 0.55),
+    inset 0 0 50px rgba(0, 0, 0, 0.35),
+    inset 0 0 140px rgba(0, 0, 0, 0.45);
+  background:
+    linear-gradient(to right,  rgba(0,0,0,0.12), transparent 7%, transparent 93%, rgba(0,0,0,0.12)),
+    linear-gradient(to bottom, rgba(0,0,0,0.12), transparent 7%, transparent 93%, rgba(0,0,0,0.12)),
+    linear-gradient(
+      -30deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.01) 30%,
+      transparent 50%
+    );
 }
 
 /* ===== SONY BVM-D14H5U CRT SIMULATION ===== */
