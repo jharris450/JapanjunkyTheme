@@ -40,45 +40,59 @@
   border-radius: 0 !important;
 }
 
-/* --- CRT Barrel Distortion (curved tube face) --- */
-/* Sony BVM-D20F1U: the Trinitron tube face is slightly convex.
-   A thick off-screen border with inner border-radius fills the
-   viewport corners with black to simulate the curved glass edge.
-   Inset box-shadow darkens the perimeter like real phosphor
-   brightness falloff. Faint diagonal gradient = glass reflection. */
+/* --- CRT Barrel Distortion + Glass Depth (curved tube face) --- */
+/* Sony BVM-D14H5U: 14" HR Trinitron, 600 TVL, 0.25mm AG pitch.
+   14" tubes have noticeably more barrel curvature than 20" models —
+   flatter in the center, curvature ramps up toward edges/corners.
+   The glass-to-phosphor gap (~8-12mm) creates visible depth:
+   phosphors appear recessed behind the glass surface.
+
+   Three-layer shadow stack simulates this depth:
+     1. Tight edge shadow (2px spread) = glass lip casting onto phosphors
+     2. Medium shadow (40px blur) = penumbra from glass curvature
+     3. Deep ambient shadow (120px blur) = tube depth occlusion
+
+   Inner border-radius 18px = more pronounced 14" tube curvature.
+   Diagonal gradient = specular highlight on convex glass surface. */
 .jj-body::after {
   content: '';
   position: fixed;
-  top: -20px;
-  right: -20px;
-  bottom: -20px;
-  left: -20px;
+  top: -24px;
+  right: -24px;
+  bottom: -24px;
+  left: -24px;
   z-index: 10001;
   pointer-events: none;
-  border-radius: 30px !important;
-  border: 20px solid #000;
-  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.35);
+  border-radius: 42px !important;
+  border: 24px solid #000;
+  box-shadow:
+    inset 0 0 120px rgba(0, 0, 0, 0.4),
+    inset 0 0 40px rgba(0, 0, 0, 0.3),
+    inset 0 0 10px 2px rgba(0, 0, 0, 0.5);
   background: linear-gradient(
     -30deg,
-    rgba(255, 255, 255, 0.015) 0%,
-    transparent 45%
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 30%,
+    transparent 50%
   );
 }
 
-/* ===== SONY BVM-D20F1U CRT SIMULATION ===== */
+/* ===== SONY BVM-D14H5U CRT SIMULATION ===== */
 /*
- * Full-screen CRT filter modeled on a Sony BVM-D20F1U:
- * 20" Super HR Trinitron, 900 TVL, 0.30mm aperture grille.
+ * Full-screen CRT filter modeled on a Sony BVM-D14H5U:
+ * 14" HR Trinitron, 600 TVL, 0.25mm aperture grille.
  *
  * Layer stack (back → front):
- *   ::before  — Trinitron aperture grille (vertical R|G|B phosphor stripes)
- *   ::after   — Gaussian scanlines + vignette + D65 warm tint
+ *   ::before     — Trinitron aperture grille (vertical R|G|B phosphor stripes)
+ *   ::after      — Gaussian scanlines + vignette + D65 warm tint
  *   body::before — Damper wire shadows (2 wires at 1/3 and 2/3 height)
+ *   body::after  — Barrel distortion + glass depth + specular highlight
  */
 
 /* --- Layer 1: Trinitron Aperture Grille (vertical phosphor stripes) --- */
 /* Real Trinitron uses continuous vertical phosphor stripes, not dots.
-   Pattern: Red | Green | Blue | black gap — repeating 4px period.
+   D14H5U: 0.25mm pitch — tighter than the 20" D20F1U (0.31mm).
+   Pattern: Red | Green | Blue | black gap — repeating ~3.2px period.
    mix-blend-mode: screen makes RGB stripes brighten content slightly,
    while the black gap darkens between triplets. */
 /* --- CRT Overlay (top-level, above all UI) --- */
@@ -98,13 +112,13 @@
     repeating-linear-gradient(
       to right,
       rgba(255, 40, 40, 0.06) 0px,
-      rgba(255, 40, 40, 0.06) calc(1px / var(--jj-zoom)),
-      rgba(40, 255, 40, 0.06) calc(1px / var(--jj-zoom)),
-      rgba(40, 255, 40, 0.06) calc(2px / var(--jj-zoom)),
-      rgba(60, 60, 255, 0.06) calc(2px / var(--jj-zoom)),
-      rgba(60, 60, 255, 0.06) calc(3px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.06) calc(3px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.06) calc(4px / var(--jj-zoom))
+      rgba(255, 40, 40, 0.06) calc(0.8px / var(--jj-zoom)),
+      rgba(40, 255, 40, 0.06) calc(0.8px / var(--jj-zoom)),
+      rgba(40, 255, 40, 0.06) calc(1.6px / var(--jj-zoom)),
+      rgba(60, 60, 255, 0.06) calc(1.6px / var(--jj-zoom)),
+      rgba(60, 60, 255, 0.06) calc(2.4px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.06) calc(2.4px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.06) calc(3.2px / var(--jj-zoom))
     );
   pointer-events: none;
   z-index: 9998;
@@ -112,9 +126,10 @@
 }
 
 /* --- Layer 2: Gaussian Scanlines + Vignette + D65 Warm Tint --- */
-/* BVM scanlines at 240p on 1080p ≈ 4px per scanline cell.
-   Gaussian profile: bright center → dark gap (gap wider than lit line).
-   Vignette tightened to 45%→0.5 for BVM edge darkening.
+/* D14H5U scanlines at 240p — more visible on 14" since each line
+   covers a larger fraction of the screen. Gaussian profile.
+   Vignette: tighter than 20" — 14" tubes have steeper beam angles
+   at edges, causing more pronounced brightness falloff (40%→0.45).
    D65 warm tint: barely perceptible warmth across the whole screen. */
 .jj-crt-overlay::after,
 .jj-crt-frame::after {
@@ -136,8 +151,8 @@
     ),
     radial-gradient(
       ellipse at center,
-      transparent 50%,
-      rgba(0, 0, 0, 0.30) 100%
+      transparent 40%,
+      rgba(0, 0, 0, 0.45) 100%
     ),
     linear-gradient(
       to bottom,
@@ -150,8 +165,9 @@
 }
 
 /* --- Layer 3: Trinitron Damper Wire Shadows --- */
-/* BVM 20" has 2 damper wires at 1/3 and 2/3 screen height.
-   Thin tungsten wires that hold the aperture grille taut.
+/* D14H5U has 2 damper wires at 1/3 and 2/3 screen height.
+   More visible on a 14" tube than on larger monitors.
+   Thin tungsten wires hold the aperture grille taut.
    Cast faint horizontal shadows — the Trinitron "fingerprint".
    mix-blend-mode: multiply makes them visible on bright content,
    invisible on dark areas (just like the real thing). */
