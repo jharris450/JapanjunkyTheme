@@ -199,7 +199,6 @@
 
   if (!isMobile) {
     enterBtn.addEventListener('mouseenter', onMouseRipple);
-    enterBtn.addEventListener('mousemove', onMouseRipple);
   }
   enterBtn.addEventListener('touchstart', onTouchRipple, { passive: true });
   enterBtn.addEventListener('touchmove', onTouchRipple, { passive: true });

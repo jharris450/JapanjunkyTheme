@@ -41,14 +41,14 @@
 }
 
 .jj-splash-enter:hover {
-  border-color: var(--jj-accent, #00d4ff);
-  color: var(--jj-accent, #00d4ff);
-  text-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 16px rgba(0, 212, 255, 0.2);
+  border-color: var(--jj-primary, #e8313a);
+  color: var(--jj-primary, #e8313a);
+  text-shadow: 0 0 8px rgba(232, 49, 58, 0.5);
+  box-shadow: 0 0 16px rgba(232, 49, 58, 0.2);
 }
 
 .jj-splash-enter:focus-visible {
-  outline: 1px solid var(--jj-accent, #00d4ff);
+  outline: 1px solid var(--jj-primary, #e8313a);
   outline-offset: 2px;
 }
 
