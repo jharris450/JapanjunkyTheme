@@ -29,7 +29,7 @@
     vignetteStart: 0.35,
     vignetteEnd: 1.0,
     vignetteIntensity: 0.40,
-    overlayBarrel: 0.025,
+    overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
     beamWidth: 6.0,
     flickerIntensity: 0.015,
@@ -415,7 +415,10 @@
 
     initBarrelDistortion(cfg);
 
-    document.body.classList.add('jj-crt-shader-active');
+    // Add class to <html> (not body) so the SVG filter on the root element
+    // doesn't break position:fixed descendants (root element is exempt from
+    // creating a new containing block per CSS Filter Effects spec).
+    document.documentElement.classList.add('jj-crt-shader-active');
 
     initShaderOverlay(cfg);
   }

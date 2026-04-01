@@ -436,14 +436,16 @@
   display: none !important;
 }
 
-/* SVG barrel distortion on content wrapper */
-#jj-crt-content {
+/* SVG barrel distortion applied to root element.
+   Root element is exempt from creating a new containing block for
+   fixed-positioned descendants (CSS Filter Effects spec), so
+   position:fixed elements (taskbar, ring, screensaver) still work. */
+html.jj-crt-shader-active {
   filter: url(#jj-crt-barrel);
 }
 
-/* Disable barrel distortion in high contrast or when shader is not active */
 @media (prefers-contrast: more) {
-  #jj-crt-content {
+  html.jj-crt-shader-active {
     filter: none;
   }
 }
