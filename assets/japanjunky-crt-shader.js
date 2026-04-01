@@ -142,7 +142,7 @@
     // feImage: load the displacement map
     var feImage = document.createElementNS(svgNS, 'feImage');
     feImage.setAttribute('result', 'displacementMap');
-    feImage.setAttribute('href', mapUrl);
+    feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', mapUrl);
     feImage.setAttribute('preserveAspectRatio', 'none');
 
     // feDisplacementMap: apply barrel distortion
