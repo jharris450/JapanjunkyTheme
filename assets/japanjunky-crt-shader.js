@@ -16,25 +16,25 @@
 
   // ─── Default Configuration ───────────────────────────────────
   var defaults = {
-    barrelStrength: 0.12,
-    barrelScale: 28,
+    barrelStrength: 0.10,
+    barrelScale: 24,
     displacementSize: 256,
-    scanlineIntensity: 0.15,
+    scanlineIntensity: 0.12,
     scanlinePeriod: 3.0,
-    grilleIntensity: 0.12,
+    grilleIntensity: 0.10,
     grillePitch: 3.2,
-    chromaticAberration: 1.5,
-    bloomIntensity: 0.08,
-    bloomRadius: 4.0,
-    vignetteStart: 0.4,
+    chromaticAberration: 1.2,
+    bloomIntensity: 0.06,
+    bloomRadius: 3.0,
+    vignetteStart: 0.35,
     vignetteEnd: 1.0,
-    vignetteIntensity: 0.45,
-    overlayBarrel: 0.03,
+    vignetteIntensity: 0.40,
+    overlayBarrel: 0.025,
     beamScan: false,
-    beamWidth: 8.0,
-    flickerIntensity: 0.02,
-    warmth: 0.02,
-    damperWireOpacity: 0.14
+    beamWidth: 6.0,
+    flickerIntensity: 0.015,
+    warmth: 0.015,
+    damperWireOpacity: 0.12
   };
 
   // ─── Config Merge ────────────────────────────────────────────
@@ -262,6 +262,13 @@
     '  /* ── D65 Warm Tint ────────────────────────────────────── */',
     '  vec3 warmTint = vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.6, 1.0 - uWarmth * 0.4);',
     '',
+    '',
+    '  /* ── Power State ──────────────────────────────────────── */',
+    '  float powerFade = 1.0;',
+    '  if (uTime < 0.4) {',
+    '    powerFade = smoothstep(0.0, 1.0, uTime / 0.4);',
+    '  }',
+    '',
     '  /* ── Composite ────────────────────────────────────────── */',
     '  float alpha = 0.0;',
     '  vec3 color = vec3(0.0);',
@@ -289,7 +296,7 @@
     '  color = phosphorTint + caColor + vec3(bloom) * warmTint;',
     '  alpha = max(totalDarken, caAlpha);',
     '',
-    '  gl_FragColor = vec4(color, clamp(alpha, 0.0, 1.0));',
+    '  gl_FragColor = vec4(color, clamp(alpha * powerFade, 0.0, 1.0));',
     '}'
   ].join('\n');
 
@@ -315,6 +322,8 @@
       return;
     }
 
+    var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x
+    renderer.setPixelRatio(dpr);
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.setClearColor(0x000000, 0);
 
@@ -323,7 +332,7 @@
 
     var uniforms = {
       uTime:                { value: 0.0 },
-      uResolution:          { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      uResolution:          { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) },
       uScanlineIntensity:   { value: cfg.scanlineIntensity },
       uScanlinePeriod:      { value: cfg.scanlinePeriod },
       uGrilleIntensity:     { value: cfg.grilleIntensity },
@@ -368,8 +377,10 @@
     function onResize() {
       var w = window.innerWidth;
       var h = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
-      uniforms.uResolution.value.set(w, h);
+      uniforms.uResolution.value.set(w * dpr, h * dpr);
     }
     window.addEventListener('resize', onResize);
 
