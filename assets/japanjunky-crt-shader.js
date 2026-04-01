@@ -17,25 +17,25 @@
 
   // ─── Default Configuration ───────────────────────────────────
   var defaults = {
-    barrelStrength: 0.10,
-    barrelScale: 24,
+    barrelStrength: 0.08,
+    barrelScale: 18,
     displacementSize: 256,
-    scanlineIntensity: 0.12,
-    scanlinePeriod: 3.0,
-    grilleIntensity: 0.10,
-    grillePitch: 3.2,
-    chromaticAberration: 1.2,
-    bloomIntensity: 0.06,
-    bloomRadius: 3.0,
-    vignetteStart: 0.35,
-    vignetteEnd: 1.0,
-    vignetteIntensity: 0.40,
+    scanlineIntensity: 0.35,
+    scanlinePeriod: 4.0,
+    grilleIntensity: 0.25,
+    grillePitch: 3.0,
+    chromaticAberration: 2.5,
+    bloomIntensity: 0.12,
+    bloomRadius: 2.0,
+    vignetteStart: 0.3,
+    vignetteEnd: 0.95,
+    vignetteIntensity: 0.55,
     overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
     beamWidth: 6.0,
-    flickerIntensity: 0.015,
-    warmth: 0.015,
-    damperWireOpacity: 0.12
+    flickerIntensity: 0.025,
+    warmth: 0.02,
+    damperWireOpacity: 0.18
   };
 
   // ─── Config Merge ────────────────────────────────────────────
@@ -147,6 +147,13 @@
     feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', mapUrl);
     feImage.setAttribute('preserveAspectRatio', 'none');
 
+    // feFlood: black fill behind displaced content (prevents white edges
+    // where displacement samples outside the source graphic bounds)
+    var feFlood = document.createElementNS(svgNS, 'feFlood');
+    feFlood.setAttribute('flood-color', '#000000');
+    feFlood.setAttribute('flood-opacity', '1');
+    feFlood.setAttribute('result', 'blackFill');
+
     // feDisplacementMap: apply barrel distortion
     var feDisplace = document.createElementNS(svgNS, 'feDisplacementMap');
     feDisplace.setAttribute('in', 'SourceGraphic');
@@ -154,9 +161,18 @@
     feDisplace.setAttribute('scale', String(cfg.barrelScale));
     feDisplace.setAttribute('xChannelSelector', 'R');
     feDisplace.setAttribute('yChannelSelector', 'G');
+    feDisplace.setAttribute('result', 'displaced');
+
+    // feComposite: layer displaced content over black fill
+    var feComposite = document.createElementNS(svgNS, 'feComposite');
+    feComposite.setAttribute('in', 'displaced');
+    feComposite.setAttribute('in2', 'blackFill');
+    feComposite.setAttribute('operator', 'over');
 
     filter.appendChild(feImage);
+    filter.appendChild(feFlood);
     filter.appendChild(feDisplace);
+    filter.appendChild(feComposite);
     defs.appendChild(filter);
     svg.appendChild(defs);
 
