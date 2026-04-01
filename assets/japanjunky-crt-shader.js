@@ -1,8 +1,9 @@
 /**
  * JapanJunky CRT Shader — Barrel Distortion + Overlay
  *
- * Task 1: SVG barrel distortion via displacement map generator + inline filter.
- * Task 2: Three.js shader overlay for scanlines, grille, bloom, vignette (placeholder).
+ * Two-layer CRT simulation inspired by Codetaur's Three.js CRT shader:
+ *   Layer 1: SVG barrel distortion via displacement map + inline feDisplacementMap filter
+ *   Layer 2: Three.js fullscreen quad shader (scanlines, grille, bloom, vignette, CA, beam scan)
  *
  * Generates a 256x256 displacement map on a canvas, encodes it as a data URL,
  * and injects an inline SVG filter (#jj-crt-barrel) that applies barrel distortion
@@ -124,6 +125,7 @@
     svg.setAttribute('xmlns', svgNS);
     svg.setAttribute('width', '0');
     svg.setAttribute('height', '0');
+    svg.setAttribute('aria-hidden', 'true');
     svg.style.position = 'absolute';
     svg.style.width = '0';
     svg.style.height = '0';
