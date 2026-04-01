@@ -161,14 +161,236 @@
     document.body.appendChild(svg);
   }
 
-  // ─── Three.js Shader Overlay (placeholder) ───────────────────
-  /**
-   * Placeholder for Task 2: Three.js fullscreen overlay with
-   * scanlines, phosphor grille, bloom, vignette, chromatic aberration.
-   */
+  // ─── GLSL Shaders ────────────────────────────────────────────
+  var CRT_VERT = [
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = uv;',
+    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+    '}'
+  ].join('\n');
+
+  var CRT_FRAG = [
+    'precision highp float;',
+    '',
+    'varying vec2 vUv;',
+    '',
+    'uniform float uTime;',
+    'uniform vec2  uResolution;',
+    'uniform float uScanlineIntensity;',
+    'uniform float uScanlinePeriod;',
+    'uniform float uGrilleIntensity;',
+    'uniform float uGrillePitch;',
+    'uniform float uChromaticAberration;',
+    'uniform float uBloomIntensity;',
+    'uniform float uBloomRadius;',
+    'uniform float uVignetteStart;',
+    'uniform float uVignetteEnd;',
+    'uniform float uVignetteIntensity;',
+    'uniform float uBarrelDistortion;',
+    'uniform bool  uBeamScan;',
+    'uniform float uBeamWidth;',
+    'uniform float uFlickerIntensity;',
+    'uniform float uWarmth;',
+    'uniform float uDamperWireOpacity;',
+    '',
+    '/* Barrel distortion for overlay UVs */',
+    'vec2 barrelUV(vec2 uv, float k) {',
+    '  vec2 c = uv - 0.5;',
+    '  float r2 = dot(c, c);',
+    '  vec2 warped = c * (1.0 + k * r2);',
+    '  return warped + 0.5;',
+    '}',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv;',
+    '  vec2 px = uv * uResolution;',
+    '',
+    '  /* Apply barrel distortion to overlay coordinates */',
+    '  vec2 bUv = barrelUV(uv, uBarrelDistortion);',
+    '  vec2 bPx = bUv * uResolution;',
+    '',
+    '  /* ── Scanlines (Gaussian profile) ─────────────────────── */',
+    '  float scanY = mod(bPx.y, uScanlinePeriod);',
+    '  float scanCenter = uScanlinePeriod * 0.5;',
+    '  float scanDist = abs(scanY - scanCenter) / scanCenter;',
+    '  float scanline = 1.0 - uScanlineIntensity * exp(-scanDist * scanDist * 4.0);',
+    '',
+    '  /* ── Trinitron Aperture Grille (vertical RGB stripes) ── */',
+    '  float grilleX = mod(bPx.x, uGrillePitch);',
+    '  float grillePhase = grilleX / uGrillePitch;',
+    '  vec3 grille = vec3(1.0);',
+    '  float grilleR = smoothstep(0.0, 0.05, grillePhase) * (1.0 - smoothstep(0.20, 0.25, grillePhase));',
+    '  float grilleG = smoothstep(0.25, 0.30, grillePhase) * (1.0 - smoothstep(0.45, 0.50, grillePhase));',
+    '  float grilleB = smoothstep(0.50, 0.55, grillePhase) * (1.0 - smoothstep(0.70, 0.75, grillePhase));',
+    '  float grilleGap = smoothstep(0.73, 0.75, grillePhase);',
+    '  grille.r = mix(1.0, 1.0 + uGrilleIntensity, grilleR);',
+    '  grille.g = mix(1.0, 1.0 + uGrilleIntensity, grilleG);',
+    '  grille.b = mix(1.0, 1.0 + uGrilleIntensity, grilleB);',
+    '  grille *= mix(1.0, 1.0 - uGrilleIntensity * 0.5, grilleGap);',
+    '',
+    '  /* ── Chromatic Aberration (edge-weighted) ──────────────── */',
+    '  vec2 center = bUv - 0.5;',
+    '  float caStrength = dot(center, center) * uChromaticAberration;',
+    '  vec2 caOffset = center * caStrength / uResolution;',
+    '',
+    '  /* ── Bloom (simplified single-pass glow) ──────────────── */',
+    '  float bloomDist = length(center);',
+    '  float bloom = uBloomIntensity * exp(-bloomDist * bloomDist * uBloomRadius * uBloomRadius);',
+    '',
+    '  /* ── Vignette ─────────────────────────────────────────── */',
+    '  float vignetteDist = length(center) * 1.414;',
+    '  float vignette = 1.0 - uVignetteIntensity * smoothstep(uVignetteStart, uVignetteEnd, vignetteDist);',
+    '',
+    '  /* ── Damper Wires (2 horizontal shadows at 1/3 and 2/3) ─ */',
+    '  float wire1 = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(0.0, 1.5 / uResolution.y, abs(bUv.y - 0.3333)));',
+    '  float wire2 = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(0.0, 1.5 / uResolution.y, abs(bUv.y - 0.6667)));',
+    '  float damperWires = wire1 * wire2;',
+    '',
+    '  /* ── Beam Scanning ────────────────────────────────────── */',
+    '  float beamBrightness = 1.0;',
+    '  if (uBeamScan) {',
+    '    float beamPos = mod(uTime * 60.0, uResolution.y);',
+    '    float beamDist = abs(bPx.y - beamPos);',
+    '    float beamFalloff = uBeamWidth * uScanlinePeriod;',
+    '    beamBrightness = 0.85 + 0.15 * exp(-beamDist * beamDist / (beamFalloff * beamFalloff));',
+    '  }',
+    '',
+    '  /* ── Screen Flicker ───────────────────────────────────── */',
+    '  float flicker = 1.0 - uFlickerIntensity * sin(uTime * 188.5);',
+    '',
+    '  /* ── D65 Warm Tint ────────────────────────────────────── */',
+    '  vec3 warmTint = vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.6, 1.0 - uWarmth * 0.4);',
+    '',
+    '  /* ── Composite ────────────────────────────────────────── */',
+    '  float alpha = 0.0;',
+    '  vec3 color = vec3(0.0);',
+    '',
+    '  float scanAlpha = (1.0 - scanline);',
+    '',
+    '  float grilleAlpha = (1.0 - min(grille.r, min(grille.g, grille.b)));',
+    '  vec3 phosphorTint = vec3(',
+    '    grilleR * 0.4,',
+    '    grilleG * 0.4,',
+    '    grilleB * 0.4',
+    '  ) * uGrilleIntensity;',
+    '',
+    '  float caR = smoothstep(0.0, 0.003, length(caOffset)) * caStrength * 40.0;',
+    '  vec3 caColor = vec3(caR * 0.3, 0.0, caR * 0.3);',
+    '  float caAlpha = min(caR * 0.15, 0.08);',
+    '',
+    '  float vignetteAlpha = (1.0 - vignette);',
+    '',
+    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha);',
+    '  totalDarken *= damperWires;',
+    '  totalDarken *= beamBrightness;',
+    '  totalDarken *= flicker;',
+    '',
+    '  color = phosphorTint + caColor + vec3(bloom) * warmTint;',
+    '  alpha = max(totalDarken, caAlpha);',
+    '',
+    '  gl_FragColor = vec4(color, clamp(alpha, 0.0, 1.0));',
+    '}'
+  ].join('\n');
+
+  // ─── Three.js CRT Overlay ──────────────────────────────────────
   function initShaderOverlay(cfg) {
-    // Task 2 implementation goes here
-    void cfg;
+    if (typeof THREE === 'undefined') return;
+
+    var canvas = document.getElementById('jj-crt-shader-canvas');
+    if (!canvas) return;
+
+    var reducedMotion = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,
+        antialias: false,
+        premultipliedAlpha: false
+      });
+    } catch (e) {
+      return;
+    }
+
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.setClearColor(0x000000, 0);
+
+    var camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    var scene = new THREE.Scene();
+
+    var uniforms = {
+      uTime:                { value: 0.0 },
+      uResolution:          { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      uScanlineIntensity:   { value: cfg.scanlineIntensity },
+      uScanlinePeriod:      { value: cfg.scanlinePeriod },
+      uGrilleIntensity:     { value: cfg.grilleIntensity },
+      uGrillePitch:         { value: cfg.grillePitch },
+      uChromaticAberration: { value: cfg.chromaticAberration },
+      uBloomIntensity:      { value: cfg.bloomIntensity },
+      uBloomRadius:         { value: cfg.bloomRadius },
+      uVignetteStart:       { value: cfg.vignetteStart },
+      uVignetteEnd:         { value: cfg.vignetteEnd },
+      uVignetteIntensity:   { value: cfg.vignetteIntensity },
+      uBarrelDistortion:    { value: cfg.overlayBarrel },
+      uBeamScan:            { value: reducedMotion ? false : cfg.beamScan },
+      uBeamWidth:           { value: cfg.beamWidth },
+      uFlickerIntensity:    { value: reducedMotion ? 0.0 : cfg.flickerIntensity },
+      uWarmth:              { value: cfg.warmth },
+      uDamperWireOpacity:   { value: cfg.damperWireOpacity }
+    };
+
+    var material = new THREE.ShaderMaterial({
+      vertexShader: CRT_VERT,
+      fragmentShader: CRT_FRAG,
+      uniforms: uniforms,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
+
+    var geometry = new THREE.PlaneGeometry(2, 2);
+    var mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    var startTime = performance.now();
+    var running = true;
+
+    function animate() {
+      if (!running) return;
+      requestAnimationFrame(animate);
+      uniforms.uTime.value = (performance.now() - startTime) / 1000.0;
+      renderer.render(scene, camera);
+    }
+
+    function onResize() {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+      renderer.setSize(w, h, false);
+      uniforms.uResolution.value.set(w, h);
+    }
+    window.addEventListener('resize', onResize);
+
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        running = false;
+      } else {
+        running = true;
+        startTime = performance.now() - uniforms.uTime.value * 1000.0;
+        animate();
+      }
+    });
+
+    animate();
+
+    window.JJ_CRT_SHADER = {
+      uniforms: uniforms,
+      renderer: renderer,
+      pause: function () { running = false; },
+      resume: function () { running = true; animate(); }
+    };
   }
 
   // ─── Init ────────────────────────────────────────────────────
