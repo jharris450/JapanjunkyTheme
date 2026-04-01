@@ -423,6 +423,31 @@
   /* CSS cursor PNGs are inherently reduced-motion safe */
 }
 
+/* ===== THREE.JS CRT SHADER ACTIVE ===== */
+/* When the WebGL shader overlay is running, disable CSS CRT layers
+   (they're replaced by the shader). Glow utilities and animations
+   remain active — they're element-level, not full-screen overlays. */
+.jj-crt-shader-active .jj-crt-overlay::before,
+.jj-crt-shader-active .jj-crt-overlay::after,
+.jj-crt-shader-active .jj-crt-frame::before,
+.jj-crt-shader-active .jj-crt-frame::after,
+.jj-crt-shader-active .jj-body::before,
+.jj-crt-shader-active .jj-body::after {
+  display: none !important;
+}
+
+/* SVG barrel distortion on content wrapper */
+#jj-crt-content {
+  filter: url(#jj-crt-barrel);
+}
+
+/* Disable barrel distortion in high contrast or when shader is not active */
+@media (prefers-contrast: more) {
+  #jj-crt-content {
+    filter: none;
+  }
+}
+
 /* ===== HIGH CONTRAST MODE ===== */
 @media (prefers-contrast: more) {
   :root {
