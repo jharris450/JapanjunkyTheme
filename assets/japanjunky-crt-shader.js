@@ -20,22 +20,22 @@
     barrelStrength: 0.08,
     barrelScale: 18,
     displacementSize: 256,
-    scanlineIntensity: 0.35,
+    scanlineIntensity: 0.22,
     scanlinePeriod: 4.0,
-    grilleIntensity: 0.25,
+    grilleIntensity: 0.18,
     grillePitch: 3.0,
     chromaticAberration: 2.5,
-    bloomIntensity: 0.12,
-    bloomRadius: 2.0,
-    vignetteStart: 0.3,
+    bloomIntensity: 0.22,
+    bloomRadius: 1.6,
+    vignetteStart: 0.45,
     vignetteEnd: 0.95,
-    vignetteIntensity: 0.55,
+    vignetteIntensity: 0.35,
     overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
     beamWidth: 6.0,
     flickerIntensity: 0.025,
     warmth: 0.02,
-    damperWireOpacity: 0.18
+    damperWireOpacity: 0.14
   };
 
   // ─── Config Merge ────────────────────────────────────────────
