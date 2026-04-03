@@ -25,9 +25,6 @@
   camera.position.set(0, 0, 5);
 
   var shaderRes = 240;
-  if (window.JJ_SCREENSAVER_CONFIG && window.JJ_SCREENSAVER_CONFIG.resolution) {
-    shaderRes = parseInt(window.JJ_SCREENSAVER_CONFIG.resolution, 10) || 240;
-  }
 
   // ─── PS1 Shaders ──────────────────────────────────────────────
   var PS1_VERT = [

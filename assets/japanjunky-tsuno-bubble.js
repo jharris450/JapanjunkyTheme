@@ -9,10 +9,9 @@
 (function () {
   'use strict';
 
-  // ─── Guard: need screensaver canvas in DOM ──────────────────
-  var ssCanvas = document.getElementById('jj-screensaver') ||
-                 document.getElementById('jj-screensaver-display');
-  if (!ssCanvas) return;
+  // ─── Guard: need biolum canvas in DOM ──────────────────────
+  var bgCanvas = document.getElementById('jj-biolum');
+  if (!bgCanvas) return;
 
   // ─── Config ─────────────────────────────────────────────────
   var JP_TEXT = 'いらっしゃいませ';

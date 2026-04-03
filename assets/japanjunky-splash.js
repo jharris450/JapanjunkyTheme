@@ -5,7 +5,7 @@
  * before the homepage. Uses its own WebGL renderer + 240p VGA
  * dither pipeline, then hands off to the screensaver on ENTER.
  *
- * Depends on: THREE (global), JJ_ScreensaverPost (global),
+ * Depends on: THREE (global),
  *             JJ_SPLASH_CONFIG (global, set by theme.liquid)
  */
 (function () {
@@ -259,8 +259,8 @@
       }
     }
 
-    if (window.JJ_ScreensaverPost) {
-      JJ_ScreensaverPost.dither(displayImageData);
+    if (false) {
+      // Screensaver post-processor removed — splash dithering disabled
     }
 
     displayCtx.putImageData(displayImageData, 0, 0);
@@ -302,11 +302,10 @@
     transitioning = true;
     transitionStart = performance.now() * 0.001;
 
-    // Start screensaver now so its background renders behind the fading splash.
-    // By the time the 2s fade reveals the homepage, the vortex is already running.
-    if (window.JJ_Portal_Init) {
-      window.JJ_Portal_Init();
-      delete window.JJ_Portal_Init;
+    // Start bioluminescent background so it renders behind the fading splash.
+    if (window.JJ_Biolum_Init) {
+      window.JJ_Biolum_Init();
+      delete window.JJ_Biolum_Init;
     }
 
     // Ripple burst from center
@@ -375,9 +374,9 @@
     if (btn) btn.style.display = 'none';
     var sc = document.getElementById('jj-splash');
     if (sc) sc.style.display = 'none';
-    if (window.JJ_Portal_Init) {
-      window.JJ_Portal_Init();
-      delete window.JJ_Portal_Init;
+    if (window.JJ_Biolum_Init) {
+      window.JJ_Biolum_Init();
+      delete window.JJ_Biolum_Init;
     }
   }
 
