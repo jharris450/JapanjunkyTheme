@@ -1018,6 +1018,12 @@
       cursorState.prevPos[0] = cursorState.pos[0];
       cursorState.prevPos[1] = cursorState.pos[1];
 
+      // Cursor debug (every 2s)
+      if (frameCount % 120 === 0 && frameCount < 600) {
+        console.log('Biolum: cursor pos=' + cursorState.pos[0].toFixed(3) + ',' + cursorState.pos[1].toFixed(3) +
+          ' vel=' + cursorState.vel[0].toFixed(2) + ',' + cursorState.vel[1].toFixed(2));
+      }
+
       // CPU-side state
       updateBubbles(dt);
       updateBursts(dt);
@@ -1033,6 +1039,19 @@
 
       // Stage 2: Particle render
       renderParticles();
+
+      // ─── Pipeline diagnostics (first 2 frames) ───
+      if (frameCount < 2) {
+        var px = new Float32Array(4);
+        // Check particle positions
+        gl.bindFramebuffer(gl.FRAMEBUFFER, particlePositions.readFBO);
+        gl.readPixels(texSize / 2 | 0, texSize / 2 | 0, 1, 1, gl.RGBA, gl.FLOAT, px);
+        console.log('Biolum [' + frameCount + '] particle pos:', px[0].toFixed(3), px[1].toFixed(3), px[2].toFixed(3), px[3].toFixed(3));
+        // Check scene FBO (particle render output)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO);
+        gl.readPixels(sceneW / 2 | 0, sceneH / 2 | 0, 1, 1, gl.RGBA, gl.FLOAT, px);
+        console.log('Biolum [' + frameCount + '] scene center:', px[0].toFixed(4), px[1].toFixed(4), px[2].toFixed(4), px[3].toFixed(4));
+      }
 
       if (fontAtlasLoaded) {
         // Stage 3: ASCII conversion (to offscreen FBO)
@@ -1053,6 +1072,15 @@
         gl.uniform1i(gl.getUniformLocation(bloomCompositeProg, 'u_bloomTex'), 1);
         gl.uniform1f(gl.getUniformLocation(bloomCompositeProg, 'u_bloomStrength'), 0.0);
         drawQuad(gl, quadVAO);
+      }
+
+      // ─── Screen diagnostic (first 2 frames) ───
+      if (frameCount < 2) {
+        var spx = new Uint8Array(4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.readPixels(canvas.width / 2 | 0, canvas.height / 2 | 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, spx);
+        console.log('Biolum [' + frameCount + '] screen center:', spx[0], spx[1], spx[2], spx[3]);
+        console.log('Biolum [' + frameCount + '] canvas size:', canvas.width + 'x' + canvas.height, 'scene size:', sceneW + 'x' + sceneH);
       }
 
       frameCount++;
