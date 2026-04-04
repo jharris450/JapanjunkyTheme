@@ -26,7 +26,7 @@
   </style>
 
   {{ 'japanjunky-base.css' | asset_url | stylesheet_tag }}
-
+  {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
@@ -132,10 +132,14 @@
 <script>try{if(sessionStorage.getItem('jj-entered')){document.getElementById('jj-homepage').style.opacity='';}}catch(e){}</script>
 {% endif %}
 
-<canvas id="jj-biolum" aria-hidden="true" tabindex="-1" style="
-  position:fixed;inset:0;width:100%;height:100%;
-  z-index:0;pointer-events:none;
+<canvas id="jj-screensaver" aria-hidden="true" tabindex="-1" style="
+  position:fixed;top:0;left:0;width:40vw;height:40vh;
+  z-index:0;image-rendering:pixelated;image-rendering:crisp-edges;
+  pointer-events:none;
 "></canvas>
+
+  {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
+  <div class="jj-crt-overlay" aria-hidden="true"></div>
 
   {%- comment -%} Left zone: product viewer + info {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
@@ -218,9 +222,32 @@
   </script>
   {% endif %}
 
+  <script>
+    window.JJ_SCREENSAVER_CONFIG = {
+      enabled: {{ settings.screensaver_enabled | default: true }},
+      resolution: {{ settings.screensaver_resolution | default: 240 }},
+      fps: {{ settings.screensaver_fps | default: 24 }},
+      orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
+      mouseInteraction: {{ settings.screensaver_mouse | default: true }},
+      swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
+      ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
+      fragmentMasks: {
+        url: {{ 'frag-masks.png' | asset_url | json }},
+        count: 8,
+        columns: 4,
+        rows: 2
+      },
+      fragments: [
+        { url: 'https://cdn.shopify.com/s/files/1/0697/8440/4047/files/miho1.gif?v=1774564937', w: 128, h: 128 },
+        { url: 'https://cdn.shopify.com/s/files/1/0697/8440/4047/files/rebecca1.gif?v=1774564936', w: 128, h: 128 },
+        { url: 'https://cdn.shopify.com/s/files/1/0697/8440/4047/files/rebecca2.gif?v=1774564936', w: 128, h: 128 }
+      ]
+    };
+  </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
   <script src="{{ 'gifuct.min.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-biolum.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
@@ -228,10 +255,15 @@
   <script src="{{ 'japanjunky-tsuno-bubble.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
-
+  <script src="{{ 'japanjunky-crt-shader.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
   {% if settings.splash_enabled %}
   <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
   {% endif %}
+{%- comment -%} CRT Shader: Three.js overlay canvas {%- endcomment -%}
+<canvas id="jj-crt-shader-canvas" aria-hidden="true" role="presentation" style="
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:10002;pointer-events:none;
+"></canvas>
 </body>
 </html>

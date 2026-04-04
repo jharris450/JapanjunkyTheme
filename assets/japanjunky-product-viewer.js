@@ -1,8 +1,9 @@
 /**
  * japanjunky-product-viewer.js
  * Dedicated 3D product viewer with spring physics + idle animation.
- * Renders to its own canvas, independent from background.
+ * Renders to its own canvas, independent from screensaver.
  *
+ * Consumes: window.JJ_SCREENSAVER_CONFIG (for shader resolution)
  * Accesses: window.JJ_Portal (only for Tsuno Daishi + parallax coordination)
  * Listens:  jj:product-selected, jj:product-deselected
  */
@@ -24,6 +25,9 @@
   camera.position.set(0, 0, 5);
 
   var shaderRes = 240;
+  if (window.JJ_SCREENSAVER_CONFIG && window.JJ_SCREENSAVER_CONFIG.resolution) {
+    shaderRes = parseInt(window.JJ_SCREENSAVER_CONFIG.resolution, 10) || 240;
+  }
 
   // ─── PS1 Shaders ──────────────────────────────────────────────
   var PS1_VERT = [
