@@ -491,17 +491,19 @@
 
   function init() {
     if (window.matchMedia && window.matchMedia('(prefers-contrast: more)').matches) {
+      console.warn('Biolum: skipped — prefers-contrast:more');
       return;
     }
 
     var cfg = mergeConfig();
 
     if (!cfg.mobileEnabled && /Mobi|Android/i.test(navigator.userAgent)) {
+      console.warn('Biolum: skipped — mobile device');
       return;
     }
 
     var canvas = document.getElementById('jj-biolum');
-    if (!canvas) return;
+    if (!canvas) { console.warn('Biolum: skipped — #jj-biolum not found'); return; }
 
     var gl = canvas.getContext('webgl2', {
       alpha: false,
@@ -509,10 +511,22 @@
       premultipliedAlpha: false,
       preserveDrawingBuffer: false
     });
-    if (!gl) return;
+    if (!gl) { console.warn('Biolum: skipped — WebGL2 not available'); return; }
 
     var floatExt = gl.getExtension('EXT_color_buffer_float');
-    if (!floatExt) return;
+    if (!floatExt) { console.warn('Biolum: skipped — EXT_color_buffer_float not available'); return; }
+
+    // Context loss detection & recovery
+    canvas.addEventListener('webglcontextlost', function (e) {
+      e.preventDefault();
+      console.warn('Biolum: WebGL context lost');
+    });
+    canvas.addEventListener('webglcontextrestored', function () {
+      console.log('Biolum: WebGL context restored — reinitializing');
+      init();
+    });
+
+    console.log('Biolum: WebGL2 context OK, canvas ' + canvas.width + 'x' + canvas.height);
 
     var reducedMotion = window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -538,6 +552,7 @@
     var particleVelocities = createDoubleFBO(gl, texSize, texSize);
 
     var particleInitProg = createProgram(gl, PASSTHROUGH_VERT, PARTICLE_INIT_FRAG);
+    if (!particleInitProg) console.error('Biolum: particleInitProg FAILED');
 
     // Initialize particle state via MRT
     (function initParticles() {
@@ -557,6 +572,7 @@
     })();
 
     var particleUpdateProg = createProgram(gl, PASSTHROUGH_VERT, PARTICLE_UPDATE_FRAG);
+    if (!particleUpdateProg) console.error('Biolum: particleUpdateProg FAILED');
     var particleUpdateFBO = gl.createFramebuffer();
 
     // ─── Fluid Field ─────────────────────────────────────────────
@@ -572,7 +588,9 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     var fluidInjectProg = createProgram(gl, PASSTHROUGH_VERT, FLUID_INJECT_FRAG);
+    if (!fluidInjectProg) console.error('Biolum: fluidInjectProg FAILED');
     var fluidStepProg = createProgram(gl, PASSTHROUGH_VERT, FLUID_STEP_FRAG);
+    if (!fluidStepProg) console.error('Biolum: fluidStepProg FAILED');
 
     // ─── Particle Render FBO ─────────────────────────────────────
     var sceneW = canvas.width;
@@ -585,6 +603,7 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     var particleRenderProg = createProgram(gl, PARTICLE_RENDER_VERT, PARTICLE_RENDER_FRAG);
+    if (!particleRenderProg) console.error('Biolum: particleRenderProg FAILED');
 
     // Instance ID buffer + VAO for particle rendering
     var instanceIds = new Float32Array(texSize * texSize);
@@ -608,6 +627,7 @@
 
     // ─── ASCII Shader ────────────────────────────────────────────
     var asciiProg = createProgram(gl, PASSTHROUGH_VERT, ASCII_FRAG);
+    if (!asciiProg) console.error('Biolum: asciiProg FAILED');
 
     // ─── Font Atlas ──────────────────────────────────────────────
     var fontAtlasTex = gl.createTexture();
@@ -622,14 +642,17 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       fontAtlasLoaded = true;
+      console.log('Biolum: font atlas loaded (' + fontImg.naturalWidth + 'x' + fontImg.naturalHeight + ')');
     };
     fontImg.onerror = function () {
       console.warn('Biolum: font atlas failed to load — running without ASCII conversion');
     };
     var scriptEl = document.querySelector('script[src*="japanjunky-biolum"]');
-    fontImg.src = scriptEl
+    var atlasSrc = scriptEl
       ? scriptEl.src.replace(/japanjunky-biolum\.js.*/, 'cp437-font-atlas.png')
       : 'cp437-font-atlas.png';
+    console.log('Biolum: loading font atlas from', atlasSrc);
+    fontImg.src = atlasSrc;
 
     // ─── Bloom Resources ─────────────────────────────────────────
     var asciiTex = createFloatTexture(gl, sceneW, sceneH, null);
@@ -652,8 +675,13 @@
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     var bloomThresholdProg = createProgram(gl, PASSTHROUGH_VERT, BLOOM_THRESHOLD_FRAG);
+    if (!bloomThresholdProg) console.error('Biolum: bloomThresholdProg FAILED');
     var blurProg = createProgram(gl, PASSTHROUGH_VERT, BLUR_FRAG);
+    if (!blurProg) console.error('Biolum: blurProg FAILED');
     var bloomCompositeProg = createProgram(gl, PASSTHROUGH_VERT, BLOOM_COMPOSITE_FRAG);
+    if (!bloomCompositeProg) console.error('Biolum: bloomCompositeProg FAILED');
+
+    console.log('Biolum: all shaders compiled, init complete');
 
     // ─── Cursor State ──────────────────────────────────────────
     var cursorState = {
@@ -961,8 +989,11 @@
     var startTime = performance.now();
     var lastTime = startTime;
 
+    var frameCount = 0;
+
     function frame() {
       if (!running) return;
+      if (gl.isContextLost()) { console.warn('Biolum: context lost in frame loop'); return; }
 
       var now = performance.now();
       var dt = Math.min((now - lastTime) / 1000.0, 0.05);
@@ -1015,6 +1046,11 @@
         gl.uniform1i(gl.getUniformLocation(bloomCompositeProg, 'u_bloomTex'), 1);
         gl.uniform1f(gl.getUniformLocation(bloomCompositeProg, 'u_bloomStrength'), 0.0);
         drawQuad(gl, quadVAO);
+      }
+
+      frameCount++;
+      if (frameCount === 1) {
+        console.log('Biolum: first frame rendered, fontAtlasLoaded=' + fontAtlasLoaded);
       }
 
       if (reducedMotion) {
