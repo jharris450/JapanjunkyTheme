@@ -150,7 +150,7 @@
 
   // ─── GLSL Shaders ───────────────────────────────────────────
 
-  var PASSTHROUGH_VERT = '#version 300 es\nin vec2 a_pos;out vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;gl_Position=vec4(a_pos,0,1);}';
+  var PASSTHROUGH_VERT = '#version 300 es\nlayout(location=0) in vec2 a_pos;out vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;gl_Position=vec4(a_pos,0,1);}';
 
   // --- Particle Init ---
   var PARTICLE_INIT_FRAG = [
@@ -316,8 +316,8 @@
   // --- Particle Render (instanced billboards) ---
   var PARTICLE_RENDER_VERT = [
     '#version 300 es',
-    'in vec2 a_quad;',
-    'in float a_instanceId;',
+    'layout(location=0) in vec2 a_quad;',
+    'layout(location=1) in float a_instanceId;',
     'uniform sampler2D u_positionTex;',
     'uniform sampler2D u_velocityTex;',
     'uniform float u_texSize;',
@@ -557,6 +557,7 @@
     })();
 
     var particleUpdateProg = createProgram(gl, PASSTHROUGH_VERT, PARTICLE_UPDATE_FRAG);
+    var particleUpdateFBO = gl.createFramebuffer();
 
     // ─── Fluid Field ─────────────────────────────────────────────
     var fluidField = createDoubleFBO(gl, cfg.fluidResX, cfg.fluidResY);
@@ -612,6 +613,7 @@
     var fontAtlasTex = gl.createTexture();
     var fontAtlasLoaded = false;
     var fontImg = new Image();
+    fontImg.crossOrigin = 'anonymous';
     fontImg.onload = function () {
       gl.bindTexture(gl.TEXTURE_2D, fontAtlasTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fontImg);
@@ -620,6 +622,9 @@
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       fontAtlasLoaded = true;
+    };
+    fontImg.onerror = function () {
+      console.warn('Biolum: font atlas failed to load — running without ASCII conversion');
     };
     var scriptEl = document.querySelector('script[src*="japanjunky-biolum"]');
     fontImg.src = scriptEl
@@ -747,8 +752,7 @@
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_cursorStrength'), cfg.cursorStrength);
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_cursorRadius'), cfg.cursorRadius);
 
-      var updateFBO = gl.createFramebuffer();
-      gl.bindFramebuffer(gl.FRAMEBUFFER, updateFBO);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, particleUpdateFBO);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
                               gl.TEXTURE_2D, particlePositions.write, 0);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1,
@@ -756,7 +760,6 @@
       gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
       gl.viewport(0, 0, texSize, texSize);
       drawQuad(gl, quadVAO);
-      gl.deleteFramebuffer(updateFBO);
 
       particlePositions.swap();
       particleVelocities.swap();
@@ -860,8 +863,6 @@
     }
 
     function renderASCII() {
-      if (!fontAtlasLoaded) return;
-
       if (canvas.width !== sceneW || canvas.height !== sceneH) {
         gl.deleteTexture(asciiTex);
         gl.deleteFramebuffer(asciiFBO);
@@ -887,7 +888,7 @@
       gl.uniform2f(gl.getUniformLocation(asciiProg, 'u_resolution'), canvas.width, canvas.height);
       gl.uniform1f(gl.getUniformLocation(asciiProg, 'u_displayScale'), cfg.displayScale);
       gl.uniform1f(gl.getUniformLocation(asciiProg, 'u_ditherStrength'), cfg.ditherStrength);
-      gl.uniform1iv(gl.getUniformLocation(asciiProg, 'u_glyphRamp'), cfg.glyphRamp);
+      gl.uniform1iv(gl.getUniformLocation(asciiProg, 'u_glyphRamp'), new Int32Array(cfg.glyphRamp));
       gl.uniform1i(gl.getUniformLocation(asciiProg, 'u_rampLength'), cfg.glyphRamp.length);
 
       drawQuad(gl, quadVAO);
@@ -995,11 +996,26 @@
       // Stage 2: Particle render
       renderParticles();
 
-      // Stage 3: ASCII conversion
-      renderASCII();
+      if (fontAtlasLoaded) {
+        // Stage 3: ASCII conversion (to offscreen FBO)
+        renderASCII();
 
-      // Stage 4: Bloom → screen
-      renderBloom();
+        // Stage 4: Bloom → screen
+        renderBloom();
+      } else {
+        // Fallback: blit particle scene directly to screen while atlas loads
+        gl.useProgram(bloomCompositeProg);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+        gl.uniform1i(gl.getUniformLocation(bloomCompositeProg, 'u_sceneTex'), 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, sceneTex);
+        gl.uniform1i(gl.getUniformLocation(bloomCompositeProg, 'u_bloomTex'), 1);
+        gl.uniform1f(gl.getUniformLocation(bloomCompositeProg, 'u_bloomStrength'), 0.0);
+        drawQuad(gl, quadVAO);
+      }
 
       if (reducedMotion) {
         running = false;
