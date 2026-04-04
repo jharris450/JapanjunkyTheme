@@ -39,7 +39,7 @@
     lavaStrength: 0.8,
     noiseStrength: 0.4,
     displayScale: 2,
-    glyphRamp: [32, 250, 248, 45, 111, 48],
+    glyphRamp: [32, 250, 248, 111, 153, 79, 48],
     ditherStrength: 0.6,
     bloomStrength: 1.4,
     bloomRadius: 0.5,
