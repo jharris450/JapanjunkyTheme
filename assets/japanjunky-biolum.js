@@ -516,6 +516,9 @@
     var floatExt = gl.getExtension('EXT_color_buffer_float');
     if (!floatExt) { console.warn('Biolum: skipped — EXT_color_buffer_float not available'); return; }
 
+    var linearFloatExt = gl.getExtension('OES_texture_float_linear');
+    if (!linearFloatExt) console.warn('Biolum: OES_texture_float_linear not available — using NEAREST');
+
     // Context loss detection & recovery
     canvas.addEventListener('webglcontextlost', function (e) {
       e.preventDefault();
@@ -526,7 +529,11 @@
       init();
     });
 
-    console.log('Biolum: WebGL2 context OK, canvas ' + canvas.width + 'x' + canvas.height);
+    // Use NEAREST for float textures if LINEAR filtering isn't supported
+    var FLOAT_FILTER = linearFloatExt ? gl.LINEAR : gl.NEAREST;
+
+    console.log('Biolum: WebGL2 context OK, float filter=' +
+      (linearFloatExt ? 'LINEAR' : 'NEAREST'));
 
     var reducedMotion = window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -579,8 +586,8 @@
     var fluidField = createDoubleFBO(gl, cfg.fluidResX, cfg.fluidResY);
     [fluidField.texA, fluidField.texB].forEach(function (tex) {
       gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
     });
 
     var injectionTex = createFloatTexture(gl, cfg.fluidResX, cfg.fluidResY, null);
@@ -597,8 +604,8 @@
     var sceneH = canvas.height;
     var sceneTex = createFloatTexture(gl, sceneW, sceneH, null);
     gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
     var sceneFBO = createFBO(gl, sceneTex);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
@@ -657,8 +664,8 @@
     // ─── Bloom Resources ─────────────────────────────────────────
     var asciiTex = createFloatTexture(gl, sceneW, sceneH, null);
     gl.bindTexture(gl.TEXTURE_2D, asciiTex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
     var asciiFBO = createFBO(gl, asciiTex);
 
     var bloomW = Math.max(1, Math.floor(sceneW / 2));
@@ -667,8 +674,8 @@
     var bloomTexB = createFloatTexture(gl, bloomW, bloomH, null);
     [bloomTexA, bloomTexB].forEach(function (t) {
       gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
     });
     var bloomFBO_A = createFBO(gl, bloomTexA);
     var bloomFBO_B = createFBO(gl, bloomTexB);
@@ -854,8 +861,8 @@
         gl.deleteFramebuffer(sceneFBO);
         sceneTex = createFloatTexture(gl, sceneW, sceneH, null);
         gl.bindTexture(gl.TEXTURE_2D, sceneTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
         sceneFBO = createFBO(gl, sceneTex);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       }
@@ -896,8 +903,8 @@
         gl.deleteFramebuffer(asciiFBO);
         asciiTex = createFloatTexture(gl, canvas.width, canvas.height, null);
         gl.bindTexture(gl.TEXTURE_2D, asciiTex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
         asciiFBO = createFBO(gl, asciiTex);
       }
       gl.bindFramebuffer(gl.FRAMEBUFFER, asciiFBO);
@@ -936,8 +943,8 @@
         bloomTexB = createFloatTexture(gl, bloomW, bloomH, null);
         [bloomTexA, bloomTexB].forEach(function (t) {
           gl.bindTexture(gl.TEXTURE_2D, t);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, FLOAT_FILTER);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, FLOAT_FILTER);
         });
         bloomFBO_A = createFBO(gl, bloomTexA);
         bloomFBO_B = createFBO(gl, bloomTexB);
