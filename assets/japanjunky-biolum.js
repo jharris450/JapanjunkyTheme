@@ -17,31 +17,33 @@
 
   // ─── Default Configuration ───────────────────────────────────
   var defaults = {
-    particleCount: 50000,
-    particleSize: 4.0,
-    activationScale: 1.5,
-    energyAccumulation: 1.2,
-    energyDecay: 0.8,
-    activationThreshold: 1.0,
-    activationDuration: 1.0,
-    refractoryPeriod: 1.5,
+    particleCount: 10000,
+    particleSize: 14.0,
+    activationScale: 1.8,
+    energyAccumulation: 2.5,
+    energyDecay: 0.25,
+    activationThreshold: 0.5,
+    activationDuration: 2.5,
+    refractoryPeriod: 0.4,
     fluidResX: 128,
     fluidResY: 64,
-    fluidDissipation: 0.98,
-    cursorStrength: 1.5,
-    cursorRadius: 0.06,
-    carouselBurstStrength: 2.0,
-    carouselBurstDuration: 1.5,
-    bubbleCount: 10,
-    bubbleSpawnInterval: 2.5,
-    bubbleRiseSpeed: 0.08,
-    bubbleWakeStrength: 0.6,
-    displayScale: 1,
-    glyphRamp: [32, 250, 176, 177, 178, 219],
-    ditherStrength: 1.0,
-    bloomStrength: 0.6,
-    bloomRadius: 0.3,
-    bloomThreshold: 0.15,
+    fluidDissipation: 0.35,
+    cursorStrength: 4.0,
+    cursorRadius: 0.15,
+    carouselBurstStrength: 3.0,
+    carouselBurstDuration: 2.0,
+    bubbleCount: 14,
+    bubbleSpawnInterval: 1.2,
+    bubbleRiseSpeed: 0.03,
+    bubbleWakeStrength: 1.8,
+    lavaStrength: 0.8,
+    noiseStrength: 0.4,
+    displayScale: 2,
+    glyphRamp: [32, 250, 7, 254, 219],
+    ditherStrength: 0.6,
+    bloomStrength: 1.4,
+    bloomRadius: 0.5,
+    bloomThreshold: 0.06,
     mobileEnabled: false
   };
 
@@ -261,6 +263,8 @@
     'uniform vec3 u_bubbles[12];',
     'uniform int u_bubbleCount;',
     'uniform float u_bubbleWakeStrength;',
+    'uniform float u_time;',
+    'uniform float u_lavaStrength;',
     'void main() {',
     '  vec2 force = vec2(0.0);',
     '  vec2 toCursor = v_uv - u_cursorPos;',
@@ -284,12 +288,16 @@
     '    float bStr = u_bubbles[i].z;',
     '    vec2 toBubble = v_uv - bPos;',
     '    float bDist2 = dot(toBubble, toBubble);',
-    '    float radius2 = 0.002;',
+    '    float radius2 = 0.004;',
     '    float influence = exp(-bDist2 / radius2);',
     '    vec2 upForce = vec2(0.0, 1.0) * bStr * u_bubbleWakeStrength;',
     '    float belowFactor = smoothstep(0.0, 0.05, v_uv.y - bPos.y);',
     '    force += upForce * influence * (1.0 - belowFactor * 0.5);',
     '  }',
+    '  float t = u_time * 0.12;',
+    '  float lx = sin(v_uv.y * 3.0 + t) * cos(v_uv.x * 2.1 + t * 0.7);',
+    '  float ly = cos(v_uv.x * 2.5 + t * 0.9) * sin(v_uv.y * 1.8 + t * 1.1) + 0.25;',
+    '  force += vec2(lx, ly) * u_lavaStrength;',
     '  o_color = vec4(force, 0.0, 1.0);',
     '}'
   ].join('\n');
@@ -360,7 +368,7 @@
     'void main() {',
     '  int pid = clamp(int(v_phosphorId), 0, 5);',
     '  vec3 color = PHOSPHORS[pid];',
-    '  float alpha = mix(0.15, 1.0, v_activation);',
+    '  float alpha = mix(0.35, 1.0, v_activation);',
     '  o_color = vec4(color * alpha, alpha);',
     '}'
   ].join('\n');
@@ -375,7 +383,7 @@
     'uniform vec2 u_resolution;',
     'uniform float u_displayScale;',
     'uniform float u_ditherStrength;',
-    'uniform int u_glyphRamp[6];',
+    'uniform int u_glyphRamp[8];',
     'uniform int u_rampLength;',
     'const vec3 PALETTE[32] = vec3[32](',
     '  vec3(0,0,0), vec3(0.067,0.067,0.067), vec3(0.133,0.133,0.133),',
@@ -781,7 +789,7 @@
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_activationThreshold'), cfg.activationThreshold);
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_activationDuration'), cfg.activationDuration);
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_refractoryPeriod'), cfg.refractoryPeriod);
-      gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_noiseStrength'), 0.1);
+      gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_noiseStrength'), cfg.noiseStrength);
       gl.uniform2f(gl.getUniformLocation(particleUpdateProg, 'u_cursorPos'), cursorPos[0], cursorPos[1]);
       gl.uniform2f(gl.getUniformLocation(particleUpdateProg, 'u_cursorVel'), cursorVel[0], cursorVel[1]);
       gl.uniform1f(gl.getUniformLocation(particleUpdateProg, 'u_cursorStrength'), cfg.cursorStrength);
@@ -800,7 +808,7 @@
       particleVelocities.swap();
     }
 
-    function updateFluidInjection(cursorPos, cursorVel) {
+    function updateFluidInjection(cursorPos, cursorVel, time) {
       gl.useProgram(fluidInjectProg);
       gl.bindFramebuffer(gl.FRAMEBUFFER, injectionFBO);
       gl.viewport(0, 0, cfg.fluidResX, cfg.fluidResY);
@@ -809,6 +817,8 @@
       gl.uniform2f(gl.getUniformLocation(fluidInjectProg, 'u_cursorVel'), cursorVel[0], cursorVel[1]);
       gl.uniform1f(gl.getUniformLocation(fluidInjectProg, 'u_cursorStrength'), cfg.cursorStrength);
       gl.uniform1f(gl.getUniformLocation(fluidInjectProg, 'u_cursorRadius'), cfg.cursorRadius);
+      gl.uniform1f(gl.getUniformLocation(fluidInjectProg, 'u_time'), time);
+      gl.uniform1f(gl.getUniformLocation(fluidInjectProg, 'u_lavaStrength'), cfg.lavaStrength);
 
       gl.uniform1i(gl.getUniformLocation(fluidInjectProg, 'u_burstCount'), bursts.length);
       gl.uniform1f(gl.getUniformLocation(fluidInjectProg, 'u_burstDuration'), cfg.carouselBurstDuration);
@@ -1018,18 +1028,12 @@
       cursorState.prevPos[0] = cursorState.pos[0];
       cursorState.prevPos[1] = cursorState.pos[1];
 
-      // Cursor debug (every 2s)
-      if (frameCount % 120 === 0 && frameCount < 600) {
-        console.log('Biolum: cursor pos=' + cursorState.pos[0].toFixed(3) + ',' + cursorState.pos[1].toFixed(3) +
-          ' vel=' + cursorState.vel[0].toFixed(2) + ',' + cursorState.vel[1].toFixed(2));
-      }
-
       // CPU-side state
       updateBubbles(dt);
       updateBursts(dt);
 
       // Stage 1a: Fluid injection
-      updateFluidInjection(cursorState.pos, cursorState.vel);
+      updateFluidInjection(cursorState.pos, cursorState.vel, time);
 
       // Stage 1b: Fluid step
       stepFluid(dt);
@@ -1039,19 +1043,6 @@
 
       // Stage 2: Particle render
       renderParticles();
-
-      // ─── Pipeline diagnostics (first 2 frames) ───
-      if (frameCount < 2) {
-        var px = new Float32Array(4);
-        // Check particle positions
-        gl.bindFramebuffer(gl.FRAMEBUFFER, particlePositions.readFBO);
-        gl.readPixels(texSize / 2 | 0, texSize / 2 | 0, 1, 1, gl.RGBA, gl.FLOAT, px);
-        console.log('Biolum [' + frameCount + '] particle pos:', px[0].toFixed(3), px[1].toFixed(3), px[2].toFixed(3), px[3].toFixed(3));
-        // Check scene FBO (particle render output)
-        gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO);
-        gl.readPixels(sceneW / 2 | 0, sceneH / 2 | 0, 1, 1, gl.RGBA, gl.FLOAT, px);
-        console.log('Biolum [' + frameCount + '] scene center:', px[0].toFixed(4), px[1].toFixed(4), px[2].toFixed(4), px[3].toFixed(4));
-      }
 
       if (fontAtlasLoaded) {
         // Stage 3: ASCII conversion (to offscreen FBO)
@@ -1074,19 +1065,7 @@
         drawQuad(gl, quadVAO);
       }
 
-      // ─── Screen diagnostic (first 2 frames) ───
-      if (frameCount < 2) {
-        var spx = new Uint8Array(4);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.readPixels(canvas.width / 2 | 0, canvas.height / 2 | 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, spx);
-        console.log('Biolum [' + frameCount + '] screen center:', spx[0], spx[1], spx[2], spx[3]);
-        console.log('Biolum [' + frameCount + '] canvas size:', canvas.width + 'x' + canvas.height, 'scene size:', sceneW + 'x' + sceneH);
-      }
-
       frameCount++;
-      if (frameCount === 1) {
-        console.log('Biolum: first frame rendered, fontAtlasLoaded=' + fontAtlasLoaded);
-      }
 
       if (reducedMotion) {
         running = false;
