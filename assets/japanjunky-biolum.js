@@ -428,7 +428,7 @@
     '  float atlasRow = float(cp437Index / 16);',
     '  vec2 subCellUv = fract(pixel / vec2(tileW, tileH));',
     '  vec2 atlasUv = (vec2(atlasCol, atlasRow) + subCellUv) / 16.0;',
-    '  float glyphAlpha = texture(u_fontAtlas, atlasUv).r;',
+    '  float glyphAlpha = texture(u_fontAtlas, atlasUv).a;',
     '  vec3 quantized = nearestPaletteColor(sceneColor);',
     '  o_color = vec4(quantized * glyphAlpha, 1.0);',
     '}'
@@ -838,7 +838,7 @@
       gl.clear(gl.COLOR_BUFFER_BIT);
 
       gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      gl.blendFunc(gl.ONE, gl.ONE);
 
       gl.useProgram(particleRenderProg);
 
