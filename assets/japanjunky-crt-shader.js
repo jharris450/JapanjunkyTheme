@@ -35,7 +35,8 @@
     beamWidth: 6.0,
     flickerIntensity: 0.025,
     warmth: 0.02,
-    damperWireOpacity: 0.14
+    damperWireOpacity: 0.14,
+    fogIntensity: 0.7
   };
 
   // ─── Config Merge ────────────────────────────────────────────
@@ -211,6 +212,7 @@
     'uniform float uFlickerIntensity;',
     'uniform float uWarmth;',
     'uniform float uDamperWireOpacity;',
+    'uniform float uFogIntensity;',
     '',
     '/* Barrel distortion for overlay UVs */',
     'vec2 barrelUV(vec2 uv, float k) {',
@@ -257,6 +259,26 @@
     '  float vignetteDist = length(center) * 1.414;',
     '  float vignette = 1.0 - uVignetteIntensity * smoothstep(uVignetteStart, uVignetteEnd, vignetteDist);',
     '',
+    '  /* ── Volumetric Fog Vignette (screen-space smoke) ──────── */',
+    '  vec2 fogCenter = bUv - 0.5;',
+    '  float fogSDist = length(fogCenter) * 2.0;',
+    '  float fogAngle = atan(fogCenter.y, fogCenter.x);',
+    '  float fogEdge = smoothstep(0.3, 0.9, fogSDist);',
+    '',
+    '  float fA = fogAngle - uTime * 0.12;',
+    '  float fog1 = sin(fA * 4.0 + fogSDist * 10.0 - uTime * 0.25) * 0.5 + 0.5;',
+    '  float fog2 = sin(fA * 6.0 - fogSDist * 8.0 + uTime * 0.18) * 0.5 + 0.5;',
+    '  float fog3 = sin(fA * 2.0 + fogSDist * 14.0 - uTime * 0.35) * 0.5 + 0.5;',
+    '  float fogDensity = fog1 * 0.5 + fog2 * 0.3 + fog3 * 0.2;',
+    '',
+    '  fogDensity = smoothstep(0.3, 0.7, fogDensity);',
+    '',
+    '  float fogWisps = sin(fA * 3.0 + uTime * 0.08) * 0.5 + 0.5;',
+    '  fogDensity *= mix(0.3, 1.0, fogWisps);',
+    '',
+    '  fogDensity *= fogEdge;',
+    '  fogDensity *= uFogIntensity;',
+    '',
     '  /* ── Damper Wires (2 horizontal shadows at 1/3 and 2/3) ─ */',
     '  float wire1 = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(0.0, 1.5 / uResolution.y, abs(bUv.y - 0.3333)));',
     '  float wire2 = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(0.0, 1.5 / uResolution.y, abs(bUv.y - 0.6667)));',
@@ -302,12 +324,13 @@
     '',
     '  float vignetteAlpha = (1.0 - vignette);',
     '',
-    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha);',
+    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * (1.0 - fogDensity);',
     '  totalDarken *= damperWires;',
     '  totalDarken *= beamBrightness;',
     '  totalDarken *= flicker;',
     '',
-    '  color = phosphorTint + caColor + vec3(bloom) * warmTint;',
+    '  vec3 fogColor = vec3(0.12, 0.06, 0.02);',
+    '  color = phosphorTint + caColor + vec3(bloom) * warmTint + fogColor * fogDensity;',
     '  alpha = max(totalDarken, caAlpha);',
     '',
     '  gl_FragColor = vec4(color, clamp(alpha * powerFade, 0.0, 1.0));',
@@ -362,7 +385,8 @@
       uBeamWidth:           { value: cfg.beamWidth },
       uFlickerIntensity:    { value: reducedMotion ? 0.0 : cfg.flickerIntensity },
       uWarmth:              { value: cfg.warmth },
-      uDamperWireOpacity:   { value: cfg.damperWireOpacity }
+      uDamperWireOpacity:   { value: cfg.damperWireOpacity },
+      uFogIntensity:        { value: cfg.fogIntensity }
     };
 
     var material = new THREE.ShaderMaterial({
