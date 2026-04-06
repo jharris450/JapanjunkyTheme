@@ -160,7 +160,7 @@
     '  fogDensity *= mix(0.5, 1.0, fogWisps);',
     '',
     '  // Edge-only, subtle',
-    '  fogDensity *= fogEdge * 0.25;',
+    '  fogDensity *= fogEdge * 0.4;',
     '',
     '  // Warm-neutral fog (Tsuno-referenced amber)',
     '  vec3 fogColor = vec3(0.85, 0.55, 0.3);',
