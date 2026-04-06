@@ -204,12 +204,19 @@
 
     // Meta block — Code, Label, Format, Year, Condition
     if (elMeta) {
-      elMeta.innerHTML =
+      var metaHtml = '';
+      if (jpName || jpTitle) {
+        if (jpName) metaHtml += '<div><span class="jj-meta-value jj-meta-jp">' + escapeHtml(jpName) + '</span></div>';
+        if (jpName && jpTitle) metaHtml += '<br>';
+        if (jpTitle) metaHtml += '<div><span class="jj-meta-value jj-meta-jp">' + escapeHtml(jpTitle) + '</span></div>';
+      }
+      metaHtml +=
         '<div><span class="jj-meta-label">Code:</span> <span class="jj-meta-value">' + escapeHtml(code || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Label:</span> <span class="jj-meta-value">' + escapeHtml(label || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Format:</span> <span class="jj-meta-value">' + escapeHtml(formatLabel || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Year:</span> <span class="jj-meta-value">' + escapeHtml(year || '---') + '</span></div>' +
         '<div><span class="jj-meta-label">Condition:</span> <span class="jj-meta-value">' + escapeHtml(condition || '---') + '</span></div>';
+      elMeta.innerHTML = metaHtml;
       triggerClass(elMeta, 'jj-meta-rendering');
     }
 
