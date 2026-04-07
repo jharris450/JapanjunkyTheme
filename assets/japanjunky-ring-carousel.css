@@ -82,8 +82,11 @@
   padding: 2px 6px;
   cursor: default;
   position: relative;
-  flex-shrink: 0;
+  flex-shrink: 1;
   white-space: nowrap;
+  min-width: 0;
+  overflow: clip;
+  text-overflow: ellipsis;
 }
 
 .jj-ring__search-wrap:focus-within ~ .jj-ring__filter-btn,
