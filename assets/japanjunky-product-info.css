@@ -40,7 +40,9 @@
   color: var(--jj-muted, #666);
   line-height: 1.4;
   padding-top: 2px;
+  padding-bottom: 6px;
   margin-bottom: 6px;
+  border-bottom: 1px solid #333;
 }
 .jj-product-info__jp-name:empty {
   display: none;

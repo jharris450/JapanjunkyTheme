@@ -283,11 +283,8 @@
 }
 
 /* --- Reduced Motion --- */
-@media (prefers-reduced-motion: reduce) {
-  .jj-ring__cover {
-    transition: none;
-  }
-}
+/* Carousel scroll transitions always play — they are essential to the UI,
+   not decorative. Other animations respect prefers-reduced-motion. */
 
 /* --- High Contrast --- */
 @media (prefers-contrast: more) {
