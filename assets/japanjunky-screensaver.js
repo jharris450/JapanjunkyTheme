@@ -49,8 +49,14 @@
   // ─── Scene + Camera ──────────────────────────────────────────
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(60, resW / resH, 0.1, 100);
-  camera.position.set(0, 0, -1);
-  camera.lookAt(0, 0, 30);
+
+  var CAMERA_PRESETS = {
+    default: { pos: [0, 0, -1], look: [0, 0, 30] },
+    product: { pos: [-3, 0.5, -1], look: [2, 0, 30] }
+  };
+  var cameraPreset = CAMERA_PRESETS[config.cameraPreset] || CAMERA_PRESETS.default;
+  camera.position.set(cameraPreset.pos[0], cameraPreset.pos[1], cameraPreset.pos[2]);
+  camera.lookAt(cameraPreset.look[0], cameraPreset.look[1], cameraPreset.look[2]);
 
   // ─── Swirl Speed ─────────────────────────────────────────────
   var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
@@ -447,6 +453,9 @@
   // Idle position: left side of viewport, inline with selected product
   // v2 — positive x = screen-left confirmed
   var TSUNO_IDLE_POS = { x: 4.0, y: 0.0, z: 6 };
+  // Product page: Tsuno starts in a calm resting position near portal edge
+  var tsunoProductPageMode = config.cameraPreset === 'product';
+  var TSUNO_PRODUCT_POS = { x: 2.5, y: -0.5, z: 8 };
   var TSUNO_ORBIT_RADIUS = 2.0;
   var TSUNO_ORBIT_SPEED = 0.2;
   var TSUNO_ORBIT_Z = 16;
@@ -836,6 +845,7 @@
 
   function tsunoOnProductSelected() {
     if (!tsunoMesh || tsunoState !== 'idle') return;
+    if (tsunoProductPageMode) return; // Product page: Tsuno stays calm
 
     // First product selection activates personality system
     if (!tsunoActivated) {
@@ -942,7 +952,8 @@
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
-      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+      var tsunoStartPos = tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS;
+      tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       scene.add(tsunoMesh);
 
       // Update the pre-created tsuno API with real references
@@ -1857,7 +1868,7 @@
   var parallaxOffset = { x: 0, y: 0 };
   var MAX_PARALLAX = 0.5;
   var PARALLAX_LERP = 0.05;
-  var LOOK_TARGET = { x: 0, y: 0, z: 30 };
+  var LOOK_TARGET = { x: cameraPreset.look[0], y: cameraPreset.look[1], z: cameraPreset.look[2] };
   var isMobile = window.matchMedia && window.matchMedia('(hover: none)').matches;
 
   if (config.mouseInteraction !== false && !isMobile) {
