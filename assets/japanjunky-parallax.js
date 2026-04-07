@@ -13,7 +13,7 @@
   if (!config || !config.enabled) return;
 
   var intensity = config.intensity || 6;
-  var RADIUS = 350; // px — activation radius around each element
+  var RADIUS = 400; // px — activation radius around each element
 
   var layers = document.querySelectorAll('[data-parallax-layer]');
   if (!layers.length) return;
@@ -55,8 +55,8 @@
       prox *= prox; // quadratic ease-in — gentle ramp near edge
 
       // Target offset — element shifts toward mouse, scaled by proximity
-      var tx = (dx / RADIUS) * intensity * prox;
-      var ty = (dy / RADIUS) * intensity * prox;
+      var tx = (dx / RADIUS) * intensity * prox * 3.0;
+      var ty = (dy / RADIUS) * intensity * prox * 3.0;
 
       // Smooth interpolation
       var s = states[i];
