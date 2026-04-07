@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "product": {
+      "type": "jj-product",
+      "settings": {}
+    }
+  },
+  "order": ["product"]
+}

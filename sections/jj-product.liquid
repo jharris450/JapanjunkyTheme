@@ -1,0 +1,165 @@
+{%- comment -%}
+  JapanJunky Product Page — Terminal-styled product detail
+  with 3D viewer, vinyl disc, and View Transitions entrance.
+{%- endcomment -%}
+
+{%- assign p = product -%}
+{%- assign current_variant = p.selected_or_first_available_variant -%}
+
+{%- comment -%} Product data for JS {%- endcomment -%}
+<script>
+  window.JJ_SCREENSAVER_CONFIG = window.JJ_SCREENSAVER_CONFIG || {};
+  window.JJ_SCREENSAVER_CONFIG.cameraPreset = 'product';
+
+  window.JJ_PRODUCT_DATA = {
+    handle: {{ p.handle | json }},
+    title: {{ p.title | json }},
+    artist: {{ p.metafields.custom.artist | default: p.vendor | json }},
+    jpName: {{ p.metafields.custom.jp_name | default: '' | json }},
+    jpTitle: {{ p.metafields.custom.jp_title | default: '' | json }},
+    code: {{ p.metafields.custom.code | default: '' | json }},
+    label: {{ p.metafields.custom.label | default: '' | json }},
+    formatLabel: {{ p.metafields.custom.format | default: '' | json }},
+    year: {{ p.metafields.custom.year | default: '' | json }},
+    description: {{ p.description | json }},
+    images: [
+      {%- for image in p.images -%}
+        {%- unless forloop.first -%},{%- endunless -%}
+        {{ image | image_url: width: 800 | json }}
+      {%- endfor -%}
+    ],
+    variants: [
+      {%- for variant in p.variants -%}
+        {%- unless forloop.first -%},{%- endunless -%}
+        {
+          "id": {{ variant.id }},
+          "title": {{ variant.title | json }},
+          "price": {{ variant.price | money | json }},
+          "available": {{ variant.available }},
+          "option1": {{ variant.option1 | json }}
+        }
+      {%- endfor -%}
+    ],
+    currentVariantId: {{ current_variant.id }},
+    currentPrice: {{ current_variant.price | money | json }},
+    available: {{ current_variant.available }}
+  };
+</script>
+
+{%- comment -%} Product page layout {%- endcomment -%}
+<div class="jj-pdp" id="jj-pdp">
+
+  {%- comment -%} Left: Product info panel {%- endcomment -%}
+  <div class="jj-pdp-info" id="jj-pdp-info">
+
+    <a href="/" class="jj-pdp-back" id="jj-pdp-back">[&larr; Catalog]</a>
+
+    <div class="jj-pdp-artist" id="jj-pdp-artist">{{ p.metafields.custom.artist | default: p.vendor }}</div>
+
+    {%- if p.metafields.custom.jp_name != blank -%}
+    <div class="jj-pdp-jp-name">{{ p.metafields.custom.jp_name }}</div>
+    {%- endif -%}
+
+    <div class="jj-pdp-title" id="jj-pdp-title">{{ p.title }}</div>
+
+    {%- if p.metafields.custom.jp_title != blank -%}
+    <div class="jj-pdp-jp-title">{{ p.metafields.custom.jp_title }}</div>
+    {%- endif -%}
+
+    <div class="jj-pdp-meta">
+      {%- if p.metafields.custom.code != blank -%}
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Code:</span> <span class="jj-meta-row__value">{{ p.metafields.custom.code }}</span></div>
+      {%- endif -%}
+      {%- if p.metafields.custom.label != blank -%}
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Label:</span> <span class="jj-meta-row__value">{{ p.metafields.custom.label }}</span></div>
+      {%- endif -%}
+      {%- if p.metafields.custom.format != blank -%}
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Format:</span> <span class="jj-meta-row__value">{{ p.metafields.custom.format }}</span></div>
+      {%- endif -%}
+      {%- if p.metafields.custom.year != blank -%}
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Year:</span> <span class="jj-meta-row__value">{{ p.metafields.custom.year }}</span></div>
+      {%- endif -%}
+      {%- if current_variant.option1 != blank -%}
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Condition:</span> <span class="jj-meta-row__value">{{ current_variant.option1 }}</span></div>
+      {%- endif -%}
+    </div>
+
+    <div class="jj-pdp-price" id="jj-pdp-price">{{ current_variant.price | money }}</div>
+
+    {%- if p.variants.size > 1 -%}
+    <div class="jj-pdp-variants" id="jj-pdp-variants">
+      {%- for variant in p.variants -%}
+      <button class="jj-pdp-variant-btn{% if variant == current_variant %} jj-pdp-variant-btn--active{% endif %}"
+              data-variant-id="{{ variant.id }}"
+              data-variant-price="{{ variant.price | money }}"
+              data-variant-available="{{ variant.available }}"
+              data-variant-option1="{{ variant.option1 }}"
+              type="button">
+        [{{ variant.option1 }}]
+      </button>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+
+    <div class="jj-pdp-actions">
+      <form id="jj-pdp-cart-form" action="/cart/add" method="post">
+        <input type="hidden" name="id" id="jj-pdp-variant-id" value="{{ current_variant.id }}">
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="jj-action-btn" id="jj-pdp-add-to-cart"
+                {% unless current_variant.available %}disabled{% endunless %}>
+          {%- if current_variant.available -%}[Add to Cart]{%- else -%}[Unavailable]{%- endif -%}
+        </button>
+      </form>
+    </div>
+
+    {%- if p.images.size > 0 -%}
+    <div class="jj-pdp-thumbs" id="jj-pdp-thumbs">
+      {%- for image in p.images limit: 4 -%}
+      <button class="jj-pdp-thumb{% if forloop.first %} jj-pdp-thumb--active{% endif %}"
+              data-thumb-index="{{ forloop.index0 }}"
+              data-image-url="{{ image | image_url: width: 800 }}"
+              type="button">
+        <img src="{{ image | image_url: width: 80 }}" alt="{{ image.alt | escape }}" loading="lazy" width="80" height="80">
+      </button>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+
+    {%- if p.description != blank -%}
+    <div class="jj-pdp-description">
+      {{ p.description }}
+    </div>
+    {%- endif -%}
+
+  </div>
+
+  {%- comment -%} Right: 3D product viewer canvas {%- endcomment -%}
+  <div class="jj-pdp-viewer" id="jj-pdp-viewer">
+    <canvas id="jj-pdp-viewer-canvas" aria-label="3D product viewer"></canvas>
+  </div>
+
+</div>
+
+{%- comment -%} No-JS fallback: static image + standard form {%- endcomment -%}
+<noscript>
+  <style>.jj-pdp { display: none; }</style>
+  <div style="padding: 20px; color: #e0d5c0; font-family: monospace;">
+    <h1>{{ p.title }}</h1>
+    {%- if p.featured_image -%}
+    <img src="{{ p.featured_image | image_url: width: 400 }}" alt="{{ p.featured_image.alt | escape }}">
+    {%- endif -%}
+    <p>{{ current_variant.price | money }}</p>
+    <p>{{ p.description }}</p>
+    <form action="/cart/add" method="post">
+      <input type="hidden" name="id" value="{{ current_variant.id }}">
+      <button type="submit">Add to Cart</button>
+    </form>
+  </div>
+</noscript>
+
+{% schema %}
+{
+  "name": "Product Page",
+  "settings": []
+}
+{% endschema %}
