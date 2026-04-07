@@ -207,7 +207,7 @@
       var metaHtml = '';
       if (jpName || jpTitle) {
         if (jpName) metaHtml += '<div><span class="jj-meta-value jj-meta-jp">' + escapeHtml(jpName) + '</span></div>';
-        if (jpName && jpTitle) metaHtml += '<br>';
+        if (jpName && jpTitle) metaHtml += '<hr class="jj-meta-hr">';
         if (jpTitle) metaHtml += '<div><span class="jj-meta-value jj-meta-jp">' + escapeHtml(jpTitle) + '</span></div>';
       }
       metaHtml +=
