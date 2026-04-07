@@ -38,7 +38,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   transition: flex 0.25s ease;
 }
 .jj-ring__search-wrap:focus-within {
@@ -52,7 +52,7 @@
 
 .jj-ring__search {
   width: 100px;
-  min-width: 60px;
+  min-width: 30px;
   height: 22px;
   padding: 0 4px;
   background: #000;
@@ -82,11 +82,8 @@
   padding: 2px 6px;
   cursor: default;
   position: relative;
-  flex-shrink: 1;
+  flex-shrink: 0;
   white-space: nowrap;
-  min-width: 0;
-  overflow: clip;
-  text-overflow: ellipsis;
 }
 
 .jj-ring__search-wrap:focus-within ~ .jj-ring__filter-btn,
