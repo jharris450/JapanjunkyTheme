@@ -144,7 +144,7 @@
   {%- comment -%} Left zone: product viewer + info {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
     <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
-    <div class="jj-product-info" id="jj-product-info" style="display:none;">
+    <div class="jj-product-info" id="jj-product-info" data-parallax-layer style="display:none;">
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
       <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>
       <div class="jj-product-info__title" id="jj-pi-title"></div>
@@ -256,6 +256,15 @@
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-crt-shader.js' | asset_url }}" defer></script>
+  {% if settings.parallax_enabled %}
+  <script>
+    window.JJ_PARALLAX_CONFIG = {
+      enabled: true,
+      intensity: {{ settings.parallax_intensity | default: 6 }}
+    };
+  </script>
+  <script src="{{ 'japanjunky-parallax.js' | asset_url }}" defer></script>
+  {% endif %}
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
   {% if settings.splash_enabled %}
   <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
