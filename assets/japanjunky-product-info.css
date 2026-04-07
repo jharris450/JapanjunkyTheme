@@ -42,7 +42,10 @@
   padding-top: 2px;
   padding-bottom: 6px;
   margin-bottom: 6px;
-  border-bottom: 1px solid #333;
+  background-image: linear-gradient(#333, #333);
+  background-size: 25% 1px;
+  background-position: left bottom;
+  background-repeat: no-repeat;
 }
 .jj-product-info__jp-name:empty {
   display: none;
