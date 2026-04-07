@@ -175,7 +175,11 @@
     '',
     '  float intensity = glow + rays * glow * 0.6;',
     '',
-    '  vec3 color = mix(vec3(0.8, 0.1, 0.0), vec3(0.95, 0.85, 0.7), glow);',
+    '  // Pulse breathing',
+    '  float pulse = 1.0 + sin(uTime * 0.8) * 0.15;',
+    '  intensity *= pulse;',
+    '',
+    '  vec3 color = mix(vec3(0.3, 0.05, 0.4), vec3(0.7, 0.5, 0.95), glow);',
     '',
     '  gl_FragColor = vec4(color * intensity, intensity);',
     '}'
