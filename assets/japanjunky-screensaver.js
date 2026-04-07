@@ -303,15 +303,26 @@
     '}'
   ].join('\n');
 
-  var PORTAL_RING_COUNT = 6;
-  var portalRings = [];
-  var ringGeo = new THREE.PlaneGeometry(5.6, 5.6);
+  var RING_CONFIG = [
+    { color: [0.95, 0.7, 0.2],   size: 8,   z: 2,  rot: 0.15,  intensity: 1.0 },
+    { color: [0.85, 0.15, 0.05], size: 7,   z: 7,  rot: -0.25, intensity: 0.9 },
+    { color: [0.8, 0.1, 0.3],   size: 6.2, z: 12, rot: 0.35,  intensity: 0.8 },
+    { color: [0.6, 0.1, 0.5],   size: 5.5, z: 17, rot: -0.45, intensity: 0.7 },
+    { color: [0.4, 0.15, 0.65], size: 5,   z: 22, rot: 0.55,  intensity: 0.6 },
+    { color: [0.65, 0.45, 0.85], size: 4.5, z: 27, rot: -0.65, intensity: 0.5 }
+  ];
 
-  for (var ri = 0; ri < PORTAL_RING_COUNT; ri++) {
+  var portalRings = [];
+
+  for (var ri = 0; ri < RING_CONFIG.length; ri++) {
+    var rc = RING_CONFIG[ri];
+    var ringGeo = new THREE.PlaneGeometry(rc.size, rc.size);
     var ringMat = new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: parseFloat(resH) },
-        uHue: { value: ri / PORTAL_RING_COUNT }
+        uTime: { value: 0.0 },
+        uBaseColor: { value: new THREE.Vector3(rc.color[0], rc.color[1], rc.color[2]) },
+        uFlameIntensity: { value: rc.intensity }
       },
       vertexShader: GLOW_VERT,
       fragmentShader: RING_FRAG,
@@ -321,11 +332,39 @@
       side: THREE.DoubleSide
     });
     var ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.position.z = 4 + ri * 5;
-    ringMesh.userData.rotSpeed = (0.3 + ri * 0.15) * (ri % 2 === 0 ? 1 : -1);
+    ringMesh.position.z = rc.z;
+    ringMesh.userData.rotSpeed = rc.rot;
     scene.add(ringMesh);
     portalRings.push(ringMesh);
   }
+
+  // Glow plane behind front ring — warm backlight bloom
+  var ringGlowGeo = new THREE.PlaneGeometry(10, 10);
+  var RING_GLOW_FRAG = [
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv - 0.5;',
+    '  float dist = length(uv);',
+    '  float glow = 1.0 / (1.0 + dist * 4.0);',
+    '  glow = pow(glow, 2.0) * 0.3;',
+    '  vec3 color = vec3(0.95, 0.7, 0.2);',
+    '  gl_FragColor = vec4(color * glow, glow);',
+    '}'
+  ].join('\n');
+  var ringGlowMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uResolution: { value: parseFloat(resH) }
+    },
+    vertexShader: GLOW_VERT,
+    fragmentShader: RING_GLOW_FRAG,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  var ringGlowMesh = new THREE.Mesh(ringGlowGeo, ringGlowMat);
+  ringGlowMesh.position.z = 3;
+  scene.add(ringGlowMesh);
 
   // ─── Vortex Swirl Backdrop ─────────────────────────────────
   var BACKDROP_FRAG = [
@@ -1873,8 +1912,9 @@
     glow.material.uniforms.uTime.value = t;
     sparkles.material.uniforms.uTime.value = t;
 
-    // Spin portal rings
+    // Spin portal rings + update time
     for (var ri = 0; ri < portalRings.length; ri++) {
+      portalRings[ri].material.uniforms.uTime.value = t;
       portalRings[ri].rotation.z += portalRings[ri].userData.rotSpeed * 0.02;
     }
 
