@@ -32,7 +32,11 @@
   pointer-events: auto;
   position: relative;
   z-index: 2;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
 }
+.jj-ring__bar::-webkit-scrollbar { display: none; }
 
 .jj-ring__search-wrap {
   display: flex;
@@ -82,9 +86,8 @@
   padding: 2px 6px;
   cursor: default;
   position: relative;
-  flex-shrink: 1;
+  flex-shrink: 0;
   white-space: nowrap;
-  min-width: 0;
 }
 
 .jj-ring__search-wrap:focus-within ~ .jj-ring__filter-btn,
