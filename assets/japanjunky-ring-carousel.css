@@ -84,8 +84,6 @@
   position: relative;
   flex-shrink: 1;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   min-width: 0;
 }
 
