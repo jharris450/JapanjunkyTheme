@@ -234,10 +234,12 @@
     'uniform float uTime;',
     'uniform float uResolution;',
     'varying float vAlpha;',
+    'varying float vDepth;',
     '',
     'void main() {',
     '  float twinkle = sin(uTime * 3.0 + aPhase) * 0.5 + 0.5;',
     '  vAlpha = pow(twinkle, 3.0);',
+    '  vDepth = clamp(position.z / 35.0, 0.0, 1.0);',
     '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
     '  gl_PointSize = aSize * (20.0 / -viewPos.z);',
     '  vec4 clipPos = projectionMatrix * viewPos;',
@@ -249,12 +251,16 @@
 
   var SPARKLE_FRAG = [
     'varying float vAlpha;',
+    'varying float vDepth;',
     '',
     'void main() {',
     '  float dist = length(gl_PointCoord - vec2(0.5));',
     '  if (dist > 0.5) discard;',
     '  float glow = 1.0 - dist * 2.0;',
-    '  gl_FragColor = vec4(0.95, 0.85, 0.7, glow * vAlpha);',
+    '  vec3 warmColor = vec3(0.95, 0.85, 0.7);',
+    '  vec3 coolColor = vec3(0.8, 0.7, 0.95);',
+    '  vec3 sparkleColor = mix(warmColor, coolColor, vDepth);',
+    '  gl_FragColor = vec4(sparkleColor, glow * vAlpha);',
     '}'
   ].join('\n');
 
