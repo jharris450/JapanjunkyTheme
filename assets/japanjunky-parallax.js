@@ -1,63 +1,82 @@
 /**
  * Japanjunky - Mouse Parallax
  *
- * Parallax: mouse-tracked subtle shift on .jj-ascii-window elements
+ * Proximity-based: each [data-parallax-layer] element responds
+ * independently to the mouse based on its own distance from the cursor.
+ * Movement ramps from 0 (far) to max (close) with quadratic ease-in.
  */
 
 (function () {
   'use strict';
 
-  // ─── Mouse Parallax ───────────────────────────────────────
-  const parallaxConfig = window.JJ_PARALLAX_CONFIG;
-  if (parallaxConfig && parallaxConfig.enabled) {
-    initParallax(parallaxConfig.intensity);
+  var config = window.JJ_PARALLAX_CONFIG;
+  if (!config || !config.enabled) return;
+
+  var intensity = config.intensity || 6;
+  var RADIUS = 350; // px — activation radius around each element
+
+  var layers = document.querySelectorAll('[data-parallax-layer]');
+  if (!layers.length) return;
+
+  var mouseX = -9999;
+  var mouseY = -9999;
+  var ticking = false;
+
+  // Per-layer smooth interpolation state
+  var states = [];
+  for (var i = 0; i < layers.length; i++) {
+    states.push({ x: 0, y: 0 });
   }
 
-  function initParallax(intensity) {
-    const layers = document.querySelectorAll('[data-parallax-layer]');
-    if (!layers.length) return;
+  document.addEventListener('mousemove', function (e) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(tick);
+    }
+  });
 
-    let mouseX = 0.5;
-    let mouseY = 0.5;
-    let currentX = 0.5;
-    let currentY = 0.5;
-    let ticking = false;
+  function tick() {
+    var settling = false;
 
-    document.addEventListener('mousemove', function (e) {
-      mouseX = e.clientX / window.innerWidth;
-      mouseY = e.clientY / window.innerHeight;
+    for (var i = 0; i < layers.length; i++) {
+      var rect = layers[i].getBoundingClientRect();
+      var cx = rect.left + rect.width / 2;
+      var cy = rect.top + rect.height / 2;
 
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(updateParallax);
-      }
-    });
+      // Vector from element center to mouse
+      var dx = mouseX - cx;
+      var dy = mouseY - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
 
-    function updateParallax() {
+      // Proximity: 1 when on element, 0 at RADIUS or beyond
+      var prox = Math.max(0, 1 - dist / RADIUS);
+      prox *= prox; // quadratic ease-in — gentle ramp near edge
+
+      // Target offset — element shifts toward mouse, scaled by proximity
+      var tx = (dx / RADIUS) * intensity * prox;
+      var ty = (dy / RADIUS) * intensity * prox;
+
       // Smooth interpolation
-      currentX += (mouseX - currentX) * 0.1;
-      currentY += (mouseY - currentY) * 0.1;
+      var s = states[i];
+      s.x += (tx - s.x) * 0.1;
+      s.y += (ty - s.y) * 0.1;
 
-      const offsetX = (currentX - 0.5) * 2; // -1 to 1
-      const offsetY = (currentY - 0.5) * 2;
-
-      layers.forEach(function (layer) {
-        const depth = parseInt(layer.style.getPropertyValue('--jj-depth') || '1', 10) ||
-                      (layer.classList.contains('jj-depth-3') ? 3 :
-                       layer.classList.contains('jj-depth-2') ? 2 : 1);
-
-        const moveX = offsetX * intensity * (depth * 0.3);
-        const moveY = offsetY * intensity * (depth * 0.2);
-
-        layer.style.transform = 'translate(' + moveX + 'px, ' + moveY + 'px)';
-      });
-
-      // Continue animation if mouse is still moving
-      if (Math.abs(mouseX - currentX) > 0.001 || Math.abs(mouseY - currentY) > 0.001) {
-        requestAnimationFrame(updateParallax);
+      if (Math.abs(s.x) > 0.01 || Math.abs(s.y) > 0.01) {
+        layers[i].style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px)';
+        settling = true;
       } else {
-        ticking = false;
+        s.x = 0;
+        s.y = 0;
+        layers[i].style.transform = '';
       }
+    }
+
+    if (settling) {
+      requestAnimationFrame(tick);
+    } else {
+      ticking = false;
     }
   }
 })();
