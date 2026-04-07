@@ -32,11 +32,7 @@
   pointer-events: auto;
   position: relative;
   z-index: 2;
-  overflow-x: auto;
-  overflow-y: visible;
-  scrollbar-width: none;
 }
-.jj-ring__bar::-webkit-scrollbar { display: none; }
 
 .jj-ring__search-wrap {
   display: flex;
