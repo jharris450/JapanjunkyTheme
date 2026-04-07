@@ -318,12 +318,16 @@
   ].join('\n');
 
   var RING_CONFIG = [
-    { color: [0.95, 0.7, 0.2],   size: 8,   z: 2,  rot: 0.15,  intensity: 1.0 },
-    { color: [0.85, 0.15, 0.05], size: 7,   z: 7,  rot: -0.25, intensity: 0.9 },
-    { color: [0.8, 0.1, 0.3],   size: 6.2, z: 12, rot: 0.35,  intensity: 0.8 },
-    { color: [0.6, 0.1, 0.5],   size: 5.5, z: 17, rot: -0.45, intensity: 0.7 },
-    { color: [0.4, 0.15, 0.65], size: 5,   z: 22, rot: 0.55,  intensity: 0.6 },
-    { color: [0.65, 0.45, 0.85], size: 4.5, z: 27, rot: -0.65, intensity: 0.5 }
+    { color: [0.95, 0.75, 0.25], size: 8.0, z: 1,  rot: 0.12,  intensity: 1.0 },
+    { color: [0.95, 0.55, 0.1],  size: 7.5, z: 3,  rot: -0.18, intensity: 0.95 },
+    { color: [0.9, 0.3, 0.08],   size: 7.0, z: 5,  rot: 0.24,  intensity: 0.9 },
+    { color: [0.85, 0.15, 0.1],  size: 6.5, z: 7,  rot: -0.30, intensity: 0.85 },
+    { color: [0.8, 0.1, 0.25],   size: 6.0, z: 9,  rot: 0.36,  intensity: 0.8 },
+    { color: [0.7, 0.1, 0.4],    size: 5.6, z: 11, rot: -0.42, intensity: 0.75 },
+    { color: [0.6, 0.1, 0.55],   size: 5.2, z: 13, rot: 0.48,  intensity: 0.7 },
+    { color: [0.5, 0.15, 0.65],  size: 4.8, z: 15, rot: -0.54, intensity: 0.65 },
+    { color: [0.45, 0.25, 0.75], size: 4.5, z: 17, rot: 0.60,  intensity: 0.6 },
+    { color: [0.55, 0.4, 0.85],  size: 4.2, z: 19, rot: -0.66, intensity: 0.55 }
   ];
 
   var portalRings = [];
