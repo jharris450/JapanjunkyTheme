@@ -1,0 +1,101 @@
+/* ============================================
+   VIEW TRANSITIONS — Cross-page animations
+   ============================================ */
+
+/* --- Transition Names — Homepage elements --- */
+.jj-ring__bar {
+  view-transition-name: catalog-bar;
+}
+.jj-ring__stage {
+  view-transition-name: catalog-stage;
+}
+.jj-product-info {
+  view-transition-name: product-info;
+}
+#jj-viewer-canvas {
+  view-transition-name: product-canvas;
+}
+#jj-screensaver {
+  view-transition-name: portal;
+}
+
+/* --- Transition Names — Product page elements --- */
+.jj-pdp-info {
+  view-transition-name: product-info;
+}
+#jj-pdp-viewer-canvas {
+  view-transition-name: product-canvas;
+}
+
+/* --- Keyframes --- */
+@keyframes jj-fly-up {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(-120%); opacity: 0; }
+}
+
+@keyframes jj-fly-down {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(120%); opacity: 0; }
+}
+
+@keyframes jj-slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-120%); opacity: 0; }
+}
+
+@keyframes jj-slide-in-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes jj-fade-scale-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes jj-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes jj-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* --- Outgoing (homepage → product page) --- */
+::view-transition-old(catalog-bar) {
+  animation: jj-fly-up 0.5s ease-in forwards;
+}
+::view-transition-old(catalog-stage) {
+  animation: jj-fly-down 0.6s ease-in forwards;
+}
+::view-transition-old(product-info) {
+  animation: jj-slide-out-left 0.4s ease-in forwards;
+}
+::view-transition-old(product-canvas) {
+  animation: jj-fade-out 0.3s ease-in forwards;
+}
+::view-transition-old(portal) {
+  animation: jj-fade-out 0.3s ease-out forwards;
+}
+
+/* --- Incoming (product page appears) --- */
+::view-transition-new(product-info) {
+  animation: jj-slide-in-left 0.4s ease-out;
+}
+::view-transition-new(product-canvas) {
+  animation: jj-fade-scale-in 0.4s ease-out 0.1s both;
+}
+::view-transition-new(portal) {
+  animation: jj-fade-in 0.3s ease-in 0.1s both;
+}
+::view-transition-new(catalog-bar) {
+  animation: jj-fade-in 0.3s ease-out;
+}
+::view-transition-new(catalog-stage) {
+  animation: jj-fade-in 0.3s ease-out;
+}
+
+/* --- Back navigation (product page → homepage) --- */
+/* Reverse: product info slides out left, catalog flies back in */

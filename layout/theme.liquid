@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="view-transition" content="same-origin">
 
   <title>{{ page_title }}{% unless page_title contains shop.name %} - {{ shop.name }}{% endunless %}</title>
 
@@ -33,6 +34,7 @@
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-tsuno-bubble.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-transitions.css' | asset_url | stylesheet_tag }}
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
   {% endif %}
