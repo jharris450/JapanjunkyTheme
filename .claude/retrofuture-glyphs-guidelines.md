@@ -141,7 +141,7 @@ The Color CRT palette draws from the book's multi-color ASCII art: vivid phospho
   /* --- Core Brand Colors (existing, preserved) --- */
   --jj-primary:      #e8313a;  /* Red — high-energy phosphor, primary actions, brand */
   --jj-secondary:    #f5d742;  /* Gold/Yellow — secondary info, prices, highlights */
-  --jj-accent:       #4aa4e0;  /* Cyan/Blue — links, codes, informational */
+  --jj-accent:       #33ff33;  /* Green phosphor — links, codes, informational */
   --jj-text:         #d4c9a8;  /* Warm cream — body text, default foreground */
 
   /* --- Extended CRT Phosphor Colors --- */
@@ -167,7 +167,7 @@ The Color CRT palette draws from the book's multi-color ASCII art: vivid phospho
 3. **Color means something.** Each phosphor color has a semantic role:
    - **Red** (`--jj-primary`): Brand identity, primary actions, critical states, active/selected
    - **Gold** (`--jj-secondary`): Prices, values, headings, highlighted information
-   - **Cyan/Blue** (`--jj-accent`): Links, codes, reference data, informational
+   - **Green** (`--jj-accent`): Links, codes, reference data, informational
    - **Green** (`--jj-green`): Success, online status, positive conditions, terminal prompts
    - **Amber** (`--jj-amber`): Warnings, limited stock, caution
    - **Magenta** (`--jj-magenta`): Rare items, special editions, unique states
@@ -193,7 +193,6 @@ The Color CRT palette draws from the book's multi-color ASCII art: vivid phospho
 /* Color-specific glow examples */
 .glow-red     { text-shadow: 0 0 4px #e8313a, 0 0 8px rgba(232, 49, 58, 0.4); }
 .glow-gold    { text-shadow: 0 0 4px #f5d742, 0 0 8px rgba(245, 215, 66, 0.4); }
-.glow-cyan    { text-shadow: 0 0 4px #4aa4e0, 0 0 8px rgba(74, 164, 224, 0.4); }
 .glow-green   { text-shadow: 0 0 4px #33ff33, 0 0 8px rgba(51, 255, 51, 0.4); }
 
 /* Box glow for containers */

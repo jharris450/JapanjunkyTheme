@@ -14,6 +14,14 @@
                  document.getElementById('jj-screensaver-display');
   if (!ssCanvas) return;
 
+  // ─── Guard: skip the welcome greeting on the product page ──
+  // The product page shows Tsuno in his floating idle state; the
+  // "いらっしゃいませ / Welcome!" bubble is a homepage-only greeting.
+  if (window.JJ_SCREENSAVER_CONFIG &&
+      window.JJ_SCREENSAVER_CONFIG.cameraPreset === 'product') {
+    return;
+  }
+
   // ─── Config ─────────────────────────────────────────────────
   var JP_TEXT = 'いらっしゃいませ';
   var EN_TEXT = 'Welcome!';

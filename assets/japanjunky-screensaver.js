@@ -980,6 +980,14 @@
 
       // Place Tsuno at idle position — personality system activates on first product selection
       tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+
+      // On the product page there is no "first product selection" to activate
+      // the personality system, so bootstrap the floating idle immediately.
+      if (tsunoProductPageMode) {
+        tsunoActivated = true;
+        var tInit = performance.now() * 0.001;
+        startBehavior(tInit, pickNextBehavior(tsunoMoodIdx, 0));
+      }
     });
   }
 

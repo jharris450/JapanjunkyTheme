@@ -234,6 +234,7 @@
       fps: {{ settings.screensaver_fps | default: 24 }},
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
+      {%- if template == 'product' -%}cameraPreset: 'product',{%- endif %}
       swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
       ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
       fragmentMasks: {

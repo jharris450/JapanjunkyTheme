@@ -44,9 +44,7 @@
     [160, 100, 0],
     [255, 170, 0],    // --jj-amber
 
-    // Cyan / accent (3)
-    [10, 60, 90],
-    [74, 164, 224],   // --jj-accent
+    // Cyan (1) — reserved for CD format indicator
     [0, 229, 229],    // --jj-cyan
 
     // Green (3)

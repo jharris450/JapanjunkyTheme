@@ -914,7 +914,6 @@
       handle: pdpData.handle,
       imageUrl: frontUrl,
       imageBackUrl: backUrl,
-      type3d: 'box',
       available: pdpData.available
     });
 
