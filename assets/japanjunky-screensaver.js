@@ -2014,6 +2014,23 @@
     setBubbleVisible: function (visible) {
       bubbleMesh.visible = !!visible;
       textMesh.visible = !!visible;
+    },
+    triggerTsunoGrab: function (cb) {
+      if (!tsunoMesh || tsunoProductPageMode) { if (cb) cb(); return; }
+      // Move Tsuno toward the product viewer area (right side, close to camera)
+      tsunoTransitioning = true;
+      var t = performance.now() * 0.001;
+      tsunoTransStart = t;
+      tsunoTransDuration = 0.5;
+      tsunoTransFrom.x = tsunoMesh.position.x;
+      tsunoTransFrom.y = tsunoMesh.position.y;
+      tsunoTransFrom.z = tsunoMesh.position.z;
+      // Target: near the product viewer canvas position (left side, close)
+      tsunoTransTo.x = 1.0;
+      tsunoTransTo.y = 0.0;
+      tsunoTransTo.z = 3.0;
+      // Callback after grab completes
+      if (cb) setTimeout(cb, 550);
     }
   };
 

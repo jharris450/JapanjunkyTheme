@@ -618,6 +618,32 @@
     ]);
   }
 
+  // ─── [View] Button — Cinematic Transition ─────────────────────
+  if (piView) {
+    piView.addEventListener('click', function (e) {
+      var href = piView.href;
+      if (!href) return; // fallback: normal navigation
+
+      // If View Transitions API not supported, just navigate
+      if (!document.startViewTransition) return;
+
+      e.preventDefault();
+
+      // Trigger Tsuno grab animation, then navigate
+      var portal = window.JJ_Portal;
+      if (portal && portal.triggerTsunoGrab) {
+        portal.triggerTsunoGrab(function () {
+          window.location.href = href;
+        });
+      } else {
+        // No portal — navigate after short delay
+        setTimeout(function () {
+          window.location.href = href;
+        }, 200);
+      }
+    });
+  }
+
   function hideProductInfo() {
     // Just stop any in-progress typewriter. Keep all content visible —
     // showProductInfo will overwrite it when the next product arrives.
