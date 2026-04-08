@@ -2,20 +2,22 @@
    VIEW TRANSITIONS — Cross-page animations
    ============================================ */
 
-/* --- Transition Names — Homepage elements --- */
-.jj-ring__bar {
+/* --- Transition Names — Homepage elements ---
+   Applied via .jj-transitioning class on <html> to avoid
+   view-transition-name side effects (forced containment) on idle pages. */
+.jj-transitioning .jj-ring__bar {
   view-transition-name: catalog-bar;
 }
-.jj-ring__stage {
+.jj-transitioning .jj-ring__stage {
   view-transition-name: catalog-stage;
 }
-.jj-product-info {
+.jj-transitioning .jj-product-info {
   view-transition-name: product-info;
 }
-#jj-viewer-canvas {
+.jj-transitioning #jj-viewer-canvas {
   view-transition-name: product-canvas;
 }
-#jj-screensaver {
+.jj-transitioning #jj-screensaver {
   view-transition-name: portal;
 }
 
@@ -25,6 +27,10 @@
 }
 #jj-pdp-viewer-canvas {
   view-transition-name: product-canvas;
+}
+/* Portal name: on product page always, on homepage only during transition */
+.jj-body--product #jj-screensaver {
+  view-transition-name: portal;
 }
 
 /* --- Keyframes --- */

@@ -793,6 +793,9 @@
 
       e.preventDefault();
 
+      // Activate view-transition-name on homepage elements
+      document.documentElement.classList.add('jj-transitioning');
+
       // Trigger Tsuno grab animation, then navigate
       var portal = window.JJ_Portal;
       if (portal && portal.triggerTsunoGrab) {
