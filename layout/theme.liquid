@@ -144,7 +144,8 @@
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
-  {%- comment -%} Left zone: product viewer + info {%- endcomment -%}
+  {% unless template == 'product' %}
+  {%- comment -%} Left zone: product viewer + info (homepage only) {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
     <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
     <div class="jj-product-info" id="jj-product-info" data-parallax-layer style="display:none;">
@@ -194,6 +195,7 @@
 
   {%- comment -%} Header group (navigation, store links) {%- endcomment -%}
   {% sections 'header-group' %}
+  {% endunless %}
 
   {%- comment -%} Shopify content_for_layout — homepage outputs JJ_PRODUCTS JSON, other pages render normally {%- endcomment -%}
   <main id="MainContent" role="main"{% if template == 'index' %} style="display:none;"{% endif %}>
@@ -253,7 +255,9 @@
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
+  {% unless template == 'product' %}
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
+  {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-tsuno-bubble.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
