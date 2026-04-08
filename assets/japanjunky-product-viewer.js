@@ -298,6 +298,8 @@
     if (vinylMesh) {
       scene.remove(vinylMesh);
       if (vinylMesh.geometry) vinylMesh.geometry.dispose();
+      if (vinylMesh.userData.labelTexA) vinylMesh.userData.labelTexA.dispose();
+      if (vinylMesh.userData.labelTexB) vinylMesh.userData.labelTexB.dispose();
       if (vinylMesh.material) {
         disposeTextures(vinylMesh.material);
         vinylMesh.material.dispose();
@@ -346,11 +348,16 @@
     vinylMesh.userData.currentSide = 'A';
     scene.add(vinylMesh);
 
-    // Start slide-out after a delay
-    vinylSlideProgress = 0;
+    vinylSlideProgress = -1; // entrance deferred until startVinylEntrance()
     vinylIdleTime = 0;
 
     return vinylMesh;
+  }
+
+  function startVinylEntrance() {
+    if (!vinylMesh) return;
+    vinylSlideProgress = 0;
+    vinylIdleTime = 0;
   }
 
   function updateVinyl(dt) {
@@ -913,6 +920,7 @@
     if (frontUrl) {
       setTimeout(function () {
         createVinylDisc(labelAUrl, labelBUrl);
+        startVinylEntrance();
       }, 500);
     }
 
@@ -920,12 +928,22 @@
     document.addEventListener('jj:pdp-thumb-selected', function (e) {
       var idx = e.detail.index;
       if (idx === 0 && currentModel) {
-        // Flip to front
-        currentModel.rotation.y = 0;
+        // Flip to front via flick animation
+        var diff = 0 - currentModel.rotation.y;
+        if (Math.abs(diff) > 0.01) {
+          flick.active = true;
+          flick.velY = diff * 0.15;
+          flick.velX = 0;
+        }
         swapVinylLabel('A');
       } else if (idx === 1 && currentModel) {
-        // Flip to back
-        currentModel.rotation.y = Math.PI;
+        // Flip to back via flick animation
+        var diff = Math.PI - currentModel.rotation.y;
+        if (Math.abs(diff) > 0.01) {
+          flick.active = true;
+          flick.velY = diff * 0.15;
+          flick.velX = 0;
+        }
         swapVinylLabel('B');
       } else if (idx === 2) {
         swapVinylLabel('A');
