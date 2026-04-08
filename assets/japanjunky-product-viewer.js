@@ -301,7 +301,6 @@
       if (vinylMesh.userData.labelTexA) vinylMesh.userData.labelTexA.dispose();
       if (vinylMesh.userData.labelTexB) vinylMesh.userData.labelTexB.dispose();
       if (vinylMesh.material) {
-        disposeTextures(vinylMesh.material);
         vinylMesh.material.dispose();
       }
       vinylMesh = null;
@@ -927,9 +926,10 @@
     // Listen for thumbnail clicks
     document.addEventListener('jj:pdp-thumb-selected', function (e) {
       var idx = e.detail.index;
+      var diff;
       if (idx === 0 && currentModel) {
         // Flip to front via flick animation
-        var diff = 0 - currentModel.rotation.y;
+        diff = 0 - currentModel.rotation.y;
         if (Math.abs(diff) > 0.01) {
           flick.active = true;
           flick.velY = diff * 0.15;
@@ -938,7 +938,7 @@
         swapVinylLabel('A');
       } else if (idx === 1 && currentModel) {
         // Flip to back via flick animation
-        var diff = Math.PI - currentModel.rotation.y;
+        diff = Math.PI - currentModel.rotation.y;
         if (Math.abs(diff) > 0.01) {
           flick.active = true;
           flick.velY = diff * 0.15;
