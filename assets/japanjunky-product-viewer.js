@@ -82,13 +82,14 @@
     time: 0
   };
 
-  // Product page: calmer float, less rotation
+  // Product page: stable orientation — no auto-rotate, no tilt sway.
+  // Only the gentle vertical bob remains. Drag is the only way to rotate.
   if (isProductPage) {
-    idle.rotSpeed = 0.06;
+    idle.rotSpeed = 0;
     idle.bobAmp = 0.03;
     idle.bobPeriod = 3.5;
-    idle.tiltXAmp = 0.04;
-    idle.tiltZAmp = 0.04;
+    idle.tiltXAmp = 0;
+    idle.tiltZAmp = 0;
     idle.tiltXFreq = 0.4;
     idle.tiltZFreq = 0.3;
   }
@@ -296,7 +297,7 @@
 
   function createVinylDisc(labelAUrl, labelBUrl) {
     if (vinylMesh) {
-      scene.remove(vinylMesh);
+      if (vinylMesh.parent) vinylMesh.parent.remove(vinylMesh);
       if (vinylMesh.geometry) vinylMesh.geometry.dispose();
       if (vinylMesh.userData.labelTexA) vinylMesh.userData.labelTexA.dispose();
       if (vinylMesh.userData.labelTexB) vinylMesh.userData.labelTexB.dispose();
@@ -339,13 +340,18 @@
     });
 
     vinylMesh = new THREE.Mesh(geo, mat);
-    // Start hidden behind album cover
+    // Start hidden behind album cover (local coords — vinyl is parented to cover)
     vinylMesh.position.set(0, 0, -0.02);
     vinylMesh.visible = false;
     vinylMesh.userData.labelTexA = labelTexA;
     vinylMesh.userData.labelTexB = labelTexB;
     vinylMesh.userData.currentSide = 'A';
-    scene.add(vinylMesh);
+    // Parent the vinyl to the album cover so drag rotations move them together.
+    if (currentModel) {
+      currentModel.add(vinylMesh);
+    } else {
+      scene.add(vinylMesh);
+    }
 
     vinylSlideProgress = -1; // entrance deferred until startVinylEntrance()
     vinylIdleTime = 0;
@@ -372,10 +378,10 @@
       return;
     }
 
-    // Idle: slow rotation + gentle bob
+    // Idle: turntable spin only. Vertical bob is inherited from the parent
+    // album cover, so adding another here would double up.
     vinylIdleTime += dt;
     vinylMesh.rotation.z += dt * (2 * Math.PI / 9); // ~9s per revolution
-    vinylMesh.position.y = Math.sin(vinylIdleTime * 0.8) * 0.02; // gentle bob
   }
 
   function swapVinylLabel(side) {
