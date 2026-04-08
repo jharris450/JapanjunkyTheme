@@ -13,6 +13,18 @@
   // ─── DOM ──────────────────────────────────────────────────────
   var canvas = document.getElementById('jj-viewer-canvas');
   var infoPanel = document.getElementById('jj-product-info');
+
+  // Product page mode: uses a different canvas and data source
+  var pdpCanvas = document.getElementById('jj-pdp-viewer-canvas');
+  var pdpData = window.JJ_PRODUCT_DATA;
+  var isProductPage = !!pdpCanvas && !!pdpData;
+
+  // Use product page canvas if on product page
+  if (isProductPage) {
+    canvas = pdpCanvas;
+    infoPanel = null; // product page has its own info panel
+  }
+
   if (!canvas) return;
 
   // ─── Three.js Scene Setup ─────────────────────────────────────
@@ -69,6 +81,17 @@
     tiltZFreq: 0.5,       // Hz
     time: 0
   };
+
+  // Product page: calmer float, less rotation
+  if (isProductPage) {
+    idle.rotSpeed = 0.06;
+    idle.bobAmp = 0.03;
+    idle.bobPeriod = 3.5;
+    idle.tiltXAmp = 0.04;
+    idle.tiltZAmp = 0.04;
+    idle.tiltXFreq = 0.4;
+    idle.tiltZFreq = 0.3;
+  }
 
   // ─── Spring Physics ───────────────────────────────────────────
   var spring = {
@@ -232,6 +255,135 @@
     return tex;
   }
 
+  // ─── Vinyl Disc ─────────────────────────────────────────────────
+  var vinylMesh = null;
+  var vinylIdleTime = 0;
+  var vinylSlideProgress = -1; // -1 = not started, 0→1 = sliding out
+
+  var VINYL_FRAG = [
+    'uniform sampler2D uLabel;',
+    'uniform float uHasLabel;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv - 0.5;',
+    '  float dist = length(uv) * 2.0;',
+    '',
+    '  // Disc shape',
+    '  if (dist > 1.0) discard;',
+    '',
+    '  // Center hole',
+    '  if (dist < 0.04) discard;',
+    '',
+    '  // Label area (40% of radius)',
+    '  if (dist < 0.4 && uHasLabel > 0.5) {',
+    '    // Map to label texture',
+    '    vec2 labelUv = (uv / 0.4) * 0.5 + 0.5;',
+    '    gl_FragColor = texture2D(uLabel, labelUv);',
+    '    return;',
+    '  }',
+    '',
+    '  // Grooves: concentric rings',
+    '  float groove = sin(dist * 200.0) * 0.5 + 0.5;',
+    '  float base = 0.02 + groove * 0.03;',
+    '  // Slight sheen based on angle',
+    '  float angle = atan(uv.y, uv.x);',
+    '  float sheen = pow(abs(sin(angle * 2.0 + 1.0)), 8.0) * 0.04;',
+    '  vec3 color = vec3(base + sheen);',
+    '  gl_FragColor = vec4(color, 1.0);',
+    '}'
+  ].join('\n');
+
+  function createVinylDisc(labelAUrl, labelBUrl) {
+    if (vinylMesh) {
+      scene.remove(vinylMesh);
+      if (vinylMesh.geometry) vinylMesh.geometry.dispose();
+      if (vinylMesh.material) {
+        disposeTextures(vinylMesh.material);
+        vinylMesh.material.dispose();
+      }
+      vinylMesh = null;
+    }
+
+    var geo = new THREE.CylinderGeometry(0.9, 0.9, 0.02, 32);
+    // Rotate so the flat face is visible (face camera)
+    geo.rotateX(Math.PI / 2);
+
+    var labelTexA = null;
+    var labelTexB = null;
+    var hasLabel = 0.0;
+
+    if (labelAUrl) {
+      labelTexA = textureLoader.load(labelAUrl);
+      labelTexA.minFilter = THREE.NearestFilter;
+      labelTexA.magFilter = THREE.NearestFilter;
+      hasLabel = 1.0;
+    }
+    if (labelBUrl) {
+      labelTexB = textureLoader.load(labelBUrl);
+      labelTexB.minFilter = THREE.NearestFilter;
+      labelTexB.magFilter = THREE.NearestFilter;
+    }
+
+    var mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: shaderRes },
+        uLabel: { value: labelTexA || createFallbackTexture() },
+        uHasLabel: { value: hasLabel }
+      },
+      vertexShader: PS1_VERT,
+      fragmentShader: VINYL_FRAG,
+      side: THREE.DoubleSide,
+      transparent: true
+    });
+
+    vinylMesh = new THREE.Mesh(geo, mat);
+    // Start hidden behind album cover
+    vinylMesh.position.set(0, 0, -0.02);
+    vinylMesh.visible = false;
+    vinylMesh.userData.labelTexA = labelTexA;
+    vinylMesh.userData.labelTexB = labelTexB;
+    vinylMesh.userData.currentSide = 'A';
+    scene.add(vinylMesh);
+
+    // Start slide-out after a delay
+    vinylSlideProgress = 0;
+    vinylIdleTime = 0;
+
+    return vinylMesh;
+  }
+
+  function updateVinyl(dt) {
+    if (!vinylMesh) return;
+
+    // Slide-out animation
+    if (vinylSlideProgress >= 0 && vinylSlideProgress < 1) {
+      vinylMesh.visible = true;
+      vinylSlideProgress += dt / 0.6; // 0.6s duration
+      if (vinylSlideProgress > 1) vinylSlideProgress = 1;
+      var ease = 1 - Math.pow(1 - vinylSlideProgress, 3); // ease-out cubic
+      vinylMesh.position.x = ease * 1.1; // slide right to 50% pulled out
+      return;
+    }
+
+    // Idle: slow rotation + gentle bob
+    vinylIdleTime += dt;
+    vinylMesh.rotation.z += dt * (2 * Math.PI / 9); // ~9s per revolution
+    vinylMesh.position.y = Math.sin(vinylIdleTime * 0.8) * 0.02; // gentle bob
+  }
+
+  function swapVinylLabel(side) {
+    if (!vinylMesh) return;
+    var mat = vinylMesh.material;
+    if (side === 'B' && vinylMesh.userData.labelTexB) {
+      mat.uniforms.uLabel.value = vinylMesh.userData.labelTexB;
+      vinylMesh.userData.currentSide = 'B';
+    } else if (vinylMesh.userData.labelTexA) {
+      mat.uniforms.uLabel.value = vinylMesh.userData.labelTexA;
+      vinylMesh.userData.currentSide = 'A';
+    }
+  }
+
   function disposeTextures(mat) {
     if (!mat) return;
     if (mat.uniforms && mat.uniforms.uTexture && mat.uniforms.uTexture.value) {
@@ -327,6 +479,11 @@
     // Bobbing always applies (even during spring settling)
     if (!drag.active) {
       currentModel.position.y = Math.sin(idle.time * (2 * Math.PI / idle.bobPeriod)) * idle.bobAmp;
+    }
+
+    // Vinyl disc animation (product page only)
+    if (isProductPage && vinylMesh) {
+      updateVinyl(dt);
     }
 
     renderer.render(scene, camera);
@@ -735,4 +892,46 @@
     coordDeselect();
     hideProductInfo();
   });
+
+  // ─── Product Page: Auto-Init ──────────────────────────────────
+  if (isProductPage) {
+    var frontUrl = pdpData.images[0] || null;
+    var backUrl = pdpData.images[1] || null;
+    var labelAUrl = pdpData.images[2] || null;
+    var labelBUrl = pdpData.images[3] || null;
+
+    createModel({
+      title: pdpData.title,
+      handle: pdpData.handle,
+      imageUrl: frontUrl,
+      imageBackUrl: backUrl,
+      type3d: 'box',
+      available: pdpData.available
+    });
+
+    // Create vinyl disc after a short delay (entrance animation)
+    if (frontUrl) {
+      setTimeout(function () {
+        createVinylDisc(labelAUrl, labelBUrl);
+      }, 500);
+    }
+
+    // Listen for thumbnail clicks
+    document.addEventListener('jj:pdp-thumb-selected', function (e) {
+      var idx = e.detail.index;
+      if (idx === 0 && currentModel) {
+        // Flip to front
+        currentModel.rotation.y = 0;
+        swapVinylLabel('A');
+      } else if (idx === 1 && currentModel) {
+        // Flip to back
+        currentModel.rotation.y = Math.PI;
+        swapVinylLabel('B');
+      } else if (idx === 2) {
+        swapVinylLabel('A');
+      } else if (idx === 3) {
+        swapVinylLabel('B');
+      }
+    });
+  }
 })();
