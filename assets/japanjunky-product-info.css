@@ -6,6 +6,7 @@
 /* --- The box: text content with dark backdrop --- */
 .jj-product-info {
   position: relative;
+  z-index: 3;
   background: rgba(0, 0, 0, 0.75);
   width: 100%;
   max-width: 360px;
@@ -103,8 +104,6 @@
 .jj-product-info__actions {
   display: flex;
   gap: 4px;
-  position: relative;
-  z-index: 3;
 }
 
 .jj-product-info__actions .jj-action-btn {
