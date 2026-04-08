@@ -579,6 +579,7 @@
   var tsunoTransDuration = 1.5;     // transition ease duration (s), scaled by mood speed
   var tsunoTransFrom = { x: 4, y: 0, z: 6 };
   var tsunoTransTo = { x: 4, y: 0, z: 6 };
+  var tsunoGrabCallback = null;      // callback fired when grab transition completes
   // Moment cues
   var tsunoPulseStart = -1;         // arrival pulse start time (-1 = inactive)
   var tsunoShakeStart = -1;         // startle shake start time (-1 = inactive)
@@ -654,6 +655,11 @@
         tp = 1.0;
         tsunoTransitioning = false;
         tsunoPulseStart = t; // trigger arrival pulse
+        if (tsunoGrabCallback) {
+          var cb = tsunoGrabCallback;
+          tsunoGrabCallback = null;
+          cb();
+        }
       }
       var ease = easeInOutCubic(tp);
       tsunoMesh.position.x = tsunoTransFrom.x + (tsunoTransTo.x - tsunoTransFrom.x) * ease;
@@ -2016,8 +2022,13 @@
       textMesh.visible = !!visible;
     },
     triggerTsunoGrab: function (cb) {
-      if (!tsunoMesh || tsunoProductPageMode) { if (cb) cb(); return; }
-      // Move Tsuno toward the product viewer area (right side, close to camera)
+      if (!tsunoMesh || tsunoProductPageMode) {
+        if (cb) setTimeout(cb, 200);
+        return;
+      }
+      // Cancel any in-progress judging animation
+      if (tsunoJudging) tsunoJudging = false;
+      // Move Tsuno toward the product viewer canvas area
       tsunoTransitioning = true;
       var t = performance.now() * 0.001;
       tsunoTransStart = t;
@@ -2025,12 +2036,14 @@
       tsunoTransFrom.x = tsunoMesh.position.x;
       tsunoTransFrom.y = tsunoMesh.position.y;
       tsunoTransFrom.z = tsunoMesh.position.z;
-      // Target: near the product viewer canvas position (left side, close)
       tsunoTransTo.x = 1.0;
       tsunoTransTo.y = 0.0;
       tsunoTransTo.z = 3.0;
-      // Callback after grab completes
-      if (cb) setTimeout(cb, 550);
+      // Prevent behavior scheduler from interrupting the grab
+      tsunoBehaviorStart = t;
+      tsunoBehaviorDuration = 2.0;
+      // Fire callback when transition completes (tied to rAF, not wall clock)
+      tsunoGrabCallback = cb || null;
     }
   };
 

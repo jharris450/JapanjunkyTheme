@@ -621,10 +621,11 @@
   // ─── [View] Button — Cinematic Transition ─────────────────────
   if (piView) {
     piView.addEventListener('click', function (e) {
-      var href = piView.href;
+      var href = piView.getAttribute('href');
       if (!href) return; // fallback: normal navigation
 
-      // If View Transitions API not supported, just navigate
+      // Feature-detect View Transitions API; the cross-document transition
+      // fires automatically via <meta name="view-transition"> on navigation
       if (!document.startViewTransition) return;
 
       e.preventDefault();
