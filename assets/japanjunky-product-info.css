@@ -103,6 +103,8 @@
 .jj-product-info__actions {
   display: flex;
   gap: 4px;
+  position: relative;
+  z-index: 3;
 }
 
 .jj-product-info__actions .jj-action-btn {
