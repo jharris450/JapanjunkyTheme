@@ -228,6 +228,30 @@
   animation: jj-pdp-canvas-in 0.4s ease-out 0.1s both;
 }
 
+/* --- Condition color code ---
+   m  = Mint / Sealed / New    → cyan phosphor
+   nm = Near Mint / Excellent  → green phosphor
+   vg = Very Good              → gold
+   g  = Good / fallback        → muted gray
+   Placed late in the file so these rules beat the default variant-btn
+   color without needing extra specificity. */
+.jj-cond-m  { color: var(--jj-cyan, #00e5e5); text-shadow: 0 0 4px rgba(0, 229, 229, 0.3); }
+.jj-cond-nm { color: var(--jj-green, #33ff33); text-shadow: 0 0 4px rgba(51, 255, 51, 0.3); }
+.jj-cond-vg { color: var(--jj-secondary, #f5d742); text-shadow: 0 0 4px rgba(245, 215, 66, 0.3); }
+.jj-cond-g  { color: #888; }
+
+/* Variant buttons: always show condition color so grades are readable
+   at a glance. Active state is signalled by a matching heavier border. */
+.jj-pdp-variant-btn.jj-cond-m  { color: var(--jj-cyan, #00e5e5);      border-color: rgba(0, 229, 229, 0.4); }
+.jj-pdp-variant-btn.jj-cond-nm { color: var(--jj-green, #33ff33);     border-color: rgba(51, 255, 51, 0.4); }
+.jj-pdp-variant-btn.jj-cond-vg { color: var(--jj-secondary, #f5d742); border-color: rgba(245, 215, 66, 0.4); }
+.jj-pdp-variant-btn.jj-cond-g  { color: #888;                          border-color: #555; }
+
+.jj-pdp-variant-btn--active.jj-cond-m  { border-color: var(--jj-cyan, #00e5e5);      text-shadow: 0 0 4px rgba(0, 229, 229, 0.5); }
+.jj-pdp-variant-btn--active.jj-cond-nm { border-color: var(--jj-green, #33ff33);     text-shadow: 0 0 4px rgba(51, 255, 51, 0.5); }
+.jj-pdp-variant-btn--active.jj-cond-vg { border-color: var(--jj-secondary, #f5d742); text-shadow: 0 0 4px rgba(245, 215, 66, 0.5); }
+.jj-pdp-variant-btn--active.jj-cond-g  { border-color: #aaa;                          color: #ccc; }
+
 /* --- High Contrast --- */
 @media (prefers-contrast: more) {
   .jj-pdp-info {

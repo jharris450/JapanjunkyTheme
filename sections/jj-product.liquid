@@ -6,6 +6,17 @@
 {%- assign p = product -%}
 {%- assign current_variant = p.selected_or_first_available_variant -%}
 
+{%- comment -%} Resolve condition class for the currently-selected variant {%- endcomment -%}
+{%- assign _cv_cond = current_variant.option1 | default: '' | downcase | strip -%}
+{%- assign current_cond_class = 'jj-cond-g' -%}
+{%- if _cv_cond == 'm' or _cv_cond == 'n' or _cv_cond == 'mint' or _cv_cond == 'new' or _cv_cond == 'sealed' -%}
+  {%- assign current_cond_class = 'jj-cond-m' -%}
+{%- elsif _cv_cond == 'nm' or _cv_cond == 'near mint' or _cv_cond contains 'ex' -%}
+  {%- assign current_cond_class = 'jj-cond-nm' -%}
+{%- elsif _cv_cond == 'vg' or _cv_cond == 'vg+' or _cv_cond contains 'very' -%}
+  {%- assign current_cond_class = 'jj-cond-vg' -%}
+{%- endif -%}
+
 {%- comment -%} Product data for JS {%- endcomment -%}
 <script>
   window.JJ_SCREENSAVER_CONFIG = window.JJ_SCREENSAVER_CONFIG || {};
@@ -80,7 +91,7 @@
       <div class="jj-meta-row"><span class="jj-meta-row__label">Year:</span> <span class="jj-meta-row__value">{{ p.metafields.custom.year }}</span></div>
       {%- endif -%}
       {%- if current_variant.option1 != blank -%}
-      <div class="jj-meta-row"><span class="jj-meta-row__label">Condition:</span> <span class="jj-meta-row__value">{{ current_variant.option1 }}</span></div>
+      <div class="jj-meta-row"><span class="jj-meta-row__label">Condition:</span> <span class="jj-meta-row__value {{ current_cond_class }}" id="jj-pdp-condition-value">{{ current_variant.option1 }}</span></div>
       {%- endif -%}
     </div>
 
@@ -89,11 +100,21 @@
     {%- if p.variants.size > 1 -%}
     <div class="jj-pdp-variants" id="jj-pdp-variants">
       {%- for variant in p.variants -%}
-      <button class="jj-pdp-variant-btn{% if variant == current_variant %} jj-pdp-variant-btn--active{% endif %}"
+        {%- assign _v_cond = variant.option1 | default: '' | downcase | strip -%}
+        {%- assign v_cond_class = 'jj-cond-g' -%}
+        {%- if _v_cond == 'm' or _v_cond == 'n' or _v_cond == 'mint' or _v_cond == 'new' or _v_cond == 'sealed' -%}
+          {%- assign v_cond_class = 'jj-cond-m' -%}
+        {%- elsif _v_cond == 'nm' or _v_cond == 'near mint' or _v_cond contains 'ex' -%}
+          {%- assign v_cond_class = 'jj-cond-nm' -%}
+        {%- elsif _v_cond == 'vg' or _v_cond == 'vg+' or _v_cond contains 'very' -%}
+          {%- assign v_cond_class = 'jj-cond-vg' -%}
+        {%- endif -%}
+      <button class="jj-pdp-variant-btn {{ v_cond_class }}{% if variant == current_variant %} jj-pdp-variant-btn--active{% endif %}"
               data-variant-id="{{ variant.id }}"
               data-variant-price="{{ variant.price | money }}"
               data-variant-available="{{ variant.available }}"
               data-variant-option1="{{ variant.option1 }}"
+              data-cond-class="{{ v_cond_class }}"
               type="button">
         [{{ variant.option1 }}]
       </button>

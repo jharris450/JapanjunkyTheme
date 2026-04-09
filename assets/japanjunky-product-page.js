@@ -60,9 +60,15 @@
           addToCartBtn.textContent = vavail ? '[Add to Cart]' : '[Unavailable]';
         }
 
-        // Update condition in meta
-        var conditionEl = document.querySelector('.jj-pdp-meta .jj-meta-row:last-child .jj-meta-row__value');
-        if (conditionEl && voption1) conditionEl.textContent = voption1;
+        // Update condition in meta + swap color class to match the variant's grade
+        var conditionEl = document.getElementById('jj-pdp-condition-value') ||
+                          document.querySelector('.jj-pdp-meta .jj-meta-row:last-child .jj-meta-row__value');
+        if (conditionEl && voption1) {
+          conditionEl.textContent = voption1;
+          var newCondClass = btn.getAttribute('data-cond-class') || 'jj-cond-g';
+          conditionEl.classList.remove('jj-cond-m', 'jj-cond-nm', 'jj-cond-vg', 'jj-cond-g');
+          conditionEl.classList.add(newCondClass);
+        }
 
         // Update URL without reload
         var url = new URL(window.location);
