@@ -138,6 +138,20 @@
 
   window.addEventListener('resize', resize);
 
+  // Observe the canvas so the WebGL backing buffer always matches the
+  // element's laid-out size. Without this, a cold product-page load can
+  // run resize() before the stylesheet has given the canvas its final
+  // 500×500 box, locking the renderer at the 300×150 default canvas
+  // size — which then gets stretched by CSS and looks low-res. The
+  // observer fires once on initial layout (fixing the first paint) and
+  // again on any subsequent size change.
+  if (typeof ResizeObserver !== 'undefined') {
+    try {
+      var ro = new ResizeObserver(function () { resize(); });
+      ro.observe(canvas);
+    } catch (e) { /* ignore — fall back to window resize only */ }
+  }
+
   // ─── Model Creation ───────────────────────────────────────────
 
   function createModel(data) {
@@ -784,6 +798,12 @@
 
     // Show info panel and position canvas over its top-right
     infoPanel.style.display = '';
+    // Re-size the renderer now that the canvas has layout. Without this,
+    // the first product selection runs startAnimating() → resize() while
+    // the info panel (and thus the canvas) is still display:none, so the
+    // rect is 0×0 and the renderer keeps its 300×150 default backing
+    // buffer — the canvas looks low-res until a later resize event.
+    resize();
     positionCanvasOverBox();
 
     // Only play CRT-on entrance animation the first time
