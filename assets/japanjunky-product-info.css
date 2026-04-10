@@ -17,12 +17,14 @@
   margin-bottom: 40px; /* gap above taskbar */
 }
 
-/* Canvas: absolutely positioned within product-zone, overlapping the box top-right */
+/* Canvas: absolutely positioned inside the info box so it inherits the box's
+   stacking context. z-index 1 paints it above the box background/text but
+   still below the actions row (z-index 2), so buttons remain clickable. */
 #jj-viewer-canvas {
   position: absolute;
   width: 550px;
   height: 550px;
-  z-index: 2;
+  z-index: 1;
   pointer-events: auto;
   cursor: grab;
 }
@@ -100,10 +102,14 @@
   text-shadow: 0 0 6px rgba(245, 215, 66, 0.4);
 }
 
-/* Actions */
+/* Actions — positioned above the canvas within the box's local stacking
+   context so the Add to Cart / View buttons remain clickable even where
+   the 3D viewer canvas overlaps them. */
 .jj-product-info__actions {
   display: flex;
   gap: 4px;
+  position: relative;
+  z-index: 2;
 }
 
 .jj-product-info__actions .jj-action-btn {

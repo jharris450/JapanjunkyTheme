@@ -670,23 +670,24 @@
   var selectedCoverEl = null;
 
   function positionCanvasOverBox() {
-    if (!infoPanel || !canvas || !productZone) return;
-    var zoneRect = productZone.getBoundingClientRect();
+    if (!infoPanel || !canvas) return;
+    // Canvas is now a child of infoPanel, so coords are box-local.
     var boxRect = infoPanel.getBoundingClientRect();
     var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
     var cw = 550; // canvas width
 
-    // Center canvas horizontally on the box's top-right corner
-    var leftPx = (boxRect.right - zoneRect.left) / zoom - cw / 2;
+    // Center canvas horizontally on the box's right edge (box-local x).
+    var leftPx = boxRect.width / zoom - cw / 2;
 
-    // Align vertically with the selected catalogue cover, or default above box
+    // Align vertically with the selected catalogue cover, or default above box.
     var topPx;
     if (selectedCoverEl) {
       var coverRect = selectedCoverEl.getBoundingClientRect();
-      var coverCenterY = (coverRect.top + coverRect.height / 2 - zoneRect.top) / zoom;
+      var coverCenterY = (coverRect.top + coverRect.height / 2 - boxRect.top) / zoom;
       topPx = coverCenterY - cw / 2;
     } else {
-      topPx = (boxRect.top - zoneRect.top) / zoom - cw / 2;
+      // Box top in box-local coords is 0, so canvas center on box top edge = -cw/2.
+      topPx = -cw / 2;
     }
 
     canvas.style.position = 'absolute';
@@ -712,10 +713,22 @@
     return div.innerHTML;
   }
 
-  function buildMetaRow(label, value) {
+  function buildMetaRow(label, value, valueClass) {
+    var cls = valueClass ? ' ' + valueClass : '';
     return '<div class="jj-meta-row"><span class="jj-meta-row__label">' +
-           escapeHtml(label) + ':</span> <span class="jj-meta-row__value">' +
+           escapeHtml(label) + ':</span> <span class="jj-meta-row__value' + cls + '">' +
            escapeHtml(value) + '</span></div>';
+  }
+
+  // Map raw condition text to one of the jj-cond-* color classes. Mirrors
+  // the Liquid mapping in sections/jj-product.liquid so the homepage info
+  // panel color-codes conditions the same way the product page does.
+  function getConditionClass(cond) {
+    var c = (cond || '').toString().toLowerCase().trim();
+    if (c === 'm' || c === 'n' || c === 'mint' || c === 'new' || c === 'sealed') return 'jj-cond-m';
+    if (c === 'nm' || c === 'near mint' || c.indexOf('ex') !== -1) return 'jj-cond-nm';
+    if (c === 'vg' || c === 'vg+' || c.indexOf('very') !== -1) return 'jj-cond-vg';
+    return 'jj-cond-g';
   }
 
   var infoPanelShown = false;
@@ -748,7 +761,7 @@
       if (data.formatLabel) rows.push(buildMetaRow('Format', data.formatLabel));
       if (data.year) rows.push(buildMetaRow('Year', data.year));
       if (data.label) rows.push(buildMetaRow('Label', data.label));
-      if (data.condition) rows.push(buildMetaRow('Condition', data.condition));
+      if (data.condition) rows.push(buildMetaRow('Condition', data.condition, getConditionClass(data.condition)));
       if (data.code) rows.push(buildMetaRow('Code', data.code));
       piMeta.innerHTML = rows.join('');
     }

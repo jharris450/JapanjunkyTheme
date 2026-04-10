@@ -192,11 +192,23 @@
   border-top: 1px solid #222;
 }
 
-/* --- Right: Viewer canvas zone --- */
+/* --- Right: Viewer canvas zone ---
+   Background: warm amber radial glow behind the 3D viewer canvas so the
+   right side of the page reads as portal-lit (matching the homepage) instead
+   of a black void. The gradient is centered roughly where the 500px canvas
+   sits (top:50% right:10%, so ~65% across the viewer zone horizontally). */
 .jj-pdp-viewer {
   flex: 1;
   position: relative;
   pointer-events: auto;
+  background:
+    radial-gradient(
+      ellipse 55% 60% at 65% 50%,
+      rgba(232, 90, 15, 0.22) 0%,
+      rgba(102, 40, 10, 0.12) 35%,
+      rgba(40, 15, 5, 0.05) 65%,
+      transparent 90%
+    );
 }
 
 #jj-pdp-viewer-canvas {

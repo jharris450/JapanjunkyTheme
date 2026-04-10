@@ -58,6 +58,17 @@
   camera.position.set(cameraPreset.pos[0], cameraPreset.pos[1], cameraPreset.pos[2]);
   camera.lookAt(cameraPreset.look[0], cameraPreset.look[1], cameraPreset.look[2]);
 
+  // Product-page preset: camera is off-axis so several effects need
+  // conditional handling (amber clear color, fragment occlusion fade, etc.)
+  var isProductPagePreset = (config.cameraPreset === 'product');
+
+  // Main-pass clear color. Product page camera is off-axis, so part of
+  // the view sees past the tunnel cylinder wall — with a black clear
+  // that area reads as a dead void. Fill with a warm amber that matches
+  // the dim end of the tunnel shader's warm palette so the empty side
+  // reads as portal glow, aligned with the homepage's appearance.
+  var mainClearColor = isProductPagePreset ? 0x3a1a08 : 0x000000;
+
   // ─── Swirl Speed ─────────────────────────────────────────────
   var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
   var swirlSpeed = SWIRL_SPEEDS[config.orbitSpeed] || SWIRL_SPEEDS.slow;
@@ -1662,6 +1673,13 @@
       // Spawn position
       var angle = Math.random() * Math.PI * 2;
       var r = layer.spawnRadiusMin + Math.random() * (layer.spawnRadiusMax - layer.spawnRadiusMin);
+      if (isProductPagePreset) {
+        // Force fragments to spawn hugging the tunnel wall so every one of
+        // them will visibly cross TUNNEL_RADIUS as it expands outward and
+        // trigger the emergence fade. Near-axis spawns would otherwise
+        // never leave the cylinder and stay invisible their whole life.
+        r = TUNNEL_RADIUS * (0.85 + Math.random() * 0.15);
+      }
       var sx = Math.cos(angle) * r;
       var sy = Math.sin(angle) * r;
 
@@ -1670,6 +1688,10 @@
       var layerScale = layer.scaleMin + Math.random() * (layer.scaleMax - layer.scaleMin);
       var meshScaleX = layerScale * (meta.w / maxDim);
       var meshScaleY = layerScale * (meta.h / maxDim);
+
+      // Compute target alpha once so we can modulate it per-frame (e.g. the
+      // product-page emergence fade) without losing the spawn-time intent.
+      var targetAlpha = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
 
       // Try to recycle
       var mesh;
@@ -1684,7 +1706,7 @@
           isVivid ? 1.0 : 0.85,
           isVivid ? 1.0 : 0.7
         );
-        mesh.material.uniforms.uFragAlpha.value = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
+        mesh.material.uniforms.uFragAlpha.value = targetAlpha;
         scene.add(mesh);
       } else {
         var mat = makeFragmentMaterial(texEntry.tex);
@@ -1696,7 +1718,7 @@
           isVivid ? 1.0 : 0.85,
           isVivid ? 1.0 : 0.7
         );
-        mat.uniforms.uFragAlpha.value = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
+        mat.uniforms.uFragAlpha.value = targetAlpha;
         mesh = new THREE.Mesh(fragmentGeo, mat);
         scene.add(mesh);
       }
@@ -1718,7 +1740,8 @@
         baseY: sy,
         expandRate: layer.expandRate || 2.0,
         wobbleFreq: 0.3 + Math.random() * 0.5,
-        wobbleAmp: layer.wobbleAmp
+        wobbleAmp: layer.wobbleAmp,
+        targetAlpha: targetAlpha
       };
 
       fragmentPool.push(mesh);
@@ -1755,6 +1778,21 @@
       mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
 
       // GIF frame updates handled by tickFragmentGifs()
+
+      // Product-page emergence fade: the off-axis camera can see straight
+      // through the tunnel cylinder wall, so fragments spawned deep inside
+      // the funnel would otherwise appear as if they were showing *through*
+      // the portal. Keep them hidden while they're inside the cylinder and
+      // fade them in once they've radially expanded past the tunnel wall
+      // (i.e. they've visibly emerged from the funnel toward the camera).
+      if (isProductPagePreset) {
+        var fr = Math.sqrt(mesh.position.x * mesh.position.x + mesh.position.y * mesh.position.y);
+        // 0 while fully inside, ramps to 1 as radius crosses 1.0 units past wall.
+        var emerge = (fr - TUNNEL_RADIUS) / 1.0;
+        if (emerge < 0) emerge = 0;
+        else if (emerge > 1) emerge = 1;
+        mesh.material.uniforms.uFragAlpha.value = ud.targetAlpha * emerge;
+      }
 
       // Despawn (fragments fly toward camera, despawn when past it)
       if (mesh.position.z < SPAWN_Z) {
@@ -1819,7 +1857,7 @@
   function renderOneFrame() {
     // Pass 1 — main scene (layer 0): dithered
     camera.layers.set(0);
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
     renderer.render(scene, camera);
