@@ -772,11 +772,11 @@
     // Meta tags — stacked rows
     if (piMeta) {
       var rows = [];
+      if (data.code) rows.push(buildMetaRow('Code', data.code));
+      if (data.label) rows.push(buildMetaRow('Label', data.label));
       if (data.formatLabel) rows.push(buildMetaRow('Format', data.formatLabel));
       if (data.year) rows.push(buildMetaRow('Year', data.year));
-      if (data.label) rows.push(buildMetaRow('Label', data.label));
       if (data.condition) rows.push(buildMetaRow('Condition', data.condition, getConditionClass(data.condition)));
-      if (data.code) rows.push(buildMetaRow('Code', data.code));
       piMeta.innerHTML = rows.join('');
     }
 

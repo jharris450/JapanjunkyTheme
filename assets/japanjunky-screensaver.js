@@ -1732,6 +1732,9 @@
         texIdx: texIdx,
         velZ: -(layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin)),
         accel: -layer.accel,
+        // Product page: lateral sweep so fragments fly left across the
+        // angled camera view instead of straight at the viewer.
+        velX: isProductPagePreset ? (0.02 + Math.random() * 0.015) : 0,
         driftFreqX: 0.3 + Math.random() * 0.4,
         driftFreqY: 0.25 + Math.random() * 0.35,
         driftAmp: layer.driftAmp,
@@ -1761,6 +1764,9 @@
       // Z movement (frame-based)
       ud.velZ += ud.accel;
       mesh.position.z += ud.velZ;
+
+      // Lateral sweep (product page: fragments drift left across view)
+      ud.baseX += ud.velX;
 
       // Radial expansion — fragments fly outward toward screen edges as they approach
       var zProgress = 1.0 - (mesh.position.z - SPAWN_Z) / (DESPAWN_Z - SPAWN_Z);
