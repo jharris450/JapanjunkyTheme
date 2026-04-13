@@ -147,7 +147,7 @@
   {% unless template == 'product' %}
   {%- comment -%} Left zone: product viewer + info (homepage only) {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
-    <div class="jj-product-info" id="jj-product-info" data-parallax-layer style="display:none;">
+    <div class="jj-product-info" id="jj-product-info" style="display:none;">
       {%- comment -%} Canvas lives inside the box so its stacking context is local — lets the graphic paint in front of the box bg while keeping actions on top of the graphic. {%- endcomment -%}
       <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
