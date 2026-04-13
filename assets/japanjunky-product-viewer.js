@@ -776,7 +776,7 @@
       if (data.label) rows.push(buildMetaRow('Label', data.label));
       if (data.formatLabel) rows.push(buildMetaRow('Format', data.formatLabel));
       if (data.year) rows.push(buildMetaRow('Year', data.year));
-      if (data.condition) rows.push(buildMetaRow('Condition', data.condition, getConditionClass(data.condition)));
+      if (data.condition) rows.push(buildMetaRow('Condition', String(data.condition).toUpperCase(), getConditionClass(data.condition)));
       piMeta.innerHTML = rows.join('');
     }
 
@@ -883,16 +883,7 @@
             piAddToCart.disabled = false;
           }, 1500);
 
-          fetch('/cart.js')
-            .then(function (r) { return r.json(); })
-            .then(function (cart) {
-              var cartBtns = document.querySelectorAll('.jj-nav-action-btn');
-              for (var i = 0; i < cartBtns.length; i++) {
-                if (cartBtns[i].textContent.indexOf('Cart') !== -1) {
-                  cartBtns[i].textContent = '[Cart:' + cart.item_count + ']';
-                }
-              }
-            });
+          if (window.jjRefreshCart) window.jjRefreshCart();
         })
         .catch(function () {
           piAddToCart.textContent = '[ERR]';

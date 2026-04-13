@@ -20,6 +20,22 @@
   z-index: 1000;
   font-size: 12px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Safety extension: covers any subpixel/compositor gap between the
+   taskbar's bottom edge and the viewport bottom that can surface during
+   repaints (e.g. parallax transform on other layers under zoom: 2.5). */
+.jj-taskbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 4px;
+  background: #0a0a0a;
+  pointer-events: none;
 }
 
 /* --- Start Button Wrapper --- */

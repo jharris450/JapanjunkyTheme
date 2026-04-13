@@ -32,6 +32,8 @@
   pointer-events: auto;
   position: relative;
   z-index: 2;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .jj-ring__search-wrap {

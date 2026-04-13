@@ -110,6 +110,7 @@
             addToCartBtn.textContent = '[Add to Cart]';
             addToCartBtn.disabled = false;
           }, 1500);
+          if (window.jjRefreshCart) window.jjRefreshCart();
         })
         .catch(function () {
           addToCartBtn.textContent = '[ERR]';

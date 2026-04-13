@@ -309,15 +309,7 @@
             elAddBtn.textContent = '[Add to Cart]';
             elAddBtn.disabled = false;
           }, 1500);
-          // Update cart count in nav
-          var cartBtns = document.querySelectorAll('.jj-nav-action-btn');
-          cartBtns.forEach(function (btn) {
-            if (btn.textContent.indexOf('Cart') !== -1) {
-              fetch('/cart.js').then(function (r) { return r.json(); }).then(function (cart) {
-                btn.textContent = '[Cart:' + cart.item_count + ']';
-              });
-            }
-          });
+          if (window.jjRefreshCart) window.jjRefreshCart();
         })
         .catch(function () {
           elAddBtn.textContent = '[ERR]';
