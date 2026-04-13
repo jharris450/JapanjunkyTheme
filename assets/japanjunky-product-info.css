@@ -15,8 +15,6 @@
   padding: 10px 16px 12px;
   margin-top: auto; /* push box to bottom of product zone, canvas overlaps above */
   margin-bottom: 40px; /* gap above taskbar */
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 /* Canvas: absolutely positioned inside the info box so it inherits the box's
