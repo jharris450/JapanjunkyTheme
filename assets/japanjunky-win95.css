@@ -6,27 +6,22 @@
 /* --- Win95 Taskbar (terminal status bar) --- */
 .jj-taskbar {
   position: fixed;
-  /* Extend 6px below the viewport bottom so subpixel rounding from
-     html { zoom: 2.5 } can never leave a visible gap under the
-     taskbar during repaints (e.g. parallax transforms). The extra
-     6px gets clipped by html { overflow: hidden }, and we add a
-     matching padding-bottom so content stays in its original slot. */
-  bottom: -6px;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 38px;
+  height: 32px;
   background: #0a0a0a;
   border-top: 1px solid #333;
   display: flex;
   align-items: center;
-  padding: 2px 8px 8px;
+  padding: 2px 8px;
   gap: 4px;
   flex-shrink: 0;
-  z-index: 1000;
+  /* Must sit above #jj-crt-shader-canvas (z-index 10002) so the
+     Three.js scene never paints over the taskbar area. */
+  z-index: 10010;
   font-size: 12px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 /* --- Start Button Wrapper --- */
