@@ -130,10 +130,45 @@
 
 .jj-ring__count {
   margin-left: auto;
-  margin-right: 16px;
+  margin-right: 8px;
   color: #555;
   font-size: 10px;
   white-space: nowrap;
+}
+
+/* --- Cart Button (replaces the removed jj-nav-bar) --- */
+.jj-ring__cart-btn {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--jj-text, #e0d5c0);
+  background: none;
+  border: 1px solid #333;
+  padding: 2px 6px;
+  cursor: default;
+  flex-shrink: 0;
+  white-space: nowrap;
+  text-decoration: none;
+  text-transform: none;
+}
+.jj-ring__cart-btn:hover {
+  color: var(--jj-primary, #e8313a);
+  border-color: var(--jj-primary, #e8313a);
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.3);
+  box-shadow: 0 0 6px rgba(232, 49, 58, 0.15);
+  text-decoration: none;
+}
+.jj-ring__cart-btn__icon {
+  color: var(--jj-secondary, #f5d742);
+  font-weight: 700;
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.35);
+}
+.jj-ring__cart-btn--flash {
+  animation: jj-ring-cart-flash 600ms steps(6, end) 1;
+}
+@keyframes jj-ring-cart-flash {
+  0%   { background: #0f2a0f; border-color: #33ff33; color: #33ff33; box-shadow: 0 0 10px rgba(51, 255, 51, 0.5); }
+  50%  { background: #000;    border-color: #33ff33; color: #33ff33; box-shadow: 0 0 6px  rgba(51, 255, 51, 0.3); }
+  100% { background: transparent; border-color: #333; color: var(--jj-text, #e0d5c0); box-shadow: none; }
 }
 
 /* --- Filter Dropdown --- */

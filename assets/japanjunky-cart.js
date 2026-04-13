@@ -18,10 +18,10 @@
 
         var btn = document.getElementById('jj-nav-cart');
         if (btn) {
-          btn.classList.remove('jj-nav-cart--flash');
+          btn.classList.remove('jj-ring__cart-btn--flash');
           // Force reflow so the animation restarts on repeat clicks.
           void btn.offsetWidth;
-          btn.classList.add('jj-nav-cart--flash');
+          btn.classList.add('jj-ring__cart-btn--flash');
         }
         return cart;
       })
