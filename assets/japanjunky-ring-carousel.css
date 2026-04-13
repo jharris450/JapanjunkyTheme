@@ -8,13 +8,14 @@
   position: fixed;
   right: 0;
   top: 0;
-  width: 16vw;
+  width: 50vw;
   height: calc(40vh - 12.8px); /* above taskbar (divided by 2.5 for zoom) */
   z-index: 50;
   display: flex;
   flex-direction: column;
   pointer-events: none;
 }
+
 
 /* --- Filter/Search Bar --- */
 .jj-ring__bar {
@@ -218,7 +219,8 @@
 /* --- Arc Stage (vertical increscent) --- */
 .jj-ring__stage {
   flex: 1;
-  width: 100%;
+  width: 16vw;
+  align-self: flex-end;
   display: flex;
   align-items: center;
   justify-content: center;
