@@ -64,7 +64,14 @@
       s.y += (ty - s.y) * 0.1;
 
       if (Math.abs(s.x) > 0.01 || Math.abs(s.y) > 0.01) {
-        layers[i].style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px)';
+        // Round to integer pixels — fractional translates force the
+        // root's SVG barrel filter (filter: url(#jj-crt-barrel)) to
+        // re-rasterize at sub-pixel offsets, exposing a 1–3px gap at
+        // the viewport edges where the displacement filter samples
+        // outside the source bounds.
+        var rx = Math.round(s.x);
+        var ry = Math.round(s.y);
+        layers[i].style.transform = 'translate(' + rx + 'px, ' + ry + 'px)';
         settling = true;
       } else {
         s.x = 0;
