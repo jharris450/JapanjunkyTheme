@@ -31,6 +31,7 @@
 
 /* --- Start Button --- */
 .jj-start-btn {
+  position: relative;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   font-weight: 700;
@@ -46,6 +47,7 @@
   letter-spacing: 0;
   white-space: nowrap;
   height: 26px;
+  overflow: visible;
 }
 
 .jj-start-btn__icon {
@@ -62,6 +64,113 @@
 .jj-start-btn:active,
 .jj-start-btn--active {
   background: #111;
+}
+
+/* --- Cart notification badge (top-left corner of CMD button) --- */
+.jj-start-btn__cart-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 14px;
+  height: 14px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.jj-start-btn__cart-icon {
+  position: relative;
+  z-index: 2;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f5d742;
+  text-shadow:
+    0 0 3px #f5d742,
+    0 0 6px rgba(245, 215, 66, 0.7);
+}
+
+/* 80s pop: radial neon burst behind the cart icon */
+.jj-start-btn__cart-pop {
+  position: absolute;
+  inset: -6px;
+  z-index: 1;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(255, 240, 120, 0.9) 0%,
+      rgba(255, 80, 200, 0.75) 28%,
+      rgba(120, 60, 255, 0.55) 55%,
+      rgba(0, 220, 255, 0.25) 78%,
+      transparent 100%);
+  opacity: 0;
+  transform: scale(0.4);
+  filter: blur(0.5px);
+  mix-blend-mode: screen;
+}
+
+/* --- Glow + badge animation when cart-flash is applied --- */
+.jj-start-btn--cart-flash {
+  border-color: var(--jj-primary);
+  animation: jj-start-btn-glow 1600ms ease-out 1;
+}
+
+.jj-start-btn--cart-flash .jj-start-btn__cart-badge {
+  display: flex;
+  animation: jj-cart-badge-flash 1600ms steps(8, end) 1;
+}
+
+.jj-start-btn--cart-flash .jj-start-btn__cart-pop {
+  animation: jj-cart-pop-burst 1600ms ease-out 1;
+}
+
+@keyframes jj-start-btn-glow {
+  0% {
+    box-shadow:
+      0 0 0 rgba(232, 49, 58, 0),
+      0 0 0 rgba(245, 215, 66, 0);
+    text-shadow: 0 0 0 rgba(232, 49, 58, 0);
+  }
+  15% {
+    box-shadow:
+      0 0 14px rgba(232, 49, 58, 0.85),
+      0 0 28px rgba(255, 80, 200, 0.45);
+    text-shadow: 0 0 6px rgba(232, 49, 58, 0.7);
+  }
+  100% {
+    box-shadow:
+      0 0 0 rgba(232, 49, 58, 0),
+      0 0 0 rgba(255, 80, 200, 0);
+    text-shadow: 0 0 0 rgba(232, 49, 58, 0);
+  }
+}
+
+@keyframes jj-cart-badge-flash {
+  0%, 100% { opacity: 0; }
+  10%, 30%, 50%, 70%, 90% { opacity: 1; }
+  20%, 40%, 60%, 80%      { opacity: 0.15; }
+}
+
+@keyframes jj-cart-pop-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
+  55% {
+    opacity: 0.7;
+    transform: scale(2.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
 }
 
 /* --- Taskbar Divider --- */
