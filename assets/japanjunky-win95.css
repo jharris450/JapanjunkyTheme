@@ -47,7 +47,9 @@
   letter-spacing: 0;
   white-space: nowrap;
   height: 26px;
-  overflow: visible;
+  /* Clip badge + neon pop to button bounds so nothing paints above the
+     taskbar (any leak retriggers the parallax/CRT-canvas gap regression). */
+  overflow: hidden;
 }
 
 .jj-start-btn__icon {
@@ -57,8 +59,6 @@
 
 .jj-start-btn:hover {
   border-color: var(--jj-primary);
-  text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
-  box-shadow: 0 0 6px rgba(232, 49, 58, 0.15);
 }
 
 .jj-start-btn:active,
@@ -69,10 +69,10 @@
 /* --- Cart notification badge (top-left corner of CMD button) --- */
 .jj-start-btn__cart-badge {
   position: absolute;
-  top: -6px;
-  left: -6px;
-  width: 14px;
-  height: 14px;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
   display: none;
   align-items: center;
   justify-content: center;
@@ -80,25 +80,26 @@
   z-index: 2;
 }
 
+.jj-start-btn--has-cart .jj-start-btn__cart-badge {
+  display: flex;
+}
+
 .jj-start-btn__cart-icon {
   position: relative;
   z-index: 2;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   color: #f5d742;
-  text-shadow:
-    0 0 3px #f5d742,
-    0 0 6px rgba(245, 215, 66, 0.7);
 }
 
-/* 80s pop: radial neon burst behind the cart icon */
+/* 80s pop: radial neon burst behind the cart icon. Sized so even the
+   peak scale stays inside the 26px button (no paint above taskbar). */
 .jj-start-btn__cart-pop {
   position: absolute;
-  inset: -6px;
+  inset: -3px;
   z-index: 1;
-  border-radius: 0;
   background:
     radial-gradient(circle at 50% 50%,
       rgba(255, 240, 120, 0.9) 0%,
@@ -108,18 +109,11 @@
       transparent 100%);
   opacity: 0;
   transform: scale(0.4);
-  filter: blur(0.5px);
-  mix-blend-mode: screen;
 }
 
-/* --- Glow + badge animation when cart-flash is applied --- */
-.jj-start-btn--cart-flash {
-  border-color: var(--jj-primary);
-  animation: jj-start-btn-glow 1600ms ease-out 1;
-}
-
+/* Flash burst on add-to-cart. Only animates the badge contents — no
+   box-shadow / text-shadow / border that could extend past the button. */
 .jj-start-btn--cart-flash .jj-start-btn__cart-badge {
-  display: flex;
   animation: jj-cart-badge-flash 1600ms steps(8, end) 1;
 }
 
@@ -127,50 +121,24 @@
   animation: jj-cart-pop-burst 1600ms ease-out 1;
 }
 
-@keyframes jj-start-btn-glow {
-  0% {
-    box-shadow:
-      0 0 0 rgba(232, 49, 58, 0),
-      0 0 0 rgba(245, 215, 66, 0);
-    text-shadow: 0 0 0 rgba(232, 49, 58, 0);
-  }
-  15% {
-    box-shadow:
-      0 0 14px rgba(232, 49, 58, 0.85),
-      0 0 28px rgba(255, 80, 200, 0.45);
-    text-shadow: 0 0 6px rgba(232, 49, 58, 0.7);
-  }
-  100% {
-    box-shadow:
-      0 0 0 rgba(232, 49, 58, 0),
-      0 0 0 rgba(255, 80, 200, 0);
-    text-shadow: 0 0 0 rgba(232, 49, 58, 0);
-  }
-}
-
 @keyframes jj-cart-badge-flash {
-  0%, 100% { opacity: 0; }
+  0%, 100% { opacity: 1; }
   10%, 30%, 50%, 70%, 90% { opacity: 1; }
-  20%, 40%, 60%, 80%      { opacity: 0.15; }
+  20%, 40%, 60%, 80%      { opacity: 0.25; }
 }
 
 @keyframes jj-cart-pop-burst {
-  0% {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  20% {
-    opacity: 1;
-    transform: scale(1.6);
-  }
-  55% {
-    opacity: 0.7;
-    transform: scale(2.1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2.6);
-  }
+  0%   { opacity: 0;   transform: scale(0.3); }
+  20%  { opacity: 1;   transform: scale(1.4); }
+  55%  { opacity: 0.6; transform: scale(1.8); }
+  100% { opacity: 0;   transform: scale(2.0); }
+}
+
+/* --- Start menu cart row symbol --- */
+.jj-start-menu__cart-symbol {
+  color: #f5d742;
+  font-weight: 700;
+  margin-right: 2px;
 }
 
 /* --- Taskbar Divider --- */

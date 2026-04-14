@@ -19,10 +19,13 @@
 
         var btn = document.getElementById('jj-start-btn');
         if (btn) {
+          btn.classList.toggle('jj-start-btn--has-cart', cart.item_count > 0);
           btn.classList.remove('jj-start-btn--cart-flash');
           // Force reflow so the animation restarts on repeat clicks.
           void btn.offsetWidth;
-          btn.classList.add('jj-start-btn--cart-flash');
+          if (cart.item_count > 0) {
+            btn.classList.add('jj-start-btn--cart-flash');
+          }
         }
         return cart;
       })
