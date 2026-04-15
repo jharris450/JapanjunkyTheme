@@ -436,6 +436,89 @@
     });
   }
 
+  // ─── Memphis Squiggle Backdrop ─────────────────────────────
+  // Full-frame procedural pattern inspired by 80s music-video drop
+  // cloths (Memphis style). Marks animate shrinking big→small on loop.
+  var MEMPHIS_VERT = [
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = uv;',
+    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+    '}'
+  ].join('\n');
+
+  var MEMPHIS_FRAG = [
+    'uniform float uTime;',
+    'uniform float uAspect;',
+    'varying vec2 vUv;',
+    '',
+    'float hash(vec2 p) {',
+    '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
+    '}',
+    'float vnoise(vec2 p) {',
+    '  vec2 i = floor(p);',
+    '  vec2 f = fract(p);',
+    '  vec2 u = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),',
+    '             mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),',
+    '             u.y);',
+    '}',
+    'float fbm(vec2 p) {',
+    '  float v = 0.0;',
+    '  float a = 0.5;',
+    '  for (int i = 0; i < 5; i++) {',
+    '    v += a * vnoise(p);',
+    '    p *= 2.03;',
+    '    a *= 0.5;',
+    '  }',
+    '  return v;',
+    '}',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv - 0.5;',
+    '  uv.x *= uAspect;',
+    '',
+    '  // Loop: marks shrink from big to small, then reset.',
+    '  float phase = fract(uTime * 0.035);',
+    '  float scale = mix(3.5, 26.0, phase);',
+    '',
+    '  vec2 p = uv * scale;',
+    '',
+    '  // Domain-warp for organic squiggle shapes.',
+    '  vec2 w = vec2(',
+    '    fbm(p * 0.7 + vec2(uTime * 0.12, 0.0)),',
+    '    fbm(p * 0.7 + vec2(5.2, 1.3) - vec2(0.0, uTime * 0.09))',
+    '  );',
+    '  p += w * 1.9;',
+    '',
+    '  float n = fbm(p * 1.1);',
+    '  float mask = smoothstep(0.44, 0.58, n);',
+    '',
+    '  // Cream bg, near-black ink — Memphis feel, no pink.',
+    '  vec3 bg  = vec3(0.16, 0.11, 0.05);',
+    '  vec3 ink = vec3(0.0);',
+    '  vec3 color = mix(bg, ink, mask);',
+    '',
+    '  gl_FragColor = vec4(color, 1.0);',
+    '}'
+  ].join('\n');
+
+  var memphisGeo = new THREE.PlaneGeometry(80, 50);
+  var memphisMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0.0 },
+      uAspect: { value: resW / resH }
+    },
+    vertexShader: MEMPHIS_VERT,
+    fragmentShader: MEMPHIS_FRAG,
+    depthWrite: false,
+    depthTest: false
+  });
+  var memphisBackdrop = new THREE.Mesh(memphisGeo, memphisMat);
+  memphisBackdrop.position.set(0, 0, 40);
+  memphisBackdrop.renderOrder = -10;
+  scene.add(memphisBackdrop);
+
   // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
   var GHOST_FRAG = [
     'uniform sampler2D uTexture;',
@@ -1998,6 +2081,7 @@
     tunnel.material.uniforms.uTime.value = t;
     glow.material.uniforms.uTime.value = t;
     sparkles.material.uniforms.uTime.value = t;
+    memphisBackdrop.material.uniforms.uTime.value = t;
 
     // Spin portal rings + update time
     for (var ri = 0; ri < portalRings.length; ri++) {

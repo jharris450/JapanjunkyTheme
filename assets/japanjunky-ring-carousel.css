@@ -20,6 +20,7 @@
 /* --- Filter/Search Bar --- */
 .jj-ring__bar {
   width: 75%;
+  align-self: flex-end;
   flex-shrink: 0;
   display: flex;
   flex-wrap: nowrap;
