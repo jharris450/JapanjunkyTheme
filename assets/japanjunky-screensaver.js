@@ -93,6 +93,28 @@
     'uniform float uSwirlSpeed;',
     'varying vec2 vUv;',
     '',
+    'float mhash(vec2 p) {',
+    '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
+    '}',
+    'float mnoise(vec2 p) {',
+    '  vec2 i = floor(p);',
+    '  vec2 f = fract(p);',
+    '  vec2 u = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(mhash(i), mhash(i + vec2(1.0, 0.0)), u.x),',
+    '             mix(mhash(i + vec2(0.0, 1.0)), mhash(i + vec2(1.0, 1.0)), u.x),',
+    '             u.y);',
+    '}',
+    'float mfbm(vec2 p) {',
+    '  float v = 0.0;',
+    '  float a = 0.5;',
+    '  for (int i = 0; i < 5; i++) {',
+    '    v += a * mnoise(p);',
+    '    p *= 2.03;',
+    '    a *= 0.5;',
+    '  }',
+    '  return v;',
+    '}',
+    '',
     'void main() {',
     '  float angle = vUv.x;',
     '  float depth = vUv.y;',
@@ -138,6 +160,21 @@
     '  vec3 glowWarm = vec3(0.95, 0.75, 0.5);',
     '  vec3 glowCool = vec3(0.7, 0.5, 0.95);',
     '  color += mix(glowWarm, glowCool, depthMix) * glow * 0.3;',
+    '',
+    '  // Memphis squiggle backdrop — baked onto tunnel walls so it',
+    '  // shows through the wrapping cylinder. Animates big→small.',
+    '  float phase = fract(uTime * 0.035);',
+    '  float mscale = mix(4.0, 24.0, phase);',
+    '  vec2 mp = vec2(angle * 6.2832 * 1.4, depth * 10.0) * (mscale / 12.0);',
+    '  vec2 mw = vec2(',
+    '    mfbm(mp * 0.7 + vec2(uTime * 0.12, 0.0)),',
+    '    mfbm(mp * 0.7 + vec2(5.2, 1.3) - vec2(0.0, uTime * 0.09))',
+    '  );',
+    '  mp += mw * 1.9;',
+    '  float mn = mfbm(mp * 1.1);',
+    '  float mmask = smoothstep(0.44, 0.58, mn);',
+    '  // Darken walls where memphis marks fall, leaving bright spiral.',
+    '  color = mix(color, color * 0.1, mmask * (1.0 - pattern * 0.7));',
     '',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
@@ -503,7 +540,12 @@
     '}'
   ].join('\n');
 
-  var memphisGeo = new THREE.PlaneGeometry(80, 50);
+  // Rendered as a separate pre-pass with ortho camera so it fills the
+  // full frame behind the tunnel (which otherwise wraps the camera
+  // and occludes any in-scene backdrop mesh).
+  var memphisScene = new THREE.Scene();
+  var memphisCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  var memphisGeo = new THREE.PlaneGeometry(2, 2);
   var memphisMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0.0 },
@@ -515,9 +557,7 @@
     depthTest: false
   });
   var memphisBackdrop = new THREE.Mesh(memphisGeo, memphisMat);
-  memphisBackdrop.position.set(0, 0, 40);
-  memphisBackdrop.renderOrder = -10;
-  scene.add(memphisBackdrop);
+  memphisScene.add(memphisBackdrop);
 
   // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
   var GHOST_FRAG = [
@@ -1944,12 +1984,17 @@
 
   // ─── Render one frame (reusable) ─────────────────────────────
   function renderOneFrame() {
-    // Pass 1 — main scene (layer 0): dithered
+    // Pass 0 — memphis backdrop pre-pass fills the frame before the
+    // tunnel wraps the camera.
     camera.layers.set(0);
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
+    var prevAutoClear = renderer.autoClear;
+    renderer.autoClear = false;
+    renderer.render(memphisScene, memphisCamera);
     renderer.render(scene, camera);
+    renderer.autoClear = prevAutoClear;
     renderer.setRenderTarget(null);
 
     renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
