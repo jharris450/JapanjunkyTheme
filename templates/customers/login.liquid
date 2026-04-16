@@ -1,0 +1,123 @@
+{%- comment -%}
+  JapanJunky Login Page — Terminal-styled auth panel
+  with screen-swap between login, register, and password reset.
+{%- endcomment -%}
+
+<script>
+  window.JJ_SCREENSAVER_CONFIG = window.JJ_SCREENSAVER_CONFIG || {};
+  window.JJ_SCREENSAVER_CONFIG.cameraPreset = 'login';
+</script>
+
+<div class="jj-auth" id="jj-auth">
+  {%- comment -%} Login form (default visible) {%- endcomment -%}
+  <div class="jj-auth__screen" id="jj-auth-login" data-screen="login">
+    <div class="jj-auth__title">
+      <span class="jj-auth__prompt">C:\&gt;</span> auth /login
+    </div>
+    <div class="jj-auth__error" id="jj-auth-error" style="display:none;"></div>
+    <form action="/account/login" method="post">
+      <input type="hidden" name="return_to" value="/">
+      <div class="jj-auth__row">
+        <label for="jj-login-email">user:</label>
+        <input type="email" id="jj-login-email" name="customer[email]"
+               autocomplete="email" required>
+      </div>
+      <div class="jj-auth__row">
+        <label for="jj-login-pass">pass:</label>
+        <input type="password" id="jj-login-pass" name="customer[password]"
+               autocomplete="current-password" required>
+      </div>
+      <div class="jj-auth__actions">
+        <button type="submit" class="jj-win95-btn-sm">[Login]</button>
+        <a href="#" class="jj-auth__forgot" id="jj-auth-forgot-link">[Forgot?]</a>
+      </div>
+    </form>
+    <div class="jj-auth__divider"></div>
+    <div class="jj-auth__switch">
+      no account? <a href="#" id="jj-auth-to-register" class="jj-auth__switch-link">[Register]</a>
+    </div>
+  </div>
+
+  {%- comment -%} Register form (hidden, swapped in via JS) {%- endcomment -%}
+  <div class="jj-auth__screen" id="jj-auth-register" data-screen="register" style="display:none;">
+    <div class="jj-auth__title">
+      <span class="jj-auth__prompt">C:\&gt;</span> auth /register
+    </div>
+    <div class="jj-auth__error" id="jj-auth-register-error" style="display:none;"></div>
+    <form action="/account" method="post">
+      <input type="hidden" name="form_type" value="create_customer">
+      <input type="hidden" name="return_to" value="/">
+      <div class="jj-auth__row">
+        <label for="jj-reg-first">first:</label>
+        <input type="text" id="jj-reg-first" name="customer[first_name]"
+               autocomplete="given-name" required>
+      </div>
+      <div class="jj-auth__row">
+        <label for="jj-reg-last">last:</label>
+        <input type="text" id="jj-reg-last" name="customer[last_name]"
+               autocomplete="family-name" required>
+      </div>
+      <div class="jj-auth__row">
+        <label for="jj-reg-email">email:</label>
+        <input type="email" id="jj-reg-email" name="customer[email]"
+               autocomplete="email" required>
+      </div>
+      <div class="jj-auth__row">
+        <label for="jj-reg-pass">pass:</label>
+        <input type="password" id="jj-reg-pass" name="customer[password]"
+               autocomplete="new-password" required>
+      </div>
+      <div class="jj-auth__actions">
+        <button type="submit" class="jj-win95-btn-sm">[Create Account]</button>
+      </div>
+    </form>
+    <div class="jj-auth__divider"></div>
+    <div class="jj-auth__switch">
+      have account? <a href="#" id="jj-auth-to-login" class="jj-auth__switch-link">[Login]</a>
+    </div>
+  </div>
+
+  {%- comment -%} Password reset form (hidden, swapped in via JS) {%- endcomment -%}
+  <div class="jj-auth__screen" id="jj-auth-reset" data-screen="reset" style="display:none;">
+    <div class="jj-auth__title">
+      <span class="jj-auth__prompt">C:\&gt;</span> auth /reset
+    </div>
+    <form action="/account/recover" method="post">
+      <div class="jj-auth__row">
+        <label for="jj-reset-email">email:</label>
+        <input type="email" id="jj-reset-email" name="email"
+               autocomplete="email" required>
+      </div>
+      <div class="jj-auth__actions">
+        <button type="submit" class="jj-win95-btn-sm">[Send Reset]</button>
+      </div>
+    </form>
+    <div class="jj-auth__divider"></div>
+    <div class="jj-auth__switch">
+      back to <a href="#" id="jj-auth-to-login-from-reset" class="jj-auth__switch-link">[Login]</a>
+    </div>
+  </div>
+</div>
+
+{%- comment -%} No-JS fallback {%- endcomment -%}
+<noscript>
+  <style>.jj-auth { display: none; }</style>
+  <div style="padding: 20px; color: #e0d5c0; font-family: monospace;">
+    <h2>Login</h2>
+    <form action="/account/login" method="post">
+      <input type="hidden" name="return_to" value="/">
+      <label>Email: <input type="email" name="customer[email]" required></label><br>
+      <label>Password: <input type="password" name="customer[password]" required></label><br>
+      <button type="submit">Login</button>
+    </form>
+    <h2>Register</h2>
+    <form action="/account" method="post">
+      <input type="hidden" name="form_type" value="create_customer">
+      <label>First Name: <input type="text" name="customer[first_name]" required></label><br>
+      <label>Last Name: <input type="text" name="customer[last_name]" required></label><br>
+      <label>Email: <input type="email" name="customer[email]" required></label><br>
+      <label>Password: <input type="password" name="customer[password]" required></label><br>
+      <button type="submit">Create Account</button>
+    </form>
+  </div>
+</noscript>
