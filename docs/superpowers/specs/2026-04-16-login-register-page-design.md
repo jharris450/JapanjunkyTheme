@@ -327,7 +327,7 @@ All links call `e.preventDefault()` before swap.
 ### Keystroke event dispatch
 
 ```javascript
-var authInputs = document.querySelectorAll('.jj-auth input');
+var authInputs = document.querySelectorAll('.jj-auth input:not([type="hidden"])');
 for (var i = 0; i < authInputs.length; i++) {
   authInputs[i].addEventListener('keydown', function () {
     document.dispatchEvent(new CustomEvent('jj-auth-keystroke'));
