@@ -52,7 +52,8 @@
 
   var CAMERA_PRESETS = {
     default: { pos: [0, 0, -1], look: [0, 0, 30] },
-    product: { pos: [-3, 0.5, -1], look: [2, 0, 30] }
+    product: { pos: [-3, 0.5, -1], look: [2, 0, 30] },
+    login:   { pos: [0, 2.5, -1], look: [0, -1, 30] }
   };
   var cameraPreset = CAMERA_PRESETS[config.cameraPreset] || CAMERA_PRESETS.default;
   camera.position.set(cameraPreset.pos[0], cameraPreset.pos[1], cameraPreset.pos[2]);
@@ -61,13 +62,14 @@
   // Product-page preset: camera is off-axis so several effects need
   // conditional handling (amber clear color, fragment occlusion fade, etc.)
   var isProductPagePreset = (config.cameraPreset === 'product');
+  var isLoginPreset = (config.cameraPreset === 'login');
 
   // Main-pass clear color. Product page camera is off-axis, so part of
   // the view sees past the tunnel cylinder wall — with a black clear
   // that area reads as a dead void. Fill with a warm amber that matches
   // the dim end of the tunnel shader's warm palette so the empty side
   // reads as portal glow, aligned with the homepage's appearance.
-  var mainClearColor = isProductPagePreset ? 0x3a1a08 : 0x000000;
+  var mainClearColor = (isProductPagePreset || isLoginPreset) ? 0x3a1a08 : 0x000000;
 
   // ─── Swirl Speed ─────────────────────────────────────────────
   var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
@@ -640,7 +642,11 @@
   var TSUNO_IDLE_POS = { x: 4.0, y: 0.0, z: 6 };
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
+  var tsunoLoginPageMode = config.cameraPreset === 'login';
   var TSUNO_PRODUCT_POS = { x: 2.5, y: -0.5, z: 8 };
+  var TSUNO_LOGIN_POS = { x: 0, y: 0.5, z: 3 };
+  var tsunoLastFlipTime = 0;
+  var TSUNO_FLIP_THROTTLE = 0.3;
   var TSUNO_ORBIT_RADIUS = 2.0;
   var TSUNO_ORBIT_SPEED = 0.2;
   var TSUNO_ORBIT_Z = 16;
@@ -798,6 +804,16 @@
 
   function updateTsunoIdle(t) {
     if (!tsunoMesh) return;
+
+    if (tsunoLoginPageMode) {
+      tsunoMesh.scale.set(-3.5, 3.5, 1);
+      tsunoMesh.position.x = TSUNO_LOGIN_POS.x + Math.sin(t * 0.15) * 0.3;
+      tsunoMesh.position.y = TSUNO_LOGIN_POS.y + Math.sin(t * 0.22) * 0.15;
+      tsunoMesh.position.z = TSUNO_LOGIN_POS.z;
+      tsunoMesh.material.uniforms.uAlpha.value = 0.6;
+      tsunoMesh.lookAt(camera.position);
+      return;
+    }
 
     // Before first product selection: simple idle bob at fixed position
     if (!tsunoActivated) {
@@ -1036,7 +1052,7 @@
 
   function tsunoOnProductSelected() {
     if (!tsunoMesh || tsunoState !== 'idle') return;
-    if (tsunoProductPageMode) return; // Product page: Tsuno stays calm
+    if (tsunoProductPageMode || tsunoLoginPageMode) return;
 
     // First product selection activates personality system
     if (!tsunoActivated) {
@@ -1143,7 +1159,7 @@
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
-      var tsunoStartPos = tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS;
+      var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       scene.add(tsunoMesh);
 
@@ -1168,11 +1184,26 @@
 
       // On the product page there is no "first product selection" to activate
       // the personality system, so bootstrap the floating idle immediately.
-      if (tsunoProductPageMode) {
+      if (tsunoLoginPageMode) {
+        tsunoMesh.scale.set(-3.5, 3.5, 1);
+        tsunoMesh.position.set(TSUNO_LOGIN_POS.x, TSUNO_LOGIN_POS.y, TSUNO_LOGIN_POS.z);
+        tsunoMesh.material.uniforms.uAlpha.value = 0.6;
+      } else if (tsunoProductPageMode) {
         tsunoActivated = true;
         var tInit = performance.now() * 0.001;
         startBehavior(tInit, pickNextBehavior(tsunoMoodIdx, 0));
       }
+    });
+  }
+
+  if (tsunoLoginPageMode) {
+    document.addEventListener('jj-auth-keystroke', function () {
+      if (!tsunoMesh) return;
+      var now = performance.now() * 0.001;
+      if (now - tsunoLastFlipTime < TSUNO_FLIP_THROTTLE) return;
+      if (Math.random() < 0.4) return;
+      tsunoLastFlipTime = now;
+      tsunoMesh.scale.x = tsunoMesh.scale.x > 0 ? -3.5 : 3.5;
     });
   }
 
@@ -2254,7 +2285,7 @@
       textMesh.visible = !!visible;
     },
     triggerTsunoGrab: function (cb) {
-      if (!tsunoMesh || tsunoProductPageMode) {
+      if (!tsunoMesh || tsunoProductPageMode || tsunoLoginPageMode) {
         if (cb) setTimeout(cb, 200);
         return;
       }
