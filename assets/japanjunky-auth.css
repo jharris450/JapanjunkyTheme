@@ -1,6 +1,6 @@
 /* ============================================
-   JAPANJUNKY AUTH PAGE
-   Terminal-styled login/register/reset panel
+   JAPANJUNKY AUTH GATEWAY
+   Terminal-styled authentication gateway panel
    centered over the portal vortex background.
    ============================================ */
 
@@ -17,12 +17,6 @@
   padding: 16px 20px 20px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   pointer-events: auto;
-  transition: background-color 100ms ease;
-}
-
-/* --- Flash state (screen-swap phosphor burst) --- */
-.jj-auth--flash {
-  background-color: rgba(40, 30, 20, 0.9);
 }
 
 /* --- Title bar --- */
@@ -46,40 +40,16 @@
   text-shadow: 0 0 4px rgba(51, 255, 51, 0.4);
 }
 
-/* --- Form rows --- */
-.jj-auth__row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-  font-size: 13px;
-  padding: 2px 10px;
+/* --- Body text --- */
+.jj-auth__body {
+  padding: 4px 10px 8px;
 }
 
-.jj-auth__row label {
-  width: 40px;
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+.jj-auth__message {
   font-size: 12px;
   color: #888;
-  text-transform: none;
-  flex-shrink: 0;
-}
-
-.jj-auth__row input {
-  flex: 1;
-  background: #0a0a0a;
-  border: 1px solid #333;
-  color: var(--jj-text, #e0d5c0);
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 12px;
-  padding: 3px 6px;
-  outline: none;
-  min-width: 0;
-}
-
-.jj-auth__row input:focus {
-  border-color: var(--jj-primary, #e8313a);
-  box-shadow: 0 0 4px rgba(232, 49, 58, 0.3);
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* --- Actions --- */
@@ -88,60 +58,4 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* --- Forgot link --- */
-.jj-auth__forgot {
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 10px;
-  color: #666;
-  text-decoration: none;
-}
-
-.jj-auth__forgot:hover {
-  color: var(--jj-primary, #e8313a);
-}
-
-/* --- Divider --- */
-.jj-auth__divider {
-  border: none;
-  border-top: 1px solid #333;
-  margin: 10px 0 8px;
-}
-
-/* --- Switch link (login <-> register) --- */
-.jj-auth__switch {
-  font-size: 11px;
-  color: #666;
-  padding: 0 10px;
-}
-
-.jj-auth__switch-link {
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  color: var(--jj-accent, #33ff33);
-  text-decoration: none;
-}
-
-.jj-auth__switch-link:hover {
-  text-shadow: 0 0 6px rgba(51, 255, 51, 0.6);
-}
-
-/* --- Error message --- */
-.jj-auth__error {
-  font-size: 11px;
-  color: var(--jj-primary, #e8313a);
-  padding: 4px 10px;
-  margin-bottom: 6px;
-}
-
-.jj-auth__error::before {
-  content: '> ERR: ';
-  color: var(--jj-primary, #e8313a);
-}
-
-/* --- Reduced motion: skip flash --- */
-@media (prefers-reduced-motion: reduce) {
-  .jj-auth {
-    transition: none;
-  }
 }

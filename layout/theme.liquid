@@ -39,7 +39,7 @@
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
   {% endif %}
-  {% if template contains 'customers/login' %}
+  {% if template.suffix == 'login' %}
   {{ 'japanjunky-auth.css' | asset_url | stylesheet_tag }}
   {% endif %}
 
@@ -130,7 +130,7 @@
   </script>
 </head>
 
-<body class="jj-body{% if template == 'product' %} jj-body--product{% endif %}{% if template contains 'customers/login' %} jj-body--auth{% endif %}">
+<body class="jj-body{% if template == 'product' %} jj-body--product{% endif %}{% if template.suffix == 'login' %} jj-body--auth{% endif %}">
 {% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
 <button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
@@ -147,7 +147,7 @@
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
-  {% unless template == 'product' or template contains 'customers/login' %}
+  {% unless template == 'product' or template.suffix == 'login' %}
   {%- comment -%} Left zone: product viewer + info (homepage only) {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
     <div class="jj-product-info" id="jj-product-info" style="display:none;">
@@ -236,7 +236,7 @@
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
       {%- if template == 'product' -%}cameraPreset: 'product',{%- endif %}
-      {%- if template contains 'customers/login' -%}cameraPreset: 'login',{%- endif %}
+      {%- if template.suffix == 'login' -%}cameraPreset: 'login',{%- endif %}
       swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
       ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
       fragmentMasks: {
@@ -258,7 +258,7 @@
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
-  {% unless template == 'product' or template contains 'customers/login' %}
+  {% unless template == 'product' or template.suffix == 'login' %}
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
@@ -278,9 +278,6 @@
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cart.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-page.js' | asset_url }}" defer></script>
-  {% if template contains 'customers/login' %}
-  <script src="{{ 'japanjunky-auth.js' | asset_url }}" defer></script>
-  {% endif %}
   {% if settings.splash_enabled %}
   <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
   {% endif %}

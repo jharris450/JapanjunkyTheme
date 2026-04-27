@@ -1,0 +1,23 @@
+{%- comment -%}
+  JapanJunky Login Gateway — Terminal-styled auth gateway
+  with portal vortex background and watchful Tsuno.
+  Redirects to Shopify's hosted authentication.
+{%- endcomment -%}
+
+<script>
+  window.JJ_SCREENSAVER_CONFIG = window.JJ_SCREENSAVER_CONFIG || {};
+  window.JJ_SCREENSAVER_CONFIG.cameraPreset = 'login';
+</script>
+
+<div class="jj-auth" id="jj-auth">
+  <div class="jj-auth__title">
+    <span class="jj-auth__prompt">C:\&gt;</span> auth /login
+  </div>
+  <div class="jj-auth__body">
+    <p class="jj-auth__message">access restricted.</p>
+    <p class="jj-auth__message">authenticate to continue.</p>
+  </div>
+  <div class="jj-auth__actions">
+    <a href="/account/login" class="jj-win95-btn-sm">[Authenticate]</a>
+  </div>
+</div>

@@ -806,7 +806,12 @@
     if (!tsunoMesh) return;
 
     if (tsunoLoginPageMode) {
-      tsunoMesh.scale.set(-3.5, 3.5, 1);
+      if (t - tsunoLastFlipTime > 2.0 + Math.sin(t * 0.7) * 1.5) {
+        tsunoLastFlipTime = t;
+        tsunoMesh.scale.x = tsunoMesh.scale.x > 0 ? -3.5 : 3.5;
+      }
+      var sx = tsunoMesh.scale.x > 0 ? 3.5 : -3.5;
+      tsunoMesh.scale.set(sx, 3.5, 1);
       tsunoMesh.position.x = TSUNO_LOGIN_POS.x + Math.sin(t * 0.15) * 0.3;
       tsunoMesh.position.y = TSUNO_LOGIN_POS.y + Math.sin(t * 0.22) * 0.15;
       tsunoMesh.position.z = TSUNO_LOGIN_POS.z;
