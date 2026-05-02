@@ -384,3 +384,24 @@
 .jj-clock-popover__date {
   text-align: center;
 }
+
+/* ============================================
+   AUDIO MUTE TOGGLE (taskbar)
+   ============================================ */
+.jj-taskbar__audio-toggle {
+  background: none;
+  border: 1px solid var(--jj-secondary, #888);
+  color: var(--jj-text, #e0d5c0);
+  font-size: 14px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  margin: 0 4px;
+}
+.jj-taskbar__audio-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.jj-taskbar__audio-toggle .jj-audio-icon {
+  display: inline-block;
+  line-height: 1;
+}

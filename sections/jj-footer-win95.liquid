@@ -18,6 +18,13 @@
     {%- comment -%} Tabs managed dynamically by japanjunky-wm.js {%- endcomment -%}
   </div>
 
+  {% if settings.audio_enabled %}
+  <button id="jj-audio-mute" class="jj-taskbar__audio-toggle" type="button"
+          aria-label="Toggle ambient audio">
+    <span class="jj-audio-icon" data-state="muted">🔇</span>
+  </button>
+  {% endif %}
+
   {% render 'win95-clock' %}
 </footer>
 
