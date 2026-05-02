@@ -504,6 +504,29 @@
     }
     buildShrineProps();
 
+    // ─── Moss patch texture (consumed by lantern receivers below) ──
+    // Sparse green moss for the small lit zones under stone lanterns.
+    function makePlaceholderMoss() {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#1a2a14';
+      ctx.fillRect(0, 0, 64, 64);
+      for (var i = 0; i < 80; i++) {
+        ctx.fillStyle = 'rgba(50,80,30,0.5)';
+        ctx.fillRect(
+          Math.floor(Math.random() * 64),
+          Math.floor(Math.random() * 64), 2, 2);
+      }
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    var mossTex = (opts.textures && opts.textures.moss) || makePlaceholderMoss();
+
     // ─── Layer 5: Foreground rocks + grass tufts ──────────────
     // Rocky outcrops on left + right (concept4) plus a few grass billboards.
     var rockMat = new THREE.MeshBasicMaterial({
