@@ -581,6 +581,160 @@
     }
     buildGodRays(5);
 
+    // ─── Drifting fog wisps (instanced billboards) ────────────
+    function makeFogWispTexture() {
+      var c = document.createElement('canvas');
+      c.width = 128; c.height = 64;
+      var ctx = c.getContext('2d');
+      var grad = ctx.createRadialGradient(64, 32, 4, 64, 32, 60);
+      grad.addColorStop(0,    'rgba(220,180,130,0.6)');
+      grad.addColorStop(0.5,  'rgba(180,140,100,0.25)');
+      grad.addColorStop(1,    'rgba(180,140,100,0.0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 64);
+      return new THREE.CanvasTexture(c);
+    }
+    var fogWispTex = makeFogWispTexture();
+    var FOG_WISP_COUNT = 20;
+    var fogWispGeo = new THREE.PlaneGeometry(3, 1.2);
+    var fogWispMat = new THREE.MeshBasicMaterial({
+      map: fogWispTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      fog: false
+    });
+    var fogWispMesh = new THREE.InstancedMesh(fogWispGeo, fogWispMat, FOG_WISP_COUNT);
+    var fogWispData = [];
+    var dummy = new THREE.Object3D();
+    for (var fi = 0; fi < FOG_WISP_COUNT; fi++) {
+      var fwx = (Math.random() - 0.5) * 30;
+      var fwy = 0.3 + Math.random() * 1.5;
+      var fwz = 8 + Math.random() * 30;
+      fogWispData.push({
+        baseX: fwx, baseY: fwy, baseZ: fwz,
+        driftPhase: Math.random() * 6.28,
+        speed: 0.05 + Math.random() * 0.05
+      });
+      dummy.position.set(fwx, fwy, fwz);
+      dummy.updateMatrix();
+      fogWispMesh.setMatrixAt(fi, dummy.matrix);
+    }
+    fogWispMesh.instanceMatrix.needsUpdate = true;
+    layers.fogWisps.add(fogWispMesh);
+
+    // ─── Falling needles ──────────────────────────────────────
+    var NEEDLE_COUNT = 60;
+    var needleGeo = new THREE.PlaneGeometry(0.04, 0.18);
+    var needleMat = new THREE.MeshBasicMaterial({
+      color: 0x6a4020,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+      fog: true
+    });
+    var needleMesh = new THREE.InstancedMesh(needleGeo, needleMat, NEEDLE_COUNT);
+    var needleData = [];
+    for (var ni = 0; ni < NEEDLE_COUNT; ni++) {
+      needleData.push({
+        x: (Math.random() - 0.5) * 20,
+        y: Math.random() * 14,
+        z: 6 + Math.random() * 30,
+        rotZ: Math.random() * 6.28,
+        vy: -0.03 - Math.random() * 0.04,
+        vx: (Math.random() - 0.5) * 0.01,
+        spin: (Math.random() - 0.5) * 0.4
+      });
+    }
+    layers.particles.add(needleMesh);
+
+    // ─── Distant bird ─────────────────────────────────────────
+    var birdGeo = new THREE.PlaneGeometry(0.5, 0.15);
+    var birdMat = new THREE.MeshBasicMaterial({
+      color: 0x1a0a04,
+      transparent: true,
+      opacity: 0.8,
+      fog: false
+    });
+    var birdMesh = new THREE.Mesh(birdGeo, birdMat);
+    birdMesh.position.set(-30, 8, 60);
+    birdMesh.visible = false;
+    layers.particles.add(birdMesh);
+    var birdNextStart = 30;
+
+    // ─── Lantern point lights ─────────────────────────────────
+    var lanternLights = [];
+    var lanternMossPatches = [];
+    function makeMossPatch(x, z, radius) {
+      var geo = new THREE.CircleGeometry(radius, 12);
+      var mat = new THREE.MeshLambertMaterial({
+        map: mossTex,
+        side: THREE.DoubleSide,
+        fog: true
+      });
+      injectVertexSnap(mat);
+      var patch = new THREE.Mesh(geo, mat);
+      patch.rotation.x = -Math.PI / 2;
+      patch.position.set(x, 0.02, z);
+      layers.shrine.add(patch);
+      return patch;
+    }
+    function buildLanterns() {
+      for (var li = 0; li < SHRINE_PROPS.length; li++) {
+        var P = SHRINE_PROPS[li];
+        if (P.type !== 'ishidoro') continue;
+        var light = new THREE.PointLight(0xff7820, 0.4, 4.0, 2.0);
+        light.position.set(P.pos[0], P.pos[1] + 0.5, P.pos[2]);
+        light.userData.basePhase = Math.random() * 6.28;
+        light.userData.baseIntensity = 0.4;
+        layers.shrine.add(light);
+        lanternLights.push(light);
+        lanternMossPatches.push(makeMossPatch(P.pos[0], P.pos[2], 1.5));
+      }
+    }
+    buildLanterns();
+
+    // ─── Phosphor scintillation grain ─────────────────────────
+    function makeNoiseTexture() {
+      var c = document.createElement('canvas');
+      c.width = 128; c.height = 128;
+      var ctx = c.getContext('2d');
+      var img = ctx.createImageData(128, 128);
+      for (var i = 0; i < img.data.length; i += 4) {
+        var v = Math.floor(Math.random() * 256);
+        img.data[i] = v;
+        img.data[i + 1] = v;
+        img.data[i + 2] = v;
+        img.data[i + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      var tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      return tex;
+    }
+    var grainTex = makeNoiseTexture();
+    var grainMat = new THREE.MeshBasicMaterial({
+      map: grainTex,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: false,
+      opacity: 0.03,
+      color: 0xff9040,
+      fog: false
+    });
+    var grainGeo = new THREE.PlaneGeometry(2, 2);
+    var grainQuad = new THREE.Mesh(grainGeo, grainMat);
+    grainQuad.frustumCulled = false;
+    grainQuad.renderOrder = 999;
+    camera.add(grainQuad);
+    if (scene.children.indexOf(camera) === -1) scene.add(camera);
+    grainQuad.position.set(0, 0, -1);
+    layers.grain.userData.grainQuadRef = grainQuad;
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
@@ -647,6 +801,76 @@
         var phase = godRayMaterials[gi].userData.godRayPhase;
         godRayMaterials[gi].opacity = 0.50 + Math.sin(t * 0.4 + phase) * 0.08;
       }
+      // Fog wisp drift
+      for (var wi = 0; wi < fogWispData.length; wi++) {
+        var d = fogWispData[wi];
+        dummy.position.set(
+          d.baseX + Math.sin(t * d.speed + d.driftPhase) * 1.2,
+          d.baseY + Math.sin(t * d.speed * 1.3 + d.driftPhase) * 0.2,
+          d.baseZ + Math.cos(t * d.speed + d.driftPhase) * 0.6
+        );
+        dummy.lookAt(camera.position);
+        dummy.updateMatrix();
+        fogWispMesh.setMatrixAt(wi, dummy.matrix);
+      }
+      fogWispMesh.instanceMatrix.needsUpdate = true;
+      // Falling needles
+      for (var npi = 0; npi < needleData.length; npi++) {
+        var nd = needleData[npi];
+        nd.x += nd.vx;
+        nd.y += nd.vy;
+        nd.rotZ += nd.spin * 0.02;
+        if (nd.y < -0.2) {
+          nd.y = 14;
+          nd.x = (Math.random() - 0.5) * 20;
+          nd.z = 6 + Math.random() * 30;
+        }
+        dummy.position.set(nd.x, nd.y, nd.z);
+        dummy.rotation.set(0, 0, nd.rotZ);
+        dummy.updateMatrix();
+        needleMesh.setMatrixAt(npi, dummy.matrix);
+      }
+      needleMesh.instanceMatrix.needsUpdate = true;
+      // Bird scripted flight
+      if (t > birdNextStart && !birdMesh.visible) {
+        birdMesh.visible = true;
+        birdMesh.position.set(-30, 7 + Math.random() * 3, 50 + Math.random() * 15);
+        birdMesh.userData.startT = t;
+      }
+      if (birdMesh.visible) {
+        var bdt = t - birdMesh.userData.startT;
+        birdMesh.position.x = -30 + bdt * 6;
+        if (birdMesh.position.x > 30) {
+          birdMesh.visible = false;
+          birdNextStart = t + 30 + Math.random() * 30;
+        }
+      }
+      // Lantern flicker
+      for (var li2 = 0; li2 < lanternLights.length; li2++) {
+        var L = lanternLights[li2];
+        var noise = (
+          Math.sin(t * 7.3 + L.userData.basePhase) * 0.5 +
+          Math.sin(t * 13.1 + L.userData.basePhase * 2.1) * 0.3
+        ) * 0.15;
+        L.intensity = L.userData.baseIntensity + noise;
+      }
+      // Moss glow pulse
+      for (var mpi = 0; mpi < lanternMossPatches.length; mpi++) {
+        var mp = lanternMossPatches[mpi];
+        var pulse = 1.0 + Math.sin(t * 0.5 + mpi * 1.7) * 0.12;
+        mp.material.color.setRGB(pulse, pulse, pulse);
+      }
+      // Grain UV scroll
+      grainTex.offset.x = (t * 0.7) % 1;
+      grainTex.offset.y = (t * 0.43) % 1;
+      // ─── Scroll parallax ──────────────────────────────────
+      var SCROLL_PIXELS_PER_UNIT = 200;
+      var sUnits = -(scrollY || 0) / SCROLL_PIXELS_PER_UNIT;
+      layers.silhouette.position.y = sUnits * 0.05;
+      layers.midGrove.position.y   = sUnits * 0.15;
+      layers.hero.position.y       = sUnits * 0.40;
+      layers.shrine.position.y     = sUnits * 0.60;
+      layers.foreground.position.y = sUnits * 1.00;
     }
 
     // Tier setter (full implementation in perf phase)
