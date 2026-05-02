@@ -2096,8 +2096,9 @@
     }
 
     // Spawn and animate flying objects
-    spawnObject(time);
-    animateObjects(time);
+    // Flying objects (album covers) disabled — non-PS1, leftover from portal era
+    // spawnObject(time);
+    // animateObjects(time);
 
     // Spawn and animate memory fragments
     // Memory fragments disabled — forest scene has its own atmosphere
