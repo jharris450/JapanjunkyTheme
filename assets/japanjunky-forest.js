@@ -17,11 +17,11 @@
   // ─── Camera presets ──────────────────────────────────────────
   var PRESETS = {
     home: {
-      pos:  [0, 1.7, -2],
-      look: [0, 1.0, 14],
-      fog:  { near: 6, far: 38 },        // tighter fog for horror atmosphere
-      fov:  58,
-      float: { pos: 0.05, rot: 0.7 * Math.PI / 180, period: 4.0 }
+      pos:  [0, 1.6, -2],
+      look: [0, 2.0, 14],          // looking slightly UP the steps
+      fog:  { near: 6, far: 32 },
+      fov:  60,
+      float: { pos: 0.05, rot: 0.6 * Math.PI / 180, period: 4.0 }
     },
     product: {
       pos:  [2, 1.4, 4],
@@ -63,19 +63,20 @@
     Object.keys(layers).forEach(function (k) { scene.add(layers[k]); });
 
     // ─── Distance fog (initialized early — tree shader reads it) ──
-    // Desaturated amber-gray, Silent Hill PS1 horror tone.
-    scene.fog = new THREE.Fog(0x3a2818, currentPreset.fog.near, currentPreset.fog.far);
+    // Cool gray-green: light filtering through cedar canopy (concept6).
+    scene.fog = new THREE.Fog(0x3a4838, currentPreset.fog.near, currentPreset.fog.far);
 
     // ─── Layer 0: Sky / fog wall ──────────────────────────────
     // Single billboard plane far behind everything. Amber gradient
     // (light top → deep bottom). Always faces camera implicitly via
     // its z-far placement.
-    // Sunset gradient — horizon glow mid-band, deep amber up high, dim bottom
+    // Cool canopy gradient — light filtering through cedar grove (concept6).
+    // Top dim shadow, mid backlit green, bottom deep moss shadow.
     var skyMat = new THREE.ShaderMaterial({
       uniforms: {
-        uTopColor:    { value: new THREE.Color(0x6a3018) },  // dusky red-purple top
-        uMidColor:    { value: new THREE.Color(0xd86a20) },  // sunset glow mid
-        uBottomColor: { value: new THREE.Color(0x3a2818) }   // foggy dark base
+        uTopColor:    { value: new THREE.Color(0x2a3024) },  // dim canopy top
+        uMidColor:    { value: new THREE.Color(0x6a7858) },  // backlit moss-green
+        uBottomColor: { value: new THREE.Color(0x1c1e16) }   // deep shadow base
       },
       vertexShader: [
         'varying vec2 vUv;',
@@ -306,22 +307,20 @@
     // X-billboard alpha-cutout planes via buildXTree above. Per PS1 horror
     // guidelines, 3D foliage is wrong; flat planes are authentic.)
 
-    // ─── Layer 2: Mid grove (deeper rows flanking the path) ─────────
-    // Both sides of path. Trees are tall + thin (PS1 horror conifer).
-    // baseR small (0.3-0.5) = thin trunks. Trunks tall (12-16m) so
-    // foliage clusters high overhead.
+    // ─── Layer 2: Mid grove — denser rows tightly flanking steps ─────
+    // Concept6: cedars in two close parallel rows, packed tight.
     var MID_GROVE_LAYOUT = [
-      // [x,    z,    height, baseR, topR]
-      // Left side
-      [ -7, 32, 14, 0.45, 0.30],
-      [ -5, 38, 13, 0.40, 0.25],
-      [ -9, 44, 12, 0.40, 0.25],
-      [ -6, 50, 13, 0.45, 0.28],
-      // Right side
-      [  6, 30, 14, 0.45, 0.30],
-      [  9, 36, 12, 0.40, 0.25],
-      [  5, 44, 13, 0.40, 0.25],
-      [  8, 50, 12, 0.40, 0.25]
+      // [x,   z,  height, baseR, topR]
+      // Left row, ascending
+      [ -3.6, 18, 17, 0.45, 0.30],
+      [ -3.4, 22, 16, 0.45, 0.30],
+      [ -3.8, 27, 15, 0.40, 0.25],
+      [ -3.5, 33, 14, 0.40, 0.25],
+      // Right row, ascending
+      [  3.6, 19, 17, 0.45, 0.30],
+      [  3.4, 24, 16, 0.45, 0.30],
+      [  3.8, 29, 15, 0.40, 0.25],
+      [  3.5, 35, 14, 0.40, 0.25]
     ];
     function buildMidGrove(count) {
       for (var i = 0; i < Math.min(count, MID_GROVE_LAYOUT.length); i++) {
@@ -331,14 +330,14 @@
     }
     buildMidGrove(8);
 
-    // ─── Layer 3: Hero conifers flanking the path near camera ───────
-    // Two close pairs on left + right of path. Tall thin trunks.
+    // ─── Layer 3: Hero cedars flanking the steps near camera ────────
+    // Concept6: huge close-up cedars right next to the lanterns.
     var HERO_LAYOUT = [
       // [x,    z,  height, baseR, topR]
-      [ -3.0,  9,  16, 0.55, 0.32],   // close-left
-      [ -4.5, 16, 15, 0.50, 0.30],   // mid-left
-      [  3.0, 10, 16, 0.55, 0.32],   // close-right
-      [  4.5, 18, 15, 0.50, 0.30]    // mid-right
+      [ -3.4,  6, 22, 0.65, 0.40],   // closest-left, tallest
+      [ -3.4, 11, 20, 0.55, 0.35],   // mid-left
+      [  3.4,  7, 22, 0.65, 0.40],   // closest-right, tallest
+      [  3.4, 13, 20, 0.55, 0.35]    // mid-right
     ];
     var heroCedars = [];
     function buildHeroCedars(count) {
@@ -510,22 +509,14 @@
       return tex;
     }
 
-    // Sparse shrine props — fewer items, placed beside the path.
-    // Heavy fog hides distant detail so we don't need many.
+    // Concept6: TWO BIG ishidoro lanterns flanking the steps in foreground.
+    // Other shrine props minor or removed.
     var SHRINE_PROPS = [
-      // Hokora at base of close-right hero tree (visible)
-      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [3.7, 0.45, 12.0] },
-      // Jizo cluster at base of close-left hero
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [-3.5, 0.35, 11.0] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [-3.2, 0.35, 11.4] },
-      // One stone lantern each side of path
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [-2.0, 0.7, 7.0] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [ 2.0, 0.7, 8.0] },
-      // Couple of sotoba poles peeking out (concept4 vibe)
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.5, 0.8, 13.5] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.7, 0.8, 13.7] },
-      // One distant haka
-      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-2.8, 0.2, 16.0] }
+      // Big foreground lanterns — these are the key compositional anchors
+      { type: 'ishidoro', w: 1.4, h: 3.4, hex: '#9a9080', pos: [-2.4, 1.7, 4.2] },
+      { type: 'ishidoro', w: 1.4, h: 3.4, hex: '#9a9080', pos: [ 2.4, 1.7, 4.5] },
+      // Optional smaller hokora deeper up the steps
+      { type: 'hokora',   w: 0.8, h: 0.8, hex: '#7a6a55', pos: [0.0, 0.4, 22.0] }
     ];
 
     function buildShrineProps() {
@@ -557,6 +548,53 @@
       }
     }
     buildShrineProps();
+
+    // ─── Mossy stone cliff on left edge (concept6 dark cliff face) ──
+    var cliffMat = new THREE.MeshBasicMaterial({
+      color: 0x2a3022,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(cliffMat);
+    var cliffGeo = new THREE.BoxGeometry(3, 8, 12);
+    var cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
+    cliffMesh.position.set(-6.5, 3.5, 9);
+    cliffMesh.rotation.y = 0.15;
+    layers.foreground.add(cliffMesh);
+    // A second slimmer protrusion further back-left
+    var cliff2Geo = new THREE.BoxGeometry(2, 5, 6);
+    var cliff2 = new THREE.Mesh(cliff2Geo, cliffMat);
+    cliff2.position.set(-7.0, 2.0, 16);
+    cliff2.rotation.y = -0.2;
+    layers.foreground.add(cliff2);
+
+    // ─── Stone steps ascending up the path (concept6) ─────────
+    // 12 stacked low-poly slabs rising in z + y. Replaces flat dirt path.
+    var stepMat = new THREE.MeshBasicMaterial({
+      color: 0x4a4438,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(stepMat);
+    var STEP_COUNT = 14;
+    var STEP_DEPTH = 1.2;       // each step's z-extent
+    var STEP_RISE = 0.18;       // each step lifts y by this much
+    var STEP_WIDTH = 3.2;
+    for (var sti = 0; sti < STEP_COUNT; sti++) {
+      var slabGeo = new THREE.BoxGeometry(
+        STEP_WIDTH + (Math.random() - 0.5) * 0.6,
+        0.3,
+        STEP_DEPTH + (Math.random() - 0.5) * 0.2
+      );
+      var slab = new THREE.Mesh(slabGeo, stepMat);
+      slab.position.set(
+        (Math.random() - 0.5) * 0.3,
+        sti * STEP_RISE + 0.0,
+        2 + sti * STEP_DEPTH
+      );
+      slab.rotation.y = (Math.random() - 0.5) * 0.06;
+      layers.road.add(slab);
+    }
 
     // ─── Moss patch texture (consumed by lantern receivers below) ──
     // Sparse green moss for the small lit zones under stone lanterns.
@@ -597,10 +635,13 @@
       mesh.rotation.y = rotY;
       return mesh;
     }
-    layers.foreground.add(makeRock(-5.5, 0.3, 5,   1.8, 1.2, 1.6,  0.4));
-    layers.foreground.add(makeRock(-7.0, 0.1, 12,  2.4, 1.0, 1.8, -0.6));
-    layers.foreground.add(makeRock( 5.5, 0.2, 4,   1.6, 1.0, 1.4,  0.2));
-    layers.foreground.add(makeRock( 7.0, 0.4, 10,  2.0, 1.4, 2.0, -0.3));
+    // Mossy boulders scattered around steps (concept6 ground stones)
+    layers.foreground.add(makeRock(-1.6, 0.2, 2.5,  0.7, 0.5, 0.8,  0.4));
+    layers.foreground.add(makeRock( 1.8, 0.2, 3.0,  0.6, 0.4, 0.7, -0.6));
+    layers.foreground.add(makeRock(-1.3, 0.15, 8.5, 0.5, 0.4, 0.6,  0.3));
+    layers.foreground.add(makeRock( 1.5, 0.15, 9.0, 0.6, 0.4, 0.7, -0.4));
+    layers.foreground.add(makeRock( 5.0, 0.4, 12.0, 1.2, 0.9, 1.0,  0.2));
+    layers.foreground.add(makeRock(-5.5, 0.3, 22.0, 1.4, 1.0, 1.2, -0.3));
 
     // Grass tufts — billboard quads with grass-clump texture, scattered on
     // path edges. Procedural canvas (CC photos can replace later).
@@ -650,41 +691,19 @@
       layers.foreground.add(makeGrassTuft(GT[0], GT[1], GT[2]));
     }
 
-    // ─── Layer 6: Dirt path (replaces asphalt road) ───────────
-    function makeDirtPathTexture() {
-      var c = document.createElement('canvas');
-      c.width = 64; c.height = 256;
-      var ctx = c.getContext('2d');
-      // Dark dirt base
-      ctx.fillStyle = '#2a1d12';
-      ctx.fillRect(0, 0, 64, 256);
-      // Random gravel speckle
-      for (var i = 0; i < 240; i++) {
-        ctx.fillStyle = (Math.random() < 0.5) ? '#3a2a1a' : '#1a1208';
-        ctx.fillRect(
-          Math.floor(Math.random() * 64),
-          Math.floor(Math.random() * 256), 2, 2);
-      }
-      // Faint center wear path
-      ctx.fillStyle = 'rgba(90,70,50,0.15)';
-      ctx.fillRect(20, 0, 24, 256);
-      var tex = new THREE.CanvasTexture(c);
-      tex.magFilter = THREE.NearestFilter;
-      tex.minFilter = THREE.NearestFilter;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      return tex;
-    }
-    var pathTex = makeDirtPathTexture();
-    pathTex.repeat.set(1, 12);
-    // Path runs through center of frame, narrowing into mist
-    var pathGeo = new THREE.PlaneGeometry(2.6, 50);
-    var pathMat = new THREE.MeshBasicMaterial({ map: pathTex, fog: true });
-    injectVertexSnap(pathMat);
-    var pathMesh = new THREE.Mesh(pathGeo, pathMat);
-    pathMesh.rotation.x = -Math.PI / 2;
-    pathMesh.position.set(0, 0.01, 22);
-    layers.road.add(pathMesh);
+    // (Stone steps already added above — no flat dirt path needed.)
+    // Mossy ground plane fills around the steps so it doesn't look floating.
+    var groundMat = new THREE.MeshBasicMaterial({
+      color: 0x2a2820,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(groundMat);
+    var groundGeo = new THREE.PlaneGeometry(60, 60);
+    var groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.rotation.x = -Math.PI / 2;
+    groundMesh.position.set(0, -0.05, 18);
+    layers.road.add(groundMesh);
 
     // ─── PS1 vertex-snap shader injection ─────────────────────
     // Quantize clip-space xy to integer pixel grid → wobble effect.
