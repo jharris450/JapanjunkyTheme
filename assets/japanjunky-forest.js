@@ -436,6 +436,61 @@
     }
     buildShrineProps();
 
+    // ─── Layer 5: Foreground roots / moss ─────────────────────
+    function makePlaceholderMoss() {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#2a4a1c';
+      ctx.fillRect(0, 0, 64, 64);
+      for (var i = 0; i < 80; i++) {
+        ctx.fillStyle = 'rgba(60,90,30,0.5)';
+        ctx.fillRect(
+          Math.floor(Math.random() * 64),
+          Math.floor(Math.random() * 64), 2, 2);
+      }
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    var mossTex = (opts.textures && opts.textures.moss) || makePlaceholderMoss();
+
+    var fgGeo = new THREE.SphereGeometry(2.5, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    var fgMat = new THREE.MeshBasicMaterial({ map: mossTex, fog: true });
+    mossTex.repeat.set(2, 2);
+    var fgMound = new THREE.Mesh(fgGeo, fgMat);
+    fgMound.position.set(-3, -0.5, 3);
+    fgMound.scale.set(1.5, 0.6, 1.0);
+    layers.foreground.add(fgMound);
+
+    // ─── Layer 6: Road slice ──────────────────────────────────
+    function makePlaceholderRoad() {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 256;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#1a1612';
+      ctx.fillRect(0, 0, 64, 256);
+      ctx.fillStyle = '#4a3e30';
+      ctx.fillRect(30, 0, 4, 256);
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    var roadTex = makePlaceholderRoad();
+    roadTex.repeat.set(1, 8);
+    var roadGeo = new THREE.PlaneGeometry(3, 30);
+    var roadMat = new THREE.MeshBasicMaterial({ map: roadTex, fog: true });
+    var roadMesh = new THREE.Mesh(roadGeo, roadMat);
+    roadMesh.rotation.x = -Math.PI / 2;
+    roadMesh.position.set(-4, 0.01, 8);
+    layers.road.add(roadMesh);
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
