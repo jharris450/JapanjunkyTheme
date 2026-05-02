@@ -338,13 +338,16 @@
       var phase = Math.random() * 6.28;
       var phases = new Float32Array([phase, phase, phase, phase]);
       geo.setAttribute('aSwayPhase', new THREE.BufferAttribute(phases, 1));
+      // ShaderMaterial + fog requires merging THREE.UniformsLib.fog and
+      // adding fog includes to the shader. Skipping that since shide hang
+      // close to camera and won't visibly fade. Disable fog instead.
       var mat = new THREE.ShaderMaterial({
         uniforms: { uTime: { value: 0 }, uMap: { value: shideTex } },
         vertexShader: SHIDE_VERT,
         fragmentShader: SHIDE_FRAG,
         transparent: true,
         side: THREE.DoubleSide,
-        fog: true
+        fog: false
       });
       shideMaterials.push(mat);
       var mesh = new THREE.Mesh(geo, mat);
