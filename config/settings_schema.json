@@ -47,16 +47,6 @@
         "default": "slow"
       },
       {
-        "type": "select",
-        "id": "scene_mode",
-        "label": "Background scene",
-        "options": [
-          { "value": "forest", "label": "Forest grove (default)" },
-          { "value": "portal", "label": "Portal vortex (legacy)" }
-        ],
-        "default": "forest"
-      },
-      {
         "type": "checkbox",
         "id": "audio_enabled",
         "label": "Enable ambient audio + interaction accents",

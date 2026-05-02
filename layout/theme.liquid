@@ -130,7 +130,7 @@
   </script>
 </head>
 
-<body class="jj-body{% if template == 'product' %} jj-body--product{% endif %}{% if template.suffix == 'login' %} jj-body--auth{% endif %} jj-body--scene-{{ settings.scene_mode | default: 'forest' }}">
+<body class="jj-body{% if template == 'product' %} jj-body--product{% endif %}{% if template.suffix == 'login' %} jj-body--auth{% endif %} jj-body--scene-forest">
 {% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
 <button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
@@ -235,7 +235,6 @@
       fps: {{ settings.screensaver_fps | default: 24 }},
       orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
-      sceneMode: '{{ settings.scene_mode | default: "forest" }}',
       audioEnabled: {{ settings.audio_enabled | default: true }},
       {%- if template == 'product' -%}cameraPreset: 'product',{%- endif %}
       {%- if template.suffix == 'login' -%}cameraPreset: 'login',{%- endif %}
@@ -263,10 +262,8 @@
     };
   </script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
-  {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-nav-flash.js' | asset_url }}" defer></script>
-  {% endif %}
   {% if settings.audio_enabled %}
   <script src="{{ 'japanjunky-audio.js' | asset_url }}" defer></script>
   {% endif %}
