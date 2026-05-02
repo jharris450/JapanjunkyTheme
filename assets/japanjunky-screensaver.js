@@ -1143,9 +1143,12 @@
         }
       }
       var ease = easeInOutCubic(tp);
-      tsunoMesh.position.x = tsunoTransFrom.x + (tsunoTransTo.x - tsunoTransFrom.x) * ease;
-      tsunoMesh.position.y = tsunoTransFrom.y + (tsunoTransTo.y - tsunoTransFrom.y) * ease;
-      tsunoMesh.position.z = tsunoTransFrom.z + (tsunoTransTo.z - tsunoTransFrom.z) * ease;
+      // Quadratic Bezier for arcing path (sub-plan 2). Falls through to
+      // near-linear when mid is approximately the average (no trunk shift).
+      var ub = 1 - ease;
+      tsunoMesh.position.x = ub*ub * tsunoTransFrom.x + 2*ub*ease * tsunoTransMid.x + ease*ease * tsunoTransTo.x;
+      tsunoMesh.position.y = ub*ub * tsunoTransFrom.y + 2*ub*ease * tsunoTransMid.y + ease*ease * tsunoTransTo.y;
+      tsunoMesh.position.z = ub*ub * tsunoTransFrom.z + 2*ub*ease * tsunoTransMid.z + ease*ease * tsunoTransTo.z;
     } else {
       // ── At-position idle animations per behavior ──
       var beh = TSUNO_BEHAVIORS[tsunoBehaviorIdx];
