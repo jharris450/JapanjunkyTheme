@@ -939,9 +939,77 @@
       currentPhosphorMix = T.phosphorMix;
     }
 
-    // Anchor/collider stubs (implemented in sub-plan 2)
-    function getTsunoAnchors() { return []; }
-    function getTrunkColliders() { return []; }
+    // ─── Tsuno anchors (sub-plan 2) ───────────────────────────
+    var tsunoAnchors = null;
+    function getTsunoAnchors() {
+      if (tsunoAnchors) return tsunoAnchors;
+      tsunoAnchors = [];
+      // Tree anchors — one per hero cedar (just to side of trunk at mid-height)
+      for (var hi = 0; hi < heroCedars.length; hi++) {
+        var L = heroCedars[hi].layout;
+        tsunoAnchors.push({
+          id: 'hero_cedar_' + hi,
+          pos: [L[0] + (L[3] + 0.3), L[2] * 0.5, L[1]],
+          weight: 1.0,
+          type: 'tree',
+          trunkX: L[0],
+          trunkZ: L[1],
+          trunkRadius: L[3]
+        });
+      }
+      // Shrine anchors — derived from SHRINE_PROPS
+      for (var pi = 0; pi < SHRINE_PROPS.length; pi++) {
+        var P = SHRINE_PROPS[pi];
+        var atype, weight;
+        if (P.type === 'hokora')        { atype = 'shrine';  weight = 1.5; }
+        else if (P.type === 'jizo')     { atype = 'shrine';  weight = 1.2; }
+        else if (P.type === 'ishidoro') { atype = 'lantern'; weight = 0.6; }
+        else if (P.type === 'sotoba')   { atype = 'grave';   weight = 0.9; }
+        else if (P.type === 'haka')     { atype = 'grave';   weight = 0.8; }
+        else continue;
+        tsunoAnchors.push({
+          id: P.type + '_' + pi,
+          pos: [P.pos[0], P.pos[1] + P.h * 0.7, P.pos[2]],
+          weight: weight,
+          type: atype
+        });
+      }
+      // Rope anchors — one per hero rope
+      for (var ri = 0; ri < heroCedars.length; ri++) {
+        var rL = heroCedars[ri].layout;
+        var ropeY = rL[2] * 0.45;
+        tsunoAnchors.push({
+          id: 'shide_rope_' + ri,
+          pos: [rL[0] + 0.6, ropeY, rL[1] + 0.6],
+          weight: 0.7,
+          type: 'rope'
+        });
+      }
+      return tsunoAnchors;
+    }
+
+    var trunkColliders = null;
+    function getTrunkColliders() {
+      if (trunkColliders) return trunkColliders;
+      trunkColliders = [];
+      for (var hi = 0; hi < heroCedars.length; hi++) {
+        var L = heroCedars[hi].layout;
+        trunkColliders.push({
+          x: L[0], z: L[1],
+          radius: L[3] + 0.15,
+          height: L[2]
+        });
+      }
+      for (var mi = 0; mi < MID_GROVE_LAYOUT.length; mi++) {
+        var ML = MID_GROVE_LAYOUT[mi];
+        trunkColliders.push({
+          x: ML[0], z: ML[1],
+          radius: ML[3] + 0.15,
+          height: ML[2]
+        });
+      }
+      return trunkColliders;
+    }
 
     // Two-phase construction stubs
     function bootstrap() { /* implemented in perf-tier task */ }
