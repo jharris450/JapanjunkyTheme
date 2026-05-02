@@ -767,6 +767,35 @@
   ].join('\n');
 
   // ─── Tsuno Daishi — Shopkeeper ──────────────────────────────
+  // ─── Forest anchor accessors (sub-plan 2) ────────────────────
+  // Return null when sceneModule is portal mode or anchors unavailable.
+  // Behavior pos() functions fall back to hardcoded positions in that case.
+  function getForestAnchors() {
+    if (!sceneModule || !sceneModule.getTsunoAnchors) return null;
+    var a = sceneModule.getTsunoAnchors();
+    return (a && a.length > 0) ? a : null;
+  }
+  function pickAnchorByType(type) {
+    var anchors = getForestAnchors();
+    if (!anchors) return null;
+    var pool = [];
+    var totalW = 0;
+    for (var i = 0; i < anchors.length; i++) {
+      if (anchors[i].type === type) {
+        pool.push(anchors[i]);
+        totalW += anchors[i].weight;
+      }
+    }
+    if (pool.length === 0) return null;
+    var roll = Math.random() * totalW;
+    var acc = 0;
+    for (var j = 0; j < pool.length; j++) {
+      acc += pool[j].weight;
+      if (roll <= acc) return pool[j];
+    }
+    return pool[pool.length - 1];
+  }
+
   var tsunoMesh = null;
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
   var tsunoActivated = false; // true after first product selection — personality system engages
@@ -842,25 +871,72 @@
   }
 
   // Behavior IDs: 0=hang, 1=peek, 2=loom, 3=patrol, 4=perch, 5=sink, 6=circle, 7=retreat
+  // Forest mode (sub-plan 2): pos() prefers anchors; falls back to hardcoded.
+  // Product/login presets early-return before these run, so hardcoded paths
+  // are still active when forest anchors are absent.
   var TSUNO_BEHAVIORS = [
-    { name: 'hang',    pos: function () { return { x: 4.0, y: 0.0, z: 6 }; } },
-    { name: 'peek',    pos: function () {
-      var zDist = 5 - camera.position.z; // z:5 minus camera z
-      var halfW = Math.tan(camera.fov * Math.PI / 360) * zDist * (camera.aspect || viewportAspect);
-      return { x: halfW - 0.5, y: 0.5, z: 5 };
-    }},
-    { name: 'loom',    pos: function () { return { x: 1.5, y: 0.5, z: 2.5 }; } },
-    { name: 'patrol',  pos: function () { return { x: 6.0, y: 0.3, z: 10 }; },
-      animated: true, endX: -4.0 },
-    { name: 'perch',   pos: function () { return { x: 5.0, y: -1.0, z: 6 }; } },
-    { name: 'sink',    pos: function () {
-      // Sink transitions to current pos (not bottom); the drop is animated in updateTsunoIdle
-      var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
-      var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
-      var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
-      return { x: cx, y: cy, z: cz };
+    {
+      name: 'hang',
+      pos: function () {
+        var a = pickAnchorByType('rope');
+        if (a) return { x: a.pos[0], y: a.pos[1], z: a.pos[2] };
+        return { x: 4.0, y: 0.0, z: 6 };
+      }
     },
-      // Bottom y is computed at runtime in the behavior animation
+    {
+      name: 'peek',
+      pos: function () {
+        var a = pickAnchorByType('tree');
+        if (a) {
+          // Place Tsuno on far side of trunk from camera (occluded)
+          var camX = camera.position.x;
+          var dx = a.trunkX - camX;
+          var sign = dx >= 0 ? 1 : -1;
+          return {
+            x: a.trunkX + sign * (a.trunkRadius + 0.4),
+            y: a.pos[1] - 0.2,
+            z: a.trunkZ
+          };
+        }
+        var zDist = 5 - camera.position.z;
+        var halfW = Math.tan(camera.fov * Math.PI / 360) * zDist * (camera.aspect || viewportAspect);
+        return { x: halfW - 0.5, y: 0.5, z: 5 };
+      }
+    },
+    {
+      name: 'loom',
+      pos: function () {
+        var a = pickAnchorByType('shrine');
+        if (a) return { x: a.pos[0], y: a.pos[1] + 0.6, z: a.pos[2] - 1.2 };
+        return { x: 1.5, y: 0.5, z: 2.5 };
+      }
+    },
+    {
+      name: 'patrol',
+      pos: function () {
+        var a = pickAnchorByType('lantern');
+        if (a) return { x: a.pos[0], y: a.pos[1] + 0.4, z: a.pos[2] };
+        return { x: 6.0, y: 0.3, z: 10 };
+      },
+      animated: true,
+      endX: -4.0
+    },
+    {
+      name: 'perch',
+      pos: function () {
+        var a = pickAnchorByType('shrine');
+        if (a) return { x: a.pos[0], y: a.pos[1] + 0.3, z: a.pos[2] };
+        return { x: 5.0, y: -1.0, z: 6 };
+      }
+    },
+    {
+      name: 'sink',
+      pos: function () {
+        var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
+        var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
+        var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
+        return { x: cx, y: cy, z: cz };
+      },
       bottomY: function () {
         var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
         var zDist = cz - camera.position.z;
@@ -868,13 +944,27 @@
         return -halfH - 1.0;
       }
     },
-    { name: 'circle',  pos: function () {
-      var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
-      var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
-      var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
-      return { x: cx, y: cy, z: cz };
-    }, orbital: true, radius: 1.0 },
-    { name: 'retreat',  pos: function () { return { x: 2.0, y: 0.0, z: 22 }; } }
+    {
+      name: 'circle',
+      pos: function () {
+        var a = pickAnchorByType('tree');
+        if (a) return { x: a.trunkX + a.trunkRadius + 1.0, y: a.pos[1], z: a.trunkZ };
+        var cx = tsunoMesh ? tsunoMesh.position.x : TSUNO_IDLE_POS.x;
+        var cy = tsunoMesh ? tsunoMesh.position.y : TSUNO_IDLE_POS.y;
+        var cz = tsunoMesh ? tsunoMesh.position.z : TSUNO_IDLE_POS.z;
+        return { x: cx, y: cy, z: cz };
+      },
+      orbital: true,
+      radius: 1.0
+    },
+    {
+      name: 'retreat',
+      pos: function () {
+        var a = pickAnchorByType('grave');
+        if (a) return { x: a.pos[0], y: a.pos[1], z: a.pos[2] };
+        return { x: 2.0, y: 0.0, z: 22 };
+      }
+    }
   ];
 
   function pickNextBehavior(moodIdx, currentIdx) {
