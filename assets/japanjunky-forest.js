@@ -375,6 +375,67 @@
       }
     }
 
+    // ─── Shrine props (placeholders until Task 19) ────────────
+    function makeFlatColorTex(w, h, hex) {
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = hex;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillRect(0, h - 4, w, 4);
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      return tex;
+    }
+
+    var SHRINE_PROPS = [
+      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [3.6, 0.45, 10.6] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [1.2, 0.35, 9.0] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [0.8, 0.35, 9.3] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [1.5, 0.35, 9.4] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [2.0, 0.7, 11.0] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [4.0, 0.7, 13.5] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [-3.0, 0.7, 14.0] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [5.5, 0.7, 16.0] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.7, 0.8, 11.0] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.9, 0.8, 11.2] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [5.1, 0.8, 11.1] },
+      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-4.2, 0.2, 13.0] },
+      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-4.8, 0.2, 13.3] }
+    ];
+
+    function buildShrineProps() {
+      var realTex = (opts.textures && opts.textures.shrine) || {};
+      var typeTex = {};
+      function getTypeTex(type, hex) {
+        if (typeTex[type]) return typeTex[type];
+        if (realTex[type]) {
+          typeTex[type] = realTex[type];
+        } else {
+          typeTex[type] = makeFlatColorTex(64, 96, hex);
+        }
+        return typeTex[type];
+      }
+      for (var i = 0; i < SHRINE_PROPS.length; i++) {
+        var P = SHRINE_PROPS[i];
+        var geo = new THREE.PlaneGeometry(P.w, P.h);
+        var mat = new THREE.MeshBasicMaterial({
+          map: getTypeTex(P.type, P.hex),
+          transparent: true,
+          side: THREE.DoubleSide,
+          fog: true
+        });
+        var mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(P.pos[0], P.pos[1], P.pos[2]);
+        mesh.userData.isBillboard = true;
+        mesh.userData.propType = P.type;
+        layers.shrine.add(mesh);
+      }
+    }
+    buildShrineProps();
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
@@ -430,6 +491,11 @@
       // Animate shide sway
       for (var smi = 0; smi < shideMaterials.length; smi++) {
         shideMaterials[smi].uniforms.uTime.value = t;
+      }
+      // Billboards face camera
+      for (var bi = 0; bi < layers.shrine.children.length; bi++) {
+        var b = layers.shrine.children[bi];
+        if (b.userData && b.userData.isBillboard) b.lookAt(camera.position);
       }
     }
 
