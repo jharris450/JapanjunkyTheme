@@ -71,6 +71,24 @@
   // reads as portal glow, aligned with the homepage's appearance.
   var mainClearColor = (isProductPagePreset || isLoginPreset) ? 0x3a1a08 : 0x000000;
 
+  // ─── Scene mode gate ─────────────────────────────────────────
+  // Portal mode: existing inline tunnel/glow/sparkles/rings render.
+  // Forest mode: japanjunky-forest.js builds its scene; portal pieces
+  // are constructed but never added to the scene (so per-frame uniform
+  // updates stay safe but no portal geometry renders).
+  var addPortalToScene = (config.sceneMode === 'portal');
+  if (!addPortalToScene) {
+    mainClearColor = 0x2a1208; // deep amber for forest fog
+  }
+  var sceneModule = null;
+  if (!addPortalToScene && window.JJ_Forest) {
+    sceneModule = window.JJ_Forest.create(scene, camera, null, {
+      cameraPreset: config.cameraPreset || 'home',
+      tier: 'high',
+      textureUrls: config.forestTextures || {}
+    });
+  }
+
   // ─── Swirl Speed ─────────────────────────────────────────────
   var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
   var swirlSpeed = SWIRL_SPEEDS[config.orbitSpeed] || SWIRL_SPEEDS.slow;
@@ -213,7 +231,7 @@
     var tunnel = new THREE.Mesh(geo, mat);
     tunnel.rotation.x = Math.PI / 2;
     tunnel.position.set(0, 0, 18);
-    scene.add(tunnel);
+    if (addPortalToScene) scene.add(tunnel);
     return tunnel;
   }
 
@@ -276,7 +294,7 @@
     });
     var glow = new THREE.Mesh(geo, mat);
     glow.position.set(0, 0, 36);
-    scene.add(glow);
+    if (addPortalToScene) scene.add(glow);
     return glow;
   }
 
@@ -353,7 +371,7 @@
   });
 
   var sparkles = new THREE.Points(sparkleGeo, sparkleMat);
-  scene.add(sparkles);
+  if (addPortalToScene) scene.add(sparkles);
 
   // ─── Portal Rings ──────────────────────────────────────────
   var RING_FRAG = [
@@ -420,7 +438,7 @@
     var ringMesh = new THREE.Mesh(ringGeo, ringMat);
     ringMesh.position.z = rc.z;
     ringMesh.userData.rotSpeed = rc.rot;
-    scene.add(ringMesh);
+    if (addPortalToScene) scene.add(ringMesh);
     portalRings.push(ringMesh);
   }
 
@@ -450,7 +468,7 @@
   });
   var ringGlowMesh = new THREE.Mesh(ringGlowGeo, ringGlowMat);
   ringGlowMesh.position.z = 3;
-  scene.add(ringGlowMesh);
+  if (addPortalToScene) scene.add(ringGlowMesh);
 
   // ─── Vortex Swirl Backdrop ─────────────────────────────────
   var BACKDROP_FRAG = [
@@ -483,7 +501,7 @@
       });
       vortexBackdrop = new THREE.Mesh(geo, mat);
       vortexBackdrop.position.set(0, 0, 37);
-      scene.add(vortexBackdrop);
+      if (addPortalToScene) scene.add(vortexBackdrop);
     });
   }
 
@@ -2079,7 +2097,7 @@
     renderer.clear();
     var prevAutoClear = renderer.autoClear;
     renderer.autoClear = false;
-    renderer.render(memphisScene, memphisCamera);
+    if (addPortalToScene) renderer.render(memphisScene, memphisCamera);
     renderer.render(scene, camera);
     renderer.autoClear = prevAutoClear;
     renderer.setRenderTarget(null);
@@ -2210,6 +2228,10 @@
 
     // Update shader time uniforms
     var t = time * 0.001;
+
+    // Forest scene module update (when active)
+    if (sceneModule) sceneModule.update(t, window.scrollY || 0);
+
     tunnel.material.uniforms.uTime.value = t;
     glow.material.uniforms.uTime.value = t;
     sparkles.material.uniforms.uTime.value = t;
