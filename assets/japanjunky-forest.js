@@ -140,6 +140,59 @@
     silhouetteMesh.renderOrder = -9;
     layers.silhouette.add(silhouetteMesh);
 
+    // ─── Cedar trunk builder ──────────────────────────────────
+    // sides: poly count (8/12/16 by tier)
+    // height: world units
+    // baseRadius/topRadius: tapered trunk shape
+    // barkTex: THREE.Texture (cedar bark, NEAREST sampling expected)
+    function buildCedar(sides, height, baseRadius, topRadius, barkTex) {
+      var geo = new THREE.CylinderGeometry(topRadius, baseRadius, height, sides, 1, true);
+      // Per-vertex AO: darken base, lighten top (vertex colors used as multiply)
+      var colors = [];
+      var pos = geo.attributes.position;
+      for (var i = 0; i < pos.count; i++) {
+        var y = pos.getY(i);
+        var t = (y + height / 2) / height; // 0 = bottom, 1 = top
+        var c = 0.45 + 0.55 * t;
+        colors.push(c, c, c);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      var mat = new THREE.MeshBasicMaterial({
+        map: barkTex,
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        fog: true
+      });
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.userData.isTrunk = true;
+      return mesh;
+    }
+
+    // ─── Placeholder bark (replaced by real PNG in Task 19) ──
+    function makePlaceholderBark() {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 128;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#3a2114';
+      ctx.fillRect(0, 0, 64, 128);
+      ctx.strokeStyle = '#5a3520';
+      ctx.lineWidth = 1;
+      for (var i = 0; i < 12; i++) {
+        var x = Math.floor(Math.random() * 64);
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + (Math.random() - 0.5) * 4, 128);
+        ctx.stroke();
+      }
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    var barkTex = (opts.textures && opts.textures.bark) || makePlaceholderBark();
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
