@@ -256,10 +256,19 @@
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
   <script src="{{ 'gifuct.min.js' | asset_url }}" defer></script>
+  <script>
+    window.JJ_AUDIO_CONFIG = {
+      assetBase: "{{ 'placeholder.txt' | asset_url | replace: 'placeholder.txt', '' }}",
+      enabled: {{ settings.audio_enabled | default: true }}
+    };
+  </script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
   {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-nav-flash.js' | asset_url }}" defer></script>
+  {% endif %}
+  {% if settings.audio_enabled %}
+  <script src="{{ 'japanjunky-audio.js' | asset_url }}" defer></script>
   {% endif %}
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
