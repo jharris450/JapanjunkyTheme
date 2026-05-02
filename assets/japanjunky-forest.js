@@ -65,6 +65,41 @@
     };
     Object.keys(layers).forEach(function (k) { scene.add(layers[k]); });
 
+    // ─── Layer 0: Sky / fog wall ──────────────────────────────
+    // Single billboard plane far behind everything. Amber gradient
+    // (light top → deep bottom). Always faces camera implicitly via
+    // its z-far placement.
+    var skyMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTopColor:    { value: new THREE.Color(0xc46a28) },
+        uBottomColor: { value: new THREE.Color(0x2a1208) }
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main() {',
+        '  vUv = uv;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform vec3 uTopColor;',
+        'uniform vec3 uBottomColor;',
+        'varying vec2 vUv;',
+        'void main() {',
+        '  vec3 col = mix(uBottomColor, uTopColor, smoothstep(0.0, 1.0, vUv.y));',
+        '  gl_FragColor = vec4(col, 1.0);',
+        '}'
+      ].join('\n'),
+      depthWrite: false,
+      depthTest: false,
+      fog: false
+    });
+    var skyGeo = new THREE.PlaneGeometry(200, 100);
+    var skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    skyMesh.position.set(0, 0, 80);
+    skyMesh.renderOrder = -10;
+    layers.sky.add(skyMesh);
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
