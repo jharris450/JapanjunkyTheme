@@ -484,7 +484,7 @@
     tsunoPatrolProgress = 0;
 
     // Audio accent on behavior start (forest mode only — no audio in portal)
-    if (window.JJ_Audio && window.JJ_Audio.playAccent && config.sceneMode !== 'portal') {
+    if (window.JJ_Audio && window.JJ_Audio.playAccent) {
       var bname = TSUNO_BEHAVIORS[behaviorIdx] && TSUNO_BEHAVIORS[behaviorIdx].name;
       var panX = Math.max(-1, Math.min(1, tsunoMesh.position.x / 5));
       if (bname === 'peek') {
