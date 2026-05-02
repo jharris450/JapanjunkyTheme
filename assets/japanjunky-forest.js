@@ -100,6 +100,46 @@
     skyMesh.renderOrder = -10;
     layers.sky.add(skyMesh);
 
+    // ─── Layer 1: Distant silhouette ridge ────────────────────
+    // Procedural for now. Texture swap-in happens in Task 19.
+    var silhouetteMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(0x1a0a04) },
+        uHeight: { value: 0.35 }
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main() {',
+        '  vUv = uv;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform vec3 uColor;',
+        'uniform float uHeight;',
+        'varying vec2 vUv;',
+        'float noise(float x) {',
+        '  return fract(sin(x * 12.9898) * 43758.5453);',
+        '}',
+        'void main() {',
+        '  float trunk = step(0.5, noise(floor(vUv.x * 60.0)));',
+        '  float h = noise(floor(vUv.x * 60.0) + 0.7) * 0.4 + uHeight;',
+        '  float opaque = (vUv.y < h) ? 1.0 : 0.0;',
+        '  float a = opaque * (0.6 + 0.4 * trunk);',
+        '  if (a < 0.01) discard;',
+        '  gl_FragColor = vec4(uColor, a);',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      fog: false
+    });
+    var silhouetteGeo = new THREE.PlaneGeometry(160, 30);
+    var silhouetteMesh = new THREE.Mesh(silhouetteGeo, silhouetteMat);
+    silhouetteMesh.position.set(0, 6, 60);
+    silhouetteMesh.renderOrder = -9;
+    layers.silhouette.add(silhouetteMesh);
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
