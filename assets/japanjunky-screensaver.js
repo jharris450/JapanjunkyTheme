@@ -995,6 +995,7 @@
   var tsunoTransDuration = 1.5;     // transition ease duration (s), scaled by mood speed
   var tsunoTransFrom = { x: 4, y: 0, z: 6 };
   var tsunoTransTo = { x: 4, y: 0, z: 6 };
+  var tsunoTransMid = { x: 4, y: 1, z: 6 }; // Hermite midpoint (sub-plan 2)
   var tsunoGrabCallback = null;      // callback fired when grab transition completes
   // Moment cues
   var tsunoPulseStart = -1;         // arrival pulse start time (-1 = inactive)
@@ -1040,6 +1041,40 @@
     tsunoTransTo.x = target.x;
     tsunoTransTo.y = target.y;
     tsunoTransTo.z = target.z;
+
+    // Hermite midpoint (sub-plan 2): arcs the path over a lifted control
+    // point, plus shifts sideways past trunk colliders if the straight
+    // line would pass through one.
+    tsunoTransMid.x = (tsunoTransFrom.x + tsunoTransTo.x) * 0.5;
+    tsunoTransMid.y = Math.max(tsunoTransFrom.y, tsunoTransTo.y) + 0.6;
+    tsunoTransMid.z = (tsunoTransFrom.z + tsunoTransTo.z) * 0.5;
+    if (sceneModule && sceneModule.getTrunkColliders) {
+      var colliders = sceneModule.getTrunkColliders();
+      var fx = tsunoTransFrom.x, fz = tsunoTransFrom.z;
+      var dx = tsunoTransTo.x - fx, dz = tsunoTransTo.z - fz;
+      var len2 = dx * dx + dz * dz;
+      if (len2 > 0.0001) {
+        for (var ci = 0; ci < colliders.length; ci++) {
+          var col = colliders[ci];
+          var u = ((col.x - fx) * dx + (col.z - fz) * dz) / len2;
+          u = Math.max(0, Math.min(1, u));
+          var px = fx + dx * u, pz = fz + dz * u;
+          var ddx = col.x - px, ddz = col.z - pz;
+          var dist = Math.sqrt(ddx * ddx + ddz * ddz);
+          if (dist < col.radius + 0.4) {
+            // Perpendicular shift away from trunk center
+            var nx = -dz, nz = dx;
+            var nlen = Math.sqrt(nx * nx + nz * nz) || 1;
+            nx /= nlen; nz /= nlen;
+            var sign = ((tsunoTransMid.x - col.x) * nx + (tsunoTransMid.z - col.z) * nz) >= 0 ? 1 : -1;
+            tsunoTransMid.x += nx * (col.radius + 0.8) * sign;
+            tsunoTransMid.z += nz * (col.radius + 0.8) * sign;
+            tsunoTransMid.y += 0.4;
+            break;
+          }
+        }
+      }
+    }
   }
 
   function updateTsunoIdle(t) {
