@@ -233,7 +233,6 @@
       enabled: {{ settings.screensaver_enabled | default: true }},
       resolution: {{ settings.screensaver_resolution | default: 240 }},
       fps: {{ settings.screensaver_fps | default: 24 }},
-      orbitSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
       mouseInteraction: {{ settings.screensaver_mouse | default: true }},
       audioEnabled: {{ settings.audio_enabled | default: true }},
       {%- if template == 'product' -%}cameraPreset: 'product',{%- endif %}

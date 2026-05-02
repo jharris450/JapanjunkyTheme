@@ -8,9 +8,6 @@
  *                   setCameraPreset(name),
  *                   getTsunoAnchors(),
  *                   getTrunkColliders(),
- *                   bootstrap(),
- *                   assembleFull(),
- *                   getPhosphorPass(),
  *                   getCurrentPhosphorMix(),
  *                   dispose() }
  */
@@ -1011,12 +1008,7 @@
       return trunkColliders;
     }
 
-    // Two-phase construction stubs
-    function bootstrap() { /* implemented in perf-tier task */ }
-    function assembleFull() { /* implemented in perf-tier task */ }
-
-    // Phosphor pass stubs (real implementation deferred — see Task 21)
-    function getPhosphorPass() { return null; }
+    // Phosphor mix accessor (consumed by screensaver's RTT pass)
     function getCurrentPhosphorMix() { return currentPhosphorMix; }
 
     function dispose() {
@@ -1039,9 +1031,6 @@
       setCameraPreset: setCameraPreset,
       getTsunoAnchors: getTsunoAnchors,
       getTrunkColliders: getTrunkColliders,
-      bootstrap: bootstrap,
-      assembleFull: assembleFull,
-      getPhosphorPass: getPhosphorPass,
       getCurrentPhosphorMix: getCurrentPhosphorMix,
       dispose: dispose,
       // Internal handles for later tasks:
