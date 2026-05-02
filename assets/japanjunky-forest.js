@@ -17,11 +17,11 @@
   // ─── Camera presets ──────────────────────────────────────────
   var PRESETS = {
     home: {
-      pos:  [-1.5, 1.6, -2],
-      look: [3,    1.0, 12],
-      fog:  { near: 15, far: 70 },
-      fov:  55,
-      float: { pos: 0.04, rot: 0.6 * Math.PI / 180, period: 4.0 }
+      pos:  [0, 1.7, -2],
+      look: [0, 1.0, 14],
+      fog:  { near: 6, far: 38 },        // tighter fog for horror atmosphere
+      fov:  58,
+      float: { pos: 0.05, rot: 0.7 * Math.PI / 180, period: 4.0 }
     },
     product: {
       pos:  [2, 1.4, 4],
@@ -66,10 +66,12 @@
     // Single billboard plane far behind everything. Amber gradient
     // (light top → deep bottom). Always faces camera implicitly via
     // its z-far placement.
+    // Sunset gradient — horizon glow mid-band, deep amber up high, dim bottom
     var skyMat = new THREE.ShaderMaterial({
       uniforms: {
-        uTopColor:    { value: new THREE.Color(0xc46a28) },
-        uBottomColor: { value: new THREE.Color(0x2a1208) }
+        uTopColor:    { value: new THREE.Color(0x6a3018) },  // dusky red-purple top
+        uMidColor:    { value: new THREE.Color(0xd86a20) },  // sunset glow mid
+        uBottomColor: { value: new THREE.Color(0x3a2818) }   // foggy dark base
       },
       vertexShader: [
         'varying vec2 vUv;',
@@ -80,10 +82,17 @@
       ].join('\n'),
       fragmentShader: [
         'uniform vec3 uTopColor;',
+        'uniform vec3 uMidColor;',
         'uniform vec3 uBottomColor;',
         'varying vec2 vUv;',
         'void main() {',
-        '  vec3 col = mix(uBottomColor, uTopColor, smoothstep(0.0, 1.0, vUv.y));',
+        '  // 3-stop gradient: bottom → glow band at horizon → top',
+        '  vec3 col;',
+        '  if (vUv.y < 0.45) {',
+        '    col = mix(uBottomColor, uMidColor, smoothstep(0.15, 0.45, vUv.y));',
+        '  } else {',
+        '    col = mix(uMidColor, uTopColor, smoothstep(0.45, 0.95, vUv.y));',
+        '  }',
         '  gl_FragColor = vec4(col, 1.0);',
         '}'
       ].join('\n'),
@@ -206,86 +215,88 @@
     }
     var barkTex = (opts.textures && opts.textures.bark) || makePlaceholderBark();
 
-    // ─── Conifer foliage builder (concept4/5: low-poly triangular fronds) ──
+    // ─── Sparse horror-conifer foliage (PS1 Silent Hill style) ──────
+    // Foliage is just dark silhouette planes hung from the upper trunk.
+    // Each "frond" is a low-poly cone — narrow + tall, like a stretched
+    // pine bough. Fronds get progressively narrower as they go up.
+    // Most of the trunk is BARE (concept4 has tall thin bare trunks).
     var foliageMat = new THREE.MeshBasicMaterial({
-      color: 0x2c4520,
+      color: 0x1f2818,
       side: THREE.DoubleSide,
       fog: true
     });
     injectVertexSnap(foliageMat);
-    var foliageMatDark = new THREE.MeshBasicMaterial({
-      color: 0x1a2c14,
-      side: THREE.DoubleSide,
-      fog: true
-    });
-    injectVertexSnap(foliageMatDark);
-    function buildConiferFoliage(trunkX, trunkZ, trunkTopY, baseRadius) {
-      // Stack 4 cones from trunk top downward — wider at bottom, smaller at top.
-      // Apex pointing up, base flares around the trunk.
-      var levels = [
-        { centerY: trunkTopY - 1.5, radius: baseRadius * 3.4, height: 5.0, dark: true },
-        { centerY: trunkTopY - 0.5, radius: baseRadius * 2.6, height: 4.0, dark: false },
-        { centerY: trunkTopY + 0.5, radius: baseRadius * 1.8, height: 3.0, dark: false },
-        { centerY: trunkTopY + 1.4, radius: baseRadius * 1.0, height: 2.2, dark: false }
+    function buildHorrorConifer(trunkX, trunkZ, trunkTopY, baseRadius, trunkHeight) {
+      // Foliage clusters in TOP 35% of trunk only (sparse, silhouette-style).
+      // Three thin cones, alternating slightly off-axis for organic feel.
+      var foliageBase = trunkTopY - trunkHeight * 0.35;
+      var fronds = [
+        { centerY: foliageBase + trunkHeight * 0.05, r: baseRadius * 4.5, h: 2.6, ox:  0.0,  oz:  0.0 },
+        { centerY: foliageBase + trunkHeight * 0.16, r: baseRadius * 3.2, h: 2.2, ox:  0.05, oz: -0.05 },
+        { centerY: foliageBase + trunkHeight * 0.26, r: baseRadius * 1.8, h: 1.8, ox: -0.05, oz:  0.05 }
       ];
       var group = new THREE.Group();
-      for (var i = 0; i < levels.length; i++) {
-        var L = levels[i];
-        var geo = new THREE.ConeGeometry(L.radius, L.height, 8, 1, true);
-        var mesh = new THREE.Mesh(geo, L.dark ? foliageMatDark : foliageMat);
-        mesh.position.set(trunkX, L.centerY, trunkZ);
+      for (var i = 0; i < fronds.length; i++) {
+        var L = fronds[i];
+        // 6 radial segments = jaggy PS1 silhouette
+        var geo = new THREE.ConeGeometry(L.r, L.h, 6, 1, true);
+        var mesh = new THREE.Mesh(geo, foliageMat);
+        mesh.position.set(trunkX + L.ox, L.centerY, trunkZ + L.oz);
         group.add(mesh);
       }
       return group;
     }
 
-    // ─── Layer 2: Mid grove ───────────────────────────────────
-    // 8 cedars distributed on the right side (forest edge), z=30..50.
+    // ─── Layer 2: Mid grove (deeper rows flanking the path) ─────────
+    // Both sides of path. Trees are tall + thin (PS1 horror conifer).
+    // baseR small (0.3-0.5) = thin trunks. Trunks tall (12-16m) so
+    // foliage clusters high overhead.
     var MID_GROVE_LAYOUT = [
       // [x,    z,    height, baseR, topR]
-      [ 10, 32, 11, 0.7, 0.4],
-      [ 13, 38, 10, 0.6, 0.4],
-      [  4, 35, 12, 0.8, 0.5],
-      [  9, 42, 11, 0.7, 0.4],
-      [ 14, 48, 10, 0.6, 0.4],
-      [  7, 45, 13, 0.8, 0.5],
-      [ 11, 50, 11, 0.7, 0.4],
-      [ 16, 50, 10, 0.6, 0.4]
+      // Left side
+      [ -7, 32, 14, 0.45, 0.30],
+      [ -5, 38, 13, 0.40, 0.25],
+      [ -9, 44, 12, 0.40, 0.25],
+      [ -6, 50, 13, 0.45, 0.28],
+      // Right side
+      [  6, 30, 14, 0.45, 0.30],
+      [  9, 36, 12, 0.40, 0.25],
+      [  5, 44, 13, 0.40, 0.25],
+      [  8, 50, 12, 0.40, 0.25]
     ];
     function buildMidGrove(count) {
       for (var i = 0; i < Math.min(count, MID_GROVE_LAYOUT.length); i++) {
         var L = MID_GROVE_LAYOUT[i];
-        var sides = 12;
+        var sides = 8;          // PS1: low poly trunks
         var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
         c.position.set(L[0], L[2] / 2 - 0.5, L[1]);
         layers.midGrove.add(c);
-        // Conifer foliage at top of trunk (trunk top in world coords)
         var trunkTop = L[2] - 0.5;
-        layers.midGrove.add(buildConiferFoliage(L[0], L[1], trunkTop, L[3]));
+        layers.midGrove.add(buildHorrorConifer(L[0], L[1], trunkTop, L[3], L[2]));
       }
     }
     buildMidGrove(8);
 
-    // ─── Layer 3: Hero cedars (giants near camera, all on right) ────
+    // ─── Layer 3: Hero conifers flanking the path near camera ───────
+    // Two close pairs on left + right of path. Tall thin trunks.
     var HERO_LAYOUT = [
-      // [x,   z,  height, baseR, topR]
-      [ 4,   12, 18, 1.4, 0.7],
-      [ 8,   14, 16, 1.2, 0.6],
-      [ 6,   18, 17, 1.3, 0.7],
-      [ 11,  20, 15, 1.1, 0.6]
+      // [x,    z,  height, baseR, topR]
+      [ -3.0,  9,  16, 0.55, 0.32],   // close-left
+      [ -4.5, 16, 15, 0.50, 0.30],   // mid-left
+      [  3.0, 10, 16, 0.55, 0.32],   // close-right
+      [  4.5, 18, 15, 0.50, 0.30]    // mid-right
     ];
     var heroCedars = [];
     function buildHeroCedars(count) {
       for (var i = 0; i < Math.min(count, HERO_LAYOUT.length); i++) {
         var L = HERO_LAYOUT[i];
-        var sides = 16;
+        var sides = 10;
         var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
         c.position.set(L[0], L[2] / 2 - 0.3, L[1]);
         layers.hero.add(c);
         heroCedars.push({ mesh: c, layout: L });
-        // Foliage cones on top of trunk
         var trunkTop = L[2] - 0.3;
-        layers.hero.add(buildConiferFoliage(L[0], L[1], trunkTop, L[3]));
+        layers.hero.add(buildHorrorConifer(L[0], L[1], trunkTop, L[3], L[2]));
       }
     }
     buildHeroCedars(4);
@@ -445,21 +456,22 @@
       return tex;
     }
 
-    // All shrine props on the right side, between/around the trees.
+    // Sparse shrine props — fewer items, placed beside the path.
+    // Heavy fog hides distant detail so we don't need many.
     var SHRINE_PROPS = [
-      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [5.6, 0.45, 10.6] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.0, 0.35, 9.5] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.4, 0.35, 9.8] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.7, 0.35, 9.6] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [3.5, 0.7, 11.0] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [6.0, 0.7, 13.5] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [9.0, 0.7, 14.0] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [7.5, 0.7, 16.0] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [6.7, 0.8, 11.0] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [6.9, 0.8, 11.2] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [7.1, 0.8, 11.1] },
-      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [4.2, 0.2, 13.0] },
-      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [4.8, 0.2, 13.3] }
+      // Hokora at base of close-right hero tree (visible)
+      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [3.7, 0.45, 12.0] },
+      // Jizo cluster at base of close-left hero
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [-3.5, 0.35, 11.0] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [-3.2, 0.35, 11.4] },
+      // One stone lantern each side of path
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [-2.0, 0.7, 7.0] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [ 2.0, 0.7, 8.0] },
+      // Couple of sotoba poles peeking out (concept4 vibe)
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.5, 0.8, 13.5] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.7, 0.8, 13.7] },
+      // One distant haka
+      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-2.8, 0.2, 16.0] }
     ];
 
     function buildShrineProps() {
@@ -492,45 +504,93 @@
     }
     buildShrineProps();
 
-    // ─── Layer 5: Foreground roots / moss ─────────────────────
-    function makePlaceholderMoss() {
+    // ─── Layer 5: Foreground rocks + grass tufts ──────────────
+    // Rocky outcrops on left + right (concept4) plus a few grass billboards.
+    var rockMat = new THREE.MeshBasicMaterial({
+      color: 0x4a3a2a,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(rockMat);
+    function makeRock(x, y, z, sx, sy, sz, rotY) {
+      var geo = new THREE.DodecahedronGeometry(1, 0); // 12-face low-poly
+      var mesh = new THREE.Mesh(geo, rockMat);
+      mesh.position.set(x, y, z);
+      mesh.scale.set(sx, sy, sz);
+      mesh.rotation.y = rotY;
+      return mesh;
+    }
+    layers.foreground.add(makeRock(-5.5, 0.3, 5,   1.8, 1.2, 1.6,  0.4));
+    layers.foreground.add(makeRock(-7.0, 0.1, 12,  2.4, 1.0, 1.8, -0.6));
+    layers.foreground.add(makeRock( 5.5, 0.2, 4,   1.6, 1.0, 1.4,  0.2));
+    layers.foreground.add(makeRock( 7.0, 0.4, 10,  2.0, 1.4, 2.0, -0.3));
+
+    // Grass tufts — billboard quads with grass-clump texture, scattered on
+    // path edges. Procedural canvas (CC photos can replace later).
+    function makeGrassTexture() {
       var c = document.createElement('canvas');
-      c.width = 64; c.height = 64;
+      c.width = 32; c.height = 32;
       var ctx = c.getContext('2d');
-      ctx.fillStyle = '#2a4a1c';
-      ctx.fillRect(0, 0, 64, 64);
-      for (var i = 0; i < 80; i++) {
-        ctx.fillStyle = 'rgba(60,90,30,0.5)';
-        ctx.fillRect(
-          Math.floor(Math.random() * 64),
-          Math.floor(Math.random() * 64), 2, 2);
+      ctx.clearRect(0, 0, 32, 32);
+      // Vertical green blades from bottom
+      for (var i = 0; i < 14; i++) {
+        var bx = Math.floor(Math.random() * 32);
+        var bh = 12 + Math.random() * 16;
+        ctx.strokeStyle = (Math.random() < 0.5) ? '#3a5a2a' : '#2a3a1a';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(bx, 32);
+        ctx.lineTo(bx + (Math.random() - 0.5) * 4, 32 - bh);
+        ctx.stroke();
       }
       var tex = new THREE.CanvasTexture(c);
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
       return tex;
     }
-    var mossTex = (opts.textures && opts.textures.moss) || makePlaceholderMoss();
+    var grassTex = makeGrassTexture();
+    var grassMat = new THREE.MeshBasicMaterial({
+      map: grassTex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      alphaTest: 0.4,
+      fog: true
+    });
+    function makeGrassTuft(x, z, scale) {
+      var geo = new THREE.PlaneGeometry(0.6 * scale, 0.4 * scale);
+      var mesh = new THREE.Mesh(geo, grassMat);
+      mesh.position.set(x, 0.2 * scale, z);
+      mesh.userData.isBillboard = true; // face camera each frame
+      return mesh;
+    }
+    var GRASS_LAYOUT = [
+      [-1.5, 4, 1.0], [-2.2, 6, 0.9], [1.8, 5, 1.0], [2.3, 7, 1.1],
+      [-1.0, 9, 0.8], [1.2, 11, 0.9], [-1.8, 14, 0.8], [1.6, 16, 0.9],
+      [-3.5, 7, 1.2], [3.2, 9, 1.0]
+    ];
+    for (var gti = 0; gti < GRASS_LAYOUT.length; gti++) {
+      var GT = GRASS_LAYOUT[gti];
+      layers.foreground.add(makeGrassTuft(GT[0], GT[1], GT[2]));
+    }
 
-    var fgGeo = new THREE.SphereGeometry(2.5, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-    var fgMat = new THREE.MeshBasicMaterial({ map: mossTex, fog: true });
-    mossTex.repeat.set(2, 2);
-    var fgMound = new THREE.Mesh(fgGeo, fgMat);
-    fgMound.position.set(-3, -0.5, 3);
-    fgMound.scale.set(1.5, 0.6, 1.0);
-    layers.foreground.add(fgMound);
-
-    // ─── Layer 6: Road slice ──────────────────────────────────
-    function makePlaceholderRoad() {
+    // ─── Layer 6: Dirt path (replaces asphalt road) ───────────
+    function makeDirtPathTexture() {
       var c = document.createElement('canvas');
       c.width = 64; c.height = 256;
       var ctx = c.getContext('2d');
-      ctx.fillStyle = '#1a1612';
+      // Dark dirt base
+      ctx.fillStyle = '#2a1d12';
       ctx.fillRect(0, 0, 64, 256);
-      ctx.fillStyle = '#4a3e30';
-      ctx.fillRect(30, 0, 4, 256);
+      // Random gravel speckle
+      for (var i = 0; i < 240; i++) {
+        ctx.fillStyle = (Math.random() < 0.5) ? '#3a2a1a' : '#1a1208';
+        ctx.fillRect(
+          Math.floor(Math.random() * 64),
+          Math.floor(Math.random() * 256), 2, 2);
+      }
+      // Faint center wear path
+      ctx.fillStyle = 'rgba(90,70,50,0.15)';
+      ctx.fillRect(20, 0, 24, 256);
       var tex = new THREE.CanvasTexture(c);
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
@@ -538,14 +598,16 @@
       tex.wrapT = THREE.RepeatWrapping;
       return tex;
     }
-    var roadTex = makePlaceholderRoad();
-    roadTex.repeat.set(1, 8);
-    var roadGeo = new THREE.PlaneGeometry(3, 30);
-    var roadMat = new THREE.MeshBasicMaterial({ map: roadTex, fog: true });
-    var roadMesh = new THREE.Mesh(roadGeo, roadMat);
-    roadMesh.rotation.x = -Math.PI / 2;
-    roadMesh.position.set(-4, 0.01, 8);
-    layers.road.add(roadMesh);
+    var pathTex = makeDirtPathTexture();
+    pathTex.repeat.set(1, 12);
+    // Path runs through center of frame, narrowing into mist
+    var pathGeo = new THREE.PlaneGeometry(2.6, 50);
+    var pathMat = new THREE.MeshBasicMaterial({ map: pathTex, fog: true });
+    injectVertexSnap(pathMat);
+    var pathMesh = new THREE.Mesh(pathGeo, pathMat);
+    pathMesh.rotation.x = -Math.PI / 2;
+    pathMesh.position.set(0, 0.01, 22);
+    layers.road.add(pathMesh);
 
     // ─── PS1 vertex-snap shader injection ─────────────────────
     // Quantize clip-space xy to integer pixel grid → wobble effect.
@@ -622,12 +684,10 @@
       layers.godRays.add(mesh);
       return mesh;
     }
+    // Two big god rays slanting through trees — concept5 sun-through-trees
     var GOD_RAY_LAYOUT = [
-      [ 2,  6, 14, 4, 12,  0.2, 0.0],
-      [-1,  7, 16, 3, 11, -0.1, 1.4],
-      [ 5,  6, 18, 4, 12,  0.3, 2.7],
-      [-3,  7, 20, 3, 10,  0.0, 4.1],
-      [ 1,  8, 22, 4, 14, -0.2, 5.3]
+      [ 0.5, 7, 18, 5, 14,  0.15, 0.0],   // primary shaft, near center
+      [-1.0, 6, 24, 4, 12,  0.25, 2.4]    // secondary, deeper + offset
     ];
     function buildGodRays(count) {
       for (var i = 0; i < Math.min(count, GOD_RAY_LAYOUT.length); i++) {
@@ -635,7 +695,7 @@
         buildGodRay(L[0], L[1], L[2], L[3], L[4], L[5], L[6]);
       }
     }
-    buildGodRays(5);
+    buildGodRays(2);
 
     // ─── Drifting fog wisps (instanced billboards) ────────────
     function makeFogWispTexture() {
@@ -651,7 +711,7 @@
       return new THREE.CanvasTexture(c);
     }
     var fogWispTex = makeFogWispTexture();
-    var FOG_WISP_COUNT = 20;
+    var FOG_WISP_COUNT = 12;
     var fogWispGeo = new THREE.PlaneGeometry(3, 1.2);
     var fogWispMat = new THREE.MeshBasicMaterial({
       map: fogWispTex,
@@ -771,28 +831,14 @@
       tex.minFilter = THREE.NearestFilter;
       return tex;
     }
+    // Phosphor scintillation grain DISABLED — the CPU-side dither already
+    // adds its own pixel-noise; layering grain on top reads as visual mud.
+    // Tier matrix keeps the flag for future toggling.
     var grainTex = makeNoiseTexture();
-    var grainMat = new THREE.MeshBasicMaterial({
-      map: grainTex,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      depthTest: false,
-      opacity: 0.03,
-      color: 0xff9040,
-      fog: false
-    });
-    var grainGeo = new THREE.PlaneGeometry(2, 2);
-    var grainQuad = new THREE.Mesh(grainGeo, grainMat);
-    grainQuad.frustumCulled = false;
-    grainQuad.renderOrder = 999;
-    camera.add(grainQuad);
-    if (scene.children.indexOf(camera) === -1) scene.add(camera);
-    grainQuad.position.set(0, 0, -1);
-    layers.grain.userData.grainQuadRef = grainQuad;
+    void grainTex; // keep texture builder warm for now (helper compiles)
 
-    // Distance fog
-    scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
+    // Distance fog — desaturated amber-gray (Silent Hill PS1 horror tone)
+    scene.fog = new THREE.Fog(0x3a2818, currentPreset.fog.near, currentPreset.fog.far);
 
     // Apply preset to camera
     function applyPreset(p) {
@@ -916,9 +962,7 @@
         var pulse = 1.0 + Math.sin(t * 0.5 + mpi * 1.7) * 0.12;
         mp.material.color.setRGB(pulse, pulse, pulse);
       }
-      // Grain UV scroll
-      grainTex.offset.x = (t * 0.7) % 1;
-      grainTex.offset.y = (t * 0.43) % 1;
+      // (Grain disabled — see scene assembly above)
       // ─── Scroll parallax ──────────────────────────────────
       var SCROLL_PIXELS_PER_UNIT = 200;
       var sUnits = -(scrollY || 0) / SCROLL_PIXELS_PER_UNIT;
@@ -988,9 +1032,8 @@
         lanternLights[li3].visible = T.lanternRealLights;
       }
       // Grain
-      if (layers.grain.userData.grainQuadRef) {
-        layers.grain.userData.grainQuadRef.visible = T.scintillation;
-      }
+      // Scintillation grain currently disabled at scene assembly.
+      void T;
       // Phosphor mix (consumed by getCurrentPhosphorMix())
       currentPhosphorMix = T.phosphorMix;
     }

@@ -2100,8 +2100,9 @@
     animateObjects(time);
 
     // Spawn and animate memory fragments
-    spawnFragment(time);
-    animateFragments(time, targetInterval / 1000);
+    // Memory fragments disabled — forest scene has its own atmosphere
+    // spawnFragment(time);
+    // animateFragments(time, targetInterval / 1000);
 
     // Update parallax
     updateParallax();
