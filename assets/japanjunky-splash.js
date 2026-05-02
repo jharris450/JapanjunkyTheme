@@ -118,9 +118,10 @@
     '  float pattern2 = sin(swirled.x * 10.0 - swirled.y * 6.0 + uTime * 0.3) * 0.5 + 0.5;',
     '  float p = pattern * 0.6 + pattern2 * 0.4;',
     '',
-    '  vec3 c1 = vec3(0.4, 0.05, 0.02);',
-    '  vec3 c2 = vec3(0.85, 0.35, 0.05);',
-    '  vec3 c3 = vec3(0.95, 0.75, 0.3);',
+    // Forest splash palette (sub-plan 1 Task 33 partial — palette nudge only)
+    '  vec3 c1 = vec3(0.16, 0.07, 0.03);',  // deep amber bottom (#2a1208)
+    '  vec3 c2 = vec3(0.55, 0.25, 0.08);',  // mid amber forest fog
+    '  vec3 c3 = vec3(0.85, 0.55, 0.20);',  // top amber light through canopy
     '  vec3 color = mix(c1, c2, smoothstep(0.0, 0.5, p));',
     '  color = mix(color, c3, smoothstep(0.5, 1.0, p));',
     '',
