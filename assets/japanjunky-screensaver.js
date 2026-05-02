@@ -1953,10 +1953,13 @@
     renderer.render(scene, camera);
     renderer.autoClear = prevAutoClear;
 
-    // Pass 0.5 — phosphor amber LUT, renderTarget → phosphorTarget
-    applyPhosphor();
+    // Phosphor amber LUT bypassed — current scene palette is cool
+    // lavender-grey (concept6 / forest path) and amber bias would conflict.
+    // applyPhosphor();
+    // renderer.setRenderTarget(null);
 
-    renderer.readRenderTargetPixels(phosphorTarget, 0, 0, resW, resH, pixelBuffer);
+    renderer.setRenderTarget(null);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
 
     // Copy pixels (WebGL reads bottom-up, flip vertically)
     var src = pixelBuffer;
