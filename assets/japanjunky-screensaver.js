@@ -856,13 +856,14 @@
     // Behavior weights [hang, peek, loom, patrol, perch, sink, circle, retreat]
     // hang is kept low so Tsuno moves around noticeably
     weights: [
-      [0.3, 3,   0.2, 0.5, 1,   1,   1,   3  ],  // shy
-      [0.5, 1,   3,   1,   3,   1,   1,   0.2],  // curious
-      [1,   0.5, 0.5, 0.5, 1,   2,   1,   1  ],  // lazy
-      [0.2, 3,   1,   3,   1,   1,   1,   0.5],  // mischievous
-      [1,   1,   1,   1,   3,   0.5, 1,   0.3],  // watchful
-      [0.3, 1,   1,   3,   1,   0.5, 3,   1  ],  // energetic
-      [0.5, 1,   0.3, 0.5, 1,   1,   3,   2  ]   // dreamy
+      // 0=hang 1=peek 2=loom 3=patrol 4=perch 5=sink 6=circle 7=retreat 8=contemplate
+      [0.3, 3,   0.2, 0.5, 1,   1,   1,   3,   2  ],  // shy
+      [0.5, 1,   3,   1,   3,   1,   1,   0.2, 0.5],  // curious
+      [1,   0.5, 0.5, 0.5, 1,   2,   1,   1,   1.5],  // lazy
+      [0.2, 3,   1,   3,   1,   1,   1,   0.5, 0.3],  // mischievous
+      [1,   1,   1,   1,   3,   0.5, 1,   0.3, 2  ],  // watchful
+      [0.3, 1,   1,   3,   1,   0.5, 3,   1,   0.2],  // energetic
+      [0.5, 1,   0.3, 0.5, 1,   1,   3,   2,   2.5]   // dreamy
     ]
   };
 
@@ -963,6 +964,16 @@
         var a = pickAnchorByType('grave');
         if (a) return { x: a.pos[0], y: a.pos[1], z: a.pos[2] };
         return { x: 2.0, y: 0.0, z: 22 };
+      }
+    },
+    {
+      // Behavior IDx 8 — CONTEMPLATE (sub-plan 2)
+      // Tsuno faces a sotoba/haka grave marker, low alpha, slow drift.
+      name: 'contemplate',
+      pos: function () {
+        var a = pickAnchorByType('grave');
+        if (a) return { x: a.pos[0] + 0.5, y: a.pos[1] + 0.2, z: a.pos[2] - 0.3 };
+        return { x: 2.0, y: 0.5, z: 18 };
       }
     }
   ];
@@ -1189,8 +1200,21 @@
         }
         tsunoMesh.position.x = target.x;
         tsunoMesh.position.z = target.z;
+      } else if (beh.name === 'perch') {
+        // PERCH settle: dampened bob over the shrine prop, fades to still.
+        var settleAge = t - tsunoBehaviorStart - tsunoTransDuration;
+        var settleAmp = 0.04 * Math.exp(-settleAge * 0.5);
+        tsunoMesh.position.x = target.x + Math.sin(t * 0.3) * swayAmp * 0.3;
+        tsunoMesh.position.y = target.y + Math.sin(settleAge * 4.0) * settleAmp;
+        tsunoMesh.position.z = target.z;
+      } else if (beh.name === 'contemplate') {
+        // CONTEMPLATE: very slow x drift past a grave marker.
+        var contAge = t - tsunoBehaviorStart - tsunoTransDuration;
+        tsunoMesh.position.x = target.x + Math.sin(contAge * 0.3) * 0.2;
+        tsunoMesh.position.y = target.y + Math.sin(t * bobFreq * 2 * Math.PI) * bobAmp * 0.4;
+        tsunoMesh.position.z = target.z;
       } else {
-        // Static behaviors (hang, peek, loom, perch, retreat): bob + sway at target
+        // Static behaviors (hang, peek, loom, retreat): bob + sway at target
         tsunoMesh.position.x = target.x + Math.sin(t * 0.3) * swayAmp;
         tsunoMesh.position.y = target.y + Math.sin(t * bobFreq * 2 * Math.PI) * bobAmp;
         tsunoMesh.position.z = target.z;
@@ -1222,6 +1246,35 @@
       } else {
         tsunoMesh.position.x += Math.sin(sp * Math.PI * 6) * 0.05 * (1 - sp);
       }
+    }
+
+    // PEEK occlusion alpha: when behavior is 'peek' and a trunk lies between
+    // camera and Tsuno, drop alpha to suggest half-hiddenness.
+    if (TSUNO_BEHAVIORS[tsunoBehaviorIdx]
+        && TSUNO_BEHAVIORS[tsunoBehaviorIdx].name === 'peek'
+        && sceneModule && sceneModule.getTrunkColliders) {
+      var pkColliders = sceneModule.getTrunkColliders();
+      var camX2 = camera.position.x, camZ2 = camera.position.z;
+      var pkx = tsunoMesh.position.x, pkz = tsunoMesh.position.z;
+      var occluded = false;
+      var pdx = pkx - camX2, pdz = pkz - camZ2;
+      var plen2 = pdx * pdx + pdz * pdz;
+      if (plen2 > 0.001) {
+        for (var pkc = 0; pkc < pkColliders.length; pkc++) {
+          var pcol = pkColliders[pkc];
+          var pku = ((pcol.x - camX2) * pdx + (pcol.z - camZ2) * pdz) / plen2;
+          if (pku < 0 || pku > 1) continue;
+          var ppx = camX2 + pdx * pku, ppz = camZ2 + pdz * pku;
+          var pddx = pcol.x - ppx, pddz = pcol.z - ppz;
+          if (Math.sqrt(pddx * pddx + pddz * pddz) < pcol.radius) { occluded = true; break; }
+        }
+      }
+      if (occluded) alpha = Math.min(alpha, 0.4);
+    }
+    // CONTEMPLATE: alpha dropped during slow drift to suggest reverence.
+    if (TSUNO_BEHAVIORS[tsunoBehaviorIdx]
+        && TSUNO_BEHAVIORS[tsunoBehaviorIdx].name === 'contemplate') {
+      alpha = Math.min(alpha, 0.5);
     }
 
     // Alpha with any awareness flash applied
