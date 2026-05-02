@@ -119,11 +119,27 @@
         '  return fract(sin(x * 12.9898) * 43758.5453);',
         '}',
         'void main() {',
-        '  float trunk = step(0.5, noise(floor(vUv.x * 60.0)));',
-        '  float h = noise(floor(vUv.x * 60.0) + 0.7) * 0.4 + uHeight;',
-        '  float opaque = (vUv.y < h) ? 1.0 : 0.0;',
-        '  float a = opaque * (0.6 + 0.4 * trunk);',
-        '  if (a < 0.01) discard;',
+        '  // Distant conifer silhouettes — each x band is one tree:',
+        '  // narrow trunk + triangular cone above it.',
+        '  float band = floor(vUv.x * 40.0);',
+        '  float bandX = fract(vUv.x * 40.0);   // 0..1 within band',
+        '  float treeH = noise(band) * 0.45 + 0.35;',
+        '  // Triangular cone: peak at band center, falls to 0 at edges',
+        '  float dCenter = abs(bandX - 0.5) * 2.0;',
+        '  float coneTop = treeH;',
+        '  float coneBottom = 0.05 + noise(band + 0.3) * 0.08;',
+        '  // Cone occupies (bandX 0.05..0.95) and (vUv.y < lerp(coneBottom, coneTop, 1-dCenter))',
+        '  float coneLine = mix(coneBottom, coneTop, 1.0 - dCenter);',
+        '  // Trunk: thin column at center 0.45..0.55, bottom 0..0.05',
+        '  float trunkInBand = step(0.42, bandX) * step(bandX, 0.58);',
+        '  float trunkBottom = 0.0;',
+        '  float trunkTopY = 0.05;',
+        '  float opaque = 0.0;',
+        '  if (vUv.y < coneLine && bandX > 0.06 && bandX < 0.94) opaque = 1.0;',
+        '  if (vUv.y < trunkTopY && trunkInBand > 0.5) opaque = 1.0;',
+        '  if (opaque < 0.5) discard;',
+        '  // Distance fade — taller trees further left/right of frame fade slightly',
+        '  float a = 0.78 + 0.22 * noise(band + 0.7);',
         '  gl_FragColor = vec4(uColor, a);',
         '}'
       ].join('\n'),
@@ -190,18 +206,51 @@
     }
     var barkTex = (opts.textures && opts.textures.bark) || makePlaceholderBark();
 
+    // ─── Conifer foliage builder (concept4/5: low-poly triangular fronds) ──
+    var foliageMat = new THREE.MeshBasicMaterial({
+      color: 0x2c4520,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(foliageMat);
+    var foliageMatDark = new THREE.MeshBasicMaterial({
+      color: 0x1a2c14,
+      side: THREE.DoubleSide,
+      fog: true
+    });
+    injectVertexSnap(foliageMatDark);
+    function buildConiferFoliage(trunkX, trunkZ, trunkTopY, baseRadius) {
+      // Stack 4 cones from trunk top downward — wider at bottom, smaller at top.
+      // Apex pointing up, base flares around the trunk.
+      var levels = [
+        { centerY: trunkTopY - 1.5, radius: baseRadius * 3.4, height: 5.0, dark: true },
+        { centerY: trunkTopY - 0.5, radius: baseRadius * 2.6, height: 4.0, dark: false },
+        { centerY: trunkTopY + 0.5, radius: baseRadius * 1.8, height: 3.0, dark: false },
+        { centerY: trunkTopY + 1.4, radius: baseRadius * 1.0, height: 2.2, dark: false }
+      ];
+      var group = new THREE.Group();
+      for (var i = 0; i < levels.length; i++) {
+        var L = levels[i];
+        var geo = new THREE.ConeGeometry(L.radius, L.height, 8, 1, true);
+        var mesh = new THREE.Mesh(geo, L.dark ? foliageMatDark : foliageMat);
+        mesh.position.set(trunkX, L.centerY, trunkZ);
+        group.add(mesh);
+      }
+      return group;
+    }
+
     // ─── Layer 2: Mid grove ───────────────────────────────────
-    // 6-8 cedars distributed in z=30..50, smaller than hero cedars
+    // 8 cedars distributed on the right side (forest edge), z=30..50.
     var MID_GROVE_LAYOUT = [
       // [x,    z,    height, baseR, topR]
-      [-12, 32, 11, 0.7, 0.4],
-      [ -7, 38, 10, 0.6, 0.4],
+      [ 10, 32, 11, 0.7, 0.4],
+      [ 13, 38, 10, 0.6, 0.4],
       [  4, 35, 12, 0.8, 0.5],
       [  9, 42, 11, 0.7, 0.4],
       [ 14, 48, 10, 0.6, 0.4],
-      [ -3, 45, 13, 0.8, 0.5],
-      [ -9, 50, 11, 0.7, 0.4],
-      [  7, 50, 10, 0.6, 0.4]
+      [  7, 45, 13, 0.8, 0.5],
+      [ 11, 50, 11, 0.7, 0.4],
+      [ 16, 50, 10, 0.6, 0.4]
     ];
     function buildMidGrove(count) {
       for (var i = 0; i < Math.min(count, MID_GROVE_LAYOUT.length); i++) {
@@ -210,17 +259,20 @@
         var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
         c.position.set(L[0], L[2] / 2 - 0.5, L[1]);
         layers.midGrove.add(c);
+        // Conifer foliage at top of trunk (trunk top in world coords)
+        var trunkTop = L[2] - 0.5;
+        layers.midGrove.add(buildConiferFoliage(L[0], L[1], trunkTop, L[3]));
       }
     }
     buildMidGrove(8);
 
-    // ─── Layer 3: Hero cedars (giants near camera) ────────────
+    // ─── Layer 3: Hero cedars (giants near camera, all on right) ────
     var HERO_LAYOUT = [
       // [x,   z,  height, baseR, topR]
       [ 4,   12, 18, 1.4, 0.7],
-      [-2,   14, 16, 1.2, 0.6],
+      [ 8,   14, 16, 1.2, 0.6],
       [ 6,   18, 17, 1.3, 0.7],
-      [-5,   20, 15, 1.1, 0.6]
+      [ 11,  20, 15, 1.1, 0.6]
     ];
     var heroCedars = [];
     function buildHeroCedars(count) {
@@ -231,6 +283,9 @@
         c.position.set(L[0], L[2] / 2 - 0.3, L[1]);
         layers.hero.add(c);
         heroCedars.push({ mesh: c, layout: L });
+        // Foliage cones on top of trunk
+        var trunkTop = L[2] - 0.3;
+        layers.hero.add(buildConiferFoliage(L[0], L[1], trunkTop, L[3]));
       }
     }
     buildHeroCedars(4);
@@ -390,20 +445,21 @@
       return tex;
     }
 
+    // All shrine props on the right side, between/around the trees.
     var SHRINE_PROPS = [
-      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [3.6, 0.45, 10.6] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [1.2, 0.35, 9.0] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [0.8, 0.35, 9.3] },
-      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [1.5, 0.35, 9.4] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [2.0, 0.7, 11.0] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [4.0, 0.7, 13.5] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [-3.0, 0.7, 14.0] },
-      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [5.5, 0.7, 16.0] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.7, 0.8, 11.0] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [4.9, 0.8, 11.2] },
-      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [5.1, 0.8, 11.1] },
-      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-4.2, 0.2, 13.0] },
-      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [-4.8, 0.2, 13.3] }
+      { type: 'hokora',   w: 1.0, h: 0.9, hex: '#7a6a55', pos: [5.6, 0.45, 10.6] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.0, 0.35, 9.5] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.4, 0.35, 9.8] },
+      { type: 'jizo',     w: 0.4, h: 0.7, hex: '#9a8a78', pos: [3.7, 0.35, 9.6] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [3.5, 0.7, 11.0] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [6.0, 0.7, 13.5] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [9.0, 0.7, 14.0] },
+      { type: 'ishidoro', w: 0.5, h: 1.4, hex: '#8a7a64', pos: [7.5, 0.7, 16.0] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [6.7, 0.8, 11.0] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [6.9, 0.8, 11.2] },
+      { type: 'sotoba',   w: 0.15, h: 1.6, hex: '#6a5040', pos: [7.1, 0.8, 11.1] },
+      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [4.2, 0.2, 13.0] },
+      { type: 'haka',     w: 0.5, h: 0.4, hex: '#7a7060', pos: [4.8, 0.2, 13.3] }
     ];
 
     function buildShrineProps() {
