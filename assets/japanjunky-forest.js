@@ -873,8 +873,71 @@
       layers.foreground.position.y = sUnits * 1.00;
     }
 
-    // Tier setter (full implementation in perf phase)
-    function setTier(tier) { currentTier = tier; }
+    // ─── Tier matrix ──────────────────────────────────────────
+    var TIER_MATRIX = {
+      high: {
+        midGroveCount: 8, shrineCount: 13,
+        needles: 60, fogWisps: 20, godRays: 5,
+        bird: true, lanternRealLights: true, flickerActive: true,
+        mossGlow: true, scintillation: true,
+        phosphorMix: 0.7, renderScale: 1.0, pixelRatioCap: 2.0
+      },
+      med: {
+        midGroveCount: 8, shrineCount: 11,
+        needles: 30, fogWisps: 8, godRays: 3,
+        bird: true, lanternRealLights: true, flickerActive: true,
+        mossGlow: false, scintillation: true,
+        phosphorMix: 0.7, renderScale: 0.85, pixelRatioCap: 1.5
+      },
+      low: {
+        midGroveCount: 7, shrineCount: 8,
+        needles: 0, fogWisps: 0, godRays: 0,
+        bird: false, lanternRealLights: false, flickerActive: false,
+        mossGlow: false, scintillation: false,
+        phosphorMix: 0.5, renderScale: 0.6, pixelRatioCap: 1.0
+      }
+    };
+    var tierFlags = TIER_MATRIX.high;
+    var currentPhosphorMix = 0.7;
+
+    function setTier(tier) {
+      if (!TIER_MATRIX[tier]) return;
+      currentTier = tier;
+      var T = TIER_MATRIX[tier];
+      tierFlags = T;
+      // Mid-grove count
+      for (var i = 0; i < layers.midGrove.children.length; i++) {
+        layers.midGrove.children[i].visible = i < T.midGroveCount;
+      }
+      // Shrine billboards count
+      var billboardIdx = 0;
+      for (var si = 0; si < layers.shrine.children.length; si++) {
+        var ch = layers.shrine.children[si];
+        if (ch.userData && ch.userData.isBillboard) {
+          ch.visible = billboardIdx < T.shrineCount;
+          billboardIdx++;
+        }
+      }
+      // Particles
+      if (needleMesh) needleMesh.count = T.needles;
+      if (fogWispMesh) fogWispMesh.count = T.fogWisps;
+      // God rays
+      for (var gi = 0; gi < layers.godRays.children.length; gi++) {
+        layers.godRays.children[gi].visible = gi < T.godRays;
+      }
+      // Bird
+      if (birdMesh && !T.bird) birdMesh.visible = false;
+      // Lanterns
+      for (var li3 = 0; li3 < lanternLights.length; li3++) {
+        lanternLights[li3].visible = T.lanternRealLights;
+      }
+      // Grain
+      if (layers.grain.userData.grainQuadRef) {
+        layers.grain.userData.grainQuadRef.visible = T.scintillation;
+      }
+      // Phosphor mix (consumed by getCurrentPhosphorMix())
+      currentPhosphorMix = T.phosphorMix;
+    }
 
     // Anchor/collider stubs (implemented in sub-plan 2)
     function getTsunoAnchors() { return []; }
@@ -884,9 +947,9 @@
     function bootstrap() { /* implemented in perf-tier task */ }
     function assembleFull() { /* implemented in perf-tier task */ }
 
-    // Phosphor pass stubs (implemented in shader phase)
+    // Phosphor pass stubs (real implementation deferred — see Task 21)
     function getPhosphorPass() { return null; }
-    function getCurrentPhosphorMix() { return 0.7; }
+    function getCurrentPhosphorMix() { return currentPhosphorMix; }
 
     function dispose() {
       Object.keys(layers).forEach(function (k) {
