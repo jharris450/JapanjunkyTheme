@@ -287,6 +287,94 @@
       heroRopes.push(rope);
     }
 
+    // ─── Shide paper streamers ────────────────────────────────
+    function makePlaceholderShide() {
+      var c = document.createElement('canvas');
+      c.width = 32; c.height = 96;
+      var ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 32, 96);
+      ctx.fillStyle = '#f0e8d8';
+      ctx.beginPath();
+      ctx.moveTo(8, 0);
+      ctx.lineTo(24, 16);
+      ctx.lineTo(8, 32);
+      ctx.lineTo(24, 48);
+      ctx.lineTo(8, 64);
+      ctx.lineTo(24, 80);
+      ctx.lineTo(8, 96);
+      ctx.lineTo(8, 0);
+      ctx.fill();
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      return tex;
+    }
+    var shideTex = (opts.textures && opts.textures.shide) || makePlaceholderShide();
+
+    var SHIDE_VERT = [
+      'uniform float uTime;',
+      'attribute float aSwayPhase;',
+      'varying vec2 vUv;',
+      'void main() {',
+      '  vUv = uv;',
+      '  vec3 p = position;',
+      '  float sway = (1.0 - uv.y) * 0.18;',
+      '  p.x += sin(uTime * 1.6 + aSwayPhase) * sway;',
+      '  p.z += cos(uTime * 1.1 + aSwayPhase * 1.3) * sway * 0.4;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);',
+      '}'
+    ].join('\n');
+    var SHIDE_FRAG = [
+      'uniform sampler2D uMap;',
+      'varying vec2 vUv;',
+      'void main() {',
+      '  vec4 c = texture2D(uMap, vUv);',
+      '  if (c.a < 0.5) discard;',
+      '  gl_FragColor = c;',
+      '}'
+    ].join('\n');
+
+    var shideMaterials = [];
+    function buildShideAt(worldX, worldY, worldZ) {
+      var w = 0.18, h = 0.55;
+      var geo = new THREE.PlaneGeometry(w, h);
+      var phase = Math.random() * 6.28;
+      var phases = new Float32Array([phase, phase, phase, phase]);
+      geo.setAttribute('aSwayPhase', new THREE.BufferAttribute(phases, 1));
+      var mat = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 }, uMap: { value: shideTex } },
+        vertexShader: SHIDE_VERT,
+        fragmentShader: SHIDE_FRAG,
+        transparent: true,
+        side: THREE.DoubleSide,
+        fog: true
+      });
+      shideMaterials.push(mat);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(worldX, worldY, worldZ);
+      mesh.renderOrder = 1;
+      layers.hero.add(mesh);
+      return mesh;
+    }
+
+    // Hang shide around each rope at world coordinates
+    for (var sri = 0; sri < heroRopes.length; sri++) {
+      var sHero = heroCedars[sri];
+      var sL = sHero.layout;
+      var sTrunkX = sL[0], sTrunkZ = sL[1];
+      var sRopeY = sL[2] * 0.45;
+      var sAvgRadius = (sL[3] + sL[4]) / 2 + 0.18;
+      var sHangBelow = 0.4;
+      var sCount = 5 + Math.floor(Math.random() * 3);
+      for (var ssi = 0; ssi < sCount; ssi++) {
+        var sAngle = (ssi / sCount) * Math.PI * 2;
+        var sx = sTrunkX + Math.cos(sAngle) * sAvgRadius;
+        var sz = sTrunkZ + Math.sin(sAngle) * sAvgRadius;
+        var sy = sRopeY - sHangBelow;
+        buildShideAt(sx, sy, sz);
+      }
+    }
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
@@ -339,7 +427,10 @@
     // Update loop — called every frame from screensaver.js
     function update(t, scrollY) {
       applyHandheldFloat(t);
-      // (geometry/shader/parallax updates added by later tasks)
+      // Animate shide sway
+      for (var smi = 0; smi < shideMaterials.length; smi++) {
+        shideMaterials[smi].uniforms.uTime.value = t;
+      }
     }
 
     // Tier setter (full implementation in perf phase)
