@@ -238,6 +238,55 @@
     }
     buildHeroCedars(4);
 
+    // ─── Shimenawa rope ───────────────────────────────────────
+    function makePlaceholderRope() {
+      var c = document.createElement('canvas');
+      c.width = 256; c.height = 64;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#c19a3a';
+      ctx.fillRect(0, 0, 256, 64);
+      ctx.strokeStyle = '#a07a1c';
+      ctx.lineWidth = 4;
+      for (var i = -8; i < 32; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * 16, 0);
+        ctx.lineTo(i * 16 + 28, 64);
+        ctx.stroke();
+      }
+      var tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.RepeatWrapping;
+      return tex;
+    }
+    var ropeTex = (opts.textures && opts.textures.rope) || makePlaceholderRope();
+
+    function buildRope(trunkRadius, atY, trunkX, trunkZ) {
+      var ropeRadius = trunkRadius + 0.18;
+      var tubeRadius = 0.18;
+      var radialSegs = 12;
+      var tubularSegs = 8;
+      var geo = new THREE.TorusGeometry(ropeRadius, tubeRadius, tubularSegs, radialSegs);
+      ropeTex.repeat.set(4, 1);
+      var mat = new THREE.MeshBasicMaterial({ map: ropeTex, fog: true });
+      var rope = new THREE.Mesh(geo, mat);
+      rope.rotation.x = Math.PI / 2;
+      rope.position.set(trunkX, atY, trunkZ);
+      return rope;
+    }
+
+    // Wrap hero cedars with shimenawa rope at mid-height
+    var heroRopes = [];
+    for (var hri = 0; hri < heroCedars.length; hri++) {
+      var hero = heroCedars[hri];
+      var hL = hero.layout;
+      var hRopeY = hL[2] * 0.45;
+      var hAvgRadius = (hL[3] + hL[4]) / 2;
+      var rope = buildRope(hAvgRadius, hRopeY, hL[0], hL[1]);
+      layers.hero.add(rope);
+      heroRopes.push(rope);
+    }
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
