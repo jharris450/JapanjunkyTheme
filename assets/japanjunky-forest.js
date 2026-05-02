@@ -62,6 +62,10 @@
     };
     Object.keys(layers).forEach(function (k) { scene.add(layers[k]); });
 
+    // ─── Distance fog (initialized early — tree shader reads it) ──
+    // Desaturated amber-gray, Silent Hill PS1 horror tone.
+    scene.fog = new THREE.Fog(0x3a2818, currentPreset.fog.near, currentPreset.fog.far);
+
     // ─── Layer 0: Sky / fog wall ──────────────────────────────
     // Single billboard plane far behind everything. Amber gradient
     // (light top → deep bottom). Always faces camera implicitly via
@@ -162,90 +166,145 @@
     silhouetteMesh.renderOrder = -9;
     layers.silhouette.add(silhouetteMesh);
 
-    // ─── Cedar trunk builder ──────────────────────────────────
-    // sides: poly count (8/12/16 by tier)
-    // height: world units
-    // baseRadius/topRadius: tapered trunk shape
-    // barkTex: THREE.Texture (cedar bark, NEAREST sampling expected)
-    function buildCedar(sides, height, baseRadius, topRadius, barkTex) {
-      var geo = new THREE.CylinderGeometry(topRadius, baseRadius, height, sides, 1, true);
-      // Per-vertex AO: darken base, lighten top (vertex colors used as multiply)
-      var colors = [];
-      var pos = geo.attributes.position;
-      for (var i = 0; i < pos.count; i++) {
-        var y = pos.getY(i);
-        var t = (y + height / 2) / height; // 0 = bottom, 1 = top
-        var c = 0.45 + 0.55 * t;
-        colors.push(c, c, c);
-      }
-      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      var mat = new THREE.MeshBasicMaterial({
-        map: barkTex,
-        vertexColors: true,
-        side: THREE.DoubleSide,
-        fog: true
-      });
-      var mesh = new THREE.Mesh(geo, mat);
-      mesh.userData.isTrunk = true;
-      return mesh;
-    }
-
-    // ─── Placeholder bark (replaced by real PNG in Task 19) ──
-    function makePlaceholderBark() {
+    // ─── Tree silhouette texture (alpha-cutout, 128×256) ─────
+    // PS1 horror trees are flat textured planes, not 3D meshes.
+    // Texture: dark conifer silhouette on transparent background.
+    // Variants give visual diversity across trees.
+    function makeTreeSilhouette(variant) {
       var c = document.createElement('canvas');
-      c.width = 64; c.height = 128;
+      c.width = 128; c.height = 256;
       var ctx = c.getContext('2d');
-      ctx.fillStyle = '#3a2114';
-      ctx.fillRect(0, 0, 64, 128);
-      ctx.strokeStyle = '#5a3520';
-      ctx.lineWidth = 1;
-      for (var i = 0; i < 12; i++) {
-        var x = Math.floor(Math.random() * 64);
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x + (Math.random() - 0.5) * 4, 128);
-        ctx.stroke();
+      ctx.clearRect(0, 0, 128, 256);
+      // Trunk — narrow vertical column, slight taper
+      var trunkW = 6 + variant;        // 6-9px wide
+      var trunkColor = '#0f0c08';
+      ctx.fillStyle = trunkColor;
+      ctx.beginPath();
+      ctx.moveTo(64 - trunkW / 2, 256);
+      ctx.lineTo(64 + trunkW / 2, 256);
+      ctx.lineTo(64 + trunkW / 2 - 1, 110);
+      ctx.lineTo(64 - trunkW / 2 + 1, 110);
+      ctx.closePath();
+      ctx.fill();
+      // Sparse foliage — 3 triangular fronds, each progressively smaller
+      var foliage = '#141a10';
+      ctx.fillStyle = foliage;
+      // Bottom (widest)
+      ctx.beginPath();
+      ctx.moveTo(64,        70);
+      ctx.lineTo(64 - 38,   124);
+      ctx.lineTo(64 + 38,   124);
+      ctx.closePath();
+      ctx.fill();
+      // Mid frond
+      ctx.beginPath();
+      ctx.moveTo(64,        38);
+      ctx.lineTo(64 - 28,   88);
+      ctx.lineTo(64 + 28,   88);
+      ctx.closePath();
+      ctx.fill();
+      // Top frond
+      ctx.beginPath();
+      ctx.moveTo(64,        6);
+      ctx.lineTo(64 - 18,   54);
+      ctx.lineTo(64 + 18,   54);
+      ctx.closePath();
+      ctx.fill();
+      // Pixel notch noise on edges (jagged silhouette)
+      var notches = 14 + variant * 4;
+      for (var i = 0; i < notches; i++) {
+        var nx = Math.floor(Math.random() * 128);
+        var ny = Math.floor(Math.random() * 130);
+        ctx.clearRect(nx, ny, 2, 2);
       }
       var tex = new THREE.CanvasTexture(c);
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
+      tex.generateMipmaps = false;
       return tex;
     }
-    var barkTex = (opts.textures && opts.textures.bark) || makePlaceholderBark();
+    var TREE_TEXTURES = [
+      makeTreeSilhouette(0),
+      makeTreeSilhouette(1),
+      makeTreeSilhouette(2)
+    ];
 
-    // ─── Sparse horror-conifer foliage (PS1 Silent Hill style) ──────
-    // Foliage is just dark silhouette planes hung from the upper trunk.
-    // Each "frond" is a low-poly cone — narrow + tall, like a stretched
-    // pine bough. Fronds get progressively narrower as they go up.
-    // Most of the trunk is BARE (concept4 has tall thin bare trunks).
-    var foliageMat = new THREE.MeshBasicMaterial({
-      color: 0x1f2818,
-      side: THREE.DoubleSide,
-      fog: true
-    });
-    injectVertexSnap(foliageMat);
-    function buildHorrorConifer(trunkX, trunkZ, trunkTopY, baseRadius, trunkHeight) {
-      // Foliage clusters in TOP 35% of trunk only (sparse, silhouette-style).
-      // Three thin cones, alternating slightly off-axis for organic feel.
-      var foliageBase = trunkTopY - trunkHeight * 0.35;
-      var fronds = [
-        { centerY: foliageBase + trunkHeight * 0.05, r: baseRadius * 4.5, h: 2.6, ox:  0.0,  oz:  0.0 },
-        { centerY: foliageBase + trunkHeight * 0.16, r: baseRadius * 3.2, h: 2.2, ox:  0.05, oz: -0.05 },
-        { centerY: foliageBase + trunkHeight * 0.26, r: baseRadius * 1.8, h: 1.8, ox: -0.05, oz:  0.05 }
-      ];
+    // ─── PS1 tree shader (vertex snap + affine warp + manual fog) ──
+    var TREE_VERT = [
+      'uniform float uSnapRes;',
+      'varying vec2 vUvAffine;',
+      'varying float vWAffine;',
+      'varying float vFogDepth;',
+      'void main() {',
+      '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+      '  vec4 clipPos = projectionMatrix * viewPos;',
+      '  // Vertex jitter — snap to integer pixel grid',
+      '  clipPos.xy = floor(clipPos.xy * uSnapRes / clipPos.w) * clipPos.w / uSnapRes;',
+      '  gl_Position = clipPos;',
+      '  // Affine UV setup — pre-multiply by w; fragment will divide back.',
+      '  // Cancels GPU perspective correction, restoring PSX UV warp.',
+      '  vUvAffine = uv * clipPos.w;',
+      '  vWAffine  = clipPos.w;',
+      '  vFogDepth = -viewPos.z;',
+      '}'
+    ].join('\n');
+    var TREE_FRAG = [
+      'uniform sampler2D uMap;',
+      'uniform vec3 uFogColor;',
+      'uniform float uFogNear;',
+      'uniform float uFogFar;',
+      'varying vec2 vUvAffine;',
+      'varying float vWAffine;',
+      'varying float vFogDepth;',
+      'void main() {',
+      '  vec2 uv = vUvAffine / vWAffine;',
+      '  vec4 c = texture2D(uMap, uv);',
+      '  if (c.a < 0.5) discard;',
+      '  float fogFactor = clamp((vFogDepth - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);',
+      '  vec3 col = mix(c.rgb, uFogColor, fogFactor);',
+      '  gl_FragColor = vec4(col, c.a);',
+      '}'
+    ].join('\n');
+
+    function makeTreeMaterial(treeTex) {
+      return new THREE.ShaderMaterial({
+        uniforms: {
+          uMap:       { value: treeTex },
+          uSnapRes:   { value: 240 },
+          uFogColor:  { value: scene.fog.color },
+          uFogNear:   { value: scene.fog.near },
+          uFogFar:    { value: scene.fog.far }
+        },
+        vertexShader:   TREE_VERT,
+        fragmentShader: TREE_FRAG,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: true
+      });
+    }
+
+    // ─── X-billboard tree builder (two crossed planes, alpha cutout) ──
+    function buildXTree(x, z, height, variant) {
+      var w = height * 0.55;
+      var geo = new THREE.PlaneGeometry(w, height);
+      var tex = TREE_TEXTURES[variant % TREE_TEXTURES.length];
+      var mat = makeTreeMaterial(tex);
+      var p0 = new THREE.Mesh(geo, mat);
+      p0.position.set(x, height / 2 - 0.2, z);
+      var p1 = new THREE.Mesh(geo, mat);
+      p1.position.set(x, height / 2 - 0.2, z);
+      p1.rotation.y = Math.PI / 2;
       var group = new THREE.Group();
-      for (var i = 0; i < fronds.length; i++) {
-        var L = fronds[i];
-        // 6 radial segments = jaggy PS1 silhouette
-        var geo = new THREE.ConeGeometry(L.r, L.h, 6, 1, true);
-        var mesh = new THREE.Mesh(geo, foliageMat);
-        mesh.position.set(trunkX + L.ox, L.centerY, trunkZ + L.oz);
-        group.add(mesh);
-      }
+      group.add(p0);
+      group.add(p1);
+      group.userData.isTree = true;
       return group;
     }
+
+    // ─── Sparse horror-conifer foliage (PS1 Silent Hill style) ──────
+    // (Old buildHorrorConifer cone-stack foliage retired — trees are now
+    // X-billboard alpha-cutout planes via buildXTree above. Per PS1 horror
+    // guidelines, 3D foliage is wrong; flat planes are authentic.)
 
     // ─── Layer 2: Mid grove (deeper rows flanking the path) ─────────
     // Both sides of path. Trees are tall + thin (PS1 horror conifer).
@@ -267,12 +326,7 @@
     function buildMidGrove(count) {
       for (var i = 0; i < Math.min(count, MID_GROVE_LAYOUT.length); i++) {
         var L = MID_GROVE_LAYOUT[i];
-        var sides = 8;          // PS1: low poly trunks
-        var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
-        c.position.set(L[0], L[2] / 2 - 0.5, L[1]);
-        layers.midGrove.add(c);
-        var trunkTop = L[2] - 0.5;
-        layers.midGrove.add(buildHorrorConifer(L[0], L[1], trunkTop, L[3], L[2]));
+        layers.midGrove.add(buildXTree(L[0], L[1], L[2], i));
       }
     }
     buildMidGrove(8);
@@ -290,18 +344,16 @@
     function buildHeroCedars(count) {
       for (var i = 0; i < Math.min(count, HERO_LAYOUT.length); i++) {
         var L = HERO_LAYOUT[i];
-        var sides = 10;
-        var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
-        c.position.set(L[0], L[2] / 2 - 0.3, L[1]);
-        layers.hero.add(c);
-        heroCedars.push({ mesh: c, layout: L });
-        var trunkTop = L[2] - 0.3;
-        layers.hero.add(buildHorrorConifer(L[0], L[1], trunkTop, L[3], L[2]));
+        layers.hero.add(buildXTree(L[0], L[1], L[2], i + 5));
+        heroCedars.push({ layout: L });
       }
     }
     buildHeroCedars(4);
 
-    // ─── Shimenawa rope ───────────────────────────────────────
+    // (Shimenawa rope + shide streamers removed — non-PS1, too decorative
+    // for horror tone. Trees are now flat alpha-cutout billboards which
+    // wouldn't accommodate a 3D torus rope wrap anyway.)
+    /* SHIMENAWA + SHIDE BLOCK START — retained for reference but commented
     function makePlaceholderRope() {
       var c = document.createElement('canvas');
       c.width = 256; c.height = 64;
@@ -440,6 +492,8 @@
         buildShideAt(sx, sy, sz);
       }
     }
+    SHIMENAWA + SHIDE BLOCK END */
+    var shideMaterials = []; // empty stub — update loop iterates safely
 
     // ─── Shrine props (placeholders until Task 19) ────────────
     function makeFlatColorTex(w, h, hex) {
@@ -860,8 +914,8 @@
     var grainTex = makeNoiseTexture();
     void grainTex; // keep texture builder warm for now (helper compiles)
 
-    // Distance fog — desaturated amber-gray (Silent Hill PS1 horror tone)
-    scene.fog = new THREE.Fog(0x3a2818, currentPreset.fog.near, currentPreset.fog.far);
+    // (Fog already initialized near top of create() so tree shader can
+    // bind to it. applyPreset below just updates near/far per preset.)
 
     // Apply preset to camera
     function applyPreset(p) {
