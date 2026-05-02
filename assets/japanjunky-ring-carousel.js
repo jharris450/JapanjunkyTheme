@@ -377,6 +377,10 @@
     var idx = parseInt(cover.getAttribute('data-ring-index'), 10);
     if (isNaN(idx)) return;
 
+    if (window.JJ_Audio && window.JJ_Audio.playAccent) {
+      window.JJ_Audio.playAccent('stone');
+    }
+
     if (idx === centerIndex) {
       // Clicking center cover: immediate select
       clearSelectTimer();
@@ -385,6 +389,20 @@
       // Clicking side cover: rotate it to center
       rotateTo(idx);
     }
+  });
+
+  // Hover paper rustle (debounced — fires once per cover entry)
+  var lastHoverCover = null;
+  stage.addEventListener('mouseover', function (e) {
+    var cover = e.target.closest('.jj-ring__cover');
+    if (!cover || cover === lastHoverCover) return;
+    lastHoverCover = cover;
+    if (window.JJ_Audio && window.JJ_Audio.playAccent) {
+      window.JJ_Audio.playAccent('paper');
+    }
+  });
+  stage.addEventListener('mouseleave', function () {
+    lastHoverCover = null;
   });
 
   // ─── Scroll Wheel (throttled to prevent rapid-fire) ─────────────

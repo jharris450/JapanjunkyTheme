@@ -1014,6 +1014,21 @@
     tsunoBehaviorDuration = getNextInterval();
     tsunoPatrolProgress = 0;
 
+    // Audio accent on behavior start (forest mode only — no audio in portal)
+    if (window.JJ_Audio && window.JJ_Audio.playAccent && config.sceneMode !== 'portal') {
+      var bname = TSUNO_BEHAVIORS[behaviorIdx] && TSUNO_BEHAVIORS[behaviorIdx].name;
+      var panX = Math.max(-1, Math.min(1, tsunoMesh.position.x / 5));
+      if (bname === 'peek') {
+        window.JJ_Audio.playAccent('tsuno', { pitch: 0.95 + Math.random() * 0.1, panX: panX });
+      } else if (bname === 'perch') {
+        window.JJ_Audio.playAccent('stone', { panX: panX });
+      } else if (bname === 'hang' && Math.random() < 0.5) {
+        window.JJ_Audio.playAccent('paper', { panX: panX });
+      } else if (bname === 'retreat' && Math.random() < 0.1) {
+        window.JJ_Audio.playAccent('chime', { panX: panX });
+      }
+    }
+
     // Start transition from current position to behavior target
     tsunoTransitioning = true;
     tsunoTransStart = t;

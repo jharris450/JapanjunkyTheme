@@ -25,6 +25,9 @@
           void btn.offsetWidth;
           if (cart.item_count > 0) {
             btn.classList.add('jj-start-btn--cart-flash');
+            if (window.JJ_Audio && window.JJ_Audio.playAccent) {
+              window.JJ_Audio.playAccent('bell');
+            }
           }
         }
         return cart;
