@@ -89,6 +89,123 @@
     });
   }
 
+  // ─── Performance tier system ─────────────────────────────────
+  if (sceneModule && sceneModule.setTier) {
+    var skipProbe = false;
+    var cachedTier = null;
+    try { cachedTier = localStorage.getItem('jj-perf-tier'); } catch (e) {}
+    var urlParams = new URLSearchParams(window.location.search);
+    var urlPerf = urlParams.get('perf');
+    if (urlPerf && ['high', 'med', 'low'].indexOf(urlPerf) !== -1) {
+      cachedTier = urlPerf;
+    }
+    // Mobile detection — force Low at boot, skip probe.
+    var isMobileDevice = (
+      /Mobi|Android|iPhone|iPad/.test(navigator.userAgent) ||
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+      window.innerWidth < 768 ||
+      (navigator.deviceMemory && navigator.deviceMemory < 4)
+    );
+    if (isMobileDevice) {
+      sceneModule.setTier('low');
+      try { localStorage.setItem('jj-perf-tier', 'low'); } catch (e) {}
+      skipProbe = true;
+      cachedTier = 'low';
+    } else if (cachedTier) {
+      sceneModule.setTier(cachedTier);
+      skipProbe = true;
+    }
+
+    // Boot probe — sample 2.5s of FPS, pick tier.
+    if (!skipProbe) {
+      sceneModule.setTier('low'); // start low during probe
+      var probeSamples = [];
+      var probeStart = performance.now();
+      var probeLastFrame = probeStart;
+      var probeDurationMs = 2500;
+      var probeActive = true;
+      var origUpdateProbe = sceneModule.update;
+      sceneModule.update = function (t, sy) {
+        origUpdateProbe(t, sy);
+        if (!probeActive) return;
+        var nowMs = performance.now();
+        var dt = nowMs - probeLastFrame;
+        probeLastFrame = nowMs;
+        if (dt > 0) probeSamples.push(1000 / dt);
+        if (nowMs - probeStart > probeDurationMs) {
+          probeActive = false;
+          probeSamples.sort(function (a, b) { return a - b; });
+          var med = probeSamples[Math.floor(probeSamples.length / 2)] || 60;
+          var picked = (med >= 55) ? 'high' : (med >= 40) ? 'med' : 'low';
+          try { localStorage.setItem('jj-perf-tier', picked); } catch (e) {}
+          sceneModule.setTier(picked);
+          watchdogTier = picked;
+        }
+      };
+    }
+
+    // Runtime watchdog — rolling 60-frame median, demote on sustained drop.
+    var watchdogTier = cachedTier || 'high';
+    var watchdogBuffer = [];
+    var watchdogLastFrame = performance.now();
+    var watchdogLowStart = 0;
+    var origUpdateWatchdog = sceneModule.update;
+    sceneModule.update = function (t, sy) {
+      origUpdateWatchdog(t, sy);
+      var nowMs = performance.now();
+      var dt = nowMs - watchdogLastFrame;
+      watchdogLastFrame = nowMs;
+      if (dt <= 0) return;
+      watchdogBuffer.push(1000 / dt);
+      if (watchdogBuffer.length > 60) watchdogBuffer.shift();
+      if (watchdogBuffer.length < 60) return;
+      var sorted = watchdogBuffer.slice().sort(function (a, b) { return a - b; });
+      var med = sorted[Math.floor(sorted.length / 2)];
+      var thresholds = {
+        high: { fps: 50, durationMs: 2000, next: 'med' },
+        med:  { fps: 40, durationMs: 2000, next: 'low' },
+        low:  { fps: 25, durationMs: 5000, next: 'blank' }
+      };
+      var th = thresholds[watchdogTier];
+      if (th && med < th.fps) {
+        if (watchdogLowStart === 0) watchdogLowStart = nowMs;
+        else if (nowMs - watchdogLowStart > th.durationMs) {
+          watchdogTier = th.next;
+          if (th.next === 'blank') {
+            // Hide all forest layers as final fallback
+            if (sceneModule._layers) {
+              Object.keys(sceneModule._layers).forEach(function (k) {
+                sceneModule._layers[k].visible = false;
+              });
+            }
+          } else {
+            sceneModule.setTier(th.next);
+          }
+          try { localStorage.setItem('jj-perf-tier', th.next); } catch (e) {}
+          watchdogLowStart = 0;
+          watchdogBuffer = [];
+        }
+      } else {
+        watchdogLowStart = 0;
+      }
+    };
+
+    // Battery-aware throttle
+    if (navigator.getBattery) {
+      navigator.getBattery().then(function (battery) {
+        function maybeThrottle() {
+          if (battery.level < 0.2 && !battery.charging) {
+            sceneModule.setTier('low');
+            try { renderer.setPixelRatio(0.5); } catch (e) {}
+          }
+        }
+        battery.addEventListener('levelchange', maybeThrottle);
+        battery.addEventListener('chargingchange', maybeThrottle);
+        maybeThrottle();
+      }).catch(function () {});
+    }
+  }
+
   // ─── Swirl Speed ─────────────────────────────────────────────
   var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
   var swirlSpeed = SWIRL_SPEEDS[config.orbitSpeed] || SWIRL_SPEEDS.slow;
