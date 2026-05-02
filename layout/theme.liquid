@@ -257,6 +257,9 @@
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
   <script src="{{ 'gifuct.min.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
+  {% if settings.scene_mode != 'portal' %}
+  <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
+  {% endif %}
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
