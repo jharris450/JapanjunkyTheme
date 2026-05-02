@@ -1863,15 +1863,21 @@
     depthTest: false
   });
   var phosphorQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), phosphorMat);
+  phosphorQuad.frustumCulled = false;
+  phosphorQuad.position.z = -0.5; // inside the orthographic frustum (near=0, far=1)
   phosphorScene.add(phosphorQuad);
   // Read pixels from this buffer instead of renderTarget.
   function applyPhosphor() {
     if (sceneModule && sceneModule.getCurrentPhosphorMix) {
       phosphorMat.uniforms.uMix.value = sceneModule.getCurrentPhosphorMix();
     }
+    var prevAuto = renderer.autoClear;
+    renderer.autoClear = true;
     renderer.setRenderTarget(phosphorTarget);
+    renderer.clear();
     renderer.render(phosphorScene, phosphorCamera);
     renderer.setRenderTarget(null);
+    renderer.autoClear = prevAuto;
   }
 
   // Display canvas (2D) — the visible output
