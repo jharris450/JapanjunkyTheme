@@ -204,6 +204,24 @@
   var textureLoader = new THREE.TextureLoader();
   textureLoader.crossOrigin = 'anonymous';
 
+  // ─── Shared PS1 vertex-snap shader ─────────────────────────
+  // Reused by Tsuno mesh + speech bubble + text mesh. Was previously
+  // co-located with the portal glow shader; preserved here after
+  // portal removal so those materials still compile.
+  var GLOW_VERT = [
+    'uniform float uResolution;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+    '  vec4 clipPos = projectionMatrix * viewPos;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+    '             * clipPos.w / uResolution;',
+    '  gl_Position = clipPos;',
+    '}'
+  ].join('\n');
+
   // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
   var GHOST_FRAG = [
     'uniform sampler2D uTexture;',
