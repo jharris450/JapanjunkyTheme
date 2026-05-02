@@ -105,3 +105,40 @@
 
 /* --- Back navigation (product page → homepage) --- */
 /* Reverse: product info slides out left, catalog flies back in */
+
+/* ============================================
+   FOREST PAGE FLASH — Amber wash on same-origin nav
+   ============================================ */
+.jj-page-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: rgba(196, 106, 40, 0);
+  transition: background-color 200ms ease-in;
+}
+.jj-page-flash--active {
+  background: rgba(196, 106, 40, 0.85);
+}
+.jj-page-flash--active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation: jj-crt-roll 80ms linear infinite;
+}
+@keyframes jj-crt-roll {
+  from { background-position-y: 0; }
+  to   { background-position-y: 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jj-page-flash {
+    transition: none;
+  }
+}
