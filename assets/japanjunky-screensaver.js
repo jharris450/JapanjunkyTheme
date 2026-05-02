@@ -1814,6 +1814,66 @@
     format: THREE.RGBAFormat
   });
 
+  // ─── Phosphor amber LUT pass (RTT) ────────────────────────────
+  // Maps RGB → amber-biased phosphor while preserving moss-green and
+  // shide-cream signal colors. Applied between scene render and CPU
+  // dither readback, so the amber wash hits forest + Tsuno but NOT
+  // the memory fragments (which use a separate readback pass).
+  var phosphorTarget = new THREE.WebGLRenderTarget(resW, resH, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat
+  });
+  var phosphorScene = new THREE.Scene();
+  var phosphorCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  var phosphorMat = new THREE.ShaderMaterial({
+    uniforms: {
+      tDiffuse: { value: renderTarget.texture },
+      uMix: { value: 0.7 }
+    },
+    vertexShader: [
+      'varying vec2 vUv;',
+      'void main() {',
+      '  vUv = uv;',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D tDiffuse;',
+      'uniform float uMix;',
+      'varying vec2 vUv;',
+      'vec3 phosphor(vec3 c) {',
+      '  vec3 amber = vec3(',
+      '    c.r * 1.05 + c.g * 0.10,',
+      '    c.r * 0.20 + c.g * 0.95 + c.b * 0.02,',
+      '    c.r * 0.10 + c.g * 0.30 + c.b * 0.80',
+      '  );',
+      '  // Preserve greens (moss/shide signal color)',
+      '  float greenMask = clamp(c.g - max(c.r, c.b), 0.0, 1.0);',
+      '  amber = mix(amber, c, greenMask);',
+      '  return amber;',
+      '}',
+      'void main() {',
+      '  vec4 c = texture2D(tDiffuse, vUv);',
+      '  vec3 mixed = mix(c.rgb, phosphor(c.rgb), uMix);',
+      '  gl_FragColor = vec4(mixed, c.a);',
+      '}'
+    ].join('\n'),
+    depthWrite: false,
+    depthTest: false
+  });
+  var phosphorQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), phosphorMat);
+  phosphorScene.add(phosphorQuad);
+  // Read pixels from this buffer instead of renderTarget.
+  function applyPhosphor() {
+    if (sceneModule && sceneModule.getCurrentPhosphorMix) {
+      phosphorMat.uniforms.uMix.value = sceneModule.getCurrentPhosphorMix();
+    }
+    renderer.setRenderTarget(phosphorTarget);
+    renderer.render(phosphorScene, phosphorCamera);
+    renderer.setRenderTarget(null);
+  }
+
   // Display canvas (2D) — the visible output
   var displayCanvas = document.createElement('canvas');
   displayCanvas.width = resW;
@@ -1859,8 +1919,7 @@
 
   // ─── Render one frame (reusable) ─────────────────────────────
   function renderOneFrame() {
-    // Pass 0 — memphis backdrop pre-pass fills the frame before the
-    // tunnel wraps the camera.
+    // Pass 0 — main scene render to renderTarget.
     camera.layers.set(0);
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
@@ -1869,9 +1928,11 @@
     renderer.autoClear = false;
     renderer.render(scene, camera);
     renderer.autoClear = prevAutoClear;
-    renderer.setRenderTarget(null);
 
-    renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
+    // Pass 0.5 — phosphor amber LUT, renderTarget → phosphorTarget
+    applyPhosphor();
+
+    renderer.readRenderTargetPixels(phosphorTarget, 0, 0, resW, resH, pixelBuffer);
 
     // Copy pixels (WebGL reads bottom-up, flip vertically)
     var src = pixelBuffer;
