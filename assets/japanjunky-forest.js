@@ -491,6 +491,39 @@
     roadMesh.position.set(-4, 0.01, 8);
     layers.road.add(roadMesh);
 
+    // ─── PS1 vertex-snap shader injection ─────────────────────
+    // Quantize clip-space xy to integer pixel grid → wobble effect.
+    var SNAP_RES = 240;
+    function injectVertexSnap(mat) {
+      if (mat.userData && mat.userData.psSnap) return;
+      mat.onBeforeCompile = function (shader) {
+        shader.uniforms.uSnapRes = { value: SNAP_RES };
+        shader.vertexShader = 'uniform float uSnapRes;\n' + shader.vertexShader;
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <project_vertex>',
+          [
+            '#include <project_vertex>',
+            'gl_Position.xy = floor(gl_Position.xy * uSnapRes / gl_Position.w)',
+            '              * gl_Position.w / uSnapRes;'
+          ].join('\n')
+        );
+      };
+      mat.userData = mat.userData || {};
+      mat.userData.psSnap = true;
+      mat.needsUpdate = true;
+    }
+    // Apply to all opaque MeshBasicMaterials currently in layers
+    function applySnapToAllLayers() {
+      Object.keys(layers).forEach(function (k) {
+        layers[k].traverse(function (obj) {
+          if (obj.material && obj.material.isMeshBasicMaterial) {
+            injectVertexSnap(obj.material);
+          }
+        });
+      });
+    }
+    applySnapToAllLayers();
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
