@@ -524,6 +524,63 @@
     }
     applySnapToAllLayers();
 
+    // ─── God rays (cheap fake — additive billboards) ──────────
+    function makeGodRayTexture() {
+      var c = document.createElement('canvas');
+      c.width = 64; c.height = 256;
+      var ctx = c.getContext('2d');
+      var grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0,    'rgba(255,200,120,0.0)');
+      grad.addColorStop(0.45, 'rgba(255,200,120,0.55)');
+      grad.addColorStop(1,    'rgba(255,200,120,0.0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 256);
+      var hgrad = ctx.createLinearGradient(0, 0, 64, 0);
+      hgrad.addColorStop(0, 'rgba(0,0,0,0.7)');
+      hgrad.addColorStop(0.5, 'rgba(0,0,0,0)');
+      hgrad.addColorStop(1, 'rgba(0,0,0,0.7)');
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = hgrad;
+      ctx.fillRect(0, 0, 64, 256);
+      return new THREE.CanvasTexture(c);
+    }
+    var godRayTex = makeGodRayTexture();
+    var godRayMaterials = [];
+    function buildGodRay(x, y, z, scaleX, scaleY, rotZ, basePhase) {
+      var geo = new THREE.PlaneGeometry(scaleX, scaleY);
+      var mat = new THREE.MeshBasicMaterial({
+        map: godRayTex,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false,
+        opacity: 0.55
+      });
+      mat.userData.godRayPhase = basePhase;
+      godRayMaterials.push(mat);
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.rotation.z = rotZ;
+      mesh.rotation.x = -0.4;
+      mesh.renderOrder = 5;
+      layers.godRays.add(mesh);
+      return mesh;
+    }
+    var GOD_RAY_LAYOUT = [
+      [ 2,  6, 14, 4, 12,  0.2, 0.0],
+      [-1,  7, 16, 3, 11, -0.1, 1.4],
+      [ 5,  6, 18, 4, 12,  0.3, 2.7],
+      [-3,  7, 20, 3, 10,  0.0, 4.1],
+      [ 1,  8, 22, 4, 14, -0.2, 5.3]
+    ];
+    function buildGodRays(count) {
+      for (var i = 0; i < Math.min(count, GOD_RAY_LAYOUT.length); i++) {
+        var L = GOD_RAY_LAYOUT[i];
+        buildGodRay(L[0], L[1], L[2], L[3], L[4], L[5], L[6]);
+      }
+    }
+    buildGodRays(5);
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
@@ -584,6 +641,11 @@
       for (var bi = 0; bi < layers.shrine.children.length; bi++) {
         var b = layers.shrine.children[bi];
         if (b.userData && b.userData.isBillboard) b.lookAt(camera.position);
+      }
+      // God-ray slow opacity breath
+      for (var gi = 0; gi < godRayMaterials.length; gi++) {
+        var phase = godRayMaterials[gi].userData.godRayPhase;
+        godRayMaterials[gi].opacity = 0.50 + Math.sin(t * 0.4 + phase) * 0.08;
       }
     }
 
