@@ -193,6 +193,51 @@
     }
     var barkTex = (opts.textures && opts.textures.bark) || makePlaceholderBark();
 
+    // ─── Layer 2: Mid grove ───────────────────────────────────
+    // 6-8 cedars distributed in z=30..50, smaller than hero cedars
+    var MID_GROVE_LAYOUT = [
+      // [x,    z,    height, baseR, topR]
+      [-12, 32, 11, 0.7, 0.4],
+      [ -7, 38, 10, 0.6, 0.4],
+      [  4, 35, 12, 0.8, 0.5],
+      [  9, 42, 11, 0.7, 0.4],
+      [ 14, 48, 10, 0.6, 0.4],
+      [ -3, 45, 13, 0.8, 0.5],
+      [ -9, 50, 11, 0.7, 0.4],
+      [  7, 50, 10, 0.6, 0.4]
+    ];
+    function buildMidGrove(count) {
+      for (var i = 0; i < Math.min(count, MID_GROVE_LAYOUT.length); i++) {
+        var L = MID_GROVE_LAYOUT[i];
+        var sides = 12;
+        var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
+        c.position.set(L[0], L[2] / 2 - 0.5, L[1]);
+        layers.midGrove.add(c);
+      }
+    }
+    buildMidGrove(8);
+
+    // ─── Layer 3: Hero cedars (giants near camera) ────────────
+    var HERO_LAYOUT = [
+      // [x,   z,  height, baseR, topR]
+      [ 4,   12, 18, 1.4, 0.7],
+      [-2,   14, 16, 1.2, 0.6],
+      [ 6,   18, 17, 1.3, 0.7],
+      [-5,   20, 15, 1.1, 0.6]
+    ];
+    var heroCedars = [];
+    function buildHeroCedars(count) {
+      for (var i = 0; i < Math.min(count, HERO_LAYOUT.length); i++) {
+        var L = HERO_LAYOUT[i];
+        var sides = 16;
+        var c = buildCedar(sides, L[2], L[3], L[4], barkTex);
+        c.position.set(L[0], L[2] / 2 - 0.3, L[1]);
+        layers.hero.add(c);
+        heroCedars.push({ mesh: c, layout: L });
+      }
+    }
+    buildHeroCedars(4);
+
     // Distance fog
     scene.fog = new THREE.Fog(0x2a1208, currentPreset.fog.near, currentPreset.fog.far);
 
