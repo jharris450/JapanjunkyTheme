@@ -92,11 +92,10 @@
     var STEP_W       = 2.6;
     var STEP_D       = 1.0;
     var STEP_H       = 0.32;
-    // Stairs curve from viewport-left to viewport-right as they ascend.
-    // Base at x=-3 (where Tsuno renders), top at x=+2. Quadratic curve so
-    // the curve is gentle near the bottom and more pronounced near the top.
-    var STEP_X_BASE  = -3.0;
-    var STEP_X_TOP   =  2.0;
+    // Stairs curve from viewport-right to viewport-left as they ascend.
+    // Base at x=+3 (where Tsuno renders), top sweeps left to x=-2.
+    var STEP_X_BASE  =  3.0;
+    var STEP_X_TOP   = -2.0;
     var STEP_X_CURVE = 1.4;   // exponent — higher = sharper top-end curve
 
     var stepMatColor = new THREE.Color(0x6a685c);
