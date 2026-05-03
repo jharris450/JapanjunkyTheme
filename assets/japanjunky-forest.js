@@ -88,7 +88,7 @@
     var STEP_Z_START = 1.5;   // first step just in front of camera
     var STEP_Z_DELTA = 1.0;   // depth of each step in z
     var STEP_Y_RISE  = 0.20;  // each step lifts y by this much
-    var STEP_Y_BASE  = -0.05; // first step's center y (slightly embedded)
+    var STEP_Y_BASE  = -0.55; // first step deeper into ground
     var STEP_W       = 2.6;
     var STEP_D       = 1.0;
     var STEP_H       = 0.32;
