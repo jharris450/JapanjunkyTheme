@@ -79,7 +79,62 @@
     groundMesh.position.set(0, -0.3, 14);            // anchor with center under camera path
     sceneRoot.add(groundMesh);
 
-    // (Steps 2-9 added incrementally — see commits.)
+    // ── STEP 2: Stone stairs ────────────────────────────────
+    // 14 individual rough-cut box slabs stepping up the slope.
+    // Each slab partially embedded (bottom below the slope plane at that z)
+    // so they read as set into the ground, not floating.
+    // Slope rises ~28° starting from z=0 area; we ramp y linearly per step.
+    var STEP_COUNT = 14;
+    var STEP_Z_START = 1.5;   // first step just in front of camera
+    var STEP_Z_DELTA = 1.0;   // depth of each step in z
+    var STEP_Y_RISE  = 0.20;  // each step lifts y by this much
+    var STEP_Y_BASE  = -0.05; // first step's center y (slightly embedded)
+    var STEP_W       = 2.6;
+    var STEP_D       = 1.0;
+    var STEP_H       = 0.32;
+
+    var stepMatColor = new THREE.Color(0x6a685c);
+    for (var s = 0; s < STEP_COUNT; s++) {
+      // Slight per-step jitter so stairs feel hand-placed
+      var w = STEP_W + (Math.random() - 0.5) * 0.5;
+      var d = STEP_D + (Math.random() - 0.5) * 0.2;
+      var h = STEP_H + (Math.random() - 0.5) * 0.08;
+
+      var slabGeo = new THREE.BoxGeometry(w, h, d);
+      // Bake darker shading on bottom faces so embedded portion reads dark
+      var slabPos = slabGeo.attributes.position;
+      var slabColors = [];
+      for (var v = 0; v < slabPos.count; v++) {
+        var ny = slabPos.getY(v); // -h/2 (bottom) to +h/2 (top)
+        var brightness = ny > 0 ? 0.95 : 0.55;
+        slabColors.push(
+          stepMatColor.r * brightness,
+          stepMatColor.g * brightness,
+          stepMatColor.b * brightness
+        );
+      }
+      slabGeo.setAttribute('color', new THREE.Float32BufferAttribute(slabColors, 3));
+
+      var slabMat = new THREE.MeshLambertMaterial({
+        vertexColors: true,
+        flatShading: true,
+        fog: true
+      });
+      var slab = new THREE.Mesh(slabGeo, slabMat);
+
+      // Position: stagger x ±0.2, ramp y, advance z
+      slab.position.set(
+        (Math.random() - 0.5) * 0.4,
+        STEP_Y_BASE + s * STEP_Y_RISE,
+        STEP_Z_START + s * STEP_Z_DELTA
+      );
+      // Slight yaw + roll so stairs feel hand-laid
+      slab.rotation.y = (Math.random() - 0.5) * 0.10;
+      slab.rotation.z = (Math.random() - 0.5) * 0.06;
+      sceneRoot.add(slab);
+    }
+
+    // (Steps 3-9 added incrementally — see commits.)
 
     // ── Minimal lighting so vertex colors register ──
     // Step 7 will replace these with the spec values.
