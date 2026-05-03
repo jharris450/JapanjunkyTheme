@@ -407,7 +407,107 @@
       sceneRoot.add(buildTree(treeX, treeZ, TL[2]));
     }
 
-    // (Steps 5-9 added incrementally — see commits.)
+    // ── STEP 5: Stone lanterns (ishidoro) ───────────────────
+    // Stack: square base box → short cylinder pillar → hollowed light box
+    // (4 thin walls so a true cavity reads) → pyramid roof → finial.
+    var lanternStone = new THREE.Color(0x8a8088);
+
+    function buildIshidoro(x, z, scale) {
+      var s = scale;
+      var group = new THREE.Group();
+      var mat = new THREE.MeshLambertMaterial({
+        vertexColors: true,
+        flatShading: true,
+        fog: true
+      });
+
+      // 1. Base (square box)
+      var baseG = new THREE.BoxGeometry(0.9 * s, 0.30 * s, 0.9 * s);
+      makeFlatColored(baseG, lanternStone, 0.55, 'y');
+      var base = new THREE.Mesh(baseG, mat);
+      base.position.y = 0.15 * s;
+      group.add(base);
+
+      // 2. Pillar (short cylinder)
+      var pillarG = new THREE.CylinderGeometry(0.18 * s, 0.20 * s, 0.7 * s, 8);
+      makeFlatColored(pillarG, lanternStone, 0.55, 'y');
+      var pillar = new THREE.Mesh(pillarG, mat);
+      pillar.position.y = 0.30 * s + 0.35 * s;
+      group.add(pillar);
+
+      // 3. Light chamber — 4 thin walls leaving a hollow center.
+      //    Inner aperture ~0.32×0.32 reads as a real opening.
+      var chamberY = 0.30 * s + 0.70 * s + 0.30 * s; // mid of chamber
+      var wallT = 0.10 * s;     // wall thickness
+      var chamberW = 0.70 * s;  // outer width
+      var chamberH = 0.55 * s;  // outer height
+      var innerW = chamberW - wallT * 2;
+      // Front wall
+      var wallFG = new THREE.BoxGeometry(chamberW, chamberH, wallT);
+      makeFlatColored(wallFG, lanternStone, 0.50, 'y');
+      var wallF = new THREE.Mesh(wallFG, mat);
+      wallF.position.set(0, chamberY, chamberW / 2 - wallT / 2);
+      group.add(wallF);
+      // Back wall
+      var wallB = new THREE.Mesh(wallFG.clone(), mat);
+      wallB.position.set(0, chamberY, -(chamberW / 2 - wallT / 2));
+      group.add(wallB);
+      // Left wall
+      var wallSG = new THREE.BoxGeometry(wallT, chamberH, innerW);
+      makeFlatColored(wallSG, lanternStone, 0.50, 'y');
+      var wallL = new THREE.Mesh(wallSG, mat);
+      wallL.position.set(-(chamberW / 2 - wallT / 2), chamberY, 0);
+      group.add(wallL);
+      // Right wall
+      var wallR = new THREE.Mesh(wallSG.clone(), mat);
+      wallR.position.set(chamberW / 2 - wallT / 2, chamberY, 0);
+      group.add(wallR);
+
+      // 4. Pyramid roof (4-sided cone)
+      var roofY = 0.30 * s + 0.70 * s + 0.55 * s + 0.22 * s; // base of pyramid + half height
+      var roofG = new THREE.ConeGeometry(0.65 * s, 0.45 * s, 4, 1, false);
+      makeFlatColored(roofG, lanternStone, 0.55, 'y');
+      var roof = new THREE.Mesh(roofG, mat);
+      roof.position.y = roofY;
+      roof.rotation.y = Math.PI / 4; // align flat faces toward viewer
+      group.add(roof);
+
+      // 5. Finial cap (tiny box)
+      var finG = new THREE.BoxGeometry(0.14 * s, 0.20 * s, 0.14 * s);
+      makeFlatColored(finG, lanternStone, 0.55, 'y');
+      var fin = new THREE.Mesh(finG, mat);
+      fin.position.y = roofY + 0.45 * s / 2 + 0.10 * s;
+      group.add(fin);
+
+      group.position.set(x, 0, z);
+      return group;
+    }
+
+    // Place at ~1/3 along the path, one each side.
+    var LANTERN_T = 0.30;
+    var lCurveT = Math.pow(LANTERN_T, STEP_X_CURVE);
+    var lPathX = STEP_X_BASE + (STEP_X_TOP - STEP_X_BASE) * lCurveT;
+    var lPathZ = STEP_Z_START + LANTERN_T * (STEP_COUNT - 1) * STEP_Z_DELTA;
+    var lDx = (STEP_X_TOP - STEP_X_BASE) * STEP_X_CURVE *
+              Math.pow(Math.max(LANTERN_T, 0.001), STEP_X_CURVE - 1);
+    var lDz = (STEP_COUNT - 1) * STEP_Z_DELTA;
+    var lLen = Math.sqrt(lDx * lDx + lDz * lDz) || 1;
+    var lPerpX = -lDz / lLen;
+    var lPerpZ =  lDx / lLen;
+    var LANTERN_OFFSET = 1.7;       // closer than walls (which are at 2.6)
+    var LANTERN_SCALE = 1.6;
+    sceneRoot.add(buildIshidoro(
+      lPathX + lPerpX * LANTERN_OFFSET,
+      lPathZ + lPerpZ * LANTERN_OFFSET,
+      LANTERN_SCALE
+    ));
+    sceneRoot.add(buildIshidoro(
+      lPathX - lPerpX * LANTERN_OFFSET,
+      lPathZ - lPerpZ * LANTERN_OFFSET,
+      LANTERN_SCALE
+    ));
+
+    // (Steps 6-9 added incrementally — see commits.)
 
     // ── Minimal lighting so vertex colors register ──
     // Step 7 will replace these with the spec values.
