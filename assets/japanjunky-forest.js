@@ -244,7 +244,170 @@
       ));
     }
 
-    // (Steps 4-9 added incrementally — see commits.)
+    // ── STEP 4: Trees (trunk + branches + foliage) ──────────
+    // Each tree is built as a small group of primitives — NOT a single
+    // cylinder. Trunk = 2-3 tapered cylinder segments at slight angles.
+    // Branches = 3-5 thin cylinders at upper third. Foliage = clusters
+    // of icosahedrons (detail 0) at branch ends + crown.
+    var trunkColor   = new THREE.Color(0x4a2a1a);  // dark reddish-brown
+    var foliageColor = new THREE.Color(0x2a3820);  // dark muted green
+
+    function makeFlatColored(geo, color, baseDarkness, axis) {
+      axis = axis || 'y';
+      baseDarkness = baseDarkness || 0.5;
+      var pos = geo.attributes.position;
+      var min = Infinity, max = -Infinity;
+      for (var i = 0; i < pos.count; i++) {
+        var v = pos['get' + axis.toUpperCase()](i);
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      var range = max - min || 1;
+      var colors = [];
+      for (var j = 0; j < pos.count; j++) {
+        var n = (pos['get' + axis.toUpperCase()](j) - min) / range;
+        var b = baseDarkness + (1 - baseDarkness) * n;
+        colors.push(color.r * b, color.g * b, color.b * b);
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    }
+
+    function buildTree(x, z, totalHeight) {
+      var group = new THREE.Group();
+      var trunkMat = new THREE.MeshLambertMaterial({
+        vertexColors: true,
+        flatShading: true,
+        fog: true
+      });
+      var foliageMat = new THREE.MeshLambertMaterial({
+        vertexColors: true,
+        flatShading: true,
+        fog: true
+      });
+
+      // ── Trunk: 2-3 tapered cylinder segments ──
+      var segCount = 2 + Math.floor(Math.random() * 2); // 2 or 3
+      var segHeight = totalHeight / segCount;
+      var segBaseR = 0.30 + Math.random() * 0.08;
+      var segTopR  = segBaseR * 0.7;
+      var stackY = 0;
+      var leanX = 0;
+      var leanZ = 0;
+      for (var s = 0; s < segCount; s++) {
+        var bottomR = segBaseR * (1 - s * 0.18);   // taper progressively
+        var topR    = segBaseR * (1 - (s + 1) * 0.18);
+        if (topR < 0.06) topR = 0.06;
+        var segGeo = new THREE.CylinderGeometry(topR, bottomR, segHeight, 6, 1);
+        makeFlatColored(segGeo, trunkColor, 0.45, 'y');
+        var seg = new THREE.Mesh(segGeo, trunkMat);
+        // Slight bend per segment
+        var lean = (Math.random() - 0.5) * 0.06;
+        leanX += lean;
+        leanZ += (Math.random() - 0.5) * 0.06;
+        seg.position.set(leanX, stackY + segHeight / 2, leanZ);
+        seg.rotation.x = leanZ * 0.4;
+        seg.rotation.z = -leanX * 0.4;
+        group.add(seg);
+        stackY += segHeight;
+      }
+
+      // ── Branches: 3-5 thin cylinders at upper third ──
+      var branchCount = 3 + Math.floor(Math.random() * 3); // 3-5
+      var branchTopY = totalHeight * (0.55 + Math.random() * 0.2);
+      var branchEnds = [];   // collect for foliage placement
+      for (var b = 0; b < branchCount; b++) {
+        var angle = (b / branchCount) * Math.PI * 2 + Math.random() * 0.6;
+        var brLen = 0.6 + Math.random() * 0.8;
+        var brR = 0.05 + Math.random() * 0.03;
+        var brGeo = new THREE.CylinderGeometry(brR * 0.6, brR, brLen, 5, 1);
+        makeFlatColored(brGeo, trunkColor, 0.55, 'y');
+        var br = new THREE.Mesh(brGeo, trunkMat);
+        // Branch oriented so its base attaches to trunk and tip angles upward+outward
+        // First place the branch upright, then rotate around z so its top goes outward.
+        var startY = branchTopY + b * 0.4;
+        // Move geometry origin to branch base by translating it +brLen/2
+        brGeo.translate(0, brLen / 2, 0);
+        br.position.set(leanX, startY, leanZ);
+        // Tilt outward: rotate around Z by 60° in cluster's frame, then yaw by `angle`
+        var tilt = Math.PI / 3 - Math.random() * 0.3;  // ~60° from vertical
+        br.rotation.z = Math.cos(angle) * tilt;
+        br.rotation.x = Math.sin(angle) * tilt;
+        group.add(br);
+
+        // Branch end position (approximate — for foliage)
+        var endX = leanX + Math.sin(tilt) * Math.cos(angle) * brLen;
+        var endY = startY + Math.cos(tilt) * brLen;
+        var endZ = leanZ + Math.sin(tilt) * Math.sin(angle) * brLen;
+        branchEnds.push([endX, endY, endZ]);
+      }
+      // Crown foliage anchor at the very top of trunk
+      branchEnds.push([leanX, totalHeight - 0.2, leanZ]);
+
+      // ── Foliage: icosahedron clusters at branch ends ──
+      for (var f = 0; f < branchEnds.length; f++) {
+        var be = branchEnds[f];
+        var clumpSize = 0.55 + Math.random() * 0.4;
+        var clumpGeo = new THREE.IcosahedronGeometry(1, 0);  // detail 0 = 20 tris
+        makeFlatColored(clumpGeo, foliageColor, 0.55, 'y');
+        var clump = new THREE.Mesh(clumpGeo, foliageMat);
+        clump.position.set(be[0], be[1], be[2]);
+        clump.scale.setScalar(clumpSize);
+        clump.rotation.set(
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          Math.random() * Math.PI
+        );
+        group.add(clump);
+        // Often add a second smaller clump offset slightly for fullness
+        if (Math.random() < 0.55) {
+          var clump2Geo = new THREE.IcosahedronGeometry(1, 0);
+          makeFlatColored(clump2Geo, foliageColor, 0.45, 'y');
+          var clump2 = new THREE.Mesh(clump2Geo, foliageMat);
+          var s2 = clumpSize * (0.55 + Math.random() * 0.3);
+          clump2.position.set(
+            be[0] + (Math.random() - 0.5) * 0.5,
+            be[1] + (Math.random() - 0.5) * 0.4,
+            be[2] + (Math.random() - 0.5) * 0.5
+          );
+          clump2.scale.setScalar(s2);
+          group.add(clump2);
+        }
+      }
+
+      group.position.set(x, 0, z);
+      return group;
+    }
+
+    // Place 10 trees, mostly BEHIND the walls (further from path centerline).
+    // Use the same path-curve formula and offset perpendicular by larger amount.
+    var TREE_BEHIND_OFFSET = 4.5;     // behind walls (which were at 2.6)
+    var TREE_LAYOUT = [
+      // [t along path 0..1, side +1/-1, height]
+      [0.05,  1, 12], [0.18, -1, 13], [0.32,  1, 14],
+      [0.45, -1, 12], [0.58,  1, 13], [0.72, -1, 14],
+      [0.85,  1, 13], [0.95, -1, 12],
+      // a couple closer to camera, just outside the walls
+      [0.10, -1, 11], [0.22,  1, 11]
+    ];
+    for (var ti = 0; ti < TREE_LAYOUT.length; ti++) {
+      var TL = TREE_LAYOUT[ti];
+      var tt = TL[0];
+      var tCurveT = Math.pow(tt, STEP_X_CURVE);
+      var tPathX = STEP_X_BASE + (STEP_X_TOP - STEP_X_BASE) * tCurveT;
+      var tPathZ = STEP_Z_START + tt * (STEP_COUNT - 1) * STEP_Z_DELTA;
+      var tDx = (STEP_X_TOP - STEP_X_BASE) * STEP_X_CURVE *
+                Math.pow(Math.max(tt, 0.001), STEP_X_CURVE - 1);
+      var tDz = (STEP_COUNT - 1) * STEP_Z_DELTA;
+      var tLen = Math.sqrt(tDx * tDx + tDz * tDz) || 1;
+      var tPerpX = -tDz / tLen;
+      var tPerpZ =  tDx / tLen;
+      var side = TL[1];
+      var treeX = tPathX + side * tPerpX * TREE_BEHIND_OFFSET;
+      var treeZ = tPathZ + side * tPerpZ * TREE_BEHIND_OFFSET;
+      sceneRoot.add(buildTree(treeX, treeZ, TL[2]));
+    }
+
+    // (Steps 5-9 added incrementally — see commits.)
 
     // ── Minimal lighting so vertex colors register ──
     // Step 7 will replace these with the spec values.
