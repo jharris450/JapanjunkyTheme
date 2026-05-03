@@ -92,6 +92,12 @@
     var STEP_W       = 2.6;
     var STEP_D       = 1.0;
     var STEP_H       = 0.32;
+    // Stairs curve from viewport-left to viewport-right as they ascend.
+    // Base at x=-3 (where Tsuno renders), top at x=+2. Quadratic curve so
+    // the curve is gentle near the bottom and more pronounced near the top.
+    var STEP_X_BASE  = -3.0;
+    var STEP_X_TOP   =  2.0;
+    var STEP_X_CURVE = 1.4;   // exponent — higher = sharper top-end curve
 
     var stepMatColor = new THREE.Color(0x6a685c);
     for (var s = 0; s < STEP_COUNT; s++) {
@@ -122,14 +128,25 @@
       });
       var slab = new THREE.Mesh(slabGeo, slabMat);
 
-      // Position: stagger x ±0.2, ramp y, advance z
+      // Position along the curve: x = lerp(base, top) along a quadratic
+      // curve, z linear, y linear. Hand-placed jitter on top.
+      var t = STEP_COUNT > 1 ? s / (STEP_COUNT - 1) : 0;
+      var curveT = Math.pow(t, STEP_X_CURVE);
+      var curveX = STEP_X_BASE + (STEP_X_TOP - STEP_X_BASE) * curveT;
+
       slab.position.set(
-        (Math.random() - 0.5) * 0.4,
+        curveX + (Math.random() - 0.5) * 0.25,
         STEP_Y_BASE + s * STEP_Y_RISE,
         STEP_Z_START + s * STEP_Z_DELTA
       );
-      // Slight yaw + roll so stairs feel hand-laid
-      slab.rotation.y = (Math.random() - 0.5) * 0.10;
+      // Yaw the slab so it points perpendicular to the path direction
+      // (path tangent on xz plane). Approximate path slope:
+      var dx = (STEP_X_TOP - STEP_X_BASE) * STEP_X_CURVE *
+               Math.pow(Math.max(t, 0.001), STEP_X_CURVE - 1) /
+               (STEP_COUNT - 1);
+      var dz = STEP_Z_DELTA;
+      var pathYaw = Math.atan2(dx, dz);     // angle the slab faces
+      slab.rotation.y = pathYaw + (Math.random() - 0.5) * 0.10;
       slab.rotation.z = (Math.random() - 0.5) * 0.06;
       sceneRoot.add(slab);
     }
