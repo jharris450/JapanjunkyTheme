@@ -150,7 +150,101 @@
       sceneRoot.add(slab);
     }
 
-    // (Steps 3-9 added incrementally — see commits.)
+    // ── STEP 3: Rock walls (corridor framing) ────────────────
+    // Two rows of icosahedron boulder clusters running parallel to the
+    // path, on the left and right sides. Each cluster is 2-3 icos at
+    // slightly different scales/offsets so it reads as a pile, not a
+    // single shape. Walls rise 2.5-4m so they frame the path as a corridor.
+    var WALL_COUNT = 9;             // clusters per side, evenly spaced along path
+    var WALL_OFFSET = 2.6;          // perpendicular distance from path centerline
+    var rockBaseColor = new THREE.Color(0x4a4238);
+    var rockBaseColorAlt = new THREE.Color(0x382e26);
+
+    function buildBoulderCluster(centerX, centerZ, side) {
+      // side = +1 (right of path) or -1 (left of path); used to vary jitter
+      var group = new THREE.Group();
+      var rocksInCluster = 2 + Math.floor(Math.random() * 2); // 2-3
+      for (var r = 0; r < rocksInCluster; r++) {
+        var geo = new THREE.IcosahedronGeometry(1, 1); // detail 1 = ~80 tris
+        // Bake vertex AO darkening lower verts (sit-on-ground feel)
+        var pos = geo.attributes.position;
+        var min = Infinity, max = -Infinity;
+        for (var v = 0; v < pos.count; v++) {
+          var py = pos.getY(v);
+          if (py < min) min = py;
+          if (py > max) max = py;
+        }
+        var range = max - min || 1;
+        var colors = [];
+        for (var v2 = 0; v2 < pos.count; v2++) {
+          var n = (pos.getY(v2) - min) / range;
+          var brightness = 0.45 + n * 0.55;
+          // Mix the two rock colours per-rock for variety
+          var base = (r % 2 === 0) ? rockBaseColor : rockBaseColorAlt;
+          colors.push(base.r * brightness, base.g * brightness, base.b * brightness);
+        }
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+        var mat = new THREE.MeshLambertMaterial({
+          vertexColors: true,
+          flatShading: true,
+          fog: true
+        });
+        var mesh = new THREE.Mesh(geo, mat);
+
+        // Non-uniform scale → boulder shape (not spherical)
+        var sx = 1.0 + Math.random() * 1.6;
+        var sy = 1.6 + Math.random() * 2.0;   // taller than wide for wall feel
+        var sz = 1.0 + Math.random() * 1.4;
+        mesh.scale.set(sx, sy, sz);
+
+        // Position offset within cluster: small jitter from cluster center
+        var ox = (Math.random() - 0.5) * 1.2 + side * Math.random() * 0.4;
+        var oz = (Math.random() - 0.5) * 1.4;
+        var groundY = sy * 0.5 - 0.2;          // sit on terrain (slightly embedded)
+        mesh.position.set(centerX + ox, groundY, centerZ + oz);
+        mesh.rotation.set(
+          (Math.random() - 0.5) * 0.4,
+          Math.random() * Math.PI * 2,
+          (Math.random() - 0.5) * 0.4
+        );
+        group.add(mesh);
+      }
+      return group;
+    }
+
+    // Walk the path and drop a cluster on each side at each waypoint.
+    // Use the SAME curve formula as the stairs so walls follow the curve.
+    for (var w = 0; w < WALL_COUNT; w++) {
+      var tw = WALL_COUNT > 1 ? w / (WALL_COUNT - 1) : 0;
+      var pathT = Math.pow(tw, STEP_X_CURVE);
+      var pathX = STEP_X_BASE + (STEP_X_TOP - STEP_X_BASE) * pathT;
+      var pathZ = STEP_Z_START + tw * (STEP_COUNT - 1) * STEP_Z_DELTA;
+      // Path tangent angle so walls offset perpendicular (not just ±X)
+      var dx = (STEP_X_TOP - STEP_X_BASE) * STEP_X_CURVE *
+               Math.pow(Math.max(tw, 0.001), STEP_X_CURVE - 1) /
+               (WALL_COUNT - 1);
+      var dz = (STEP_COUNT - 1) * STEP_Z_DELTA / (WALL_COUNT - 1);
+      var len = Math.sqrt(dx * dx + dz * dz) || 1;
+      // Perpendicular vector (rotate tangent 90° in xz plane)
+      var perpX = -dz / len;
+      var perpZ =  dx / len;
+
+      // Right side
+      sceneRoot.add(buildBoulderCluster(
+        pathX + perpX * WALL_OFFSET,
+        pathZ + perpZ * WALL_OFFSET,
+        +1
+      ));
+      // Left side
+      sceneRoot.add(buildBoulderCluster(
+        pathX - perpX * WALL_OFFSET,
+        pathZ - perpZ * WALL_OFFSET,
+        -1
+      ));
+    }
+
+    // (Steps 4-9 added incrementally — see commits.)
 
     // ── Minimal lighting so vertex colors register ──
     // Step 7 will replace these with the spec values.
