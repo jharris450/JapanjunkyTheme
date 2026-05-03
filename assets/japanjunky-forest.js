@@ -163,7 +163,7 @@
     function buildBoulderCluster(centerX, centerZ, side) {
       // side = +1 (right of path) or -1 (left of path); used to vary jitter
       var group = new THREE.Group();
-      var rocksInCluster = 2 + Math.floor(Math.random() * 2); // 2-3
+      var rocksInCluster = 1 + Math.floor(Math.random() * 2); // 1-2
       for (var r = 0; r < rocksInCluster; r++) {
         var geo = new THREE.IcosahedronGeometry(1, 1); // detail 1 = ~80 tris
         // Bake vertex AO darkening lower verts (sit-on-ground feel)
@@ -192,16 +192,16 @@
         });
         var mesh = new THREE.Mesh(geo, mat);
 
-        // Non-uniform scale → boulder shape (not spherical)
-        var sx = 1.0 + Math.random() * 1.6;
-        var sy = 1.6 + Math.random() * 2.0;   // taller than wide for wall feel
-        var sz = 1.0 + Math.random() * 1.4;
+        // Non-uniform scale → boulder shape, smaller so they don't dominate
+        var sx = 0.5 + Math.random() * 0.5;   // 0.5 - 1.0
+        var sy = 0.7 + Math.random() * 0.7;   // 0.7 - 1.4 (taller than wide)
+        var sz = 0.5 + Math.random() * 0.4;   // 0.5 - 0.9
         mesh.scale.set(sx, sy, sz);
 
         // Position offset within cluster: small jitter from cluster center
-        var ox = (Math.random() - 0.5) * 1.2 + side * Math.random() * 0.4;
-        var oz = (Math.random() - 0.5) * 1.4;
-        var groundY = sy * 0.5 - 0.2;          // sit on terrain (slightly embedded)
+        var ox = (Math.random() - 0.5) * 0.6 + side * Math.random() * 0.2;
+        var oz = (Math.random() - 0.5) * 0.7;
+        var groundY = sy * 0.5 - 0.5;          // embed deeper into terrain
         mesh.position.set(centerX + ox, groundY, centerZ + oz);
         mesh.rotation.set(
           (Math.random() - 0.5) * 0.4,
