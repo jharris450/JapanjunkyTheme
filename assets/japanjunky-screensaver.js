@@ -141,6 +141,18 @@
     '  vec3 glowCool = vec3(0.7, 0.5, 0.95);',
     '  color += mix(glowWarm, glowCool, depthMix) * glow * 0.3;',
     '',
+    '  // Volumetric fog wisps drifting down the tunnel',
+    '  float fA = a - uTime * 0.18;',
+    '  float fD = depth * 6.0 - uTime * 0.25;',
+    '  float w1 = sin(fA * 3.0 + fD * 2.0) * 0.5 + 0.5;',
+    '  float w2 = sin(fA * 5.0 - fD * 1.4 + 1.7) * 0.5 + 0.5;',
+    '  float w3 = sin(fA * 2.0 + fD * 3.2 - 0.6) * 0.5 + 0.5;',
+    '  float fog = w1 * 0.5 + w2 * 0.3 + w3 * 0.2;',
+    '  fog = smoothstep(0.4, 0.95, fog);',
+    '  float fogWindow = smoothstep(0.05, 0.35, depth) * smoothstep(0.95, 0.55, depth);',
+    '  vec3 fogTint = mix(vec3(0.95, 0.7, 0.45), vec3(0.75, 0.55, 0.9), depthMix);',
+    '  color += fogTint * fog * fogWindow * 0.35;',
+    '',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
