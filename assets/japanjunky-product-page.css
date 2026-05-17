@@ -122,6 +122,12 @@
   padding: 4px 8px;
   cursor: pointer;
   text-transform: uppercase;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    2px 2px 0 #000;
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
 .jj-pdp-variant-btn:hover {
@@ -129,10 +135,23 @@
   color: var(--jj-text, #e0d5c0);
 }
 
+.jj-pdp-variant-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.2),
+    0 0 0 #000;
+}
+
 .jj-pdp-variant-btn--active {
   color: var(--jj-primary, #e04040);
   border-color: var(--jj-primary, #e04040);
   text-shadow: 0 0 4px rgba(224, 64, 64, 0.4);
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 64, 64, 0.35),
+    0 0 0 #000;
 }
 
 /* --- Actions --- */
@@ -149,15 +168,32 @@
   padding: 4px 8px;
   cursor: pointer;
   text-transform: uppercase;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    2px 2px 0 #000;
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 .jj-pdp-actions .jj-action-btn:hover {
   border-color: var(--jj-primary, #e04040);
   text-shadow: 0 0 4px rgba(224, 64, 64, 0.5);
 }
+.jj-pdp-actions .jj-action-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22),
+    0 0 0 #000;
+}
 .jj-pdp-actions .jj-action-btn:disabled {
   color: #555;
   border-color: #222;
   cursor: default;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.05),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.6),
+    1px 1px 0 #000;
 }
 
 /* --- Thumbnail strip --- */
