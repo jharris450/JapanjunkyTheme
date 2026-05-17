@@ -141,6 +141,15 @@
     '  vec3 glowCool = vec3(0.7, 0.5, 0.95);',
     '  color += mix(glowWarm, glowCool, depthMix) * glow * 0.3;',
     '',
+    '  // Volumetric fog — exponential depth absorption (atmospheric).',
+    '  // Density grows with depth so far end hazes out; mid-tunnel',
+    '  // gets extra smoke fill. Pure absorption, no patterns.',
+    '  float fogFar = 1.0 - exp(-depth * 2.2);',
+    '  float fogMid = exp(-pow((depth - 0.55) * 2.6, 2.0)) * 0.55;',
+    '  float fogDensity = clamp(fogFar + fogMid, 0.0, 1.0);',
+    '  vec3 fogColor = mix(vec3(0.55, 0.35, 0.2), vec3(0.45, 0.32, 0.55), depthMix);',
+    '  color = mix(color, fogColor, fogDensity * 0.45);',
+    '',
     '  gl_FragColor = vec4(color, 1.0);',
     '}'
   ].join('\n');
