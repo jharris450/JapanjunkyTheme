@@ -152,15 +152,6 @@ h4 { font-size: 13px; }
 .jj-blink { animation: jj-blink-anim 1s step-end infinite; }
 @keyframes jj-blink-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-/* --- HR Fancy --- */
-.jj-hr-fancy {
-  border: none;
-  height: 1px;
-  background: #333;
-  margin: 0;
-  flex-shrink: 0;
-}
-
 /* --- Scrollbar styling (terminal-like) --- */
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: #000; border-left: 1px solid #222; }

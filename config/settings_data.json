@@ -8,8 +8,6 @@
     "color_win95_bar": "#5c5c5c",
     "parallax_enabled": true,
     "parallax_intensity": 8,
-    "ascii_border_style": "double",
-    "ascii_glow_enabled": true,
     "sections": {},
     "content_for_index": []
   }
