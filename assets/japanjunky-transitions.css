@@ -5,9 +5,6 @@
 /* --- Transition Names — Homepage elements ---
    Applied via .jj-transitioning class on <html> to avoid
    view-transition-name side effects (forced containment) on idle pages. */
-.jj-transitioning .jj-ring__bar {
-  view-transition-name: catalog-bar;
-}
 .jj-transitioning .jj-ring__stage {
   view-transition-name: catalog-stage;
 }
@@ -70,9 +67,6 @@
 }
 
 /* --- Outgoing (homepage → product page) --- */
-::view-transition-old(catalog-bar) {
-  animation: jj-fly-up 0.5s ease-in forwards;
-}
 ::view-transition-old(catalog-stage) {
   animation: jj-fly-down 0.6s ease-in forwards;
 }
@@ -95,9 +89,6 @@
 }
 ::view-transition-new(portal) {
   animation: jj-fade-in 0.3s ease-in 0.1s both;
-}
-::view-transition-new(catalog-bar) {
-  animation: jj-fade-in 0.3s ease-out;
 }
 ::view-transition-new(catalog-stage) {
   animation: jj-fade-in 0.3s ease-out;

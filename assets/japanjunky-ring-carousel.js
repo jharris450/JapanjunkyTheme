@@ -49,7 +49,7 @@
   }
 
   // ─── State ─────────────────────────────────────────────────────
-  var filteredProducts = allProducts.slice(); // currently visible after filters
+  var filteredProducts = allProducts.slice(); // static snapshot — featured list never narrows
   var centerIndex = 0;       // index into filteredProducts
   var coverEls = {};         // keyed by filteredProducts index → DOM element
   var selectedProduct = null; // currently selected product data (after 300ms delay)
@@ -227,7 +227,7 @@
 
     selectedProduct = product;
 
-    // Map JJ_PRODUCTS fields to event detail shape expected by product-viewer.js
+    // Map JJ_FEATURED fields to event detail shape expected by product-viewer.js
     var el = coverEls[centerIndex] || null;
     var detail = {
       handle: product.handle,
