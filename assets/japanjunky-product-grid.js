@@ -14,14 +14,45 @@
   var gridEl = document.getElementById('jj-grid');
   if (!scroll || !gridEl) return;
 
-  // ─── Wheel Scroll (seamless hero ↔ grid) ───────────────────────
-  // Intra-grid scrolling is native: wheel events over screen 2 target
-  // elements inside the scrollable wrapper. Over the hero the wrapper is
-  // pointer-events:none, so we forward wheel deltas to it manually —
-  // free scroll, no snap paging.
+  // ─── Wheel Scroll (seamless hero ↔ grid, eased) ────────────────
+  // All homepage wheel input (hero AND grid) runs through one eased
+  // animator for a consistent smooth feel: each wheel event moves a
+  // target offset, a rAF loop exponentially eases scrollTop toward it.
+  // Scrollable overlays (filter dropdowns, start menu, taskbar) keep
+  // native scrolling and are excluded.
+
+  var scrollTarget = 0;
+  var scrollAnimating = false;
+  var scrollLastTime = 0;
+
+  function maxScroll() {
+    return scroll.scrollHeight - scroll.clientHeight;
+  }
+
+  function scrollTick(now) {
+    if (!scrollAnimating) return;
+    var dt = Math.min((now - scrollLastTime) / 1000, 0.05);
+    scrollLastTime = now;
+    var diff = scrollTarget - scroll.scrollTop;
+    if (Math.abs(diff) < 0.5) {
+      scroll.scrollTop = scrollTarget;
+      scrollAnimating = false;
+      return;
+    }
+    scroll.scrollTop += diff * (1 - Math.exp(-8 * dt));
+    requestAnimationFrame(scrollTick);
+  }
+
+  function startScrollAnim() {
+    if (scrollAnimating) return;
+    scrollAnimating = true;
+    scrollLastTime = performance.now();
+    requestAnimationFrame(scrollTick);
+  }
 
   function toGrid() {
-    scroll.scrollTo({ top: scroll.clientHeight, behavior: 'smooth' });
+    scrollTarget = Math.min(scroll.clientHeight, maxScroll());
+    startScrollAnim();
   }
 
   var indicator = document.getElementById('jj-scroll-indicator');
@@ -30,13 +61,16 @@
   document.addEventListener('wheel', function (e) {
     if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
     if (e.target.closest('.jj-ring__cover')) return;           // ring rotation owns covers only
-    if (e.target.closest('.jj-scroll__screen--grid')) return;  // native scroll
+    if (e.target.closest('.jj-grid__dropdown')) return;        // dropdown scrolls natively
     if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
+    e.preventDefault(); // we drive the wrapper ourselves — no native double-scroll
     var delta = e.deltaY;
     if (e.deltaMode === 1) delta *= 16;        // line mode (Firefox)
     else if (e.deltaMode === 2) delta *= scroll.clientHeight; // page mode
-    scroll.scrollTop += delta;
-  }, { passive: true });
+    if (!scrollAnimating) scrollTarget = scroll.scrollTop; // resync after native moves
+    scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget + delta));
+    startScrollAnim();
+  }, { passive: false });
 
   // ─── Hero UI Fade ──────────────────────────────────────────────
   scroll.addEventListener('scroll', function () {
@@ -110,16 +144,9 @@
     var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), material);
     scene.add(mesh);
 
-    // Idle params copied from the viewer
-    var IDLE = {
-      rotSpeed: 0.15,
-      bobAmp: 0.05,
-      bobPeriod: 2.5,
-      tiltXAmp: 0.08,
-      tiltZAmp: 0.08,
-      tiltXFreq: 0.7,
-      tiltZFreq: 0.5
-    };
+    // Pure turntable spin — no tilt sway or bob (split from the viewer's
+    // idle wiggle on purpose). Faster than the viewer so the motion reads.
+    var ROT_SPEED = 0.4; // rad/s (~16s per revolution)
 
     var textureLoader = new THREE.TextureLoader();
     var texCache = {}; // url → THREE.Texture (persists across refilters)
@@ -134,7 +161,7 @@
       return texCache[url];
     }
 
-    var cards = []; // { ctx, tex, phase, ySeed, visible }
+    var cards = []; // { ctx, tex, ySeed, visible }
     var rafId = null;
     var lastTime = 0;
     var clock = 0;
@@ -177,11 +204,7 @@
         var c = cards[i];
         if (!c.visible) continue;
         if (!c.tex.image || !c.tex.image.width) continue; // texture still loading
-        var t = clock + c.phase;
-        mesh.rotation.y = c.ySeed + clock * IDLE.rotSpeed;
-        mesh.rotation.x = Math.sin(t * IDLE.tiltXFreq * 2 * Math.PI) * IDLE.tiltXAmp;
-        mesh.rotation.z = Math.sin(t * IDLE.tiltZFreq * 2 * Math.PI) * IDLE.tiltZAmp;
-        mesh.position.y = Math.sin(t * (2 * Math.PI / IDLE.bobPeriod)) * IDLE.bobAmp;
+        mesh.rotation.y = c.ySeed + clock * ROT_SPEED;
         material.uniforms.uTexture.value = c.tex;
         renderer.render(scene, camera);
         c.ctx.clearRect(0, 0, SIZE, SIZE);
@@ -200,7 +223,6 @@
         var card = {
           ctx: cv.getContext('2d'),
           tex: getTexture(url),
-          phase: Math.random() * 100,
           ySeed: -0.3 + (Math.random() - 0.5) * 1.2,
           visible: false
         };
