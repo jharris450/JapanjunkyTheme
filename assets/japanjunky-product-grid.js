@@ -41,4 +41,75 @@
     document.body.classList.toggle('jj-grid-active', active);
   }, { passive: true });
 
+  // ─── Card Rendering ────────────────────────────────────────────
+
+  var filteredProducts = allProducts.slice();
+
+  function textDiv(className, text) {
+    var d = document.createElement('div');
+    d.className = className;
+    d.textContent = text;
+    return d;
+  }
+
+  function createCard(p) {
+    var card = document.createElement('a');
+    card.className = 'jj-grid__card';
+    card.href = '/products/' + p.handle;
+    card.setAttribute('data-format', p.format || '');
+
+    var imgWrap = document.createElement('div');
+    imgWrap.className = 'jj-grid__card-img-wrap';
+    if (p.image) {
+      var img = document.createElement('img');
+      img.className = 'jj-grid__card-img';
+      img.src = p.image;
+      img.alt = (p.artist ? p.artist + ' - ' : '') + p.title;
+      img.loading = 'lazy';
+      img.width = 180;
+      img.height = 180;
+      imgWrap.appendChild(img);
+    } else {
+      imgWrap.innerHTML = '<span class="jj-grid__card-noimg">&#9670;</span>';
+    }
+    card.appendChild(imgWrap);
+
+    if (p.artist) card.appendChild(textDiv('jj-grid__card-artist', p.artist));
+    card.appendChild(textDiv('jj-grid__card-title', p.title));
+
+    var row = document.createElement('div');
+    row.className = 'jj-grid__card-row';
+    row.appendChild(textDiv('jj-grid__card-price', p.price));
+    if (p.format) {
+      var badge = document.createElement('span');
+      badge.className = 'jj-grid__card-format';
+      badge.setAttribute('data-format', p.format);
+      badge.textContent = p.format.toUpperCase();
+      row.appendChild(badge);
+    }
+    card.appendChild(row);
+
+    if (p.condition && p.condition !== 'n/a') {
+      card.appendChild(textDiv('jj-grid__card-cond', p.condition.toUpperCase()));
+    }
+
+    return card;
+  }
+
+  function renderGrid() {
+    gridEl.innerHTML = '';
+    if (filteredProducts.length === 0) {
+      gridEl.innerHTML = '<div class="jj-grid__empty">NO ITEMS FOUND</div>';
+      return;
+    }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < filteredProducts.length; i++) {
+      frag.appendChild(createCard(filteredProducts[i]));
+    }
+    gridEl.appendChild(frag);
+  }
+
+  // ─── Init ──────────────────────────────────────────────────────
+  renderGrid();
+
 })();
