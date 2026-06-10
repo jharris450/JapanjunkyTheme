@@ -13,6 +13,8 @@ window.JJ_PRODUCTS = [
 window.JJ_FEATURED = [
   {% render 'jj-product-json', items: featured.products, limit: 10 %}
 ];
+{%- comment -%} Curated collection may be entirely sold out — variants are filtered server-side {%- endcomment -%}
+if (!window.JJ_FEATURED.length) window.JJ_FEATURED = window.JJ_PRODUCTS.slice(0, 8);
 {%- else %}
 window.JJ_FEATURED = window.JJ_PRODUCTS.slice(0, 8);
 {%- endif %}
