@@ -73,13 +73,15 @@
 /* --- Hero UI fade when grid is in view --- */
 #jj-ring,
 .jj-product-zone {
-  transition: opacity 0.25s steps(3, end);
+  transition: opacity 0.25s steps(3, end), visibility 0s linear 0s;
 }
 
 .jj-grid-active #jj-ring,
 .jj-grid-active .jj-product-zone {
   opacity: 0;
   visibility: hidden;
+  /* delay visibility so the opacity steps actually show on the way out */
+  transition: opacity 0.25s steps(3, end), visibility 0s linear 0.25s;
 }
 
 /* --- Grid --- */

@@ -267,6 +267,10 @@
   document.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    // Grid screen owns input while hero UI is hidden — don't rotate/select blind
+    if (document.body.classList.contains('jj-grid-active')) return;
+    // Let focused links/buttons activate natively (e.g. grid cards, taskbar)
+    if (e.key === 'Enter' && e.target.closest('a, button')) return;
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault();

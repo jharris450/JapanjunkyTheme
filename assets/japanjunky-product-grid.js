@@ -27,6 +27,7 @@
   if (indicator) indicator.addEventListener('click', toGrid);
 
   document.addEventListener('wheel', function (e) {
+    if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
     if (scroll.scrollTop > 1) return;                          // already past hero
     if (e.deltaY <= 0) return;                                 // downward only
     if (e.target.closest('#jj-ring')) return;                  // ring rotation owns this
