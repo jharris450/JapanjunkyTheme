@@ -172,28 +172,8 @@
     </div>
   </div>
 
-  {%- comment -%} Ring carousel: full-viewport album cover arc {%- endcomment -%}
-  <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Product catalog">
-    <div class="jj-ring__bar" data-parallax-layer>
-      <div class="jj-ring__search-wrap">
-        <span class="jj-ring__search-prompt">&gt;</span>
-        <input class="jj-ring__search" id="jj-ring-search" type="text" placeholder="SEARCH..." autocomplete="off">
-      </div>
-      <button class="jj-ring__filter-btn" data-filter-group="format" type="button">
-        [FORMAT]<span class="jj-ring__filter-badge"></span>
-        <div class="jj-ring__dropdown" id="jj-ring-dropdown-format"></div>
-      </button>
-      <button class="jj-ring__filter-btn" data-filter-group="decade" type="button">
-        [DECADE]<span class="jj-ring__filter-badge"></span>
-        <div class="jj-ring__dropdown" id="jj-ring-dropdown-decade"></div>
-      </button>
-      <button class="jj-ring__filter-btn" data-filter-group="condition" type="button">
-        [CONDITION]<span class="jj-ring__filter-badge"></span>
-        <div class="jj-ring__dropdown" id="jj-ring-dropdown-condition"></div>
-      </button>
-      <button class="jj-ring__clear-btn" id="jj-ring-clear" type="button">[CLEAR]</button>
-      <span class="jj-ring__count" id="jj-ring-count"></span>
-    </div>
+  {%- comment -%} Ring carousel: featured picks arc {%- endcomment -%}
+  <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Featured products">
     <div class="jj-ring__stage" id="jj-ring-stage"></div>
   </div>
   {% endunless %}
