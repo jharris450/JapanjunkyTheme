@@ -31,6 +31,7 @@
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-product-grid.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-tsuno-bubble.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-calendar.css' | asset_url | stylesheet_tag }}
@@ -176,6 +177,18 @@
   <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Featured products">
     <div class="jj-ring__stage" id="jj-ring-stage"></div>
   </div>
+
+  {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = product grid {%- endcomment -%}
+  {% if template == 'index' %}
+  <div class="jj-scroll" id="jj-scroll">
+    <div class="jj-scroll__screen jj-scroll__screen--hero">
+      <button class="jj-scroll__indicator" id="jj-scroll-indicator" type="button" aria-label="Scroll to catalog">&#9660; CATALOG</button>
+    </div>
+    <div class="jj-scroll__screen jj-scroll__screen--grid">
+      <div class="jj-grid" id="jj-grid"></div>
+    </div>
+  </div>
+  {% endif %}
   {% endunless %}
 
   {%- comment -%} Shopify content_for_layout — homepage outputs JJ_PRODUCTS JSON, other pages render normally {%- endcomment -%}
@@ -245,6 +258,7 @@
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   {% unless template == 'product' or template.suffix == 'login' %}
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-tsuno-bubble.js' | asset_url }}" defer></script>

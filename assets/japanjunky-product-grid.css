@@ -1,0 +1,83 @@
+/* ============================================
+   JAPANJUNKY PRODUCT GRID
+   Scroll-snap catalog below the hero screen
+   ============================================ */
+
+/* --- Scroll Wrapper --- */
+/* pointer-events:none so hero-screen input reaches the fixed ring /
+   product zone underneath; screen 2 + indicator re-enable events.
+   Hero→grid scrolling is JS wheel paging (japanjunky-product-grid.js). */
+.jj-scroll {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  z-index: 100; /* above ring/product zone (50), below start menu (2000) */
+  pointer-events: none;
+  scrollbar-width: none;
+}
+
+.jj-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.jj-scroll__screen {
+  position: relative;
+  scroll-snap-align: start;
+}
+
+.jj-scroll__screen--hero {
+  height: 100%;
+  pointer-events: none;
+}
+
+.jj-scroll__screen--grid {
+  min-height: 100%;
+  background: #000;
+  border-top: 1px solid var(--jj-primary, #e8313a);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 40px; /* clear fixed taskbar */
+}
+
+/* --- Scroll Indicator --- */
+.jj-scroll__indicator {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: var(--jj-secondary, #f5d742);
+  background: rgba(10, 10, 10, 0.7);
+  border: 1px solid #333;
+  padding: 4px 10px;
+  animation: jj-indicator-blink 1.2s steps(2, start) infinite;
+}
+
+.jj-scroll__indicator:hover {
+  color: var(--jj-text, #e0d5c0);
+  border-color: #555;
+}
+
+@keyframes jj-indicator-blink {
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-scroll__indicator { animation: none; }
+}
+
+/* --- Hero UI fade when grid is in view --- */
+#jj-ring,
+.jj-product-zone {
+  transition: opacity 0.25s steps(3, end);
+}
+
+.jj-grid-active #jj-ring,
+.jj-grid-active .jj-product-zone {
+  opacity: 0;
+  visibility: hidden;
+}
