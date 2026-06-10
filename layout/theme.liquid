@@ -185,6 +185,26 @@
       <button class="jj-scroll__indicator" id="jj-scroll-indicator" type="button" aria-label="Scroll to catalog">&#9660; CATALOG</button>
     </div>
     <div class="jj-scroll__screen jj-scroll__screen--grid">
+      <div class="jj-grid__bar">
+        <div class="jj-grid__search-wrap">
+          <span class="jj-grid__search-prompt">&gt;</span>
+          <input class="jj-grid__search" id="jj-grid-search" type="text" placeholder="SEARCH..." autocomplete="off">
+        </div>
+        <button class="jj-grid__filter-btn" data-filter-group="format" type="button">
+          [FORMAT]<span class="jj-grid__filter-badge"></span>
+          <div class="jj-grid__dropdown" id="jj-grid-dropdown-format"></div>
+        </button>
+        <button class="jj-grid__filter-btn" data-filter-group="decade" type="button">
+          [DECADE]<span class="jj-grid__filter-badge"></span>
+          <div class="jj-grid__dropdown" id="jj-grid-dropdown-decade"></div>
+        </button>
+        <button class="jj-grid__filter-btn" data-filter-group="condition" type="button">
+          [CONDITION]<span class="jj-grid__filter-badge"></span>
+          <div class="jj-grid__dropdown" id="jj-grid-dropdown-condition"></div>
+        </button>
+        <button class="jj-grid__clear-btn" id="jj-grid-clear" type="button">[CLEAR]</button>
+        <span class="jj-grid__count" id="jj-grid-count"></span>
+      </div>
       <div class="jj-grid" id="jj-grid"></div>
     </div>
   </div>

@@ -220,3 +220,154 @@
   font-size: 12px;
   color: #555;
 }
+
+/* --- Filter/Search Bar (relocated from ring carousel) --- */
+.jj-grid__bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 4px 8px;
+  background: rgba(10, 10, 10, 0.95);
+  border-bottom: 1px solid #222;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+}
+
+.jj-grid__search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 1 auto;
+}
+
+.jj-grid__search-prompt {
+  color: var(--jj-secondary, #f5d742);
+  font-size: 11px;
+}
+
+.jj-grid__search {
+  width: 120px;
+  min-width: 30px;
+  height: 22px;
+  padding: 0 4px;
+  background: #000;
+  border: 1px solid #333;
+  color: var(--jj-text, #e0d5c0);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.jj-grid__search:focus {
+  border-color: var(--jj-primary, #e8313a);
+  box-shadow: 0 0 6px rgba(232, 49, 58, 0.3);
+  outline: none;
+}
+
+.jj-grid__filter-btn {
+  font-family: inherit;
+  font-size: 11px;
+  color: #888;
+  background: none;
+  border: 1px solid #333;
+  padding: 2px 6px;
+  cursor: default;
+  position: relative;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.jj-grid__filter-btn:hover {
+  color: var(--jj-text, #e0d5c0);
+  border-color: #555;
+}
+
+.jj-grid__filter-btn--active {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+}
+
+.jj-grid__filter-badge {
+  font-size: 9px;
+  color: var(--jj-primary, #e8313a);
+  margin-left: 2px;
+}
+
+.jj-grid__clear-btn {
+  font-family: inherit;
+  font-size: 10px;
+  color: #555;
+  background: none;
+  border: none;
+  cursor: default;
+  display: none;
+}
+
+.jj-grid__clear-btn--visible {
+  display: inline;
+}
+
+.jj-grid__clear-btn:hover {
+  color: var(--jj-primary, #e8313a);
+}
+
+.jj-grid__count {
+  margin-left: auto;
+  margin-right: 8px;
+  color: #555;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* --- Filter Dropdown --- */
+.jj-grid__dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 160px;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid #333;
+  padding: 4px 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.jj-grid__dropdown--open {
+  display: block;
+}
+
+.jj-grid__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  color: #888;
+  cursor: default;
+}
+
+.jj-grid__dropdown-item:hover {
+  background: #111;
+  color: var(--jj-text, #e0d5c0);
+}
+
+.jj-grid__dropdown-item--active {
+  color: var(--jj-secondary, #f5d742);
+}
+
+.jj-grid__dropdown-check {
+  width: 10px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .jj-grid__bar {
+    flex-wrap: wrap;
+  }
+}
