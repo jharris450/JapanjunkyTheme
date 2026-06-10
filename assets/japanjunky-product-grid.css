@@ -285,7 +285,8 @@
   border-color: #555;
 }
 
-.jj-grid__filter-btn--active {
+.jj-grid__filter-btn--active,
+.jj-grid__filter-btn--active:hover {
   color: var(--jj-secondary, #f5d742);
   border-color: var(--jj-secondary, #f5d742);
 }

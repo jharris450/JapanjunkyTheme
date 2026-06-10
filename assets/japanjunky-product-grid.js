@@ -156,6 +156,7 @@
     }
     renderGrid();
     updateCount();
+    updateClearBtn(); // covers every state source, incl. search-only
   }
 
   // ─── Count Display ─────────────────────────────────────────────
