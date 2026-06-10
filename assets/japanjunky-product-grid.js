@@ -14,10 +14,11 @@
   var gridEl = document.getElementById('jj-grid');
   if (!scroll || !gridEl) return;
 
-  // ─── Wheel Paging (hero → grid) ────────────────────────────────
-  // Grid → hero and intra-grid scrolling are native: wheel events over
-  // screen 2 target elements inside the scrollable wrapper. Over the hero
-  // the wrapper is pointer-events:none, so we page via this listener.
+  // ─── Wheel Scroll (seamless hero ↔ grid) ───────────────────────
+  // Intra-grid scrolling is native: wheel events over screen 2 target
+  // elements inside the scrollable wrapper. Over the hero the wrapper is
+  // pointer-events:none, so we forward wheel deltas to it manually —
+  // free scroll, no snap paging.
 
   function toGrid() {
     scroll.scrollTo({ top: scroll.clientHeight, behavior: 'smooth' });
@@ -28,12 +29,13 @@
 
   document.addEventListener('wheel', function (e) {
     if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
-    if (scroll.scrollTop > 1) return;                          // already past hero
-    if (e.deltaY <= 0) return;                                 // downward only
-    if (e.target.closest('#jj-ring')) return;                  // ring rotation owns this
+    if (e.target.closest('.jj-ring__cover')) return;           // ring rotation owns covers only
     if (e.target.closest('.jj-scroll__screen--grid')) return;  // native scroll
     if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
-    toGrid();
+    var delta = e.deltaY;
+    if (e.deltaMode === 1) delta *= 16;        // line mode (Firefox)
+    else if (e.deltaMode === 2) delta *= scroll.clientHeight; // page mode
+    scroll.scrollTop += delta;
   }, { passive: true });
 
   // ─── Hero UI Fade ──────────────────────────────────────────────
@@ -41,6 +43,179 @@
     var active = scroll.scrollTop > scroll.clientHeight * 0.5;
     document.body.classList.toggle('jj-grid-active', active);
   }, { passive: true });
+
+  // ─── Spinning Cover Engine ─────────────────────────────────────
+  // Same idle spin as the hero 3D viewer (japanjunky-product-viewer.js):
+  // PS1 vertex-snap shader, slow Y rotation, sine tilt + bob. One shared
+  // offscreen WebGL renderer draws every visible card into its own 2D
+  // canvas — per-card WebGL contexts would exhaust the browser limit.
+  var spinEngine = (function () {
+    if (typeof THREE === 'undefined') return null;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+
+    var SIZE = 180;
+    var glCanvas = document.createElement('canvas');
+    glCanvas.width = SIZE;
+    glCanvas.height = SIZE;
+
+    var renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: glCanvas, alpha: true, antialias: false });
+    } catch (err) {
+      return null; // WebGL unavailable — cards fall back to static images
+    }
+    renderer.setPixelRatio(1);
+    renderer.setSize(SIZE, SIZE, false);
+    renderer.setClearColor(0x000000, 0);
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.set(0, 0, 2.9);
+
+    var shaderRes = 240;
+    if (window.JJ_SCREENSAVER_CONFIG && window.JJ_SCREENSAVER_CONFIG.resolution) {
+      shaderRes = parseInt(window.JJ_SCREENSAVER_CONFIG.resolution, 10) || 240;
+    }
+
+    var PS1_VERT = [
+      'uniform float uResolution;',
+      'varying vec2 vUv;',
+      'void main() {',
+      '  vUv = uv;',
+      '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
+      '  vec4 clipPos = projectionMatrix * viewPos;',
+      '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
+      '             * clipPos.w / uResolution;',
+      '  gl_Position = clipPos;',
+      '}'
+    ].join('\n');
+
+    var PS1_FRAG = [
+      'uniform sampler2D uTexture;',
+      'varying vec2 vUv;',
+      'void main() {',
+      '  gl_FragColor = texture2D(uTexture, vUv);',
+      '}'
+    ].join('\n');
+
+    var material = new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: shaderRes },
+        uTexture: { value: null }
+      },
+      vertexShader: PS1_VERT,
+      fragmentShader: PS1_FRAG,
+      side: THREE.DoubleSide
+    });
+    var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), material);
+    scene.add(mesh);
+
+    // Idle params copied from the viewer
+    var IDLE = {
+      rotSpeed: 0.15,
+      bobAmp: 0.05,
+      bobPeriod: 2.5,
+      tiltXAmp: 0.08,
+      tiltZAmp: 0.08,
+      tiltXFreq: 0.7,
+      tiltZFreq: 0.5
+    };
+
+    var textureLoader = new THREE.TextureLoader();
+    var texCache = {}; // url → THREE.Texture (persists across refilters)
+
+    function getTexture(url) {
+      if (!texCache[url]) {
+        var tex = textureLoader.load(url);
+        tex.minFilter = THREE.NearestFilter;
+        tex.magFilter = THREE.NearestFilter;
+        texCache[url] = tex;
+      }
+      return texCache[url];
+    }
+
+    var cards = []; // { ctx, tex, phase, ySeed, visible }
+    var rafId = null;
+    var lastTime = 0;
+    var clock = 0;
+
+    var observer = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i++) {
+        var card = entries[i].target._jjSpinCard;
+        if (card) card.visible = entries[i].isIntersecting;
+      }
+      syncLoop();
+    });
+
+    function anyVisible() {
+      for (var i = 0; i < cards.length; i++) {
+        if (cards[i].visible) return true;
+      }
+      return false;
+    }
+
+    function syncLoop() {
+      var run = anyVisible() && !document.hidden;
+      if (run && !rafId) {
+        lastTime = performance.now();
+        rafId = requestAnimationFrame(tick);
+      } else if (!run && rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', syncLoop);
+
+    function tick(now) {
+      rafId = requestAnimationFrame(tick);
+      var dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+      clock += dt;
+
+      for (var i = 0; i < cards.length; i++) {
+        var c = cards[i];
+        if (!c.visible) continue;
+        if (!c.tex.image || !c.tex.image.width) continue; // texture still loading
+        var t = clock + c.phase;
+        mesh.rotation.y = c.ySeed + clock * IDLE.rotSpeed;
+        mesh.rotation.x = Math.sin(t * IDLE.tiltXFreq * 2 * Math.PI) * IDLE.tiltXAmp;
+        mesh.rotation.z = Math.sin(t * IDLE.tiltZFreq * 2 * Math.PI) * IDLE.tiltZAmp;
+        mesh.position.y = Math.sin(t * (2 * Math.PI / IDLE.bobPeriod)) * IDLE.bobAmp;
+        material.uniforms.uTexture.value = c.tex;
+        renderer.render(scene, camera);
+        c.ctx.clearRect(0, 0, SIZE, SIZE);
+        c.ctx.drawImage(glCanvas, 0, 0);
+      }
+    }
+
+    return {
+      attach: function (wrap, url, label) {
+        var cv = document.createElement('canvas');
+        cv.className = 'jj-grid__card-canvas';
+        cv.width = SIZE;
+        cv.height = SIZE;
+        cv.setAttribute('role', 'img');
+        cv.setAttribute('aria-label', label);
+        var card = {
+          ctx: cv.getContext('2d'),
+          tex: getTexture(url),
+          phase: Math.random() * 100,
+          ySeed: -0.3 + (Math.random() - 0.5) * 1.2,
+          visible: false
+        };
+        cv._jjSpinCard = card;
+        cards.push(card);
+        wrap.appendChild(cv);
+        observer.observe(cv);
+      },
+      reset: function () {
+        observer.disconnect();
+        cards = [];
+        syncLoop();
+      }
+    };
+  })();
 
   // ─── Card Rendering ────────────────────────────────────────────
 
@@ -61,11 +236,14 @@
 
     var imgWrap = document.createElement('div');
     imgWrap.className = 'jj-grid__card-img-wrap';
-    if (p.image) {
+    var alt = (p.artist ? p.artist + ' - ' : '') + p.title;
+    if (p.image && spinEngine) {
+      spinEngine.attach(imgWrap, p.image, alt);
+    } else if (p.image) {
       var img = document.createElement('img');
       img.className = 'jj-grid__card-img';
       img.src = p.image;
-      img.alt = (p.artist ? p.artist + ' - ' : '') + p.title;
+      img.alt = alt;
       img.loading = 'lazy';
       img.width = 180;
       img.height = 180;
@@ -98,6 +276,7 @@
   }
 
   function renderGrid() {
+    if (spinEngine) spinEngine.reset();
     gridEl.innerHTML = '';
     if (filteredProducts.length === 0) {
       gridEl.innerHTML = '<div class="jj-grid__empty">NO ITEMS FOUND</div>';

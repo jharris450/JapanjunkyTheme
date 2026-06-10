@@ -313,6 +313,9 @@
   var wheelCooldown = false;
 
   ring.addEventListener('wheel', function (e) {
+    // Only capture when hovering an actual cover — elsewhere the wheel
+    // falls through to the page-scroll handler (japanjunky-product-grid.js)
+    if (!e.target.closest('.jj-ring__cover')) return;
     e.preventDefault();
     if (wheelCooldown) return;
     wheelCooldown = true;

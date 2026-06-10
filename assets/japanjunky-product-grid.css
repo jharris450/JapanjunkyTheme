@@ -6,12 +6,12 @@
 /* --- Scroll Wrapper --- */
 /* pointer-events:none so hero-screen input reaches the fixed ring /
    product zone underneath; screen 2 + indicator re-enable events.
-   Hero→grid scrolling is JS wheel paging (japanjunky-product-grid.js). */
+   Hero→grid scrolling is seamless: wheel deltas are forwarded by
+   japanjunky-product-grid.js — no snap. */
 .jj-scroll {
   position: fixed;
   inset: 0;
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
   z-index: 100; /* above ring/product zone (50), below start menu (2000) */
   pointer-events: none;
   scrollbar-width: none;
@@ -23,7 +23,6 @@
 
 .jj-scroll__screen {
   position: relative;
-  scroll-snap-align: start;
 }
 
 .jj-scroll__screen--hero {
@@ -157,6 +156,14 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+/* Spinning 3D cover (shared WebGL renderer blits into per-card canvas) */
+.jj-grid__card-canvas {
+  width: 100%;
+  height: 100%;
   image-rendering: pixelated;
   display: block;
 }
