@@ -109,6 +109,7 @@
 .jj-grid__card:hover {
   text-decoration: none;
   color: var(--jj-text, #e0d5c0);
+  text-shadow: none; /* global a:hover adds a gold glow — keep format colors clean */
   border-color: var(--jj-primary, #e8313a);
   box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
 }

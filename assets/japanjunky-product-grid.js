@@ -55,7 +55,7 @@
   function createCard(p) {
     var card = document.createElement('a');
     card.className = 'jj-grid__card';
-    card.href = '/products/' + p.handle;
+    card.href = '/products/' + encodeURIComponent(p.handle);
     card.setAttribute('data-format', p.format || '');
 
     var imgWrap = document.createElement('div');
