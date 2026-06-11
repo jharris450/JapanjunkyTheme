@@ -173,7 +173,8 @@
 
 .jj-grid__card-artist {
   font-size: 10px;
-  color: #888;
+  color: var(--jj-primary, #e04040); /* matches .jj-product-info__artist */
+  text-shadow: 0 0 4px rgba(224, 64, 64, 0.4);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
