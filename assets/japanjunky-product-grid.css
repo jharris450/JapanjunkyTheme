@@ -197,8 +197,8 @@
 .jj-grid__card-price {
   font-size: 12px;
   color: var(--jj-secondary, #f5d742);
-  /* Rapid phosphor cycle — same palette as the CRT pixel cursor */
-  animation: jj-price-phosphor 0.7s steps(1, end) infinite;
+  /* Rapid phosphor strobe — same palette as the CRT pixel cursor */
+  animation: jj-price-phosphor 0.25s steps(1, end) infinite;
 }
 
 @keyframes jj-price-phosphor {
@@ -336,8 +336,18 @@
   color: var(--jj-primary, #e8313a);
 }
 
-.jj-grid__count {
+/* Sort sits at the right edge, beside the count */
+#jj-grid-sort-btn {
   margin-left: auto;
+}
+
+/* Right-aligned so the dropdown doesn't overflow the viewport edge */
+#jj-grid-sort-btn .jj-grid__dropdown {
+  left: auto;
+  right: 0;
+}
+
+.jj-grid__count {
   margin-right: 8px;
   color: #555;
   font-size: 10px;
