@@ -86,7 +86,7 @@
 /* --- Grid --- */
 .jj-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px 8px;
   padding: 16px;
 }
@@ -197,6 +197,20 @@
 .jj-grid__card-price {
   font-size: 12px;
   color: var(--jj-secondary, #f5d742);
+  /* Rapid phosphor cycle — same palette as the CRT pixel cursor */
+  animation: jj-price-phosphor 0.7s steps(1, end) infinite;
+}
+
+@keyframes jj-price-phosphor {
+  0%   { color: var(--jj-primary, #e8313a); }
+  20%  { color: var(--jj-secondary, #f5d742); }
+  40%  { color: var(--jj-green, #33ff33); }
+  60%  { color: var(--jj-cyan, #00e5e5); }
+  80%  { color: var(--jj-magenta, #e040e0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-grid__card-price { animation: none; }
 }
 
 .jj-grid__card-format {

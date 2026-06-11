@@ -67,7 +67,8 @@
         "type3d": {{ p_3d_type | json }},
         "variantId": {{ variant.id | json }},
         "available": {{ variant.available }},
-        "price": {{ variant.price | money | json }}
+        "price": {{ variant.price | money | json }},
+        "priceCents": {{ variant.price | json }}
       }
     {%- endif -%}
   {%- endfor -%}

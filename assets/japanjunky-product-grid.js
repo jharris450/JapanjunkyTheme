@@ -161,7 +161,7 @@
       return texCache[url];
     }
 
-    var cards = []; // { ctx, tex, ySeed, visible }
+    var cards = []; // { ctx, tex, visible }
     var rafId = null;
     var lastTime = 0;
     var clock = 0;
@@ -200,11 +200,13 @@
       lastTime = now;
       clock += dt;
 
+      // All cards share one synchronized rotation
+      mesh.rotation.y = -0.3 + clock * ROT_SPEED;
+
       for (var i = 0; i < cards.length; i++) {
         var c = cards[i];
         if (!c.visible) continue;
         if (!c.tex.image || !c.tex.image.width) continue; // texture still loading
-        mesh.rotation.y = c.ySeed + clock * ROT_SPEED;
         material.uniforms.uTexture.value = c.tex;
         renderer.render(scene, camera);
         c.ctx.clearRect(0, 0, SIZE, SIZE);
@@ -223,7 +225,6 @@
         var card = {
           ctx: cv.getContext('2d'),
           tex: getTexture(url),
-          ySeed: -0.3 + (Math.random() - 0.5) * 1.2,
           visible: false
         };
         cv._jjSpinCard = card;
@@ -248,6 +249,15 @@
     d.className = className;
     d.textContent = text;
     return d;
+  }
+
+  // Same mapping as japanjunky-product-viewer.js / sections/jj-product.liquid
+  function getConditionClass(cond) {
+    var c = (cond || '').toString().toLowerCase().trim();
+    if (c === 'm' || c === 'n' || c === 'mint' || c === 'new' || c === 'sealed') return 'jj-cond-m';
+    if (c === 'nm' || c === 'near mint' || c.indexOf('ex') !== -1) return 'jj-cond-nm';
+    if (c === 'vg' || c === 'vg+' || c.indexOf('very') !== -1) return 'jj-cond-vg';
+    return 'jj-cond-g';
   }
 
   function createCard(p) {
@@ -291,7 +301,7 @@
     card.appendChild(row);
 
     if (p.condition && p.condition !== 'n/a') {
-      card.appendChild(textDiv('jj-grid__card-cond', p.condition.toUpperCase()));
+      card.appendChild(textDiv('jj-grid__card-cond ' + getConditionClass(p.condition), p.condition.toUpperCase()));
     }
 
     return card;
@@ -356,9 +366,140 @@
         filteredProducts.push(allProducts[i]);
       }
     }
+    applySort();
     renderGrid();
     updateCount();
     updateClearBtn(); // covers every state source, incl. search-only
+  }
+
+  // ─── Sorting ───────────────────────────────────────────────────
+
+  var SORT_OPTIONS = [
+    { key: 'featured',   label: 'FEATURED',       badge: '' },
+    { key: 'price-asc',  label: 'PRICE LOW-HIGH', badge: 'PRICE↑' },
+    { key: 'price-desc', label: 'PRICE HIGH-LOW', badge: 'PRICE↓' },
+    { key: 'title-asc',  label: 'TITLE A-Z',      badge: 'TITLE' },
+    { key: 'artist-asc', label: 'ARTIST A-Z',     badge: 'ARTIST' },
+    { key: 'year-desc',  label: 'YEAR NEW-OLD',   badge: 'YEAR↓' },
+    { key: 'year-asc',   label: 'YEAR OLD-NEW',   badge: 'YEAR↑' }
+  ];
+  var sortMode = 'featured';
+
+  function priceOf(p) {
+    if (typeof p.priceCents === 'number') return p.priceCents;
+    // Fallback: strip currency formatting from the money string
+    var n = parseFloat(String(p.price || '').replace(/[^\d.]/g, ''));
+    return isNaN(n) ? Infinity : n;
+  }
+
+  function yearOf(p) {
+    var y = parseInt(p.year, 10);
+    return isNaN(y) ? null : y;
+  }
+
+  function strCompare(a, b) {
+    return (a || '').toLowerCase().localeCompare((b || '').toLowerCase());
+  }
+
+  function applySort() {
+    if (sortMode === 'featured') return; // catalog order, preserved by build order
+    filteredProducts.sort(function (a, b) {
+      var ya, yb;
+      switch (sortMode) {
+        case 'price-asc':  return priceOf(a) - priceOf(b);
+        case 'price-desc': return priceOf(b) - priceOf(a);
+        case 'title-asc':  return strCompare(a.title, b.title);
+        case 'artist-asc': return strCompare(a.artist, b.artist);
+        case 'year-desc':
+        case 'year-asc':
+          ya = yearOf(a);
+          yb = yearOf(b);
+          if (ya === null && yb === null) return 0;
+          if (ya === null) return 1; // unknown years sink to the bottom
+          if (yb === null) return -1;
+          return sortMode === 'year-asc' ? ya - yb : yb - ya;
+        default: return 0;
+      }
+    });
+  }
+
+  var sortBtn = document.getElementById('jj-grid-sort-btn');
+  var sortBadge = document.getElementById('jj-grid-sort-badge');
+  var sortDropdown = document.getElementById('jj-grid-dropdown-sort');
+
+  if (sortBtn && sortDropdown) {
+    for (var so = 0; so < SORT_OPTIONS.length; so++) {
+      var opt = SORT_OPTIONS[so];
+      var sItem = document.createElement('div');
+      sItem.className = 'jj-grid__dropdown-item';
+      sItem.setAttribute('data-sort-key', opt.key);
+      sItem.setAttribute('role', 'radio');
+      sItem.setAttribute('aria-checked', opt.key === sortMode ? 'true' : 'false');
+      sItem.setAttribute('tabindex', '0');
+
+      var sCheck = document.createElement('span');
+      sCheck.className = 'jj-grid__dropdown-check';
+      sCheck.textContent = opt.key === sortMode ? 'x' : ' ';
+
+      var sLbl = document.createElement('span');
+      sLbl.textContent = opt.label;
+
+      sItem.appendChild(sCheck);
+      sItem.appendChild(sLbl);
+      if (opt.key === sortMode) sItem.classList.add('jj-grid__dropdown-item--active');
+      sortDropdown.appendChild(sItem);
+    }
+
+    sortBtn.addEventListener('click', function (e) {
+      if (e.target.closest('.jj-grid__dropdown')) return;
+      var isOpen = sortDropdown.classList.contains('jj-grid__dropdown--open');
+      closeAllDropdowns();
+      if (!isOpen) sortDropdown.classList.add('jj-grid__dropdown--open');
+    });
+
+    sortDropdown.addEventListener('click', function (e) {
+      var itemEl = e.target.closest('.jj-grid__dropdown-item');
+      if (!itemEl) return;
+      e.stopPropagation();
+      e.preventDefault();
+
+      var key = itemEl.getAttribute('data-sort-key');
+      if (!key || key === sortMode) {
+        closeAllDropdowns();
+        return;
+      }
+      sortMode = key;
+
+      // Single-select: refresh check marks
+      var items = sortDropdown.querySelectorAll('.jj-grid__dropdown-item');
+      for (var i = 0; i < items.length; i++) {
+        var on = items[i].getAttribute('data-sort-key') === key;
+        items[i].classList.toggle('jj-grid__dropdown-item--active', on);
+        items[i].querySelector('.jj-grid__dropdown-check').textContent = on ? 'x' : ' ';
+        items[i].setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+
+      // Badge + button state reflect non-default sort
+      var badge = '';
+      for (var s = 0; s < SORT_OPTIONS.length; s++) {
+        if (SORT_OPTIONS[s].key === key) badge = SORT_OPTIONS[s].badge;
+      }
+      if (sortBadge) sortBadge.textContent = badge ? '(' + badge + ')' : '';
+      sortBtn.classList.toggle('jj-grid__filter-btn--active', key !== 'featured');
+
+      closeAllDropdowns();
+      refilter();
+    });
+
+    sortDropdown.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        var itemEl = e.target.closest('.jj-grid__dropdown-item');
+        if (itemEl) {
+          e.preventDefault();
+          itemEl.click();
+        }
+      }
+    });
   }
 
   // ─── Count Display ─────────────────────────────────────────────
