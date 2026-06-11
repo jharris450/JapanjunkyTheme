@@ -43,7 +43,9 @@
     var v = variant % 4;
     return [
       'html, body, * { cursor: ' + cursorVal('arrow', v) + ' !important; }',
-      'a, button, [role="button"], label, summary, select, .jj-start-btn, .jj-taskbar-tab, .jj-start-menu__item, .jj-start-submenu__item { cursor: ' + cursorVal('hand', v) + ' !important; }',
+      // "a *"/"button *" keep the hand over link/button children (e.g. grid
+      // card canvas + text divs) — the bare "*" arrow rule won on them
+      'a, a *, button, button *, [role="button"], label, summary, select, .jj-start-btn, .jj-taskbar-tab, .jj-start-menu__item, .jj-start-submenu__item { cursor: ' + cursorVal('hand', v) + ' !important; }',
       'input, textarea, [contenteditable="true"] { cursor: ' + cursorVal('text', v) + ' !important; }',
       '.jj-loading, [aria-busy="true"] { cursor: ' + cursorVal('wait', v) + ' !important; }'
     ].join('\n');

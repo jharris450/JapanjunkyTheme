@@ -7,16 +7,17 @@
 {%- endcomment -%}
 <script>
 window.JJ_PRODUCTS = [
-  {% render 'jj-product-json', items: catalog.products, limit: section.settings.products_to_show %}
+  {% render 'jj-product-json', items: catalog.products, limit: section.settings.products_to_show, include_unavailable: true %}
 ];
 {%- if featured != blank and featured.products.size > 0 %}
 window.JJ_FEATURED = [
   {% render 'jj-product-json', items: featured.products, limit: 10 %}
 ];
-{%- comment -%} Curated collection may be entirely sold out — variants are filtered server-side {%- endcomment -%}
-if (!window.JJ_FEATURED.length) window.JJ_FEATURED = window.JJ_PRODUCTS.slice(0, 8);
+{%- comment -%} Curated collection may be entirely sold out — variants are filtered server-side.
+    Fallback filters client-side: JJ_PRODUCTS now includes sold-out variants. {%- endcomment -%}
+if (!window.JJ_FEATURED.length) window.JJ_FEATURED = window.JJ_PRODUCTS.filter(function (p) { return p.available; }).slice(0, 8);
 {%- else %}
-window.JJ_FEATURED = window.JJ_PRODUCTS.slice(0, 8);
+window.JJ_FEATURED = window.JJ_PRODUCTS.filter(function (p) { return p.available; }).slice(0, 8);
 {%- endif %}
 </script>
 

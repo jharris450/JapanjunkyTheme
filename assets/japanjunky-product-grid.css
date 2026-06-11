@@ -86,7 +86,7 @@
 /* --- Grid --- */
 .jj-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px 8px;
   padding: 16px;
 }
@@ -220,6 +220,50 @@
   font-size: 9px;
   color: #555;
   margin-top: 2px;
+}
+
+/* --- Quick Add to Cart --- */
+.jj-grid__card-add {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 2px 0;
+  font-family: inherit;
+  font-size: 10px;
+  text-align: center;
+  color: #888;
+  border: 1px solid #333;
+  background: none;
+}
+
+.jj-grid__card-add:hover {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+}
+
+.jj-grid__card-add:disabled {
+  color: #555;
+  border-color: #222;
+}
+
+/* --- Sold Out --- */
+.jj-grid__card--soldout .jj-grid__card-img-wrap {
+  opacity: 0.45;
+  filter: grayscale(0.7);
+}
+
+.jj-grid__card--soldout .jj-grid__card-price {
+  color: #555; /* static — no strobe on dead stock */
+}
+
+.jj-grid__card-soldout {
+  margin-top: 6px;
+  padding: 2px 0;
+  font-size: 10px;
+  text-align: center;
+  color: #555;
+  border: 1px solid #222;
+  letter-spacing: 1px;
 }
 
 /* --- Empty State --- */

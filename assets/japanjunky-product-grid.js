@@ -289,11 +289,43 @@
     return 'jj-cond-g';
   }
 
+  // Quick add-to-cart (mirrors the viewer's ATC flow)
+  function quickAdd(btn, variantId) {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '[ADDING...]';
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: parseInt(variantId, 10), quantity: 1 })
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('Cart error');
+        return res.json();
+      })
+      .then(function () {
+        btn.textContent = '[OK]';
+        if (window.jjRefreshCart) window.jjRefreshCart();
+        setTimeout(function () {
+          btn.textContent = '[+ CART]';
+          btn.disabled = false;
+        }, 1200);
+      })
+      .catch(function () {
+        btn.textContent = '[ERR]';
+        setTimeout(function () {
+          btn.textContent = '[+ CART]';
+          btn.disabled = false;
+        }, 1200);
+      });
+  }
+
   function createCard(p) {
     var card = document.createElement('a');
     card.className = 'jj-grid__card';
     card.href = '/products/' + encodeURIComponent(p.handle);
     card.setAttribute('data-format', p.format || '');
+    if (!p.available) card.className += ' jj-grid__card--soldout';
 
     var imgWrap = document.createElement('div');
     imgWrap.className = 'jj-grid__card-img-wrap';
@@ -333,6 +365,22 @@
       card.appendChild(textDiv('jj-grid__card-cond ' + getConditionClass(p.condition), p.condition.toUpperCase()));
     }
 
+    if (p.available && p.variantId) {
+      var qa = document.createElement('button');
+      qa.className = 'jj-grid__card-add';
+      qa.type = 'button';
+      qa.textContent = '[+ CART]';
+      qa.setAttribute('aria-label', 'Add ' + p.title + ' to cart');
+      qa.addEventListener('click', function (e) {
+        e.preventDefault();  // button lives inside the card <a> — don't navigate
+        e.stopPropagation();
+        quickAdd(qa, p.variantId);
+      });
+      card.appendChild(qa);
+    } else if (!p.available) {
+      card.appendChild(textDiv('jj-grid__card-soldout', 'SOLD OUT'));
+    }
+
     return card;
   }
 
@@ -354,10 +402,11 @@
   // ─── Filter State ──────────────────────────────────────────────
   var activeFilters = {
     format: {},    // value → true (plain objects as sets for ES5)
-    decade: {},
+    genre: {},
     condition: {}
   };
   var searchQuery = '';
+  var inStockOnly = false;
 
   function setHas(obj, key) { return obj.hasOwnProperty(key); }
   function setAdd(obj, key) { obj[key] = true; }
@@ -370,15 +419,13 @@
     if (setSize(activeFilters.format) > 0) {
       if (!setHas(activeFilters.format, product.format)) return false;
     }
-    if (setSize(activeFilters.decade) > 0) {
-      var year = parseInt(product.year, 10);
-      if (isNaN(year)) return false;
-      var decade = String(Math.floor(year / 10) * 10);
-      if (!setHas(activeFilters.decade, decade)) return false;
+    if (setSize(activeFilters.genre) > 0) {
+      if (!setHas(activeFilters.genre, product.genre)) return false;
     }
     if (setSize(activeFilters.condition) > 0) {
       if (!setHas(activeFilters.condition, product.condition)) return false;
     }
+    if (inStockOnly && !product.available) return false;
     if (searchQuery) {
       var q = searchQuery.toLowerCase();
       var title = (product.title || '').toLowerCase();
@@ -548,7 +595,17 @@
 
   var searchInput = document.getElementById('jj-grid-search');
   var clearBtn = document.getElementById('jj-grid-clear');
+  var inStockBtn = document.getElementById('jj-grid-instock');
   var debounceTimer = null;
+
+  if (inStockBtn) {
+    inStockBtn.addEventListener('click', function () {
+      inStockOnly = !inStockOnly;
+      inStockBtn.classList.toggle('jj-grid__filter-btn--active', inStockOnly);
+      inStockBtn.setAttribute('aria-pressed', inStockOnly ? 'true' : 'false');
+      refilter();
+    });
+  }
 
   if (searchInput) {
     searchInput.addEventListener('input', function () {
@@ -573,9 +630,8 @@
         var val = '';
         if (group === 'format') {
           val = allProducts[p].format;
-        } else if (group === 'decade') {
-          var yr = parseInt(allProducts[p].year, 10);
-          if (!isNaN(yr) && yr >= 1900) val = String(Math.floor(yr / 10) * 10);
+        } else if (group === 'genre') {
+          val = allProducts[p].genre;
         } else if (group === 'condition') {
           val = allProducts[p].condition;
         }
@@ -601,7 +657,6 @@
 
         var lbl = document.createElement('span');
         lbl.textContent = sorted[s].toUpperCase();
-        if (group === 'decade') lbl.textContent = sorted[s] + 's';
 
         item.appendChild(check);
         item.appendChild(lbl);
@@ -675,9 +730,10 @@
   function updateClearBtn() {
     if (!clearBtn) return;
     var hasFilters = setSize(activeFilters.format) > 0 ||
-                     setSize(activeFilters.decade) > 0 ||
+                     setSize(activeFilters.genre) > 0 ||
                      setSize(activeFilters.condition) > 0 ||
-                     searchQuery !== '';
+                     searchQuery !== '' ||
+                     inStockOnly;
     if (hasFilters) {
       clearBtn.classList.add('jj-grid__clear-btn--visible');
     } else {
@@ -688,10 +744,15 @@
   if (clearBtn) {
     clearBtn.addEventListener('click', function () {
       activeFilters.format = {};
-      activeFilters.decade = {};
+      activeFilters.genre = {};
       activeFilters.condition = {};
       searchQuery = '';
       if (searchInput) searchInput.value = '';
+      inStockOnly = false;
+      if (inStockBtn) {
+        inStockBtn.classList.remove('jj-grid__filter-btn--active');
+        inStockBtn.setAttribute('aria-pressed', 'false');
+      }
 
       var items = document.querySelectorAll('.jj-grid__dropdown-item--active');
       for (var i = 0; i < items.length; i++) {
