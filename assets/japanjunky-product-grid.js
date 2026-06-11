@@ -240,6 +240,31 @@
     };
   })();
 
+  // ─── Price Strobe ──────────────────────────────────────────────
+  // Frame-indexed phosphor cycle (cursor palette). Indexing by rendered
+  // frame instead of wall-clock means dropped frames can't alias colors
+  // away — every painted frame shows the next color in sequence.
+  (function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var PALETTE = [
+      '#e8313a', // red
+      '#ffaa00', // amber
+      '#f5d742', // gold
+      '#33ff33', // green
+      '#00e5e5', // cyan
+      '#e040e0'  // magenta
+    ];
+    var FRAMES_PER_COLOR = 2; // ~33ms per color at 60fps
+    var frame = 0;
+    function strobe() {
+      requestAnimationFrame(strobe);
+      frame++;
+      if (frame % FRAMES_PER_COLOR) return;
+      gridEl.style.setProperty('--jj-price-strobe', PALETTE[(frame / FRAMES_PER_COLOR) % PALETTE.length]);
+    }
+    requestAnimationFrame(strobe);
+  })();
+
   // ─── Card Rendering ────────────────────────────────────────────
 
   var filteredProducts = allProducts.slice();

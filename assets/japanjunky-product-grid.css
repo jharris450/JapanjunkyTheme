@@ -196,21 +196,10 @@
 
 .jj-grid__card-price {
   font-size: 12px;
-  color: var(--jj-secondary, #f5d742);
-  /* Rapid phosphor strobe — same palette as the CRT pixel cursor */
-  animation: jj-price-phosphor 0.25s steps(1, end) infinite;
-}
-
-@keyframes jj-price-phosphor {
-  0%   { color: var(--jj-primary, #e8313a); }
-  20%  { color: var(--jj-secondary, #f5d742); }
-  40%  { color: var(--jj-green, #33ff33); }
-  60%  { color: var(--jj-cyan, #00e5e5); }
-  80%  { color: var(--jj-magenta, #e040e0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jj-grid__card-price { animation: none; }
+  /* Phosphor strobe driven frame-by-frame in japanjunky-product-grid.js —
+     CSS keyframes alias to 2 colors when WebGL load drops the frame rate.
+     Falls back to static gold (reduced motion / JS off). */
+  color: var(--jj-price-strobe, var(--jj-secondary, #f5d742));
 }
 
 .jj-grid__card-format {
