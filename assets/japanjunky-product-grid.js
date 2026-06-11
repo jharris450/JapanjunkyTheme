@@ -241,26 +241,30 @@
   })();
 
   // ─── Price Strobe ──────────────────────────────────────────────
-  // Frame-indexed phosphor cycle (cursor palette). Indexing by rendered
-  // frame instead of wall-clock means dropped frames can't alias colors
-  // away — every painted frame shows the next color in sequence.
+  // Sequential phosphor cycle (cursor palette). Advances by index — never
+  // skips a color — once the previous one has held HOLD_MS of wall-clock
+  // time. Frame-count stepping fused colors together on high-refresh
+  // displays; pure CSS keyframes aliased under WebGL frame drops.
   (function () {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Ordered so neighbors contrast hard — no warm/cool runs that blur
     var PALETTE = [
       '#e8313a', // red
-      '#ffaa00', // amber
-      '#f5d742', // gold
-      '#33ff33', // green
       '#00e5e5', // cyan
-      '#e040e0'  // magenta
+      '#f5d742', // gold
+      '#e040e0', // magenta
+      '#33ff33', // green
+      '#ffaa00'  // amber
     ];
-    var FRAMES_PER_COLOR = 2; // ~33ms per color at 60fps
-    var frame = 0;
-    function strobe() {
+    var HOLD_MS = 55; // ~18 colors/s, each distinctly visible
+    var idx = 0;
+    var last = 0;
+    function strobe(now) {
       requestAnimationFrame(strobe);
-      frame++;
-      if (frame % FRAMES_PER_COLOR) return;
-      gridEl.style.setProperty('--jj-price-strobe', PALETTE[(frame / FRAMES_PER_COLOR) % PALETTE.length]);
+      if (now - last < HOLD_MS) return;
+      last = now;
+      idx = (idx + 1) % PALETTE.length;
+      gridEl.style.setProperty('--jj-price-strobe', PALETTE[idx]);
     }
     requestAnimationFrame(strobe);
   })();
