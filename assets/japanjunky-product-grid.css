@@ -227,23 +227,31 @@
   display: block;
   width: 100%;
   margin-top: 6px;
-  padding: 2px 0;
+  padding: 3px 0;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 11px;
   text-align: center;
-  color: #888;
-  border: 1px solid #333;
-  background: none;
+  color: var(--jj-secondary, #f5d742);
+  border: 1px solid var(--jj-secondary, #f5d742);
+  background: rgba(245, 215, 66, 0.08);
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.4);
+  box-shadow: 0 0 6px rgba(245, 215, 66, 0.2);
 }
 
+/* Inverse video on hover — CRT highlight */
 .jj-grid__card-add:hover {
-  color: var(--jj-secondary, #f5d742);
-  border-color: var(--jj-secondary, #f5d742);
+  background: var(--jj-secondary, #f5d742);
+  color: #000;
+  text-shadow: none;
+  box-shadow: 0 0 10px rgba(245, 215, 66, 0.5);
 }
 
 .jj-grid__card-add:disabled {
-  color: #555;
-  border-color: #222;
+  color: #888;
+  border-color: #555;
+  background: none;
+  text-shadow: none;
+  box-shadow: none;
 }
 
 /* --- Sold Out --- */

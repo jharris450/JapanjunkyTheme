@@ -23,16 +23,28 @@
   var reducedMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Taskbar badge icon + the ¥ on the start menu's cart row strobe in sync
+  function strobeTargets() {
+    var els = [];
+    var badge = document.querySelector('#jj-start-btn-cart-badge .jj-start-btn__cart-icon');
+    var menuSym = document.querySelector('.jj-start-menu__cart-symbol');
+    if (badge) els.push(badge);
+    if (menuSym) els.push(menuSym);
+    return els;
+  }
+
   function setBadgeStrobing(on) {
-    var icon = document.querySelector('#jj-start-btn-cart-badge .jj-start-btn__cart-icon');
-    if (!icon) return;
+    var els = strobeTargets();
+    if (!els.length) return;
     if (!on || reducedMotion) {
       if (strobeRaf) {
         cancelAnimationFrame(strobeRaf);
         strobeRaf = null;
       }
-      icon.textContent = '¥';
-      icon.style.color = '';
+      for (var i = 0; i < els.length; i++) {
+        els[i].textContent = '¥';
+        els[i].style.color = '';
+      }
       return;
     }
     if (strobeRaf) return; // already running
@@ -44,9 +56,13 @@
       if (now - last < HOLD_MS) return;
       last = now;
       idx++;
-      icon.style.color = COLORS[idx % COLORS.length];
-      if (idx % TICKS_PER_GLYPH === 0) {
-        icon.textContent = GLYPHS[(idx / TICKS_PER_GLYPH) % GLYPHS.length];
+      var color = COLORS[idx % COLORS.length];
+      var glyph = idx % TICKS_PER_GLYPH === 0
+        ? GLYPHS[(idx / TICKS_PER_GLYPH) % GLYPHS.length]
+        : null;
+      for (var i = 0; i < els.length; i++) {
+        els[i].style.color = color;
+        if (glyph) els[i].textContent = glyph;
       }
     }
     strobeRaf = requestAnimationFrame(tick);
