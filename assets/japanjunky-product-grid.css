@@ -217,10 +217,41 @@
 .jj-grid__card-format[data-format="minidisc"] { color: var(--jj-magenta, #e040e0); border-color: var(--jj-magenta, #e040e0); }
 .jj-grid__card-format[data-format="hardware"] { color: var(--jj-white, #e0e0e0); border-color: var(--jj-white, #e0e0e0); }
 
-.jj-grid__card-cond {
+/* --- Condition Chips (all conditions collapsed onto one card) --- */
+.jj-grid__card-conds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+/* border uses currentColor so it inherits the jj-cond-* condition color */
+.jj-grid__card-cond-chip {
   font-size: 9px;
-  color: #555;
-  margin-top: 2px;
+  padding: 1px 4px;
+  border: 1px solid currentColor;
+  background: none;
+  white-space: nowrap;
+  cursor: default;
+  opacity: 0.55;
+}
+
+.jj-grid__card-cond-chip:hover {
+  opacity: 0.85;
+}
+
+.jj-grid__card-cond-chip--sel {
+  opacity: 1;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* out-of-stock conditions: greyed, struck, not selectable */
+.jj-grid__card-cond-chip--out {
+  color: #444 !important;
+  border-color: #333 !important;
+  text-shadow: none !important;
+  text-decoration: line-through;
+  opacity: 0.5;
 }
 
 /* --- Quick Add to Cart --- */
@@ -239,12 +270,46 @@
   box-shadow: 0 0 6px rgba(245, 215, 66, 0.2);
 }
 
-/* Inverse video on hover — CRT highlight */
+/* Violent shake + color flash on hover — CRT panic highlight */
 .jj-grid__card-add:hover {
   background: var(--jj-secondary, #f5d742);
   color: #000;
   text-shadow: none;
-  box-shadow: 0 0 10px rgba(245, 215, 66, 0.5);
+  animation: jj-add-shake 0.16s steps(2) infinite,
+             jj-add-flash 0.14s steps(1) infinite;
+}
+
+@keyframes jj-add-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, 1px); }
+  20% { transform: translate(2px, -2px); }
+  30% { transform: translate(-2px, -1px); }
+  40% { transform: translate(2px, 2px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -2px); }
+  90% { transform: translate(-1px, 2px); }
+}
+
+@keyframes jj-add-flash {
+  0%, 100% {
+    background: var(--jj-secondary, #f5d742);
+    color: #000;
+    box-shadow: 0 0 14px rgba(245, 215, 66, 0.9);
+  }
+  50% {
+    background: var(--jj-primary, #e8313a);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(232, 49, 58, 0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-grid__card-add:hover {
+    animation: none;
+    box-shadow: 0 0 10px rgba(245, 215, 66, 0.5);
+  }
 }
 
 .jj-grid__card-add:disabled {

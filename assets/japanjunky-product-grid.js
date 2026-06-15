@@ -271,7 +271,55 @@
 
   // ─── Card Rendering ────────────────────────────────────────────
 
-  var filteredProducts = allProducts.slice();
+  // Collapse per-condition variant entries into one card per product.
+  // JJ_PRODUCTS has one entry per variant (each variant = a condition);
+  // group by product id so each title shows once carrying all conditions.
+  function buildCards(variants) {
+    var byId = {};
+    var order = [];
+    for (var i = 0; i < variants.length; i++) {
+      var v = variants[i];
+      var key = v.id;
+      if (!byId[key]) {
+        var card = {};
+        for (var k in v) { if (v.hasOwnProperty(k)) card[k] = v[k]; }
+        card.conditions = [];
+        card.available = false;
+        byId[key] = card;
+        order.push(key);
+      }
+      var c = byId[key];
+      c.conditions.push({
+        condition: v.condition,
+        variantId: v.variantId,
+        available: v.available,
+        price: v.price,
+        priceCents: v.priceCents
+      });
+      if (v.available) c.available = true;
+    }
+    // Representative price for sort/strobe: cheapest in-stock, else cheapest
+    var cards = [];
+    for (var o = 0; o < order.length; o++) {
+      var cc = byId[order[o]];
+      var best = null;
+      for (var j = 0; j < cc.conditions.length; j++) {
+        var cond = cc.conditions[j];
+        if (typeof cond.priceCents !== 'number') continue;
+        var pref = cond.available ? 0 : 1;
+        if (best === null || pref < best.pref ||
+            (pref === best.pref && cond.priceCents < best.priceCents)) {
+          best = { pref: pref, priceCents: cond.priceCents, price: cond.price };
+        }
+      }
+      if (best) { cc.priceCents = best.priceCents; cc.price = best.price; }
+      cards.push(cc);
+    }
+    return cards;
+  }
+
+  var allCards = buildCards(allProducts);
+  var filteredProducts = allCards.slice();
 
   function textDiv(className, text) {
     var d = document.createElement('div');
@@ -351,7 +399,8 @@
 
     var row = document.createElement('div');
     row.className = 'jj-grid__card-row';
-    row.appendChild(textDiv('jj-grid__card-price', p.price));
+    var priceEl = textDiv('jj-grid__card-price', p.price);
+    row.appendChild(priceEl);
     if (p.format) {
       var badge = document.createElement('span');
       badge.className = 'jj-grid__card-format';
@@ -361,11 +410,66 @@
     }
     card.appendChild(row);
 
-    if (p.condition && p.condition !== 'n/a') {
-      card.appendChild(textDiv('jj-grid__card-cond ' + getConditionClass(p.condition), p.condition.toUpperCase()));
+    // ─── Condition chips ─────────────────────────────────────────
+    // All conditions shown together. In-stock = colored + selectable,
+    // out-of-stock = greyed + struck. Selecting drives which variant the
+    // add button buys and which price the row shows.
+    var conds = p.conditions || [];
+    var selected = null;
+    for (var s = 0; s < conds.length; s++) {
+      if (conds[s].available) { selected = conds[s]; break; }
     }
 
-    if (p.available && p.variantId) {
+    // Skip placeholder 'n/a' conditions (hardware etc. have no grade)
+    var showConds = [];
+    for (var sc = 0; sc < conds.length; sc++) {
+      var cv = (conds[sc].condition || '').toLowerCase();
+      if (cv && cv !== 'n/a') showConds.push(conds[sc]);
+    }
+
+    if (showConds.length) {
+      var condWrap = document.createElement('div');
+      condWrap.className = 'jj-grid__card-conds';
+      for (var ci = 0; ci < showConds.length; ci++) {
+        (function (cond) {
+          var chip = document.createElement('span');
+          chip.className = 'jj-grid__card-cond-chip ' + getConditionClass(cond.condition);
+          chip.textContent = (cond.condition || '').toUpperCase();
+          chip.setAttribute('role', 'radio');
+          if (!cond.available) {
+            chip.className += ' jj-grid__card-cond-chip--out';
+            chip.setAttribute('aria-disabled', 'true');
+            chip.setAttribute('aria-checked', 'false');
+          } else {
+            chip.setAttribute('tabindex', '0');
+            var isSel = cond === selected;
+            if (isSel) chip.className += ' jj-grid__card-cond-chip--sel';
+            chip.setAttribute('aria-checked', isSel ? 'true' : 'false');
+            var selectChip = function (e) {
+              if (e) { e.preventDefault(); e.stopPropagation(); }
+              selected = cond;
+              priceEl.textContent = cond.price;
+              var chips = condWrap.querySelectorAll('.jj-grid__card-cond-chip');
+              for (var x = 0; x < chips.length; x++) {
+                chips[x].classList.remove('jj-grid__card-cond-chip--sel');
+                chips[x].setAttribute('aria-checked', 'false');
+              }
+              chip.classList.add('jj-grid__card-cond-chip--sel');
+              chip.setAttribute('aria-checked', 'true');
+            };
+            chip.addEventListener('click', selectChip);
+            chip.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter' || e.key === ' ') selectChip(e);
+            });
+          }
+          condWrap.appendChild(chip);
+        })(showConds[ci]);
+      }
+      card.appendChild(condWrap);
+    }
+
+    if (selected) {
+      priceEl.textContent = selected.price; // show the chosen condition's price
       var qa = document.createElement('button');
       qa.className = 'jj-grid__card-add';
       qa.type = 'button';
@@ -374,10 +478,10 @@
       qa.addEventListener('click', function (e) {
         e.preventDefault();  // button lives inside the card <a> — don't navigate
         e.stopPropagation();
-        quickAdd(qa, p.variantId);
+        quickAdd(qa, selected.variantId); // selected updates as chips are clicked
       });
       card.appendChild(qa);
-    } else if (!p.available) {
+    } else {
       card.appendChild(textDiv('jj-grid__card-soldout', 'SOLD OUT'));
     }
 
@@ -423,7 +527,14 @@
       if (!setHas(activeFilters.genre, product.genre)) return false;
     }
     if (setSize(activeFilters.condition) > 0) {
-      if (!setHas(activeFilters.condition, product.condition)) return false;
+      var condMatch = false;
+      for (var ci = 0; ci < product.conditions.length; ci++) {
+        if (setHas(activeFilters.condition, product.conditions[ci].condition)) {
+          condMatch = true;
+          break;
+        }
+      }
+      if (!condMatch) return false;
     }
     if (inStockOnly && !product.available) return false;
     if (searchQuery) {
@@ -437,9 +548,9 @@
 
   function refilter() {
     filteredProducts = [];
-    for (var i = 0; i < allProducts.length; i++) {
-      if (matchesFilters(allProducts[i])) {
-        filteredProducts.push(allProducts[i]);
+    for (var i = 0; i < allCards.length; i++) {
+      if (matchesFilters(allCards[i])) {
+        filteredProducts.push(allCards[i]);
       }
     }
     applySort();
@@ -584,10 +695,10 @@
 
   function updateCount() {
     if (!countEl) return;
-    if (filteredProducts.length === allProducts.length) {
-      countEl.textContent = allProducts.length + ' ITEMS';
+    if (filteredProducts.length === allCards.length) {
+      countEl.textContent = allCards.length + ' ITEMS';
     } else {
-      countEl.textContent = filteredProducts.length + ' OF ' + allProducts.length + ' ITEMS';
+      countEl.textContent = filteredProducts.length + ' OF ' + allCards.length + ' ITEMS';
     }
   }
 
