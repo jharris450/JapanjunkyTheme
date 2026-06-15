@@ -132,16 +132,33 @@
       '}'
     ].join('\n');
 
-    var material = new THREE.ShaderMaterial({
+    // Front + back planes (mirrors japanjunky-product-viewer.js): the back
+    // plane is flipped 180° so a card's 2nd image rides the reverse face.
+    // Both materials are shared and swapped per-card before each render.
+    var frontMat = new THREE.ShaderMaterial({
       uniforms: {
         uResolution: { value: shaderRes },
         uTexture: { value: null }
       },
       vertexShader: PS1_VERT,
       fragmentShader: PS1_FRAG,
-      side: THREE.DoubleSide
+      side: THREE.FrontSide
     });
-    var mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), material);
+    var backMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: shaderRes },
+        uTexture: { value: null }
+      },
+      vertexShader: PS1_VERT,
+      fragmentShader: PS1_FRAG,
+      side: THREE.FrontSide
+    });
+    var mesh = new THREE.Group();
+    var frontMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), frontMat);
+    var backMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 2.0), backMat);
+    backMesh.rotation.y = Math.PI;
+    mesh.add(frontMesh);
+    mesh.add(backMesh);
     scene.add(mesh);
 
     // Pure turntable spin — no tilt sway or bob (split from the viewer's
@@ -206,8 +223,11 @@
       for (var i = 0; i < cards.length; i++) {
         var c = cards[i];
         if (!c.visible) continue;
-        if (!c.tex.image || !c.tex.image.width) continue; // texture still loading
-        material.uniforms.uTexture.value = c.tex;
+        if (!c.frontTex.image || !c.frontTex.image.width) continue; // texture still loading
+        frontMat.uniforms.uTexture.value = c.frontTex;
+        // Back falls back to the front image until/unless a 2nd image loads
+        var bt = (c.backTex.image && c.backTex.image.width) ? c.backTex : c.frontTex;
+        backMat.uniforms.uTexture.value = bt;
         renderer.render(scene, camera);
         c.ctx.clearRect(0, 0, SIZE, SIZE);
         c.ctx.drawImage(glCanvas, 0, 0);
@@ -215,16 +235,18 @@
     }
 
     return {
-      attach: function (wrap, url, label) {
+      attach: function (wrap, url, backUrl, label) {
         var cv = document.createElement('canvas');
         cv.className = 'jj-grid__card-canvas';
         cv.width = SIZE;
         cv.height = SIZE;
         cv.setAttribute('role', 'img');
         cv.setAttribute('aria-label', label);
+        var frontTex = getTexture(url);
         var card = {
           ctx: cv.getContext('2d'),
-          tex: getTexture(url),
+          frontTex: frontTex,
+          backTex: backUrl ? getTexture(backUrl) : frontTex, // default to 1st image
           visible: false
         };
         cv._jjSpinCard = card;
@@ -379,7 +401,7 @@
     imgWrap.className = 'jj-grid__card-img-wrap';
     var alt = (p.artist ? p.artist + ' - ' : '') + p.title;
     if (p.image && spinEngine) {
-      spinEngine.attach(imgWrap, p.image, alt);
+      spinEngine.attach(imgWrap, p.image, p.imageBack, alt);
     } else if (p.image) {
       var img = document.createElement('img');
       img.className = 'jj-grid__card-img';
