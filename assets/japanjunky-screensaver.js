@@ -630,15 +630,17 @@
     reactionStyle: ['shy', 'curious', 'lazy', 'playful', 'curious', 'playful', 'shy'],
     // Visual: glow alpha multiplier
     glowMult: [0.6, 1.1, 0.7, 1.0, 1.0, 1.2, 0.8],
-    // Visual: tint vec3 [r, g, b]
+    // Visual: tint vec3 [r, g, b]. Spread across the approved phosphor
+    // palette so each day reads as a distinct emotion (cyan stays reserved
+    // for the CD format indicator — never used here).
     tint: [
-      [0.85, 0.15, 0.15],  // shy — faint red
-      [1.0,  0.25, 0.1],   // curious — warm orange
-      [0.9,  0.18, 0.08],  // lazy — muted base
-      [1.0,  0.35, 0.05],  // mischievous — amber
-      [1.0,  0.2,  0.08],  // watchful — base tint
-      [1.0,  0.3,  0.1],   // energetic — bright warm
-      [0.8,  0.15, 0.2]    // dreamy — cooler purple-ish
+      [0.70, 0.10, 0.12],  // Sun shy        — faint dim red, withdrawn
+      [1.0,  0.45, 0.12],  // Mon curious    — bright warm amber-orange
+      [0.55, 0.16, 0.08],  // Tue lazy       — muted low-energy ember
+      [0.95, 0.20, 0.65],  // Wed mischievous— magenta
+      [0.35, 0.95, 0.30],  // Thu watchful   — green phosphor
+      [1.0,  0.78, 0.15],  // Fri energetic  — bright gold
+      [0.55, 0.30, 0.88]   // Sat dreamy     — soft cool purple
     ],
     // Visual: bob amplitude
     bobAmp:  [0.08, 0.18, 0.1,  0.2,  0.15, 0.25, 0.12],
@@ -780,15 +782,20 @@
       return;
     }
 
-    // Before first product selection: simple idle bob at fixed position
+    // Before first product selection: gentle idle bob at the fixed idle
+    // position — but flavored by the day's mood (tint/glow/bob/sway/tilt)
+    // so the daily personality reads immediately, before Tsuno roams.
     if (!tsunoActivated) {
+      var im = tsunoMoodIdx;
+      var iTint = TSUNO_MOODS.tint[im];
       tsunoMesh.scale.set(-1, 1, 1);
-      var bobY = Math.sin(t * 0.8 * 2 * Math.PI) * 0.03;
-      tsunoMesh.position.x = TSUNO_IDLE_POS.x;
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + bobY;
+      tsunoMesh.position.x = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
+      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
-      tsunoMesh.material.uniforms.uAlpha.value = 0.8;
+      tsunoMesh.material.uniforms.uTint.value.set(iTint[0], iTint[1], iTint[2]);
+      tsunoMesh.material.uniforms.uAlpha.value = 0.8 * TSUNO_MOODS.glowMult[im];
       tsunoMesh.lookAt(camera.position);
+      tsunoMesh.rotateZ(TSUNO_MOODS.baseTilt[im]);
       return;
     }
 
