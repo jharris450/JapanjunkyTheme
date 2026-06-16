@@ -606,6 +606,10 @@
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
   var tsunoLoginPageMode = config.cameraPreset === 'login';
+  // Storefront pages (collection / search / list / cart): no hero scroll to
+  // fire jj:tsuno-wake, so engage the personality system on load like the
+  // product page does — Tsuno should be awake and moving, not dormant idle.
+  var tsunoStorefrontMode = config.tsunoActive === true;
   var TSUNO_PRODUCT_POS = { x: 2.5, y: -0.5, z: 8 };
   var TSUNO_LOGIN_POS = { x: 0, y: 0.5, z: 3 };
   var tsunoLastFlipTime = 0;
@@ -1163,7 +1167,7 @@
         tsunoMesh.scale.set(-3.5, 3.5, 1);
         tsunoMesh.position.set(TSUNO_LOGIN_POS.x, TSUNO_LOGIN_POS.y, TSUNO_LOGIN_POS.z);
         tsunoMesh.material.uniforms.uAlpha.value = 0.6;
-      } else if (tsunoProductPageMode) {
+      } else if (tsunoProductPageMode || tsunoStorefrontMode) {
         tsunoActivated = true;
         var tInit = performance.now() * 0.001;
         startBehavior(tInit, pickNextBehavior(tsunoMoodIdx, 0));

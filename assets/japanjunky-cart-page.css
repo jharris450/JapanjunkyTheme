@@ -1,5 +1,7 @@
 /* ─── Cart page ─────────────────────────────────────────────── */
-.jj-cart { padding: 16px; max-width: 900px; margin: 0 auto; }
+/* padding-bottom clears the fixed 32px taskbar (overrides .jj-page, which
+   loads earlier — same element, both classes). */
+.jj-cart { padding: 16px 16px 40px; max-width: 900px; margin: 0 auto; }
 .jj-cart__title { margin: 0 0 16px; }
 .jj-cart__items { list-style: none; margin: 0; padding: 0; }
 .jj-cart__item {

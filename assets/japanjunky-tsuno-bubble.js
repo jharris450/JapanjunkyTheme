@@ -22,6 +22,15 @@
     return;
   }
 
+  // ─── Guard: skip greeting on storefront pages ──────────────
+  // Collection/search/list/cart show Tsuno awake + moving (personality
+  // engaged on load); the homepage-only "Welcome!" bubble would otherwise
+  // hang on screen while he roams.
+  if (window.JJ_SCREENSAVER_CONFIG &&
+      window.JJ_SCREENSAVER_CONFIG.tsunoActive === true) {
+    return;
+  }
+
   // ─── Config ─────────────────────────────────────────────────
   var JP_TEXT = 'いらっしゃいませ';
   var EN_TEXT = 'Welcome!';

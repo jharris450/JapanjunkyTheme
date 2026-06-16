@@ -553,13 +553,16 @@
   z-index: 100; /* above scene (0) + hero furniture (50), below start menu (2000) */
   overflow-y: auto;
   background: rgba(0, 0, 0, 0.85);
-  padding: 16px 16px 40px; /* bottom clears the fixed 32px taskbar */
+  /* top:0 so the sticky grid bar pins flush to the viewport top with no gap;
+     headers add their own top spacing. bottom clears the fixed 32px taskbar. */
+  padding: 0 16px 40px;
   color: var(--jj-text, #e0d5c0);
 }
 
 .jj-collection__header,
 .jj-search__header,
 .jj-collist__header {
+  padding-top: 16px;
   margin-bottom: 16px;
 }
 

@@ -3,7 +3,13 @@
   the shared grid. Non-product result types (pages, articles) are excluded.
 {%- endcomment -%}
 <div class="jj-page jj-search">
-  {%- assign product_results = search.results | where: 'object_type', 'product' -%}
+  {%- comment -%}
+    type=product (hidden field below) already restricts search.results to
+    products, so we feed search.results straight to the grid. Non-product
+    drops, if any, carry no .variants and are skipped by jj-product-json.
+    (The old `where: 'object_type','product'` filter silently returned empty
+    on this store — products never reached the grid.)
+  {%- endcomment -%}
   <header class="jj-search__header">
     <form action="{{ routes.search_url }}" method="get" role="search" class="jj-search__form">
       <input type="hidden" name="type" value="product">
@@ -13,14 +19,14 @@
       <button class="jj-action-btn" type="submit">[SEARCH]</button>
     </form>
     {%- if search.performed -%}
-      <div class="jj-search__count">{{ product_results.size }} result(s) for "{{ search.terms | escape }}"</div>
+      <div class="jj-search__count">{{ search.results.size }} result(s) for "{{ search.terms | escape }}"</div>
     {%- endif -%}
   </header>
 
-  {%- if search.performed and product_results.size > 0 -%}
+  {%- if search.performed and search.results.size > 0 -%}
     <script>
       window.JJ_PRODUCTS = [
-        {% render 'jj-product-json', items: product_results, limit: 50, include_unavailable: true %}
+        {% render 'jj-product-json', items: search.results, limit: 50, include_unavailable: true %}
       ];
     </script>
     {% render 'jj-grid-bar' %}
