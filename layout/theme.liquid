@@ -193,7 +193,20 @@
 
   {%- comment -%} Shopify content_for_layout — homepage outputs JJ_PRODUCTS JSON, other pages render normally {%- endcomment -%}
   <main id="MainContent" role="main"{% if template == 'index' %} style="display:none;"{% endif %}>
-    {{ content_for_layout }}
+    {%- comment -%} Shop policies (/policies/*) can't take a section/template — wrap
+        their render in the .jj-page scroll-layer + prose so they sit above the
+        scene and read as CRT, like the other content pages. {%- endcomment -%}
+    {%- if template == 'policy' -%}
+      <div class="jj-page jj-content jj-prose">
+        <header class="jj-content__header">
+          <span class="jj-content__prompt">C:\&gt;</span>
+          <h1 class="jj-content__title">{{ page_title }}</h1>
+        </header>
+        {{ content_for_layout }}
+      </div>
+    {%- else -%}
+      {{ content_for_layout }}
+    {%- endif -%}
   </main>
 
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
