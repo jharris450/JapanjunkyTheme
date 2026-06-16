@@ -1,0 +1,36 @@
+{%- comment -%}
+  Search results page: emits product results as window.JJ_PRODUCTS, reuses
+  the shared grid. Non-product result types (pages, articles) are excluded.
+{%- endcomment -%}
+<div class="jj-page jj-search">
+  <header class="jj-search__header">
+    <form action="{{ routes.search_url }}" method="get" role="search" class="jj-search__form">
+      <span class="jj-grid__search-prompt">&gt;</span>
+      <input class="jj-search__input" type="search" name="q" value="{{ search.terms | escape }}"
+             placeholder="SEARCH..." autocomplete="off">
+      <button class="jj-action-btn" type="submit">[SEARCH]</button>
+    </form>
+    {%- if search.performed -%}
+      <div class="jj-search__count">{{ search.results_count }} result(s) for "{{ search.terms | escape }}"</div>
+    {%- endif -%}
+  </header>
+
+  {%- if search.performed and search.results_count > 0 -%}
+    <script>
+      window.JJ_PRODUCTS = [
+        {%- assign product_results = search.results | where: 'object_type', 'product' -%}
+        {% render 'jj-product-json', items: product_results, limit: 250, include_unavailable: true %}
+      ];
+    </script>
+    {% render 'jj-grid-bar' %}
+  {%- elsif search.performed -%}
+    <div class="jj-empty">
+      <pre class="jj-empty__art">  (no results)  </pre>
+      <p class="jj-empty__msg">Nothing matched. <a href="/collections/all">Browse the catalog</a>.</p>
+    </div>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Search", "settings": [] }
+{% endschema %}
