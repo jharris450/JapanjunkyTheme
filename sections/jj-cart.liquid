@@ -1,0 +1,56 @@
+{%- comment -%}
+  Cart page. Works without JS as a standard /cart form POST; progressively
+  enhanced by japanjunky-cart-page.js (AJAX qty/remove + start-menu sync).
+{%- endcomment -%}
+<script>window.JJ_MONEY_FORMAT = {{ shop.money_format | json }};</script>
+<div class="jj-page jj-cart">
+  <header class="jj-cart__header"><h1 class="jj-cart__title">CART</h1></header>
+
+  {%- if cart.item_count == 0 -%}
+    <div class="jj-empty">
+      <pre class="jj-empty__art" aria-hidden="true">  [ cart empty ]  </pre>
+      <p class="jj-empty__msg"><a href="/collections/all">Browse the catalog</a>.</p>
+    </div>
+  {%- else -%}
+    <form action="{{ routes.cart_url }}" method="post" id="jj-cart-form" class="jj-cart__form">
+      <ul class="jj-cart__items">
+        {%- for item in cart.items -%}
+          <li class="jj-cart__item" data-line="{{ forloop.index }}" data-key="{{ item.key }}">
+            <a class="jj-cart__thumb" href="{{ item.url }}">
+              {%- if item.image -%}
+                <img src="{{ item.image | image_url: width: 160 }}" alt="{{ item.product.title | escape }}" loading="lazy">
+              {%- endif -%}
+            </a>
+            <div class="jj-cart__info">
+              <a class="jj-cart__name" href="{{ item.url }}">{{ item.product.title }}</a>
+              {%- assign artist = item.product.metafields.custom.artist -%}
+              {%- assign format = item.product.metafields.custom.format -%}
+              {%- if artist != blank -%}<span class="jj-cart__meta">{{ artist }}</span>{%- endif -%}
+              {%- if format != blank -%}<span class="jj-cart__meta">{{ format }}</span>{%- endif -%}
+              <span class="jj-cart__unit">{{ item.price | money }}</span>
+            </div>
+            <div class="jj-cart__qty">
+              <button class="jj-cart__step" type="button" data-step="-1" aria-label="Decrease quantity of {{ item.product.title | escape }}">[-]</button>
+              <input class="jj-cart__qty-input" type="number" min="0" name="updates[]"
+                     value="{{ item.quantity }}" aria-label="Quantity of {{ item.product.title | escape }}">
+              <button class="jj-cart__step" type="button" data-step="1" aria-label="Increase quantity of {{ item.product.title | escape }}">[+]</button>
+            </div>
+            <span class="jj-cart__line-total">{{ item.final_line_price | money }}</span>
+            <a class="jj-cart__remove" href="{{ item.url_to_remove }}" aria-label="Remove {{ item.product.title | escape }}">[x]</a>
+          </li>
+        {%- endfor -%}
+      </ul>
+
+      <div class="jj-cart__footer">
+        <div class="jj-cart__subtotal">SUBTOTAL: <span id="jj-cart-subtotal">{{ cart.total_price | money }}</span></div>
+        <p class="jj-cart__note">Taxes and shipping calculated at checkout.</p>
+        <button class="jj-action-btn" type="submit" name="update">[Update]</button>
+        <button class="jj-action-btn jj-cart__checkout" type="submit" name="checkout">[CHECKOUT]</button>
+      </div>
+    </form>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Cart", "settings": [] }
+{% endschema %}

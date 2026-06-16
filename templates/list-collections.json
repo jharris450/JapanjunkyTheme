@@ -1,0 +1,6 @@
+{
+  "sections": {
+    "main": { "type": "jj-collections-list" }
+  },
+  "order": ["main"]
+}

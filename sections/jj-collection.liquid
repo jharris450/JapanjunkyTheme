@@ -1,0 +1,30 @@
+{%- comment -%}
+  Collection page: emits the collection's products as window.JJ_PRODUCTS,
+  then renders the shared grid (japanjunky-product-grid.js, standalone mode).
+{%- endcomment -%}
+<div class="jj-page jj-collection">
+  <header class="jj-collection__header">
+    <h1 class="jj-collection__title">{{ collection.title }}</h1>
+    {%- if collection.description != blank -%}
+      <div class="jj-collection__desc">{{ collection.description }}</div>
+    {%- endif -%}
+  </header>
+
+  {%- if collection.products.size > 0 -%}
+    <script>
+      window.JJ_PRODUCTS = [
+        {% render 'jj-product-json', items: collection.products, limit: 50, include_unavailable: true %}
+      ];
+    </script>
+    {% render 'jj-grid-bar' %}
+  {%- else -%}
+    <div class="jj-empty">
+      <pre class="jj-empty__art" aria-hidden="true">  [ empty ]  </pre>
+      <p class="jj-empty__msg">No items in this collection yet. <a href="/collections/all">Browse all</a>.</p>
+    </div>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Collection", "settings": [] }
+{% endschema %}

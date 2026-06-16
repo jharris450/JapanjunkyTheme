@@ -1,0 +1,31 @@
+{%- comment -%}
+  Shared product-grid bar + grid container. Used by the homepage hero grid
+  screen, collection pages, and search pages. Consumes window.JJ_PRODUCTS
+  (set by the including template) via assets/japanjunky-product-grid.js.
+{%- endcomment -%}
+<div class="jj-grid__bar">
+  <div class="jj-grid__search-wrap">
+    <span class="jj-grid__search-prompt">&gt;</span>
+    <input class="jj-grid__search" id="jj-grid-search" type="text" placeholder="SEARCH..." autocomplete="off">
+  </div>
+  <button class="jj-grid__filter-btn" data-filter-group="format" type="button">
+    [FORMAT]<span class="jj-grid__filter-badge"></span>
+    <div class="jj-grid__dropdown" id="jj-grid-dropdown-format"></div>
+  </button>
+  <button class="jj-grid__filter-btn" data-filter-group="genre" type="button">
+    [GENRE]<span class="jj-grid__filter-badge"></span>
+    <div class="jj-grid__dropdown" id="jj-grid-dropdown-genre"></div>
+  </button>
+  <button class="jj-grid__filter-btn" data-filter-group="condition" type="button">
+    [CONDITION]<span class="jj-grid__filter-badge"></span>
+    <div class="jj-grid__dropdown" id="jj-grid-dropdown-condition"></div>
+  </button>
+  <button class="jj-grid__filter-btn" id="jj-grid-instock" type="button" aria-pressed="false">[IN STOCK]</button>
+  <button class="jj-grid__clear-btn" id="jj-grid-clear" type="button">[CLEAR]</button>
+  <button class="jj-grid__filter-btn" id="jj-grid-sort-btn" type="button">
+    [SORT]<span class="jj-grid__filter-badge" id="jj-grid-sort-badge"></span>
+    <div class="jj-grid__dropdown" id="jj-grid-dropdown-sort"></div>
+  </button>
+  <span class="jj-grid__count" id="jj-grid-count"></span>
+</div>
+<div class="jj-grid" id="jj-grid"></div>

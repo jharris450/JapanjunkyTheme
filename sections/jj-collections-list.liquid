@@ -1,0 +1,32 @@
+{%- comment -%}
+  Lists all storefront collections as CRT cards linking to each collection.
+  Pure Liquid + CSS, no JS.
+{%- endcomment -%}
+<div class="jj-page jj-collist">
+  <header class="jj-collist__header">
+    <h1 class="jj-collist__title">COLLECTIONS</h1>
+  </header>
+  <div class="jj-collist__grid">
+    {%- for collection in collections -%}
+      {%- unless collection.handle == 'frontpage' -%}
+        <a href="{{ collection.url }}" class="jj-collist__card">
+          <div class="jj-collist__thumb">
+            {%- if collection.image -%}
+              <img src="{{ collection.image | image_url: width: 400 }}" alt="{{ collection.title | escape }}" loading="lazy">
+            {%- elsif collection.products.first.featured_image -%}
+              <img src="{{ collection.products.first.featured_image | image_url: width: 400 }}" alt="{{ collection.title | escape }}" loading="lazy">
+            {%- else -%}
+              <span class="jj-collist__thumb-ascii">[ ? ]</span>
+            {%- endif -%}
+          </div>
+          <span class="jj-collist__name">{{ collection.title }}</span>
+          <span class="jj-collist__count">{{ collection.all_products_count }} items</span>
+        </a>
+      {%- endunless -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{ "name": "Collections List", "settings": [] }
+{% endschema %}
