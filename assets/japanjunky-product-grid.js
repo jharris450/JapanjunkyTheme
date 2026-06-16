@@ -10,9 +10,9 @@
 
   var allProducts = window.JJ_PRODUCTS || [];
 
-  var scroll = document.getElementById('jj-scroll');
+  var scroll = document.getElementById('jj-scroll'); // null on standalone (collection/search) pages
   var gridEl = document.getElementById('jj-grid');
-  if (!scroll || !gridEl) return;
+  if (!gridEl) return; // grid is required; hero (#jj-scroll) is homepage-only
 
   // ─── Wheel Scroll (seamless hero ↔ grid, eased) ────────────────
   // All homepage wheel input (hero AND grid) runs through one eased
@@ -55,35 +55,37 @@
     startScrollAnim();
   }
 
-  var indicator = document.getElementById('jj-scroll-indicator');
-  if (indicator) indicator.addEventListener('click', toGrid);
+  if (scroll) {
+    var indicator = document.getElementById('jj-scroll-indicator');
+    if (indicator) indicator.addEventListener('click', toGrid);
 
-  document.addEventListener('wheel', function (e) {
-    if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
-    if (e.target.closest('.jj-ring__cover')) return;           // ring rotation owns covers only
-    if (e.target.closest('.jj-grid__dropdown')) return;        // dropdown scrolls natively
-    if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
-    e.preventDefault(); // we drive the wrapper ourselves — no native double-scroll
-    var delta = e.deltaY;
-    if (e.deltaMode === 1) delta *= 16;        // line mode (Firefox)
-    else if (e.deltaMode === 2) delta *= scroll.clientHeight; // page mode
-    if (!scrollAnimating) scrollTarget = scroll.scrollTop; // resync after native moves
-    scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget + delta));
-    startScrollAnim();
-  }, { passive: false });
+    document.addEventListener('wheel', function (e) {
+      if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
+      if (e.target.closest('.jj-ring__cover')) return;           // ring rotation owns covers only
+      if (e.target.closest('.jj-grid__dropdown')) return;        // dropdown scrolls natively
+      if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
+      e.preventDefault(); // we drive the wrapper ourselves — no native double-scroll
+      var delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 16;        // line mode (Firefox)
+      else if (e.deltaMode === 2) delta *= scroll.clientHeight; // page mode
+      if (!scrollAnimating) scrollTarget = scroll.scrollTop; // resync after native moves
+      scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget + delta));
+      startScrollAnim();
+    }, { passive: false });
 
-  // ─── Hero UI Fade + Tsuno wake ─────────────────────────────────
-  var tsunoWoken = false;
-  scroll.addEventListener('scroll', function () {
-    var active = scroll.scrollTop > scroll.clientHeight * 0.5;
-    document.body.classList.toggle('jj-grid-active', active);
-    // First time the grid takes over, wake Tsuno's personality system
-    // (mirrors a ring-product selection). Fires once per page load.
-    if (active && !tsunoWoken) {
-      tsunoWoken = true;
-      document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
-    }
-  }, { passive: true });
+    // ─── Hero UI Fade + Tsuno wake ─────────────────────────────────
+    var tsunoWoken = false;
+    scroll.addEventListener('scroll', function () {
+      var active = scroll.scrollTop > scroll.clientHeight * 0.5;
+      document.body.classList.toggle('jj-grid-active', active);
+      // First time the grid takes over, wake Tsuno's personality system
+      // (mirrors a ring-product selection). Fires once per page load.
+      if (active && !tsunoWoken) {
+        tsunoWoken = true;
+        document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
+      }
+    }, { passive: true });
+  }
 
   // ─── Spinning Cover Engine ─────────────────────────────────────
   // Same idle spin as the hero 3D viewer (japanjunky-product-viewer.js):
