@@ -91,8 +91,6 @@
 }
 .jj-prose pre { padding: 8px; overflow-x: auto; }
 
-.jj-prose img { max-width: 100%; height: auto; }
-
 .jj-prose table {
   border-collapse: collapse;
   width: 100%;
@@ -128,6 +126,7 @@
 .jj-field__input:focus {
   outline: none;
   border-color: var(--jj-secondary, #f5d742);
+  box-shadow: 0 0 6px rgba(245, 215, 66, 0.4);
 }
 .jj-field__textarea { resize: vertical; }
 
@@ -153,7 +152,7 @@
   background: #050505;
 }
 .jj-faq__q {
-  cursor: pointer;
+  cursor: crosshair;
   padding: 10px 12px;
   color: var(--jj-secondary, #f5d742);
   font-size: 13px;
