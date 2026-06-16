@@ -224,6 +224,13 @@
     }
   });
 
+  // ─── Early dissolve on scroll-to-grid wake ──────────────────
+  document.addEventListener('jj:tsuno-wake', function () {
+    if (phase !== 'done' && !dissolved) {
+      dissolve();
+    }
+  });
+
   // ─── Init ───────────────────────────────────────────────────
   // Wait for JJ_Portal to be available, then start
   function waitAndStart() {

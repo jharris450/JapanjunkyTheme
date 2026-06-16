@@ -1391,6 +1391,22 @@
     }
   }
 
+  // ─── Wake on scroll to grid ───────────────────────────────────
+  // The grid scroll handler dispatches jj:tsuno-wake the first time the
+  // user reaches the grid. Treat it like a first product selection: engage
+  // the personality system with a deliberate "peek" wake gesture. No-op if
+  // Tsuno is already activated, not idle, or on the product/login pages.
+  document.addEventListener('jj:tsuno-wake', function () {
+    if (!tsunoMesh || tsunoState !== 'idle') return;
+    if (tsunoProductPageMode || tsunoLoginPageMode) return;
+    if (tsunoActivated) return;
+
+    tsunoActivated = true;
+    var t = performance.now() * 0.001;
+    startBehavior(t, 1);   // 1 = peek — the wake gesture
+    tsunoPulseStart = t;   // immediate arrival-pulse pop for emphasis
+  });
+
   function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
