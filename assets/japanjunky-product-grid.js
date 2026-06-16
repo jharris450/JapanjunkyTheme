@@ -72,10 +72,17 @@
     startScrollAnim();
   }, { passive: false });
 
-  // ─── Hero UI Fade ──────────────────────────────────────────────
+  // ─── Hero UI Fade + Tsuno wake ─────────────────────────────────
+  var tsunoWoken = false;
   scroll.addEventListener('scroll', function () {
     var active = scroll.scrollTop > scroll.clientHeight * 0.5;
     document.body.classList.toggle('jj-grid-active', active);
+    // First time the grid takes over, wake Tsuno's personality system
+    // (mirrors a ring-product selection). Fires once per page load.
+    if (active && !tsunoWoken) {
+      tsunoWoken = true;
+      document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
+    }
   }, { passive: true });
 
   // ─── Spinning Cover Engine ─────────────────────────────────────
