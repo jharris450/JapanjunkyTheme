@@ -197,12 +197,12 @@
         their render in the .jj-page scroll-layer + prose so they sit above the
         scene and read as CRT, like the other content pages. {%- endcomment -%}
     {%- if template == 'policy' -%}
-      <div class="jj-page jj-content jj-prose">
+      <div class="jj-page jj-content">
         <header class="jj-content__header">
           <span class="jj-content__prompt">C:\&gt;</span>
           <h1 class="jj-content__title">{{ page_title }}</h1>
         </header>
-        {{ content_for_layout }}
+        <div class="jj-prose">{{ content_for_layout }}</div>
       </div>
     {%- else -%}
       {{ content_for_layout }}

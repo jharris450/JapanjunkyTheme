@@ -140,6 +140,10 @@
 .jj-contact__errors { margin-bottom: 12px; }
 .jj-contact__error { color: var(--jj-primary, #e8313a); margin: 0 0 4px; }
 
+/* --- Policy pages (hosted render) --- */
+/* Our .jj-content__header already shows the title — hide Shopify's duplicate. */
+.jj-content .shopify-policy__title { display: none; }
+
 /* --- FAQ accordion --- */
 .jj-faq__intro { margin-bottom: 16px; }
 .jj-faq__list {
@@ -152,7 +156,7 @@
   background: #050505;
 }
 .jj-faq__q {
-  cursor: crosshair;
+  cursor: pointer;
   padding: 10px 12px;
   color: var(--jj-secondary, #f5d742);
   font-size: 13px;
