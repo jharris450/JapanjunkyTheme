@@ -1,0 +1,6 @@
+{
+  "sections": {
+    "main": { "type": "jj-faq" }
+  },
+  "order": ["main"]
+}
