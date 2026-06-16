@@ -1,0 +1,63 @@
+{%- comment -%}
+  Contact page: optional intro prose + Shopify contact form.
+  Fields: name, email, subject, order # (optional), message.
+  Native POST (works without JS); emails the store. Assigned by
+  templates/page.contact.json.
+{%- endcomment -%}
+<div class="jj-page jj-content jj-contact">
+  <header class="jj-content__header">
+    <span class="jj-content__prompt">C:\&gt;</span>
+    <h1 class="jj-content__title">{{ page.title | default: 'Contact' }}</h1>
+  </header>
+
+  {%- if page.content != blank -%}
+    <div class="jj-prose jj-contact__intro">{{ page.content }}</div>
+  {%- endif -%}
+
+  {%- form 'contact', class: 'jj-contact__form' -%}
+    {%- if form.posted_successfully? -%}
+      <p class="jj-contact__success">&gt; message transmitted. we'll be in touch.</p>
+    {%- else -%}
+      {%- if form.errors -%}
+        <div class="jj-contact__errors">
+          {%- for field in form.errors -%}
+            <p class="jj-contact__error">! {{ field }}: {{ form.errors.messages[field] }}</p>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      <label class="jj-field">
+        <span class="jj-field__label">name</span>
+        <input class="jj-field__input" type="text" name="contact[name]"
+               value="{% if form.name %}{{ form.name }}{% elsif customer %}{{ customer.name }}{% endif %}" required>
+      </label>
+
+      <label class="jj-field">
+        <span class="jj-field__label">email</span>
+        <input class="jj-field__input" type="email" name="contact[email]"
+               value="{% if form.email %}{{ form.email }}{% elsif customer %}{{ customer.email }}{% endif %}" required>
+      </label>
+
+      <label class="jj-field">
+        <span class="jj-field__label">subject</span>
+        <input class="jj-field__input" type="text" name="contact[Subject]" value="{{ form.Subject }}">
+      </label>
+
+      <label class="jj-field">
+        <span class="jj-field__label">order # <span class="jj-field__opt">(optional)</span></span>
+        <input class="jj-field__input" type="text" name="contact[Order number]" value="{{ form['Order number'] }}">
+      </label>
+
+      <label class="jj-field">
+        <span class="jj-field__label">message</span>
+        <textarea class="jj-field__input jj-field__textarea" name="contact[body]" rows="6" required>{% if form.body %}{{ form.body }}{% endif %}</textarea>
+      </label>
+
+      <button class="jj-action-btn jj-contact__send" type="submit">[ SEND ]</button>
+    {%- endif -%}
+  {%- endform -%}
+</div>
+
+{% schema %}
+{ "name": "Contact", "tag": "section", "settings": [] }
+{% endschema %}

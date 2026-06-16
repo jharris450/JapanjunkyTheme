@@ -1,0 +1,50 @@
+{%- comment -%}
+  FAQ page: optional intro prose + a CRT accordion built from
+  customizer "Q&A" blocks (question + richtext answer). Native
+  <details>/<summary> — works without JS. Assigned by
+  templates/page.faq.json.
+{%- endcomment -%}
+<div class="jj-page jj-content jj-faq">
+  <header class="jj-content__header">
+    <span class="jj-content__prompt">C:\&gt;</span>
+    <h1 class="jj-content__title">{{ page.title | default: 'FAQ' }}</h1>
+  </header>
+
+  {%- if page.content != blank -%}
+    <div class="jj-prose jj-faq__intro">{{ page.content }}</div>
+  {%- endif -%}
+
+  {%- if section.blocks.size > 0 -%}
+    <div class="jj-faq__list">
+      {%- for block in section.blocks -%}
+        <details class="jj-faq__item" {{ block.shopify_attributes }}>
+          <summary class="jj-faq__q">{{ block.settings.question }}</summary>
+          <div class="jj-prose jj-faq__a">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  {%- else -%}
+    <p class="jj-faq__empty">&gt; no entries.</p>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "FAQ",
+  "tag": "section",
+  "settings": [],
+  "blocks": [
+    {
+      "type": "faq_item",
+      "name": "Q&A",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question" },
+        { "type": "richtext", "id": "answer", "label": "Answer" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "FAQ", "blocks": [ { "type": "faq_item" }, { "type": "faq_item" } ] }
+  ]
+}
+{% endschema %}
