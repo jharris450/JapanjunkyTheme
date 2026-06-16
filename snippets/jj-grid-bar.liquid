@@ -2,7 +2,10 @@
   Shared product-grid bar + grid container. Used by the homepage hero grid
   screen, collection pages, and search pages. Consumes window.JJ_PRODUCTS
   (set by the including template) via assets/japanjunky-product-grid.js.
+  Pass show_bar: false to render only the grid (e.g. /search, where the
+  filter bar's search box is redundant to the page's own search form).
 {%- endcomment -%}
+{%- unless show_bar == false -%}
 <div class="jj-grid__bar">
   <div class="jj-grid__search-wrap">
     <span class="jj-grid__search-prompt">&gt;</span>
@@ -28,4 +31,5 @@
   </button>
   <span class="jj-grid__count" id="jj-grid-count"></span>
 </div>
+{%- endunless -%}
 <div class="jj-grid" id="jj-grid"></div>

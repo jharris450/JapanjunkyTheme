@@ -29,7 +29,7 @@
         {% render 'jj-product-json', items: search.results, limit: 50, include_unavailable: true %}
       ];
     </script>
-    {% render 'jj-grid-bar' %}
+    {% render 'jj-grid-bar', show_bar: false %}
   {%- elsif search.performed -%}
     <div class="jj-empty">
       <pre class="jj-empty__art">  (no results)  </pre>
