@@ -1,0 +1,19 @@
+{%- comment -%}
+  Generic content page: terminal header + rich-text body.
+  Assigned by templates/page.json — the default for /pages/* (about,
+  shipping info, etc.). Rides the .jj-page scroll-layer; prose via
+  japanjunky-content.css.
+{%- endcomment -%}
+<div class="jj-page jj-content">
+  <header class="jj-content__header">
+    <span class="jj-content__prompt">C:\&gt;</span>
+    <h1 class="jj-content__title">{{ page.title }}</h1>
+  </header>
+  {%- if page.content != blank -%}
+    <div class="jj-prose">{{ page.content }}</div>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{ "name": "Page", "tag": "section", "settings": [] }
+{% endschema %}
