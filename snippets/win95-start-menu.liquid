@@ -8,12 +8,18 @@
   <div class="jj-start-menu__items">
     {%- comment -%} My Account {%- endcomment -%}
     <div class="jj-start-menu__section-title">-- account --</div>
+    {%- comment -%}
+      New customer accounts: /account is the Shopify-hosted dashboard (profile +
+      orders together). There is no separate /account/register (passwordless —
+      first login creates the account) or stable /account/orders path, so both
+      labels point at /account to avoid dead links.
+    {%- endcomment -%}
     {%- if customer -%}
       <a href="/account" class="jj-start-menu__item" role="menuitem">
         <span class="jj-start-item-icon">&gt;</span>
         <span>profile</span>
       </a>
-      <a href="/account/orders" class="jj-start-menu__item" role="menuitem">
+      <a href="/account" class="jj-start-menu__item" role="menuitem">
         <span class="jj-start-item-icon">&gt;</span>
         <span>orders</span>
       </a>
@@ -21,10 +27,6 @@
       <a href="/account/login" class="jj-start-menu__item" role="menuitem">
         <span class="jj-start-item-icon">&gt;</span>
         <span>login</span>
-      </a>
-      <a href="/account/register" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&gt;</span>
-        <span>register</span>
       </a>
     {%- endif -%}
     <a href="/account" class="jj-start-menu__item" role="menuitem">
