@@ -10,13 +10,19 @@
     {%- endif -%}
   </header>
 
-  <script>
-    window.JJ_PRODUCTS = [
-      {% render 'jj-product-json', items: collection.products, limit: 250, include_unavailable: true %}
-    ];
-  </script>
-
-  {% render 'jj-grid-bar' %}
+  {%- if collection.products.size > 0 -%}
+    <script>
+      window.JJ_PRODUCTS = [
+        {% render 'jj-product-json', items: collection.products, limit: 50, include_unavailable: true %}
+      ];
+    </script>
+    {% render 'jj-grid-bar' %}
+  {%- else -%}
+    <div class="jj-empty">
+      <pre class="jj-empty__art" aria-hidden="true">  [ empty ]  </pre>
+      <p class="jj-empty__msg">No items in this collection yet. <a href="/collections/all">Browse all</a>.</p>
+    </div>
+  {%- endif -%}
 </div>
 
 {% schema %}

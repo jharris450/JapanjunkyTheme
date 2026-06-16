@@ -539,3 +539,64 @@
 .jj-collist__thumb img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
 .jj-collist__name { font-weight: bold; }
 .jj-collist__count { opacity: 0.7; font-size: 0.85em; }
+
+/* ─── Standalone storefront pages (collection / search / list) ──── */
+.jj-page {
+  padding: 16px;
+  color: var(--jj-text, #e0d5c0);
+}
+
+.jj-collection__header,
+.jj-search__header,
+.jj-collist__header {
+  margin-bottom: 16px;
+}
+
+.jj-collection__title { margin: 0 0 8px; }
+.jj-search__count { margin: 8px 0 0; }
+.jj-collection__desc {
+  margin: 8px 0 0;
+  opacity: 0.7;
+}
+
+.jj-search__form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jj-search__input {
+  flex: 1 1 320px;
+  padding: 4px 6px;
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--jj-primary, #e8313a);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.jj-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+.jj-empty__art {
+  color: var(--jj-primary, #e8313a);
+  margin: 0 0 8px;
+}
+.jj-empty__msg { margin: 0; }
+.jj-empty__msg a { color: var(--jj-primary, #e8313a); }
+
+/* Base (unscoped) action button — themes the [SEARCH] + cart buttons */
+.jj-action-btn {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--jj-primary, #e8313a);
+  background: transparent;
+  border: 1px solid var(--jj-primary, #e8313a);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.jj-action-btn:hover {
+  border-color: var(--jj-primary, #e8313a);
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
+}
