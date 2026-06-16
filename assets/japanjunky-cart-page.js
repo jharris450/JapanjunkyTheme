@@ -11,10 +11,36 @@
   var form = document.getElementById('jj-cart-form');
   if (!form) return;
 
+  // Shopify-standard money formatter, driven by the shop's money_format
+  // (exposed as window.JJ_MONEY_FORMAT). Keeps AJAX-updated totals matching
+  // the server-rendered `| money` output (correct currency + separators).
+  function formatWithDelimiters(cents, precision, thousands, decimal) {
+    precision = (typeof precision === 'undefined') ? 2 : precision;
+    thousands = thousands || ',';
+    decimal = decimal || '.';
+    if (isNaN(cents) || cents == null) return '0';
+    var number = (cents / 100.0).toFixed(precision);
+    var parts = number.split('.');
+    var dollars = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + thousands);
+    var rest = parts[1] ? (decimal + parts[1]) : '';
+    return dollars + rest;
+  }
+
   function money(cents) {
-    return (window.Shopify && Shopify.formatMoney)
-      ? Shopify.formatMoney(cents)
-      : '$' + (cents / 100).toFixed(2);
+    var format = window.JJ_MONEY_FORMAT || '${{amount}}';
+    var placeholder = /\{\{\s*(\w+)\s*\}\}/;
+    var match = format.match(placeholder);
+    if (!match) return format;
+    var value = '';
+    switch (match[1]) {
+      case 'amount': value = formatWithDelimiters(cents, 2); break;
+      case 'amount_no_decimals': value = formatWithDelimiters(cents, 0); break;
+      case 'amount_with_comma_separator': value = formatWithDelimiters(cents, 2, '.', ','); break;
+      case 'amount_no_decimals_with_comma_separator': value = formatWithDelimiters(cents, 0, '.', ','); break;
+      case 'amount_with_apostrophe_separator': value = formatWithDelimiters(cents, 2, "'", '.'); break;
+      default: value = formatWithDelimiters(cents, 2);
+    }
+    return format.replace(placeholder, value);
   }
 
   function changeLine(key, quantity, row) {

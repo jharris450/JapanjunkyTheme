@@ -2,6 +2,7 @@
   Cart page. Works without JS as a standard /cart form POST; progressively
   enhanced by japanjunky-cart-page.js (AJAX qty/remove + start-menu sync).
 {%- endcomment -%}
+<script>window.JJ_MONEY_FORMAT = {{ shop.money_format | json }};</script>
 <div class="jj-page jj-cart">
   <header class="jj-cart__header"><h1 class="jj-cart__title">CART</h1></header>
 
@@ -29,13 +30,13 @@
               <span class="jj-cart__unit">{{ item.price | money }}</span>
             </div>
             <div class="jj-cart__qty">
-              <button class="jj-cart__step" type="button" data-step="-1" aria-label="Decrease">[-]</button>
+              <button class="jj-cart__step" type="button" data-step="-1" aria-label="Decrease quantity of {{ item.product.title | escape }}">[-]</button>
               <input class="jj-cart__qty-input" type="number" min="0" name="updates[]"
-                     value="{{ item.quantity }}" aria-label="Quantity">
-              <button class="jj-cart__step" type="button" data-step="1" aria-label="Increase">[+]</button>
+                     value="{{ item.quantity }}" aria-label="Quantity of {{ item.product.title | escape }}">
+              <button class="jj-cart__step" type="button" data-step="1" aria-label="Increase quantity of {{ item.product.title | escape }}">[+]</button>
             </div>
             <span class="jj-cart__line-total">{{ item.final_line_price | money }}</span>
-            <a class="jj-cart__remove" href="{{ item.url_to_remove }}" aria-label="Remove">[x]</a>
+            <a class="jj-cart__remove" href="{{ item.url_to_remove }}" aria-label="Remove {{ item.product.title | escape }}">[x]</a>
           </li>
         {%- endfor -%}
       </ul>
