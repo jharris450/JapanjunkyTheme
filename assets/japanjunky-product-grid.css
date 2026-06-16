@@ -540,9 +540,20 @@
 .jj-collist__name { font-weight: bold; }
 .jj-collist__count { opacity: 0.7; font-size: 0.85em; }
 
-/* ─── Standalone storefront pages (collection / search / list) ──── */
+/* ─── Standalone storefront pages (collection / search / list / cart) ─
+   Own full-screen scroll layer. The body is overflow:hidden/height:100%
+   (homepage scroll model), and the fixed scene canvas (#jj-screensaver,
+   z-index:0) paints over in-flow content — so static page content would be
+   both clipped and overpainted. Mirror the .jj-pdp / .jj-scroll pattern:
+   fixed inset:0, own scroll, z-index above the scene, dim bg so the scene
+   bleeds through (matches the homepage grid screen). */
 .jj-page {
-  padding: 16px;
+  position: fixed;
+  inset: 0;
+  z-index: 100; /* above scene (0) + hero furniture (50), below start menu (2000) */
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 16px 16px 40px; /* bottom clears the fixed 32px taskbar */
   color: var(--jj-text, #e0d5c0);
 }
 

@@ -149,7 +149,7 @@
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
-  {% unless template == 'product' or template.suffix == 'login' %}
+  {% if template == 'index' %}
   {%- comment -%} Left zone: product viewer + info (homepage only) {%- endcomment -%}
   <div class="jj-product-zone" id="jj-product-zone">
     <div class="jj-product-info" id="jj-product-info" style="display:none;">
@@ -180,7 +180,6 @@
   </div>
 
   {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = product grid {%- endcomment -%}
-  {% if template == 'index' %}
   <div class="jj-scroll" id="jj-scroll">
     <div class="jj-scroll__screen jj-scroll__screen--hero">
       <button class="jj-scroll__indicator" id="jj-scroll-indicator" type="button" aria-label="Scroll to catalog">&#9660; CATALOG</button>
@@ -190,7 +189,6 @@
     </div>
   </div>
   {% endif %}
-  {% endunless %}
 
   {%- comment -%} Shopify content_for_layout — homepage outputs JJ_PRODUCTS JSON, other pages render normally {%- endcomment -%}
   <main id="MainContent" role="main"{% if template == 'index' %} style="display:none;"{% endif %}>
