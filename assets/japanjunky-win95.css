@@ -709,3 +709,32 @@
     border-color: var(--jj-primary, #e8313a);
   }
 }
+
+/* --- Drag ghost (placeholder until 3D graphics land in Tranche 3) --- */
+.jj-media-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px; /* centre on the cursor; transform sets cursor pos */
+  z-index: 10012; /* above the player (10009) and toolbox (10011) */
+  pointer-events: none; /* never block the drop hit-test */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--jj-secondary, #f5d742);
+  color: var(--jj-secondary, #f5d742);
+  box-shadow: var(--jj-tactile);
+  opacity: 0.92;
+}
+
+.jj-media-ghost[data-format="record"]   { border-color: var(--jj-amber, #ffaa00); color: var(--jj-amber, #ffaa00); }
+.jj-media-ghost[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
+.jj-media-ghost[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
