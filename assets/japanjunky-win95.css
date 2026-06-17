@@ -684,3 +684,28 @@
   padding: 2px;
   pointer-events: none;
 }
+
+/* --- Player drop feedback (no transform — physics owns el's transform) --- */
+.jj-player--accept {
+  animation: jj-player-accept 0.5s steps(2);
+}
+
+@keyframes jj-player-accept {
+  0%, 100% { box-shadow: var(--jj-tactile); border-color: var(--jj-secondary, #f5d742); }
+  50% {
+    box-shadow: 0 0 14px rgba(51, 255, 51, 0.85);
+    border-color: var(--jj-green, #33ff33);
+  }
+}
+
+.jj-player--reject {
+  animation: jj-player-reject 0.4s steps(3);
+}
+
+@keyframes jj-player-reject {
+  0%, 100% { box-shadow: var(--jj-tactile); border-color: var(--jj-secondary, #f5d742); }
+  50% {
+    box-shadow: 0 0 14px rgba(232, 49, 58, 0.9);
+    border-color: var(--jj-primary, #e8313a);
+  }
+}

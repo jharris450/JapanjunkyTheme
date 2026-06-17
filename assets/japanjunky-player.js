@@ -210,10 +210,52 @@
     } catch (e) { /* malformed — ignore */ }
   }
 
+  // Player's on-screen rectangle in VISUAL px (getBoundingClientRect), for the
+  // drag system to hit-test a drop. Returns null when no player is spawned.
+  function getRect() {
+    return el ? el.getBoundingClientRect() : null;
+  }
+
+  // Briefly toggle a CSS class to play a one-shot feedback animation. Uses a
+  // reflow to restart the animation if the class is still applied. The class
+  // must not animate `transform` (the physics loop owns el's transform).
+  function flashClass(cls) {
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(function () { if (el) el.classList.remove(cls); }, 600);
+  }
+
+  // Try to load a dropped product. Format gate: a product only plays on its
+  // matching player. Tranche 4 stubs audio — accept = visual confirm only;
+  // Tranche 5 routes the accept path to the audio engine.
+  // Returns 'no-player' | 'rejected' | 'accepted'.
+  function tryLoadProduct(product) {
+    if (!el || !currentTool) return 'no-player';
+    var fmt = product && product.format;
+    var MF = window.JJ_MediaFormat;
+    if (!MF || !MF.matchesPlayer(currentTool, fmt)) {
+      // Reject: shove the player (physics impulse) + red flash.
+      if (body) {
+        body.vy = -700;
+        body.vx = (body.vx || 0) + (Math.random() < 0.5 ? -260 : 260);
+      }
+      startLoop();
+      flashClass('jj-player--reject');
+      return 'rejected';
+    }
+    // Accept: green flash. (Audio is wired in Tranche 5.)
+    flashClass('jj-player--accept');
+    return 'accepted';
+  }
+
   window.JJ_Player = {
     spawn: spawn,
     despawn: despawn,
-    getType: function () { return currentTool; }
+    getType: function () { return currentTool; },
+    getRect: getRect,
+    tryLoadProduct: tryLoadProduct
   };
 
   if (document.readyState === 'loading') {
