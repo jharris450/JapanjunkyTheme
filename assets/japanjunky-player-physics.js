@@ -20,6 +20,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  // Exported for callers (the player module clamps spawn/drag positions with it).
   function clamp(v, lo, hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
@@ -49,15 +50,17 @@
       onFloor = true;
     }
 
-    // Horizontal friction while resting on the floor (implicit damping)
+    // Speed-proportional (viscous) floor friction — vx/(1+k*dt) is stable for any dt
     if (onFloor) {
       vx = vx / (1 + opts.friction * dt);
     }
 
-    // Sleep: tiny motion on the floor settles to a dead stop
-    if (onFloor &&
-        Math.abs(vx) < opts.restThreshold &&
-        Math.abs(vy) < opts.restThreshold) {
+    // Sleep: tiny motion on the floor settles to a dead stop. The threshold is
+    // scaled to a 60fps reference so settling is framerate-independent — a
+    // grounded body's residual bounce is gravity*dt*restitution, which scales
+    // with dt, so the cutoff must too (otherwise it never sleeps at low fps).
+    var sleepCut = opts.restThreshold * dt * 60;
+    if (onFloor && Math.abs(vx) < sleepCut && Math.abs(vy) < sleepCut) {
       vx = 0;
       vy = 0;
     }
@@ -66,6 +69,7 @@
   }
 
   function isAtRest(body, opts) {
+    // 0.5px tolerance absorbs float accumulation in the floor position.
     return body.vx === 0 && body.vy === 0 &&
            body.y >= opts.bounds.maxY - 0.5;
   }

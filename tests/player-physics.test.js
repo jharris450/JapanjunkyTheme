@@ -36,6 +36,7 @@ describe('step — floor bounce', () => {
     expect(b.y).toBe(200);       // clamped to floor (maxY)
     expect(b.vy).toBeLessThan(0); // reversed (now upward)
     expect(Math.abs(b.vy)).toBeLessThan(300); // less than pre-bounce speed
+    expect(b.vy).toBeCloseTo(-150, 5); // pre-bounce 100+2000*0.1=300; reversed*0.5
   });
 });
 
@@ -44,11 +45,13 @@ describe('step — wall bounce', () => {
     var b = Physics.step({ x: 295, y: 50, vx: 200, vy: 0 }, 0.1, opts());
     expect(b.x).toBe(300);       // clamped to maxX
     expect(b.vx).toBeLessThan(0); // reversed
+    expect(b.vx).toBeCloseTo(-100, 5); // 200 * 0.5
   });
   it('reverses vx at the left wall', () => {
     var b = Physics.step({ x: 5, y: 50, vx: -200, vy: 0 }, 0.1, opts());
     expect(b.x).toBe(0);          // clamped to minX
     expect(b.vx).toBeGreaterThan(0);
+    expect(b.vx).toBeCloseTo(100, 5); // 200 * 0.5
   });
 });
 
@@ -68,7 +71,7 @@ describe('step — never escapes bounds', () => {
 
 describe('step — floor friction', () => {
   it('reduces horizontal speed while on the floor', () => {
-    var b = Physics.step({ x: 100, y: 200, vx: 200, vy: 0 }, 0.1, opts());
+    var b = Physics.step({ x: 100, y: 200, vx: 200, vy: 0 }, 0.016, opts());
     expect(Math.abs(b.vx)).toBeLessThan(200);
     expect(Math.abs(b.vx)).toBeGreaterThan(0);
   });
@@ -86,5 +89,33 @@ describe('step + isAtRest — settling', () => {
   it('is not at rest while airborne', () => {
     var o = opts();
     expect(Physics.isAtRest({ x: 100, y: 50, vx: 0, vy: 0 }, o)).toBe(false);
+  });
+});
+
+describe('step — purity', () => {
+  it('does not mutate the input body', () => {
+    var input = { x: 50, y: 0, vx: 10, vy: -20 };
+    var frozen = JSON.stringify(input);
+    Physics.step(input, 0.1, opts());
+    expect(JSON.stringify(input)).toBe(frozen);
+  });
+});
+
+describe('step — ceiling bounce', () => {
+  it('reverses vy at the ceiling', () => {
+    var o = opts({ gravity: 0 }); // isolate the reflection from gravity
+    var b = Physics.step({ x: 100, y: 10, vx: 0, vy: -200 }, 0.1, o);
+    expect(b.y).toBe(0);                // clamped to ceiling (minY)
+    expect(b.vy).toBeCloseTo(100, 5);  // -(-200) * 0.5
+  });
+});
+
+describe('step — settles at low framerate (I1 regression)', () => {
+  it('sleeps a grounded slow body even at ~20fps (dt=0.05)', () => {
+    var o = opts({ gravity: 2600, restitution: 0.55 });
+    var b = Physics.step({ x: 100, y: 200, vx: 3, vy: 0 }, 0.05, o);
+    expect(b.vx).toBe(0);
+    expect(b.vy).toBe(0);
+    expect(Physics.isAtRest(b, o)).toBe(true);
   });
 });
