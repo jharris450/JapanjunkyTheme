@@ -524,6 +524,7 @@
     gridEl.innerHTML = '';
     if (filteredProducts.length === 0) {
       gridEl.innerHTML = '<div class="jj-grid__empty">NO ITEMS FOUND</div>';
+      document.dispatchEvent(new CustomEvent('jj:grid-render'));
       return;
     }
     var frag = document.createDocumentFragment();
@@ -531,6 +532,7 @@
       frag.appendChild(createCard(filteredProducts[i]));
     }
     gridEl.appendChild(frag);
+    document.dispatchEvent(new CustomEvent('jj:grid-render'));
   }
 
 
@@ -594,6 +596,7 @@
 
   var SORT_OPTIONS = [
     { key: 'featured',   label: 'FEATURED',       badge: '' },
+    { key: 'date-desc',  label: 'NEWEST',         badge: 'NEW' },
     { key: 'price-asc',  label: 'PRICE LOW-HIGH', badge: 'PRICE↑' },
     { key: 'price-desc', label: 'PRICE HIGH-LOW', badge: 'PRICE↓' },
     { key: 'title-asc',  label: 'TITLE A-Z',      badge: 'TITLE' },
@@ -615,6 +618,10 @@
     return isNaN(y) ? null : y;
   }
 
+  function dateOf(p) {
+    return parseInt(p.addedAt, 10) || 0; // epoch seconds; 0 sinks to bottom on desc
+  }
+
   function strCompare(a, b) {
     return (a || '').toLowerCase().localeCompare((b || '').toLowerCase());
   }
@@ -626,6 +633,7 @@
       switch (sortMode) {
         case 'price-asc':  return priceOf(a) - priceOf(b);
         case 'price-desc': return priceOf(b) - priceOf(a);
+        case 'date-desc':  return dateOf(b) - dateOf(a);
         case 'title-asc':  return strCompare(a.title, b.title);
         case 'artist-asc': return strCompare(a.artist, b.artist);
         case 'year-desc':
@@ -675,6 +683,35 @@
       if (!isOpen) sortDropdown.classList.add('jj-grid__dropdown--open');
     });
 
+    // Apply a sort key + sync the dropdown/badge/button UI. Shared by the
+    // click handler and the ?sort= URL preselect so they never diverge.
+    function applySortSelection(key) {
+      sortMode = key;
+      var items = sortDropdown.querySelectorAll('.jj-grid__dropdown-item');
+      for (var i = 0; i < items.length; i++) {
+        var on = items[i].getAttribute('data-sort-key') === key;
+        items[i].classList.toggle('jj-grid__dropdown-item--active', on);
+        items[i].querySelector('.jj-grid__dropdown-check').textContent = on ? 'x' : ' ';
+        items[i].setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+      var badge = '';
+      for (var s = 0; s < SORT_OPTIONS.length; s++) {
+        if (SORT_OPTIONS[s].key === key) badge = SORT_OPTIONS[s].badge;
+      }
+      if (sortBadge) sortBadge.textContent = badge ? '(' + badge + ')' : '';
+      sortBtn.classList.toggle('jj-grid__filter-btn--active', key !== 'featured');
+    }
+
+    // Preselect from ?sort= (the start-menu "new arrivals" link → ?sort=newest)
+    var urlSortMatch = window.location.search.match(/[?&]sort=([^&]+)/);
+    if (urlSortMatch) {
+      var urlSortVal = decodeURIComponent(urlSortMatch[1]).toLowerCase();
+      if (urlSortVal === 'newest') urlSortVal = 'date-desc';
+      for (var us = 0; us < SORT_OPTIONS.length; us++) {
+        if (SORT_OPTIONS[us].key === urlSortVal) { applySortSelection(urlSortVal); break; }
+      }
+    }
+
     sortDropdown.addEventListener('click', function (e) {
       var itemEl = e.target.closest('.jj-grid__dropdown-item');
       if (!itemEl) return;
@@ -686,25 +723,7 @@
         closeAllDropdowns();
         return;
       }
-      sortMode = key;
-
-      // Single-select: refresh check marks
-      var items = sortDropdown.querySelectorAll('.jj-grid__dropdown-item');
-      for (var i = 0; i < items.length; i++) {
-        var on = items[i].getAttribute('data-sort-key') === key;
-        items[i].classList.toggle('jj-grid__dropdown-item--active', on);
-        items[i].querySelector('.jj-grid__dropdown-check').textContent = on ? 'x' : ' ';
-        items[i].setAttribute('aria-checked', on ? 'true' : 'false');
-      }
-
-      // Badge + button state reflect non-default sort
-      var badge = '';
-      for (var s = 0; s < SORT_OPTIONS.length; s++) {
-        if (SORT_OPTIONS[s].key === key) badge = SORT_OPTIONS[s].badge;
-      }
-      if (sortBadge) sortBadge.textContent = badge ? '(' + badge + ')' : '';
-      sortBtn.classList.toggle('jj-grid__filter-btn--active', key !== 'featured');
-
+      applySortSelection(key);
       closeAllDropdowns();
       refilter();
     });
@@ -920,6 +939,7 @@
   });
 
   // ─── Init ──────────────────────────────────────────────────────
+  applySort();
   renderGrid();
   updateCount();
 

@@ -71,7 +71,8 @@
         "variantId": {{ variant.id | json }},
         "available": {{ variant.available }},
         "price": {{ variant.price | money | json }},
-        "priceCents": {{ variant.price | json }}
+        "priceCents": {{ variant.price | json }},
+        "addedAt": {{ product.created_at | date: '%s' | json }}
       }
     {%- endif -%}
   {%- endfor -%}

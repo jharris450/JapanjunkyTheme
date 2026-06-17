@@ -39,6 +39,7 @@
   {{ 'japanjunky-transitions.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-page.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-content.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-scrollbar.css' | asset_url | stylesheet_tag }}
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
   {% endif %}
@@ -280,6 +281,7 @@
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-holidays.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-crt-shader.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-scrollbar.js' | asset_url }}" defer></script>
   {% if settings.parallax_enabled %}
   <script>
     window.JJ_PARALLAX_CONFIG = {
