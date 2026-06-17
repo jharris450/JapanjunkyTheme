@@ -479,6 +479,119 @@
   animation: jj-shutdown-dots 1.2s steps(4) infinite;
 }
 
+/* --- Toolbox + fan menu --- */
+.jj-toolbox {
+  position: fixed;
+  right: 8px;
+  bottom: 40px; /* clears the 32px taskbar + a small gap */
+  width: 34px;
+  z-index: 10011; /* above taskbar (10010) and CRT canvas (10002) */
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+}
+
+.jj-toolbox__btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--jj-secondary, #f5d742);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #444;
+  cursor: default;
+  position: relative;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
+}
+
+.jj-toolbox__btn:hover {
+  border-color: var(--jj-secondary, #f5d742);
+  text-shadow: 0 0 6px rgba(245, 215, 66, 0.5);
+}
+
+.jj-toolbox__btn:active,
+.jj-toolbox--open .jj-toolbox__btn {
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
+}
+
+.jj-toolbox__btn-glyph {
+  line-height: 1;
+}
+
+/* Fan container anchored to the button's bottom-right corner */
+.jj-toolbox__fan {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+  height: 34px;
+}
+
+.jj-toolbox__fan[hidden] {
+  display: none;
+}
+
+/* Each tool starts collapsed under the button, then fans out when open */
+.jj-toolbox__tool {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--jj-accent, #33ff33);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #444;
+  cursor: default;
+  box-shadow: var(--jj-tactile);
+  opacity: 0;
+  transform: translate(0, 0) scale(0.6);
+  transition: transform 140ms steps(3), opacity 140ms steps(3);
+}
+
+.jj-toolbox__tool:hover {
+  border-color: var(--jj-accent, #33ff33);
+  text-shadow: 0 0 6px rgba(51, 255, 51, 0.5);
+}
+
+.jj-toolbox__tool:active {
+  box-shadow: var(--jj-tactile-pressed);
+}
+
+/* Open state: arc up-and-left from the bottom-right button */
+.jj-toolbox--open .jj-toolbox__tool {
+  opacity: 1;
+}
+
+.jj-toolbox--open .jj-toolbox__tool[data-tool="record"] {
+  transform: translate(0, -44px) scale(1);
+  transition-delay: 0ms;
+}
+
+.jj-toolbox--open .jj-toolbox__tool[data-tool="cassette"] {
+  transform: translate(-32px, -32px) scale(1);
+  transition-delay: 45ms;
+}
+
+.jj-toolbox--open .jj-toolbox__tool[data-tool="cd"] {
+  transform: translate(-44px, 0) scale(1);
+  transition-delay: 90ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-toolbox__btn,
+  .jj-toolbox__tool {
+    transition-duration: 0ms;
+    transition-delay: 0ms;
+  }
+}
+
 @keyframes jj-shutdown-dots {
   0% { clip-path: inset(0 100% 0 0); }
   100% { clip-path: inset(0 0 0 0); }
