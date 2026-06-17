@@ -70,8 +70,11 @@
 
   el.addEventListener('scroll', sync, { passive: true });
   window.addEventListener('resize', sync);
+  // The grid re-render changes inner scrollHeight without resizing the fixed
+  // container, so ResizeObserver alone misses it — re-sync on the grid's event.
+  document.addEventListener('jj:grid-render', sync);
   if (window.ResizeObserver) {
-    new window.ResizeObserver(sync).observe(el); // catches async grid height changes
+    new window.ResizeObserver(sync).observe(el); // viewport/layout changes
   }
 
   // ─── Arrow buttons (click + hold-to-repeat) ────────────────────

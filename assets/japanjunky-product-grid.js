@@ -524,6 +524,7 @@
     gridEl.innerHTML = '';
     if (filteredProducts.length === 0) {
       gridEl.innerHTML = '<div class="jj-grid__empty">NO ITEMS FOUND</div>';
+      document.dispatchEvent(new CustomEvent('jj:grid-render'));
       return;
     }
     var frag = document.createDocumentFragment();
@@ -531,6 +532,7 @@
       frag.appendChild(createCard(filteredProducts[i]));
     }
     gridEl.appendChild(frag);
+    document.dispatchEvent(new CustomEvent('jj:grid-render'));
   }
 
 
