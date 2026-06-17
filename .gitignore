@@ -1,0 +1,6 @@
+# Node tooling (sharp/gif-frames image scripts, vitest)
+node_modules/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
