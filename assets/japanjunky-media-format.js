@@ -17,6 +17,9 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  // Substring matching intentionally mirrors jj-product-json.liquid (Liquid `contains`).
+  // Format values are admin-entered; false-match risk ('lp' in 'help', etc.) is a
+  // non-issue given the tightly controlled music-format vocabulary.
   function normalizeFormat(raw) {
     var s = (raw == null ? '' : String(raw)).toLowerCase().trim();
     if (!s) return '';

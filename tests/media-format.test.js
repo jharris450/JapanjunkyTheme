@@ -18,10 +18,13 @@ describe('normalizeFormat', () => {
   });
   it('maps minidisc to minidisc', () => {
     expect(MF.normalizeFormat('MiniDisc')).toBe('minidisc');
+    expect(MF.normalizeFormat('mini disc')).toBe('minidisc'); // two-word form
+    expect(MF.normalizeFormat('MD')).toBe('minidisc');        // bare abbreviation
   });
   it('maps hardware-ish to hardware', () => {
     expect(MF.normalizeFormat('Walkman')).toBe('hardware');
     expect(MF.normalizeFormat('Stereo Player')).toBe('hardware');
+    expect(MF.normalizeFormat('hardware')).toBe('hardware');
   });
   it('returns empty string for unknown / empty / null', () => {
     expect(MF.normalizeFormat('')).toBe('');
