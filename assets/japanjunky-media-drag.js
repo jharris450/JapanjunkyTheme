@@ -14,9 +14,8 @@
   var EXCLUDE = 'button, input, select, textarea, .jj-grid__card-cond-chip, .jj-pdp-back';
 
   var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
-  var pending = null; // { x, y, prod, srcEl }
+  var pending = null;   // { x, y, prod }  — prod = { format, title, srcEl }
   var dragging = false;
-  var product = null;
   var ghost = null;
 
   function normFmt(raw) {
@@ -64,18 +63,19 @@
     ghost = null;
   }
 
-  function dropOnPlayer(clientX, clientY) {
+  function dropOnPlayer(clientX, clientY, prod) {
     if (!window.JJ_Player || !window.JJ_Player.getRect) return;
     var r = window.JJ_Player.getRect();
     if (!r) return;
     if (clientX >= r.left && clientX <= r.right &&
         clientY >= r.top && clientY <= r.bottom) {
-      window.JJ_Player.tryLoadProduct(product);
+      window.JJ_Player.tryLoadProduct(prod);
     }
   }
 
-  // After a drag, swallow the click the browser fires on the source (so an
-  // <a> card doesn't navigate). Self-removes after the click or a short delay.
+  // After a drag, swallow the synthetic click the browser fires on the source
+  // (so an <a> card doesn't navigate). Self-removes on that click, or shortly
+  // after — kept brief so a later legitimate click isn't swallowed.
   function suppressNextClick(srcEl) {
     if (!srcEl) return;
     function handler(ev) {
@@ -84,17 +84,27 @@
       srcEl.removeEventListener('click', handler, true);
     }
     srcEl.addEventListener('click', handler, true);
-    setTimeout(function () { srcEl.removeEventListener('click', handler, true); }, 400);
+    setTimeout(function () { srcEl.removeEventListener('click', handler, true); }, 120);
+  }
+
+  function cleanupDrag() {
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    document.removeEventListener('pointercancel', onPointerCancel);
+    dragging = false;
+    pending = null;
   }
 
   function onPointerDown(e) {
+    if (pending) return; // re-entrant guard: ignore extra pointers mid-drag
     if (e.button !== undefined && e.button !== 0) return; // primary button only
     if (e.target.closest(EXCLUDE)) return;
     var prod = getProductAt(e.target);
     if (!prod) return;
-    pending = { x: e.clientX, y: e.clientY, prod: prod, srcEl: prod.srcEl };
+    pending = { x: e.clientX, y: e.clientY, prod: prod };
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerCancel);
   }
 
   function onPointerMove(e) {
@@ -102,25 +112,29 @@
     if (!dragging) {
       var dx = (e.clientX - pending.x) / zoom;
       var dy = (e.clientY - pending.y) / zoom;
-      if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) return;
+      if (dx * dx + dy * dy < DRAG_THRESHOLD * DRAG_THRESHOLD) return;
       dragging = true;
-      product = pending.prod;
-      createGhost(product.format);
+      createGhost(pending.prod.format);
     }
     moveGhost(e.clientX, e.clientY);
   }
 
   function onPointerUp(e) {
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-    if (dragging) {
+    var wasDragging = dragging;
+    var prod = pending ? pending.prod : null;
+    cleanupDrag();
+    if (wasDragging) {
       removeGhost();
-      dropOnPlayer(e.clientX, e.clientY);
-      suppressNextClick(pending.srcEl); // a drag never navigates
+      if (prod) {
+        dropOnPlayer(e.clientX, e.clientY, prod);
+        suppressNextClick(prod.srcEl); // a drag never navigates
+      }
     }
-    dragging = false;
-    pending = null;
-    product = null;
+  }
+
+  function onPointerCancel() {
+    removeGhost();
+    cleanupDrag();
   }
 
   document.addEventListener('pointerdown', onPointerDown);

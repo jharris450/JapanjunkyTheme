@@ -22,6 +22,7 @@
   var velX = 0, velY = 0;       // tracked drag velocity (layout px/s)
   var THROW_MAX = 4000;         // clamp thrown speed (layout px/s)
   var STORE_KEY = 'jj-player';
+  var flashTimer = null;
 
   // html has zoom:2.5 — visual px (clientX, innerWidth) convert to layout px
   // (offsetWidth, transform) by dividing by this. Re-read on resize.
@@ -221,10 +222,11 @@
   // must not animate `transform` (the physics loop owns el's transform).
   function flashClass(cls) {
     if (!el) return;
+    clearTimeout(flashTimer);
     el.classList.remove(cls);
     void el.offsetWidth;
     el.classList.add(cls);
-    setTimeout(function () { if (el) el.classList.remove(cls); }, 600);
+    flashTimer = setTimeout(function () { if (el) el.classList.remove(cls); }, 600);
   }
 
   // Try to load a dropped product. Format gate: a product only plays on its
@@ -233,19 +235,18 @@
   // Returns 'no-player' | 'rejected' | 'accepted'.
   function tryLoadProduct(product) {
     if (!el || !currentTool) return 'no-player';
-    var fmt = product && product.format;
     var MF = window.JJ_MediaFormat;
-    if (!MF || !MF.matchesPlayer(currentTool, fmt)) {
-      // Reject: shove the player (physics impulse) + red flash.
+    if (!MF) return 'no-player'; // format module not loaded — silently no-op
+    var fmt = product && product.format;
+    if (!MF.matchesPlayer(currentTool, fmt)) {
       if (body) {
         body.vy = -700;
-        body.vx = (body.vx || 0) + (Math.random() < 0.5 ? -260 : 260);
+        body.vx = (Math.random() < 0.5 ? -260 : 260); // overwrite, don't accumulate
       }
-      startLoop();
+      if (!dragging) startLoop(); // don't fight a user drag in progress
       flashClass('jj-player--reject');
       return 'rejected';
     }
-    // Accept: green flash. (Audio is wired in Tranche 5.)
     flashClass('jj-player--accept');
     return 'accepted';
   }
