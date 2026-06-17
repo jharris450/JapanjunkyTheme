@@ -53,4 +53,41 @@
       btn.focus();
     }
   });
+
+  // --- Drag (or click) a fan tool to spawn its player (Tranche 2) ---
+  var PLAYER_HALF = 48; // half of the 96px player, to centre it on the cursor
+
+  function spawnFromTool(toolEl, clientX, clientY) {
+    if (!window.JJ_Player) return;
+    var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    var x = clientX / zoom - PLAYER_HALF;
+    var y = clientY / zoom - PLAYER_HALF;
+    window.JJ_Player.spawn(toolEl.getAttribute('data-tool'), x, y);
+    close();
+  }
+
+  var tools = toolbox.querySelectorAll('.jj-toolbox__tool');
+  for (var i = 0; i < tools.length; i++) {
+    (function (toolEl) {
+      toolEl.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try { toolEl.setPointerCapture(e.pointerId); } catch (err) {}
+
+        function onUp(ev) {
+          toolEl.removeEventListener('pointerup', onUp);
+          toolEl.removeEventListener('pointercancel', onCancel);
+          try { toolEl.releasePointerCapture(ev.pointerId); } catch (err) {}
+          spawnFromTool(toolEl, ev.clientX, ev.clientY);
+        }
+        function onCancel(ev) {
+          toolEl.removeEventListener('pointerup', onUp);
+          toolEl.removeEventListener('pointercancel', onCancel);
+          try { toolEl.releasePointerCapture(ev.pointerId); } catch (err) {}
+        }
+        toolEl.addEventListener('pointerup', onUp);
+        toolEl.addEventListener('pointercancel', onCancel);
+      });
+    })(tools[i]);
+  }
 })();
