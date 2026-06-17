@@ -15,6 +15,12 @@
   var body = null;        // { x, y, vx, vy } in layout px
   var rafId = null;
   var lastT = 0;
+  var dragging = false;
+  var grabDX = 0, grabDY = 0;   // cursor-to-topleft offset at grab (layout px)
+  var lastPX = 0, lastPY = 0;   // last pointer pos (layout px) for velocity
+  var lastPT = 0;               // last pointer time (ms)
+  var velX = 0, velY = 0;       // tracked drag velocity (layout px/s)
+  var THROW_MAX = 4000;         // clamp thrown speed (layout px/s)
 
   // html has zoom:2.5 — visual px (clientX, innerWidth) convert to layout px
   // (offsetWidth, transform) by dividing by this. Re-read on resize.
@@ -74,6 +80,50 @@
     }
   }
 
+  function onPointerDown(e) {
+    e.preventDefault();
+    dragging = true;
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    var px = e.clientX / zoom;
+    var py = e.clientY / zoom;
+    grabDX = px - body.x;
+    grabDY = py - body.y;
+    lastPX = px; lastPY = py; lastPT = performance.now();
+    velX = 0; velY = 0;
+    stopLoop();
+    el.classList.add('jj-player--grabbed');
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', onPointerUp);
+  }
+
+  function onPointerMove(e) {
+    if (!dragging) return;
+    var px = e.clientX / zoom;
+    var py = e.clientY / zoom;
+    var now = performance.now();
+    var dt = (now - lastPT) / 1000;
+    if (dt > 0) {
+      velX = (px - lastPX) / dt;
+      velY = (py - lastPY) / dt;
+    }
+    lastPX = px; lastPY = py; lastPT = now;
+    var opts = buildOpts();
+    body.x = Physics.clamp(px - grabDX, opts.bounds.minX, opts.bounds.maxX);
+    body.y = Physics.clamp(py - grabDY, opts.bounds.minY, opts.bounds.maxY);
+    setPosition(body.x, body.y);
+  }
+
+  function onPointerUp(e) {
+    dragging = false;
+    try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+    el.removeEventListener('pointermove', onPointerMove);
+    el.removeEventListener('pointerup', onPointerUp);
+    el.classList.remove('jj-player--grabbed');
+    body.vx = Physics.clamp(velX, -THROW_MAX, THROW_MAX);
+    body.vy = Physics.clamp(velY, -THROW_MAX, THROW_MAX);
+    startLoop();
+  }
+
   function spawn(tool, x, y) {
     despawn();
     currentTool = tool;
@@ -82,6 +132,7 @@
     el.setAttribute('data-tool', tool);
     el.innerHTML = '<span class="jj-player__label">' + tool + '</span>';
     document.body.appendChild(el);
+    el.addEventListener('pointerdown', onPointerDown);
 
     var opts = buildOpts();
     body = {
