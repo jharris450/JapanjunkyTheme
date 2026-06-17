@@ -15,6 +15,9 @@
 
   function open() {
     fan.hidden = false;
+    // Force a reflow so the browser paints the collapsed base state before the
+    // open class applies — otherwise the fan-out transition is skipped.
+    void fan.offsetHeight;
     toolbox.classList.add('jj-toolbox--open');
     btn.setAttribute('aria-expanded', 'true');
   }
@@ -22,8 +25,11 @@
   function close() {
     toolbox.classList.remove('jj-toolbox--open');
     btn.setAttribute('aria-expanded', 'false');
-    // Keep the element in the DOM during the collapse transition, then hide.
-    fan.hidden = true;
+    // Hide only after the collapse transition finishes, and only if the menu
+    // wasn't reopened in the meantime (guards rapid toggle).
+    setTimeout(function () {
+      if (!isOpen()) fan.hidden = true;
+    }, 160);
   }
 
   function isOpen() {
