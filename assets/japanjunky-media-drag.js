@@ -31,6 +31,8 @@
       return {
         format: normFmt(card.getAttribute('data-format')),
         title: t ? t.textContent : '',
+        audioUrl: card.getAttribute('data-audio-url') || '',
+        youtubeUrl: card.getAttribute('data-youtube-url') || '',
         srcEl: card
       };
     }
@@ -39,6 +41,8 @@
       return {
         format: normFmt(window.JJ_PRODUCT_DATA.formatLabel),
         title: window.JJ_PRODUCT_DATA.title || '',
+        audioUrl: window.JJ_PRODUCT_DATA.audioUrl || '',
+        youtubeUrl: window.JJ_PRODUCT_DATA.youtubeUrl || '',
         srcEl: info
       };
     }
