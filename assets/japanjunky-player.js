@@ -168,6 +168,7 @@
 
   function despawn() {
     stopLoop();
+    if (window.JJ_PlayerAudio) window.JJ_PlayerAudio.stop();
     if (el && el.parentNode) el.parentNode.removeChild(el);
     el = null;
     body = null;
@@ -248,6 +249,13 @@
       return 'rejected';
     }
     flashClass('jj-player--accept');
+    if (window.JJ_PlayerAudio) {
+      window.JJ_PlayerAudio.play({
+        format: fmt,
+        audioUrl: product.audioUrl,
+        youtubeUrl: product.youtubeUrl
+      });
+    }
     return 'accepted';
   }
 
