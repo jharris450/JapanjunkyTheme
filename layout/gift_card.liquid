@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ shop.name }} Gift Card</title>
+  {{ content_for_header }}
+  <style>
+    :root {
+      --jj-bg: {{ settings.color_background }};
+      --jj-primary: {{ settings.color_primary }};
+      --jj-secondary: {{ settings.color_secondary }};
+      --jj-accent: {{ settings.color_accent }};
+      --jj-text: {{ settings.color_text }};
+    }
+  </style>
+  {{ 'japanjunky-base.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-gate.css' | asset_url | stylesheet_tag }}
+</head>
+<body class="jj-gate-body">
+  <div class="jj-crt-overlay" aria-hidden="true"></div>
+  {{ content_for_layout }}
+  {{ 'shopify_common.js' | shopify_asset_url | script_tag }}
+  {{ 'shopify_gift_card.js' | shopify_asset_url | script_tag }}
+  <script src="{{ 'japanjunky-giftcard.js' | asset_url }}" defer></script>
+</body>
+</html>
