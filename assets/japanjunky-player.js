@@ -21,6 +21,7 @@
   var lastPT = 0;               // last pointer time (ms)
   var velX = 0, velY = 0;       // tracked drag velocity (layout px/s)
   var THROW_MAX = 4000;         // clamp thrown speed (layout px/s)
+  var STORE_KEY = 'jj-player';
 
   // html has zoom:2.5 — visual px (clientX, innerWidth) convert to layout px
   // (offsetWidth, transform) by dividing by this. Re-read on resize.
@@ -77,6 +78,7 @@
     setPosition(body.x, body.y);
     if (Physics.isAtRest(body, opts)) {
       stopLoop();
+      save();
     }
   }
 
@@ -143,6 +145,7 @@
     };
     setPosition(body.x, body.y);
     startLoop();
+    save();
   }
 
   function despawn() {
@@ -151,6 +154,7 @@
     el = null;
     body = null;
     currentTool = null;
+    clearSaved();
   }
 
   window.addEventListener('resize', function () {
@@ -163,9 +167,37 @@
     startLoop(); // re-settle if the floor moved
   });
 
+  function save() {
+    try {
+      if (!currentTool || !body) return;
+      sessionStorage.setItem(STORE_KEY, JSON.stringify({
+        tool: currentTool, x: body.x, y: body.y
+      }));
+    } catch (e) { /* sessionStorage unavailable — ignore */ }
+  }
+
+  function clearSaved() {
+    try { sessionStorage.removeItem(STORE_KEY); } catch (e) {}
+  }
+
+  function restore() {
+    try {
+      var raw = sessionStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var s = JSON.parse(raw);
+      if (s && s.tool) spawn(s.tool, s.x, s.y);
+    } catch (e) { /* malformed — ignore */ }
+  }
+
   window.JJ_Player = {
     spawn: spawn,
     despawn: despawn,
     getType: function () { return currentTool; }
   };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restore);
+  } else {
+    restore();
+  }
 })();
