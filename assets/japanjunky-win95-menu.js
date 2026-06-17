@@ -40,6 +40,124 @@
     });
   }
 
+  // ─── Shutdown Dialog ───────────────────────────────────────
+  var shutdownTrigger = document.getElementById('jj-shutdown-trigger');
+  var shutdownModal = document.getElementById('jj-shutdown');
+
+  if (shutdownTrigger && shutdownModal) {
+    var countEl = document.getElementById('jj-shutdown-count');
+    var cancelBtn = document.getElementById('jj-shutdown-cancel');
+    var xBtn = document.getElementById('jj-shutdown-x');
+    var COUNT_FROM = 5;
+    var shutdownTimer = null;
+    var bootEl = document.getElementById('jj-shutdown-boot');
+
+    var BOOT_LINES = [
+      'JAPANJUNKY BIOS v3.01',
+      'Copyright (C) 198X TSUNO Systems',
+      '',
+      'Memory Test : 640K OK',
+      'Detecting drives ...',
+      '  CRT-0 : PHOSPHOR DISPLAY UNIT',
+      '  SND-0 : PC SPEAKER',
+      'Initializing display adapter ... OK',
+      'Mounting /store ............... OK',
+      'Loading TSUNO kernel .......... OK',
+      'Starting portal subsystem ..... OK',
+      '',
+      'READY.'
+    ];
+
+    function isBooting() {
+      return shutdownModal.classList.contains('jj-shutdown--booting');
+    }
+
+    function abortShutdown() {
+      // Once the boot sequence starts the state is terminal — ignore aborts.
+      if (isBooting()) return;
+      if (shutdownTimer !== null) {
+        clearInterval(shutdownTimer);
+        shutdownTimer = null;
+      }
+      shutdownModal.hidden = true;
+    }
+
+    function goToSplash() {
+      // Clear the "already entered" flag so the splash portal replays, then
+      // return to the homepage to "boot back up".
+      try { sessionStorage.removeItem('jj-entered'); } catch (e) {}
+      window.location.href = '/';
+    }
+
+    function runBootSequence() {
+      shutdownModal.classList.add('jj-shutdown--booting');
+      if (!bootEl) { goToSplash(); return; }
+      bootEl.textContent = '';
+      var i = 0;
+      function nextLine() {
+        if (i < BOOT_LINES.length) {
+          bootEl.textContent += BOOT_LINES[i] + '\n';
+          i++;
+          // Blank separators flash by; text lines linger a beat.
+          setTimeout(nextLine, BOOT_LINES[i - 1] === '' ? 90 : 230);
+        } else {
+          setTimeout(goToSplash, 1100);
+        }
+      }
+      // Brief full-black pause before the POST log starts.
+      setTimeout(nextLine, 700);
+    }
+
+    function beginBoot() {
+      if (shutdownTimer !== null) {
+        clearInterval(shutdownTimer);
+        shutdownTimer = null;
+      }
+      runBootSequence();
+    }
+
+    function startShutdown() {
+      // Close the start menu behind the dialog.
+      if (startMenu) {
+        startMenu.classList.remove('jj-start-menu--open');
+        if (startBtn) {
+          startBtn.classList.remove('jj-start-btn--active');
+          startBtn.setAttribute('aria-expanded', 'false');
+        }
+      }
+      var remaining = COUNT_FROM;
+      if (countEl) countEl.textContent = remaining;
+      shutdownModal.classList.remove('jj-shutdown--booting');
+      if (bootEl) bootEl.textContent = '';
+      shutdownModal.hidden = false;
+      shutdownTimer = setInterval(function () {
+        remaining -= 1;
+        if (countEl) countEl.textContent = remaining > 0 ? remaining : 0;
+        if (remaining <= 0) beginBoot();
+      }, 1000);
+    }
+
+    shutdownTrigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      startShutdown();
+    });
+
+    if (cancelBtn) cancelBtn.addEventListener('click', abortShutdown);
+    if (xBtn) xBtn.addEventListener('click', abortShutdown);
+
+    // Clicking the dim backdrop (outside the dialog window) aborts.
+    shutdownModal.addEventListener('click', function (e) {
+      if (e.target === shutdownModal) abortShutdown();
+    });
+
+    // Escape aborts while the countdown is running.
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !shutdownModal.hidden && !isBooting()) {
+        abortShutdown();
+      }
+    });
+  }
+
   // ─── JST Clock + Retrofuture Date ───────────────────────────
   var clockEl = document.getElementById('jj-clock');
 
