@@ -9,10 +9,11 @@
   'use strict';
 
   // ─── Resolve the page's primary scroll container ───────────────
-  var el = document.getElementById('jj-scroll') ||
-           document.querySelector('.jj-page') ||
+  // Homepage (#jj-scroll) is intentionally excluded — its wheel-driven hero
+  // scroll has no scrollbar by design.
+  var el = document.querySelector('.jj-page') ||
            document.querySelector('.jj-pdp-info');
-  if (!el) return; // e.g. login — nothing to scroll
+  if (!el) return; // homepage / login — no in-page scroll container
 
   var LINE = 40;       // px per arrow nudge
   var REPEAT_MS = 50;  // hold-to-repeat interval
