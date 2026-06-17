@@ -1,0 +1,37 @@
+/**
+ * japanjunky-audio-util.js
+ * Pure helpers for the player audio engine. UMD: window.JJ_AudioUtil as a
+ * classic <script>, module.exports under Vitest. No Web Audio / DOM.
+ */
+;(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) {
+    module.exports = api;
+  } else {
+    root.JJ_AudioUtil = api;
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  // Extract a YouTube video id from watch?v=, youtu.be/, or /embed/ URLs.
+  function parseYouTubeId(url) {
+    var s = (url == null ? '' : String(url));
+    if (!s) return '';
+    var m = s.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+    m = s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+    m = s.match(/\/embed\/([A-Za-z0-9_-]{11})/);
+    if (m) return m[1];
+    return '';
+  }
+
+  // Decide which playback path to use for a product.
+  function choosePath(opts) {
+    if (opts && opts.audioUrl) return 'file';
+    if (opts && opts.youtubeUrl) return 'youtube';
+    return 'static';
+  }
+
+  return { parseYouTubeId: parseYouTubeId, choosePath: choosePath };
+});
