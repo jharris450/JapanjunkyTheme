@@ -404,6 +404,8 @@
     card.className = 'jj-grid__card';
     card.href = '/products/' + encodeURIComponent(p.handle);
     card.setAttribute('data-format', p.format || '');
+    if (p.audioUrl) card.setAttribute('data-audio-url', p.audioUrl);
+    if (p.youtubeUrl) card.setAttribute('data-youtube-url', p.youtubeUrl);
     if (!p.available) card.className += ' jj-grid__card--soldout';
 
     var imgWrap = document.createElement('div');
