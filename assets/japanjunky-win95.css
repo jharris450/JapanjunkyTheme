@@ -659,7 +659,7 @@
   left: 0;
   width: 96px;
   height: 96px;
-  z-index: 10009; /* below taskbar (10010) so it rests on top of it visually */
+  z-index: 10009; /* behind taskbar (10010); physics floor places player bottom flush with taskbar top */
   display: flex;
   align-items: center;
   justify-content: center;

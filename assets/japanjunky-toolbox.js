@@ -76,10 +76,17 @@
 
         function onUp(ev) {
           toolEl.removeEventListener('pointerup', onUp);
+          toolEl.removeEventListener('pointercancel', onCancel);
           try { toolEl.releasePointerCapture(ev.pointerId); } catch (err) {}
           spawnFromTool(toolEl, ev.clientX, ev.clientY);
         }
+        function onCancel(ev) {
+          toolEl.removeEventListener('pointerup', onUp);
+          toolEl.removeEventListener('pointercancel', onCancel);
+          try { toolEl.releasePointerCapture(ev.pointerId); } catch (err) {}
+        }
         toolEl.addEventListener('pointerup', onUp);
+        toolEl.addEventListener('pointercancel', onCancel);
       });
     })(tools[i]);
   }

@@ -96,6 +96,7 @@
     el.classList.add('jj-player--grabbed');
     el.addEventListener('pointermove', onPointerMove);
     el.addEventListener('pointerup', onPointerUp);
+    el.addEventListener('pointercancel', onPointerCancel);
   }
 
   function onPointerMove(e) {
@@ -120,9 +121,22 @@
     try { el.releasePointerCapture(e.pointerId); } catch (err) {}
     el.removeEventListener('pointermove', onPointerMove);
     el.removeEventListener('pointerup', onPointerUp);
+    el.removeEventListener('pointercancel', onPointerCancel);
     el.classList.remove('jj-player--grabbed');
     body.vx = Physics.clamp(velX, -THROW_MAX, THROW_MAX);
     body.vy = Physics.clamp(velY, -THROW_MAX, THROW_MAX);
+    startLoop();
+  }
+
+  function onPointerCancel(e) {
+    dragging = false;
+    try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+    el.removeEventListener('pointermove', onPointerMove);
+    el.removeEventListener('pointerup', onPointerUp);
+    el.removeEventListener('pointercancel', onPointerCancel);
+    el.classList.remove('jj-player--grabbed');
+    body.vx = 0;
+    body.vy = 0;
     startLoop();
   }
 
@@ -132,7 +146,10 @@
     el = document.createElement('div');
     el.className = 'jj-player';
     el.setAttribute('data-tool', tool);
-    el.innerHTML = '<span class="jj-player__label">' + tool + '</span>';
+    var label = document.createElement('span');
+    label.className = 'jj-player__label';
+    label.textContent = tool;
+    el.appendChild(label);
     document.body.appendChild(el);
     el.addEventListener('pointerdown', onPointerDown);
 
@@ -164,7 +181,7 @@
     body.x = Physics.clamp(body.x, opts.bounds.minX, opts.bounds.maxX);
     body.y = Physics.clamp(body.y, opts.bounds.minY, opts.bounds.maxY);
     setPosition(body.x, body.y);
-    startLoop(); // re-settle if the floor moved
+    if (!dragging) startLoop(); // don't hijack the body with physics mid-drag
   });
 
   function save() {
@@ -185,7 +202,11 @@
       var raw = sessionStorage.getItem(STORE_KEY);
       if (!raw) return;
       var s = JSON.parse(raw);
-      if (s && s.tool) spawn(s.tool, s.x, s.y);
+      if (s && s.tool) {
+        var rx = (typeof s.x === 'number' && isFinite(s.x)) ? s.x : 0;
+        var ry = (typeof s.y === 'number' && isFinite(s.y)) ? s.y : 0;
+        spawn(s.tool, rx, ry);
+      }
     } catch (e) { /* malformed — ignore */ }
   }
 
