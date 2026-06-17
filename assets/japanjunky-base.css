@@ -6,6 +6,25 @@
 @import url('https://fonts.cdnfonts.com/css/fixedsys-excelsior-301');
 @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
+/* --- Tactile button recipe (shared "pop out" CRT bevel) ---
+   Top-left highlight + bottom-right shadow = raised key. The 2px drop reads
+   as the button standing above the screen; :active swaps the bevel and nudges
+   2px down-right so it presses in. Reuse via box-shadow: var(--jj-tactile). */
+:root {
+  --jj-tactile:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    2px 2px 0 #000;
+  --jj-tactile-pressed:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22),
+    0 0 0 #000;
+  --jj-tactile-disabled:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.05),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.6),
+    1px 1px 0 #000;
+}
+
 /* --- Reset --- */
 *, *::before, *::after {
   margin: 0;

@@ -65,7 +65,7 @@
 }
 
 /* Format-specific border on selected */
-.jj-ring__cover--selected[data-format="vinyl"] .jj-ring__cover-img-wrap {
+.jj-ring__cover--selected[data-format="record"] .jj-ring__cover-img-wrap {
   border-color: var(--jj-amber, #ffaa00);
   box-shadow: 0 0 8px rgba(255, 170, 0, 0.3);
 }

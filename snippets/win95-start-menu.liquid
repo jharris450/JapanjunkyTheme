@@ -40,23 +40,6 @@
 
     <div class="jj-start-menu__divider"></div>
 
-    {%- comment -%} Catalog {%- endcomment -%}
-    <div class="jj-start-menu__section-title">-- catalog --</div>
-    <div class="jj-start-menu__item jj-start-menu__item--has-submenu" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>collections</span>
-      <div class="jj-start-submenu" role="menu">
-        <a href="/collections/all" class="jj-start-submenu__item" role="menuitem">all</a>
-        {%- for collection in collections limit: 8 -%}
-          {%- if collection.handle != 'all' and collection.handle != 'frontpage' -%}
-            <a href="{{ collection.url }}" class="jj-start-submenu__item" role="menuitem">{{ collection.title | downcase }}</a>
-          {%- endif -%}
-        {%- endfor -%}
-      </div>
-    </div>
-
-    <div class="jj-start-menu__divider"></div>
-
     {%- comment -%} Site Pages {%- endcomment -%}
     <div class="jj-start-menu__section-title">-- navigate --</div>
     <a href="/" class="jj-start-menu__item" role="menuitem">
@@ -88,9 +71,25 @@
         <span>logout</span>
       </a>
     {%- endif -%}
-    <a href="/" class="jj-start-menu__item" role="menuitem">
+    <button type="button" class="jj-start-menu__item" id="jj-shutdown-trigger" role="menuitem">
       <span class="jj-start-item-icon">&gt;</span>
-      <span>exit</span>
-    </a>
+      <span>shutdown</span>
+    </button>
   </div>
+</div>
+
+{%- comment -%} Shutdown dialog — Win95-style confirm + countdown {%- endcomment -%}
+<div class="jj-shutdown" id="jj-shutdown" role="dialog" aria-modal="true" aria-labelledby="jj-shutdown-title" hidden>
+  <div class="jj-shutdown__window" role="document">
+    <div class="jj-shutdown__titlebar">
+      <span class="jj-shutdown__title" id="jj-shutdown-title">Shut Down</span>
+      <button type="button" class="jj-shutdown__x" id="jj-shutdown-x" aria-label="Cancel shutdown">&times;</button>
+    </div>
+    <div class="jj-shutdown__body">
+      <p class="jj-shutdown__msg">Shutting down system<span class="jj-shutdown__dots">...</span></p>
+      <p class="jj-shutdown__count">Shutting down in <span id="jj-shutdown-count">5</span></p>
+      <button type="button" class="jj-shutdown__cancel jj-action-btn" id="jj-shutdown-cancel">[CANCEL]</button>
+    </div>
+  </div>
+  <pre class="jj-shutdown__boot" id="jj-shutdown-boot" aria-hidden="true"></pre>
 </div>

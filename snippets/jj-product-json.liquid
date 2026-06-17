@@ -22,7 +22,7 @@
       {%- assign p_format_lower = m_format | downcase -%}
       {%- assign p_format = '' -%}
       {%- if p_format_lower contains 'vinyl' or p_format_lower contains 'lp' or p_format_lower contains 'record' -%}
-        {%- assign p_format = 'vinyl' -%}
+        {%- assign p_format = 'record' -%}
       {%- elsif p_format_lower contains 'cd' or p_format_lower contains 'compact disc' -%}
         {%- assign p_format = 'cd' -%}
       {%- elsif p_format_lower contains 'cassette' or p_format_lower contains 'tape' -%}

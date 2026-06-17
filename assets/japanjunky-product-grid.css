@@ -116,7 +116,7 @@
 }
 
 /* Format-specific hover glow (mirrors ring selected treatment) */
-.jj-grid__card[data-format="vinyl"]:hover {
+.jj-grid__card[data-format="record"]:hover {
   border-color: var(--jj-amber, #ffaa00);
   box-shadow: 0 0 8px rgba(255, 170, 0, 0.3);
 }
@@ -204,14 +204,18 @@
 }
 
 .jj-grid__card-format {
+  display: inline-block;
   font-size: 9px;
   padding: 1px 4px;
   border: 1px solid #555;
   color: #888;
   white-space: nowrap;
+  position: relative;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: var(--jj-tactile);
 }
 
-.jj-grid__card-format[data-format="vinyl"] { color: var(--jj-amber, #ffaa00); border-color: var(--jj-amber, #ffaa00); }
+.jj-grid__card-format[data-format="record"] { color: var(--jj-amber, #ffaa00); border-color: var(--jj-amber, #ffaa00); }
 .jj-grid__card-format[data-format="cd"] { color: var(--jj-cyan, #00e5e5); border-color: var(--jj-cyan, #00e5e5); }
 .jj-grid__card-format[data-format="cassette"] { color: var(--jj-green, #33ff33); border-color: var(--jj-green, #33ff33); }
 .jj-grid__card-format[data-format="minidisc"] { color: var(--jj-magenta, #e040e0); border-color: var(--jj-magenta, #e040e0); }
@@ -399,13 +403,15 @@
   font-family: inherit;
   font-size: 11px;
   color: #888;
-  background: none;
+  background: rgba(0, 0, 0, 0.6);
   border: 1px solid #333;
   padding: 2px 6px;
   cursor: default;
   position: relative;
   flex-shrink: 0;
   white-space: nowrap;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
 .jj-grid__filter-btn:hover {
@@ -413,10 +419,18 @@
   border-color: #555;
 }
 
+.jj-grid__filter-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
+}
+
+/* Active filter stays visually pressed in to signal it's engaged */
 .jj-grid__filter-btn--active,
 .jj-grid__filter-btn--active:hover {
   color: var(--jj-secondary, #f5d742);
   border-color: var(--jj-secondary, #f5d742);
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
 }
 
 .jj-grid__filter-badge {
@@ -429,18 +443,30 @@
   font-family: inherit;
   font-size: 10px;
   color: #555;
-  background: none;
-  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  padding: 2px 6px;
   cursor: default;
   display: none;
+  position: relative;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
 .jj-grid__clear-btn--visible {
-  display: inline;
+  display: inline-block;
 }
 
 .jj-grid__clear-btn:hover {
   color: var(--jj-primary, #e8313a);
+  border-color: #555;
+}
+
+.jj-grid__clear-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
 }
 
 /* Sort sits at the right edge, beside the count */
@@ -605,12 +631,19 @@
   font-family: inherit;
   font-size: 12px;
   color: var(--jj-primary, #e8313a);
-  background: transparent;
+  background: rgba(0, 0, 0, 0.6);
   border: 1px solid var(--jj-primary, #e8313a);
   padding: 4px 10px;
   cursor: pointer;
+  position: relative;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 .jj-action-btn:hover {
   border-color: var(--jj-primary, #e8313a);
   text-shadow: 0 0 4px rgba(232, 49, 58, 0.4);
+}
+.jj-action-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
 }

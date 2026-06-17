@@ -36,7 +36,7 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--jj-primary);
-  background: transparent;
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid #444;
   padding: 2px 10px;
   cursor: default;
@@ -48,8 +48,14 @@
   white-space: nowrap;
   height: 26px;
   /* Clip badge + neon pop to button bounds so nothing paints above the
-     taskbar (any leak retriggers the parallax/CRT-canvas gap regression). */
+     taskbar (any leak retriggers the parallax/CRT-canvas gap regression).
+     overflow:hidden also clips the tactile drop shadow, so the raised bevel
+     here is inset-only — no 2px drop. */
   overflow: hidden;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
 .jj-start-btn__icon {
@@ -64,6 +70,9 @@
 .jj-start-btn:active,
 .jj-start-btn--active {
   background: #111;
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
 }
 
 /* --- Cart notification badge (top-left corner of CMD button) --- */
@@ -383,4 +392,149 @@
 
 .jj-clock-popover__date {
   text-align: center;
+}
+
+/* --- Shutdown dialog --- */
+.jj-shutdown {
+  position: fixed;
+  inset: 0;
+  /* Sits above the CRT canvas (10002) and taskbar (10010). */
+  z-index: 10020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+}
+
+.jj-shutdown[hidden] {
+  display: none;
+}
+
+.jj-shutdown__window {
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #0a0a0a;
+  border: 1px solid #444;
+  box-shadow: var(--jj-tactile);
+  animation: jj-crt-on 0.3s ease-out;
+}
+
+.jj-shutdown__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--jj-win95-bar, #1a1a1a);
+  border-bottom: 1px solid #333;
+  padding: 3px 4px 3px 8px;
+}
+
+.jj-shutdown__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--jj-text, #e0d5c0);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.jj-shutdown__x {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--jj-text, #e0d5c0);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  padding: 0 6px;
+  cursor: default;
+  position: relative;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
+}
+
+.jj-shutdown__x:hover {
+  color: var(--jj-primary, #e8313a);
+  border-color: var(--jj-primary, #e8313a);
+}
+
+.jj-shutdown__x:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--jj-tactile-pressed);
+}
+
+.jj-shutdown__body {
+  padding: 18px 16px 16px;
+  text-align: center;
+}
+
+.jj-shutdown__msg {
+  font-size: 15px;
+  color: var(--jj-primary, #e8313a);
+  text-shadow: 0 0 6px rgba(232, 49, 58, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 10px;
+}
+
+.jj-shutdown__dots {
+  animation: jj-shutdown-dots 1.2s steps(4) infinite;
+}
+
+@keyframes jj-shutdown-dots {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+.jj-shutdown__count {
+  font-size: 13px;
+  color: var(--jj-text, #e0d5c0);
+  margin: 0 0 16px;
+}
+
+#jj-shutdown-count {
+  color: var(--jj-secondary, #f5d742);
+  font-weight: 700;
+}
+
+.jj-shutdown__cancel {
+  text-transform: uppercase;
+}
+
+/* --- Boot sequence: black screen + POST text, then back to splash --- */
+.jj-shutdown--booting {
+  background: #000;
+}
+
+.jj-shutdown--booting .jj-shutdown__window {
+  display: none;
+}
+
+.jj-shutdown__boot {
+  display: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 20px 24px;
+  overflow: hidden;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--jj-accent, #33ff33);
+  text-shadow: 0 0 5px rgba(51, 255, 51, 0.4);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.jj-shutdown--booting .jj-shutdown__boot {
+  display: block;
+}
+
+/* Blinking prompt cursor at the tail of the POST log */
+.jj-shutdown__boot::after {
+  content: '_';
+  animation: jj-shutdown-cursor 1.06s step-end infinite;
+}
+
+@keyframes jj-shutdown-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }

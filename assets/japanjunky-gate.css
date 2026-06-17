@@ -45,20 +45,35 @@ body.jj-gate-body {
 }
 
 /* Shared action button (gate pages don't load the storefront stylesheets) */
+/* Tactile recipe is hardcoded here (gate pages don't load base.css where the
+   --jj-tactile vars live). Matches the storefront "pop out" bevel. */
 .jj-gate-btn {
   font-family: inherit;
   font-size: 12px;
   color: var(--jj-primary, #e8313a);
-  background: transparent;
+  background: rgba(0, 0, 0, 0.6);
   border: 1px solid var(--jj-primary, #e8313a);
   padding: 4px 10px;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
+  position: relative;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    2px 2px 0 #000;
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 .jj-gate-btn:hover {
   color: var(--jj-secondary, #f5d742);
   border-color: var(--jj-secondary, #f5d742);
+}
+.jj-gate-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22),
+    0 0 0 #000;
 }
 
 /* --- Password lock screen --- */
