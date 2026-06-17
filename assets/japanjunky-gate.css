@@ -100,7 +100,7 @@ body.jj-gate-body {
 /* --- Print: clean gift card only --- */
 @media print {
   body { background: #fff !important; color: #000 !important; }
-  .jj-crt-overlay, .jj-giftcard__actions, .jj-gate__prompt { display: none !important; }
+  .jj-crt-overlay, .jj-giftcard__actions, .jj-gate__prompt, .jj-gate-btn { display: none !important; }
   .jj-gate__panel { border-color: #000; background: #fff; color: #000; }
   .jj-gate__title, .jj-giftcard__balance, .jj-giftcard__label { color: #000 !important; }
 }
