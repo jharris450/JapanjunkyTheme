@@ -1,8 +1,7 @@
 /**
  * japanjunky-player-audio.js
- * Web Audio engine for the toolbox player. Tranche 5 (this file): self-hosted
- * file playback through an "old speaker" distortion chain, generated static
- * fallback, and stop(). The YouTube path is added next.
+ * Web Audio engine for the toolbox player. Tranche 5 (this file):
+ * Includes self-hosted file playback through an old-speaker distortion chain, YouTube IFrame playback with a crackle bed, and a generated static fallback.
  *
  * Exposes window.JJ_PlayerAudio = { play(opts), stop() }.
  * opts = { format, audioUrl, youtubeUrl }. Depends on window.JJ_AudioUtil.
@@ -21,7 +20,12 @@
     }
     // Autoplay policy: resume must follow a user gesture (the drop is one).
     if (ctx && ctx.state === 'suspended' && ctx.resume) {
-      try { ctx.resume(); } catch (e) {}
+      try {
+        var p = ctx.resume();
+        if (p && p.catch) p.catch(function () {
+          console.warn('[JJ] AudioContext resume rejected — audio may not play');
+        });
+      } catch (e) {}
     }
     return ctx;
   }
@@ -68,6 +72,7 @@
     active = {
       stop: function () {
         try { src.stop(); } catch (e) {}
+        try { src.disconnect(); } catch (e) {}
         try { trim.disconnect(); } catch (e) {}
         try { chain.output.disconnect(); } catch (e) {}
       }
@@ -83,6 +88,7 @@
       stop: function () {
         stopped = true;
         try { if (src) src.stop(); } catch (e) {}
+        try { if (src) src.disconnect(); } catch (e) {}
         try { chain.output.disconnect(); } catch (e) {}
       }
     };
@@ -108,7 +114,7 @@
   var ytQueue = [];
 
   function ensureYouTube(cb) {
-    if (ytReady && window.YT && window.YT.Player) { cb(); return; }
+    if (window.YT && window.YT.Player) { ytReady = true; cb(); return; }
     ytQueue.push(cb);
     if (window.JJ_YT_LOADING) return;
     window.JJ_YT_LOADING = true;
@@ -147,6 +153,7 @@
     src.start();
     return function () {
       try { src.stop(); } catch (e) {}
+      try { src.disconnect(); } catch (e) {}
       try { trim.disconnect(); } catch (e) {}
       try { chain.output.disconnect(); } catch (e) {}
     };
