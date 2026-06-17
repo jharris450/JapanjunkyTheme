@@ -17,11 +17,11 @@
   function parseYouTubeId(url) {
     var s = (url == null ? '' : String(url));
     if (!s) return '';
-    var m = s.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+    var m = s.match(/\/embed\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
     if (m) return m[1];
-    m = s.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+    m = s.match(/youtu\.be\/([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
     if (m) return m[1];
-    m = s.match(/\/embed\/([A-Za-z0-9_-]{11})/);
+    m = s.match(/[?&]v=([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/);
     if (m) return m[1];
     return '';
   }

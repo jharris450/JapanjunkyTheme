@@ -23,6 +23,13 @@ describe('parseYouTubeId', () => {
     expect(AU.parseYouTubeId(null)).toBe('');
     expect(AU.parseYouTubeId(undefined)).toBe('');
   });
+  it('rejects IDs longer than 11 chars (no silent truncation)', () => {
+    expect(AU.parseYouTubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ_')).toBe('');
+    expect(AU.parseYouTubeId('https://youtu.be/dQw4w9WgXcQ_')).toBe('');
+  });
+  it('prefers embed path id over a v= query param when both present', () => {
+    expect(AU.parseYouTubeId('https://www.youtube.com/embed/AAAAAAAAAAA?v=BBBBBBBBBBB')).toBe('AAAAAAAAAAA');
+  });
 });
 
 describe('choosePath', () => {
@@ -37,5 +44,8 @@ describe('choosePath', () => {
     expect(AU.choosePath({})).toBe('static');
     expect(AU.choosePath({ audioUrl: '', youtubeUrl: '' })).toBe('static');
     expect(AU.choosePath(null)).toBe('static');
+  });
+  it('treats undefined fields as static', () => {
+    expect(AU.choosePath({ audioUrl: undefined, youtubeUrl: undefined })).toBe('static');
   });
 });
