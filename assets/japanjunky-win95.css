@@ -482,7 +482,7 @@
 /* --- Toolbox + fan menu --- */
 .jj-toolbox {
   position: fixed;
-  right: 8px;
+  right: 22px; /* clear the 12px right-edge scrollbar + a gap */
   bottom: 40px; /* clears the 32px taskbar + a small gap */
   width: 34px;
   z-index: 10011; /* above taskbar (10010) and CRT canvas (10002) */
