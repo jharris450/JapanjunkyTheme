@@ -23,6 +23,10 @@
   var THROW_MAX = 4000;         // clamp thrown speed (layout px/s)
   var STORE_KEY = 'jj-player';
   var flashTimer = null;
+  var model = null;       // { group, setOpen, setPlaying, update } or null
+  var modelRenderer = null, modelScene = null, modelCamera = null, modelRaf = null;
+  var lidT = 0, lidTarget = 0; // current/target open fraction for the tween
+  var insertBeatTimer = null;
 
   // html has zoom:2.5 — visual px (clientX, innerWidth) convert to layout px
   // (offsetWidth, transform) by dividing by this. Re-read on resize.
@@ -141,17 +145,84 @@
     startLoop();
   }
 
+  function mountModel(tool) {
+    // Only the cassette model exists today; others keep the placeholder label.
+    if (tool !== 'cassette') return false;
+    if (typeof THREE === 'undefined' || !window.JJ_CassetteModel) return false;
+    var canvas = document.createElement('canvas');
+    canvas.className = 'jj-player__canvas';
+    canvas.width = 96; canvas.height = 96;
+    el.appendChild(canvas);
+    try {
+      modelRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
+      modelRenderer.setClearColor(0x000000, 0);
+      modelScene = new THREE.Scene();
+      modelCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+      modelCamera.position.set(0.45, 0.25, 3.1);
+      modelCamera.lookAt(0, 0, 0);
+      var tex = function (n) {
+        return (window.JJ_CASSETTE_TEX && window.JJ_CASSETTE_TEX[n]) ||
+               (console.error('[CassetteModel] missing texture key:', n), n);
+      };
+      model = window.JJ_CassetteModel.build(THREE, tex);
+      modelScene.add(model.group);
+      el.classList.add('jj-player--model');
+    } catch (e) {
+      unmountModel();
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+      return false;
+    }
+    var last = performance.now();
+    function render(now) {
+      modelRaf = requestAnimationFrame(render);
+      var dt = (now - last) / 1000; last = now;
+      if (dt > 0.05) dt = 0.05;
+      // ease the lid toward its target
+      // lidTarget is always exactly 0 or 1; the clamps below land on exact values, so === terminates.
+      if (lidT !== lidTarget) {
+        var step = dt / 0.5; // ~0.5s open/close
+        if (lidT < lidTarget) lidT = Math.min(lidTarget, lidT + step);
+        else lidT = Math.max(lidTarget, lidT - step);
+        model.setOpen(lidT);
+      }
+      model.group.rotation.y += dt * 0.4; // gentle idle spin
+      model.update(dt);
+      modelRenderer.render(modelScene, modelCamera);
+    }
+    modelRaf = requestAnimationFrame(render);
+    return true;
+  }
+
+  function unmountModel() {
+    clearTimeout(insertBeatTimer); insertBeatTimer = null;
+    if (modelRaf !== null) { cancelAnimationFrame(modelRaf); modelRaf = null; }
+    if (model && model.dispose) { try { model.dispose(); } catch (e) {} }
+    if (modelRenderer) { try { modelRenderer.dispose(); } catch (e) {} }
+    model = null; modelRenderer = null; modelScene = null; modelCamera = null;
+    lidT = 0; lidTarget = 0;
+  }
+
+  // open -> brief hold -> close, used as the "insert tape" beat on accept
+  function playInsertBeat() {
+    if (!model) return;
+    clearTimeout(insertBeatTimer);
+    lidTarget = 1;
+    insertBeatTimer = setTimeout(function () { lidTarget = 0; }, 650);
+  }
+
   function spawn(tool, x, y) {
     despawn();
     currentTool = tool;
     el = document.createElement('div');
     el.className = 'jj-player';
     el.setAttribute('data-tool', tool);
-    var label = document.createElement('span');
-    label.className = 'jj-player__label';
-    label.textContent = tool;
-    el.appendChild(label);
     document.body.appendChild(el);
+    if (!mountModel(tool)) {
+      var label = document.createElement('span');
+      label.className = 'jj-player__label';
+      label.textContent = tool;
+      el.appendChild(label);
+    }
     el.addEventListener('pointerdown', onPointerDown);
 
     var opts = buildOpts();
@@ -168,6 +239,7 @@
 
   function despawn() {
     stopLoop();
+    unmountModel();
     if (window.JJ_PlayerAudio) window.JJ_PlayerAudio.stop();
     if (el && el.parentNode) el.parentNode.removeChild(el);
     el = null;
@@ -256,6 +328,7 @@
         youtubeUrl: product.youtubeUrl
       });
     }
+    if (model) { playInsertBeat(); model.setPlaying(true); }
     return 'accepted';
   }
 
