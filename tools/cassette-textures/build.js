@@ -40,8 +40,13 @@ async function run() {
     process.exit(1);
   }
   for (const f of FACES) {
+    var srcPath = path.join(SRC, f.src);
+    if (!fs.existsSync(srcPath)) {
+      console.error('Missing source file: ' + srcPath);
+      process.exit(1);
+    }
     const dim = fitSize(f.crop.width, f.crop.height);
-    let img = sharp(path.join(SRC, f.src)).extract(f.crop).resize(dim.w, dim.h);
+    let img = sharp(srcPath).extract(f.crop).resize(dim.w, dim.h);
 
     if (f.out === 'cassette-front.png') {
       // Punch a transparent rounded-rect window via a dest-out composite.
@@ -51,7 +56,8 @@ async function run() {
       const mask = Buffer.from(
         '<svg width="' + dim.w + '" height="' + dim.h + '">' +
         '<rect x="' + wx + '" y="' + wy + '" width="' + ww + '" height="' + wh +
-        '" rx="' + rr + '" ry="' + rr + '" fill="#fff"/></svg>'
+        '" rx="' + rr + '" ry="' + rr + '" fill="#fff"/></svg>',
+        'utf8'
       );
       img = img.ensureAlpha().composite([{ input: mask, blend: 'dest-out' }]);
     }
@@ -62,4 +68,4 @@ async function run() {
   console.log('done.');
 }
 
-run();
+run().catch(function (err) { console.error(err && err.message ? err.message : err); process.exit(1); });
