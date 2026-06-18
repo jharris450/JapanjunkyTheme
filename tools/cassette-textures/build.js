@@ -27,7 +27,7 @@ const FACES = [
 ];
 
 // Window opening as a fraction of the cropped FRONT output (rounded rect).
-const WINDOW = { x: 0.16, y: 0.10, w: 0.68, h: 0.34, r: 0.10 };
+const WINDOW = { x: 0.235, y: 0.125, w: 0.50, h: 0.445, r: 0.18 };
 
 function fitSize(w, h) {
   var s = MAX / Math.max(w, h);
