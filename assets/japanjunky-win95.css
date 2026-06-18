@@ -745,8 +745,8 @@
   display: block;
   image-rendering: pixelated;
 }
-.jj-player:has(.jj-player__canvas) {
+/* Model players keep their framed border + bevel; only the fill goes transparent
+   so the 3D canvas shows through (and the frame survives a render failure). */
+.jj-player--model {
   background: transparent;
-  border: none;
-  box-shadow: none;
 }

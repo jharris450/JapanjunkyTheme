@@ -65,7 +65,7 @@
       cassette.add(reel);
       reels.push(reel);
     }
-    cassette.position.set(0, H * 0.12, D / 2 - 0.04); // upper area, just inside front
+    cassette.position.set(0, H * 0.12, D / 2 + 0.03); // upper area, just inside front
     group.add(cassette);
 
     // --- Lid: hinged at the RIGHT vertical edge, front photo with alpha window ---
@@ -77,12 +77,12 @@
       photoMat('cassette-lid-inner.png')        // -z inner
     ];
     var lid = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.05), lidMats);
-    lid.position.set(-W / 2, 0, 0.025);         // center sits left of the hinge
+    lid.position.set(-W / 2, 0, 0.08);          // center sits left of the hinge
     hinge.add(lid);
     // translucent cyan pane in the window opening (child of the lid)
     var pane = new THREE.Mesh(
       new THREE.PlaneGeometry(W * 0.66, H * 0.32),
-      new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.22 })
+      new THREE.MeshBasicMaterial({ color: 0x33ff33, transparent: true, opacity: 0.22 })
     );
     pane.position.set(0, H * 0.12, 0.03);
     lid.add(pane);
@@ -100,8 +100,23 @@
       }
     }
 
+    function dispose() {
+      var geos = [];
+      group.traverse(function (o) {
+        if (!o.isMesh) return;
+        if (o.geometry && geos.indexOf(o.geometry) === -1) geos.push(o.geometry);
+        var mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (var i = 0; i < mats.length; i++) {
+          var m = mats[i]; if (!m) continue;
+          if (m.map) { try { m.map.dispose(); } catch (e) {} }
+          try { m.dispose(); } catch (e) {}
+        }
+      });
+      for (var g = 0; g < geos.length; g++) { try { geos[g].dispose(); } catch (e) {} }
+    }
+
     setOpen(0);
-    return { group: group, setOpen: setOpen, setPlaying: setPlaying, update: update };
+    return { group: group, setOpen: setOpen, setPlaying: setPlaying, update: update, dispose: dispose };
   }
 
   window.JJ_CassetteModel = { build: build };
