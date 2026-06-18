@@ -738,3 +738,15 @@
 .jj-media-ghost[data-format="record"]   { border-color: var(--jj-amber, #ffaa00); color: var(--jj-amber, #ffaa00); }
 .jj-media-ghost[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
 .jj-media-ghost[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
+
+.jj-player__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+}
+.jj-player:has(.jj-player__canvas) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
