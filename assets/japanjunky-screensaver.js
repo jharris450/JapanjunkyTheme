@@ -77,6 +77,32 @@
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
   var waxState = JJ_WaxSim.createState({ seed: 7, count: 6 });
   var waxAspect = resW / resH;
+
+  // Dark→bright character ramp for the 3D ASCII glob. Drawn once into a 1-row
+  // canvas atlas (one cell per glyph), NearestFilter for the pixel look.
+  var ASCII_RAMP = [' ', '.', ',', ':', ';', '~', '=', '+', 'o', 'x', 'X', '$', '@', '#'];
+  function buildAsciiRamp(glyphs) {
+    var cell = 16;
+    var cv = document.createElement('canvas');
+    cv.width = cell * glyphs.length;
+    cv.height = cell;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px "Fixedsys Excelsior 3.01", "DotGothic16", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < glyphs.length; i++) {
+      ctx.fillText(glyphs[i], i * cell + cell / 2, cell / 2);
+    }
+    var tex = new THREE.CanvasTexture(cv);
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
+    return tex;
+  }
+  var asciiRamp = buildAsciiRamp(ASCII_RAMP);
+
   var waxUniforms = {
     uTime: { value: 0.0 },
     uAspect: { value: waxAspect },
@@ -85,7 +111,12 @@
     uBlobs: { value: [] },
     uBlobTemp: { value: [] },
     uTsuno: { value: new THREE.Vector4(0, 0, 0, 0.16) },
-    uTsunoActive: { value: 0.0 }
+    uTsunoActive: { value: 0.0 },
+    uAsciiTex: { value: asciiRamp },
+    uAsciiCount: { value: ASCII_RAMP.length },
+    uAsciiBlob: { value: 0 },          // blob 0 floats as the ASCII glob
+    uAsciiCell: { value: 5.0 },        // character cell size in render px
+    uResolution: { value: new THREE.Vector2(resW, resH) }
   };
   for (var wi = 0; wi < JJ_WaxSim.MAX_BLOBS; wi++) {
     waxUniforms.uBlobs.value.push(new THREE.Vector4(0, 0, 0, 0));
@@ -177,59 +208,21 @@
   sparkleGeo.setAttribute('aSize', new THREE.BufferAttribute(sparkleSizes, 1));
   sparkleGeo.setAttribute('aPhase', new THREE.BufferAttribute(sparklePhases, 1));
 
-  // Glyph atlas — drawn once at runtime, NearestFilter for the pixel look.
-  var GLYPHS = ['ア','イ','ウ','エ','オ','カ','ｦ','ﾝ',':','*','.','='];
-  var GLYPH_MOTE_CHANCE = 0.15;
-  var GLYPH_MOTE_SCALE = 1.8;
-
-  function buildGlyphAtlas(glyphs) {
-    var cell = 16;
-    var cv = document.createElement('canvas');
-    cv.width = cell * glyphs.length;
-    cv.height = cell;
-    var ctx = cv.getContext('2d');
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px "Fixedsys Excelsior 3.01", "DotGothic16", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (var i = 0; i < glyphs.length; i++) {
-      ctx.fillText(glyphs[i], i * cell + cell / 2, cell / 2);
-    }
-    var tex = new THREE.CanvasTexture(cv);
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    return tex;
-  }
-  var glyphAtlas = buildGlyphAtlas(GLYPHS);
-
-  var sparkleGlyph = new Float32Array(SPARKLE_COUNT);
-  for (var gi = 0; gi < SPARKLE_COUNT; gi++) {
-    sparkleGlyph[gi] = (Math.random() < GLYPH_MOTE_CHANCE)
-      ? (1 + Math.floor(Math.random() * GLYPHS.length))
-      : 0;
-  }
-  sparkleGeo.setAttribute('aGlyph', new THREE.BufferAttribute(sparkleGlyph, 1));
-
+  // Warm rising bubble motes (plain dots; the ASCII look now lives on a wax
+  // glob in the raymarch shader, not on particles).
   var SPARKLE_VERT = [
     'attribute float aSize;',
     'attribute float aPhase;',
-    'attribute float aGlyph;',
     'uniform float uTime;',
     'uniform float uResolution;',
-    'uniform float uGlyphScale;',
     'varying float vAlpha;',
-    'varying float vGlyph;',
     'void main() {',
     '  float twinkle = sin(uTime * 3.0 + aPhase) * 0.5 + 0.5;',
     '  vAlpha = pow(twinkle, 3.0);',
-    '  vGlyph = aGlyph;',
     '  vec3 pos = position;',
-    '  pos.y += mod(uTime * 0.25 + aPhase, 3.0);',
+    '  pos.y += mod(uTime * 0.25 + aPhase, 3.0);', // slow upward drift, wraps
     '  vec4 viewPos = modelViewMatrix * vec4(pos, 1.0);',
-    '  float sz = aSize * (aGlyph > 0.5 ? uGlyphScale : 1.0);',
-    '  gl_PointSize = sz * (20.0 / -viewPos.z);',
+    '  gl_PointSize = aSize * (20.0 / -viewPos.z);',
     '  vec4 clipPos = projectionMatrix * viewPos;',
     '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w) * clipPos.w / uResolution;',
     '  gl_Position = clipPos;',
@@ -237,34 +230,20 @@
   ].join('\n');
 
   var SPARKLE_FRAG = [
-    'uniform sampler2D uAtlas;',
-    'uniform float uGlyphCount;',
     'varying float vAlpha;',
-    'varying float vGlyph;',
     'void main() {',
-    '  vec3 warm = vec3(0.95, 0.72, 0.30);',
-    '  if (vGlyph > 0.5) {',
-    '    float idx = vGlyph - 1.0;',
-    '    vec2 uv = vec2((idx + gl_PointCoord.x) / uGlyphCount, gl_PointCoord.y);',
-    '    float lum = texture2D(uAtlas, uv).r;',
-    '    if (lum < 0.4) discard;',
-    '    gl_FragColor = vec4(warm, vAlpha);',
-    '  } else {',
-    '    float dist = length(gl_PointCoord - vec2(0.5));',
-    '    if (dist > 0.5) discard;',
-    '    float glow = 1.0 - dist * 2.0;',
-    '    gl_FragColor = vec4(warm, glow * vAlpha);',
-    '  }',
+    '  vec3 warm = vec3(0.95, 0.72, 0.30);', // amber/gold mote
+    '  float dist = length(gl_PointCoord - vec2(0.5));',
+    '  if (dist > 0.5) discard;',
+    '  float glow = 1.0 - dist * 2.0;',
+    '  gl_FragColor = vec4(warm, glow * vAlpha);',
     '}'
   ].join('\n');
 
   var sparkleMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0.0 },
-      uResolution: { value: parseFloat(resH) },
-      uGlyphScale: { value: GLYPH_MOTE_SCALE },
-      uAtlas: { value: glyphAtlas },
-      uGlyphCount: { value: GLYPHS.length }
+      uResolution: { value: parseFloat(resH) }
     },
     vertexShader: SPARKLE_VERT,
     fragmentShader: SPARKLE_FRAG,

@@ -10,7 +10,8 @@ describe('wax-shader module', () => {
   it('exposes vert and frag GLSL with the expected uniforms', () => {
     expect(typeof Shader.vert).toBe('string');
     expect(typeof Shader.frag).toBe('string');
-    ['uTime', 'uAspect', 'uHeatGlow', 'uBlobCount', 'uBlobs[8]', 'uBlobTemp[8]', 'uTsuno', 'uTsunoActive']
+    ['uTime', 'uAspect', 'uHeatGlow', 'uBlobCount', 'uBlobs[8]', 'uBlobTemp[8]', 'uTsuno', 'uTsunoActive',
+     'uAsciiTex', 'uAsciiCount', 'uAsciiBlob', 'uAsciiCell', 'uResolution']
       .forEach(function (decl) {
         expect(Shader.frag).toContain(decl);
       });
