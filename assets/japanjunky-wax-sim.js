@@ -42,7 +42,7 @@
   // walls bounce them. Tuned slow + liquid; adjust live in the browser pass.
   var DEFAULTS = {
     seed: 1,
-    count: 6,
+    count: 4,          // few, large globs (lava-lamp look)
     hotTemp: 1.0,      // ambient temp at the floor
     coldTemp: 0.0,     // ambient temp at the top
     neutralTemp: 0.5,  // temp at which buoyancy is zero
@@ -57,8 +57,8 @@
     xMax: 1.5,
     driftAmp: 0.012,   // lateral accel amplitude (gentle sway)
     driftFreq: 0.35,   // lateral drift frequency
-    minRadius: 0.10,
-    maxRadius: 0.20,
+    minRadius: 0.14,   // bigger, more varied globs
+    maxRadius: 0.32,
     zSpread: 0.25,     // depth slab half-range
     tsunoPush: 1.5,
     tsunoSplit: 1.0
