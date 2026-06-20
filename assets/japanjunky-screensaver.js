@@ -118,15 +118,21 @@
     uTsunoActive: { value: 0.0 },
     uAsciiTex: { value: asciiRamp },
     uAsciiCount: { value: ASCII_RAMP.length },
-    uAsciiBlob: { value: 0 },          // blob 0 floats as the ASCII glob
-    uAsciiCell: { value: 5.0 },        // character cell size in render px
+    uAsciiCenter: { value: new THREE.Vector4(0.5, 0.52, -0.6, 0.22) }, // separate front glob
+    uAsciiActive: { value: 1.0 },
+    uAsciiCell: { value: 6.0 },        // character cell size in render px
     uResolution: { value: new THREE.Vector2(resW, resH) },
     uBlobStretch: { value: [] }
   };
+  // Smoothed per-blob stretch (low-pass of the raw |vy|-driven target) so the
+  // teardrop shape eases instead of snapping when velocity changes.
+  var waxStretch = [];
+  var STRETCH_SMOOTH = 0.06;
   for (var wi = 0; wi < JJ_WaxSim.MAX_BLOBS; wi++) {
     waxUniforms.uBlobs.value.push(new THREE.Vector4(0, 0, 0, 0));
     waxUniforms.uBlobTemp.value.push(0.0);
     waxUniforms.uBlobStretch.value.push(1.0);
+    waxStretch.push(1.0);
   }
   var waxScene = new THREE.Scene();
   var waxCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -168,9 +174,15 @@
       var b = waxState.blobs[i];
       waxUniforms.uBlobs.value[i].set(b.x, b.y, b.z, b.radius);
       waxUniforms.uBlobTemp.value[i] = b.temp;
-      var sy = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
-      waxUniforms.uBlobStretch.value[i] = sy;
+      var target = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
+      waxStretch[i] += (target - waxStretch[i]) * STRETCH_SMOOTH;
+      waxUniforms.uBlobStretch.value[i] = waxStretch[i];
     }
+    // ASCII glob: centered, gentle bob — stable, always visible, never merges.
+    waxUniforms.uAsciiCenter.value.set(
+      0.5 + Math.sin(t * 0.25) * 0.04,
+      0.52 + Math.sin(t * 0.31) * 0.05,
+      -0.6, 0.22);
     if (tsuno.active) {
       waxUniforms.uTsuno.value.set(tsuno.x, tsuno.y, 0.0, tsuno.radius);
       waxUniforms.uTsunoActive.value = 1.0;
