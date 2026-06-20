@@ -71,116 +71,67 @@
   // reads as portal glow, aligned with the homepage's appearance.
   var mainClearColor = (isProductPagePreset || isLoginPreset) ? 0x3a1a08 : 0x000000;
 
-  // ─── Swirl Speed ─────────────────────────────────────────────
-  var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
-  var swirlSpeed = SWIRL_SPEEDS[config.orbitSpeed] || SWIRL_SPEEDS.slow;
-
-  // ─── Portal Tunnel ───────────────────────────────────────────
-  var TUNNEL_VERT = [
-    'uniform float uResolution;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
-    '  vec4 clipPos = projectionMatrix * viewPos;',
-    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
-    '             * clipPos.w / uResolution;',
-    '  gl_Position = clipPos;',
-    '}'
-  ].join('\n');
-
-  var TUNNEL_FRAG = [
-    'uniform float uTime;',
-    'uniform float uSwirlSpeed;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  float angle = vUv.x;',
-    '  float depth = vUv.y;',
-    '',
-    '  float a = angle * 6.2832;',
-    '  float rot = uTime * uSwirlSpeed * 0.25;',
-    '',
-    '  // Spiral tightens toward far end (whirlpool)',
-    '  float tightness = 3.0 + depth * 5.0;',
-    '',
-    '  // Two primary spiral arms',
-    '  float s1 = sin(a * 2.0 + depth * tightness * 6.2832 - rot) * 0.5 + 0.5;',
-    '  // Three counter-rotating arms',
-    '  float s2 = sin(a * 3.0 - depth * (tightness - 1.0) * 4.5 + rot * 0.6) * 0.5 + 0.5;',
-    '  // Fine wisps',
-    '  float s3 = sin(a * 5.0 + depth * tightness * 8.0 - rot * 1.4) * 0.5 + 0.5;',
-    '',
-    '  float pattern = s1 * 0.5 + s2 * 0.3 + s3 * 0.2;',
-    '',
-    '  // Warm palette (near camera)',
-    '  vec3 w1 = vec3(0.4, 0.05, 0.02);',
-    '  vec3 w2 = vec3(0.85, 0.35, 0.05);',
-    '  vec3 w3 = vec3(0.95, 0.75, 0.3);',
-    '  vec3 warm = mix(w1, w2, smoothstep(0.0, 0.5, pattern));',
-    '  warm = mix(warm, w3, smoothstep(0.5, 1.0, pattern));',
-    '',
-    '  // Purple palette (far end)',
-    '  vec3 p1 = vec3(0.25, 0.05, 0.35);',
-    '  vec3 p2 = vec3(0.6, 0.2, 0.8);',
-    '  vec3 p3 = vec3(0.8, 0.6, 0.95);',
-    '  vec3 cool = mix(p1, p2, smoothstep(0.0, 0.5, pattern));',
-    '  cool = mix(cool, p3, smoothstep(0.5, 1.0, pattern));',
-    '',
-    '  // Blend warm→purple by depth',
-    '  float depthMix = smoothstep(0.2, 0.8, depth);',
-    '  vec3 color = mix(warm, cool, depthMix);',
-    '',
-    '  float falloff = smoothstep(0.0, 0.12, depth) * smoothstep(1.0, 0.6, depth);',
-    '  color *= 0.4 + 0.6 * falloff;',
-    '',
-    '  // Glow at far end shifts warm→purple',
-    '  float glow = smoothstep(0.75, 1.0, depth);',
-    '  vec3 glowWarm = vec3(0.95, 0.75, 0.5);',
-    '  vec3 glowCool = vec3(0.7, 0.5, 0.95);',
-    '  color += mix(glowWarm, glowCool, depthMix) * glow * 0.3;',
-    '',
-    '  // ── Volumetric fog: smoke bank ───────────────────────────',
-    '  // A localized band of smoke in the mid tunnel. Mixing toward a',
-    '  // muted smoky grey DESATURATES/flattens the spiral detail in',
-    '  // that band, so it reads as a fog layer instead of just',
-    '  // brightening the whole scene. No angular pattern -> no',
-    '  // squiggles. The band drifts slowly in depth for life.',
-    '  float bankCenter = 0.45 + 0.06 * sin(uTime * 0.18);',
-    '  float fogBank = exp(-pow((depth - bankCenter) * 2.8, 2.0));',
-    '  float fogDensity = fogBank * (0.85 + 0.15 * sin(uTime * 0.35));',
-    '  vec3 fogColor = vec3(0.5, 0.4, 0.42);',
-    '  color = mix(color, fogColor, clamp(fogDensity, 0.0, 1.0) * 0.55);',
-    '',
-    '  gl_FragColor = vec4(color, 1.0);',
-    '}'
-  ].join('\n');
-
   var textureLoader = new THREE.TextureLoader();
   textureLoader.crossOrigin = 'anonymous';
 
-  function buildTunnel() {
-    var geo = new THREE.CylinderGeometry(3, 3, 40, 12, 20, true);
-    var mat = new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: parseFloat(resH) },
-        uTime: { value: 0.0 },
-        uSwirlSpeed: { value: swirlSpeed }
-      },
-      vertexShader: TUNNEL_VERT,
-      fragmentShader: TUNNEL_FRAG,
-      side: THREE.BackSide,
-      depthWrite: false
-    });
-    var tunnel = new THREE.Mesh(geo, mat);
-    tunnel.rotation.x = Math.PI / 2;
-    tunnel.position.set(0, 0, 18);
-    scene.add(tunnel);
-    return tunnel;
+  // ─── Lava-lamp wax (replaces the portal) ───────────────────
+  var waxState = JJ_WaxSim.createState({ seed: 7, count: 6 });
+  var waxAspect = resW / resH;
+  var waxUniforms = {
+    uTime: { value: 0.0 },
+    uAspect: { value: waxAspect },
+    uHeatGlow: { value: 1.0 },
+    uBlobCount: { value: waxState.blobs.length },
+    uBlobs: { value: [] },
+    uBlobTemp: { value: [] },
+    uTsuno: { value: new THREE.Vector4(0, 0, 0, 0.16) },
+    uTsunoActive: { value: 0.0 }
+  };
+  for (var wi = 0; wi < JJ_WaxSim.MAX_BLOBS; wi++) {
+    waxUniforms.uBlobs.value.push(new THREE.Vector4(0, 0, 0, 0));
+    waxUniforms.uBlobTemp.value.push(0.0);
+  }
+  var waxScene = new THREE.Scene();
+  var waxCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  var waxMat = new THREE.ShaderMaterial({
+    uniforms: waxUniforms,
+    vertexShader: JJ_WaxShader.vert,
+    fragmentShader: JJ_WaxShader.frag,
+    depthWrite: false,
+    depthTest: false
+  });
+  var waxQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), waxMat);
+  waxScene.add(waxQuad);
+
+  // Tsuno → wax field input (uv space, with frame-to-frame velocity)
+  var lastTsunoUv = null;
+  function computeTsunoInput(dt) {
+    if (!tsunoMesh || dt <= 0) return { active: false };
+    var ndc = tsunoMesh.position.clone().project(camera);
+    var uv = { x: ndc.x * 0.5 + 0.5, y: ndc.y * 0.5 + 0.5 };
+    var vx = 0, vy = 0;
+    if (lastTsunoUv) { vx = (uv.x - lastTsunoUv.x) / dt; vy = (uv.y - lastTsunoUv.y) / dt; }
+    lastTsunoUv = uv;
+    return { active: true, x: uv.x, y: uv.y, vx: vx, vy: vy, radius: 0.16 };
   }
 
-  var tunnel = buildTunnel();
+  function updateWax(t, dt) {
+    var tsuno = computeTsunoInput(dt);
+    JJ_WaxSim.step(waxState, dt, tsuno);
+    waxUniforms.uTime.value = t;
+    waxUniforms.uBlobCount.value = waxState.blobs.length;
+    for (var i = 0; i < waxState.blobs.length; i++) {
+      var b = waxState.blobs[i];
+      waxUniforms.uBlobs.value[i].set(b.x, b.y, b.z, b.radius);
+      waxUniforms.uBlobTemp.value[i] = b.temp;
+    }
+    if (tsuno.active) {
+      waxUniforms.uTsuno.value.set(tsuno.x, tsuno.y, 0.0, tsuno.radius);
+      waxUniforms.uTsunoActive.value = 1.0;
+    } else {
+      waxUniforms.uTsunoActive.value = 0.0;
+    }
+  }
 
   // ─── Starburst Glow ─────────────────────────────────────────
   var GLOW_VERT = [
@@ -196,54 +147,6 @@
     '  gl_Position = clipPos;',
     '}'
   ].join('\n');
-
-  var GLOW_FRAG = [
-    'uniform float uTime;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec2 uv = vUv - 0.5;',
-    '  float dist = length(uv);',
-    '  float angle = atan(uv.y, uv.x);',
-    '',
-    '  float rays = pow(abs(sin(angle * 8.0 + uTime * 0.5)), 4.0);',
-    '  rays += pow(abs(sin(angle * 13.0 - uTime * 0.3)), 6.0) * 0.5;',
-    '',
-    '  float glow = 1.0 / (1.0 + dist * 6.0);',
-    '  glow = pow(glow, 1.5);',
-    '',
-    '  float intensity = glow + rays * glow * 0.6;',
-    '',
-    '  // Pulse breathing',
-    '  float pulse = 1.0 + sin(uTime * 0.8) * 0.15;',
-    '  intensity *= pulse;',
-    '',
-    '  vec3 color = mix(vec3(0.3, 0.05, 0.4), vec3(0.7, 0.5, 0.95), glow);',
-    '',
-    '  gl_FragColor = vec4(color * intensity, intensity);',
-    '}'
-  ].join('\n');
-
-  function buildGlow() {
-    var geo = new THREE.PlaneGeometry(4, 4);
-    var mat = new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: parseFloat(resH) },
-        uTime: { value: 0.0 }
-      },
-      vertexShader: GLOW_VERT,
-      fragmentShader: GLOW_FRAG,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    var glow = new THREE.Mesh(geo, mat);
-    glow.position.set(0, 0, 36);
-    scene.add(glow);
-    return glow;
-  }
-
-  var glow = buildGlow();
 
   // ─── Sparkle Particles ─────────────────────────────────────
   var SPARKLE_COUNT = 30;
@@ -267,46 +170,94 @@
   sparkleGeo.setAttribute('aSize', new THREE.BufferAttribute(sparkleSizes, 1));
   sparkleGeo.setAttribute('aPhase', new THREE.BufferAttribute(sparklePhases, 1));
 
+  // Glyph atlas — drawn once at runtime, NearestFilter for the pixel look.
+  var GLYPHS = ['ア','イ','ウ','エ','オ','カ','ｦ','ﾝ',':','*','.','='];
+  var GLYPH_MOTE_CHANCE = 0.15;
+  var GLYPH_MOTE_SCALE = 1.8;
+
+  function buildGlyphAtlas(glyphs) {
+    var cell = 16;
+    var cv = document.createElement('canvas');
+    cv.width = cell * glyphs.length;
+    cv.height = cell;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px "Fixedsys Excelsior 3.01", "DotGothic16", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < glyphs.length; i++) {
+      ctx.fillText(glyphs[i], i * cell + cell / 2, cell / 2);
+    }
+    var tex = new THREE.CanvasTexture(cv);
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
+    return tex;
+  }
+  var glyphAtlas = buildGlyphAtlas(GLYPHS);
+
+  var sparkleGlyph = new Float32Array(SPARKLE_COUNT);
+  for (var gi = 0; gi < SPARKLE_COUNT; gi++) {
+    sparkleGlyph[gi] = (Math.random() < GLYPH_MOTE_CHANCE)
+      ? (1 + Math.floor(Math.random() * GLYPHS.length))
+      : 0;
+  }
+  sparkleGeo.setAttribute('aGlyph', new THREE.BufferAttribute(sparkleGlyph, 1));
+
   var SPARKLE_VERT = [
     'attribute float aSize;',
     'attribute float aPhase;',
+    'attribute float aGlyph;',
     'uniform float uTime;',
     'uniform float uResolution;',
+    'uniform float uGlyphScale;',
     'varying float vAlpha;',
-    'varying float vDepth;',
-    '',
+    'varying float vGlyph;',
     'void main() {',
     '  float twinkle = sin(uTime * 3.0 + aPhase) * 0.5 + 0.5;',
     '  vAlpha = pow(twinkle, 3.0);',
-    '  vDepth = clamp(position.z / 35.0, 0.0, 1.0);',
-    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
-    '  gl_PointSize = aSize * (20.0 / -viewPos.z);',
+    '  vGlyph = aGlyph;',
+    '  vec3 pos = position;',
+    '  pos.y += mod(uTime * 0.25 + aPhase, 3.0);',
+    '  vec4 viewPos = modelViewMatrix * vec4(pos, 1.0);',
+    '  float sz = aSize * (aGlyph > 0.5 ? uGlyphScale : 1.0);',
+    '  gl_PointSize = sz * (20.0 / -viewPos.z);',
     '  vec4 clipPos = projectionMatrix * viewPos;',
-    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
-    '             * clipPos.w / uResolution;',
+    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w) * clipPos.w / uResolution;',
     '  gl_Position = clipPos;',
     '}'
   ].join('\n');
 
   var SPARKLE_FRAG = [
+    'uniform sampler2D uAtlas;',
+    'uniform float uGlyphCount;',
     'varying float vAlpha;',
-    'varying float vDepth;',
-    '',
+    'varying float vGlyph;',
     'void main() {',
-    '  float dist = length(gl_PointCoord - vec2(0.5));',
-    '  if (dist > 0.5) discard;',
-    '  float glow = 1.0 - dist * 2.0;',
-    '  vec3 warmColor = vec3(0.95, 0.85, 0.7);',
-    '  vec3 coolColor = vec3(0.8, 0.7, 0.95);',
-    '  vec3 sparkleColor = mix(warmColor, coolColor, vDepth);',
-    '  gl_FragColor = vec4(sparkleColor, glow * vAlpha);',
+    '  vec3 warm = vec3(0.95, 0.72, 0.30);',
+    '  if (vGlyph > 0.5) {',
+    '    float idx = vGlyph - 1.0;',
+    '    vec2 uv = vec2((idx + gl_PointCoord.x) / uGlyphCount, gl_PointCoord.y);',
+    '    float lum = texture2D(uAtlas, uv).r;',
+    '    if (lum < 0.4) discard;',
+    '    gl_FragColor = vec4(warm, vAlpha);',
+    '  } else {',
+    '    float dist = length(gl_PointCoord - vec2(0.5));',
+    '    if (dist > 0.5) discard;',
+    '    float glow = 1.0 - dist * 2.0;',
+    '    gl_FragColor = vec4(warm, glow * vAlpha);',
+    '  }',
     '}'
   ].join('\n');
 
   var sparkleMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0.0 },
-      uResolution: { value: parseFloat(resH) }
+      uResolution: { value: parseFloat(resH) },
+      uGlyphScale: { value: GLYPH_MOTE_SCALE },
+      uAtlas: { value: glyphAtlas },
+      uGlyphCount: { value: GLYPHS.length }
     },
     vertexShader: SPARKLE_VERT,
     fragmentShader: SPARKLE_FRAG,
@@ -317,263 +268,6 @@
 
   var sparkles = new THREE.Points(sparkleGeo, sparkleMat);
   scene.add(sparkles);
-
-  // ─── Portal Rings ──────────────────────────────────────────
-  var RING_FRAG = [
-    'uniform float uTime;',
-    'uniform vec3 uBaseColor;',
-    'uniform float uFlameIntensity;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec2 uv = vUv - 0.5;',
-    '  float dist = length(uv) * 2.0;',
-    '  float angle = atan(uv.y, uv.x);',
-    '',
-    '  // Flame noise — layered sin waves for flickering',
-    '  float flame1 = sin(angle * 8.0 + uTime * 2.5) * 0.5 + 0.5;',
-    '  float flame2 = sin(angle * 13.0 - uTime * 1.8) * 0.5 + 0.5;',
-    '  float flame3 = sin(angle * 21.0 + uTime * 3.2) * 0.5 + 0.5;',
-    '  float flames = flame1 * 0.5 + flame2 * 0.3 + flame3 * 0.2;',
-    '',
-    '  // Ring band with flame-distorted outer edge',
-    '  float outerEdge = 0.88 + flames * 0.12;',
-    '  float ring = smoothstep(0.6, 0.78, dist) * smoothstep(outerEdge + 0.05, outerEdge - 0.05, dist);',
-    '',
-    '  // Brighten toward white at flame tips',
-    '  float tipGlow = flames * smoothstep(0.75, 0.9, dist);',
-    '  vec3 color = mix(uBaseColor, vec3(1.0, 0.9, 0.8), tipGlow * 0.6);',
-    '',
-    '  gl_FragColor = vec4(color * uFlameIntensity, ring);',
-    '}'
-  ].join('\n');
-
-  var RING_CONFIG = [
-    { color: [0.95, 0.75, 0.25], size: 8.0, z: 1,  rot: 0.12,  intensity: 1.0 },
-    { color: [0.95, 0.55, 0.1],  size: 7.5, z: 3,  rot: -0.18, intensity: 0.95 },
-    { color: [0.9, 0.3, 0.08],   size: 7.0, z: 5,  rot: 0.24,  intensity: 0.9 },
-    { color: [0.85, 0.15, 0.1],  size: 6.5, z: 7,  rot: -0.30, intensity: 0.85 },
-    { color: [0.8, 0.1, 0.25],   size: 6.0, z: 9,  rot: 0.36,  intensity: 0.8 },
-    { color: [0.7, 0.1, 0.4],    size: 5.6, z: 11, rot: -0.42, intensity: 0.75 },
-    { color: [0.6, 0.1, 0.55],   size: 5.2, z: 13, rot: 0.48,  intensity: 0.7 },
-    { color: [0.5, 0.15, 0.65],  size: 4.8, z: 15, rot: -0.54, intensity: 0.65 },
-    { color: [0.45, 0.25, 0.75], size: 4.5, z: 17, rot: 0.60,  intensity: 0.6 },
-    { color: [0.55, 0.4, 0.85],  size: 4.2, z: 19, rot: -0.66, intensity: 0.55 }
-  ];
-
-  var portalRings = [];
-
-  for (var ri = 0; ri < RING_CONFIG.length; ri++) {
-    var rc = RING_CONFIG[ri];
-    var ringGeo = new THREE.PlaneGeometry(rc.size, rc.size);
-    var ringMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: parseFloat(resH) },
-        uTime: { value: 0.0 },
-        uBaseColor: { value: new THREE.Vector3(rc.color[0], rc.color[1], rc.color[2]) },
-        uFlameIntensity: { value: rc.intensity }
-      },
-      vertexShader: GLOW_VERT,
-      fragmentShader: RING_FRAG,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-    var ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.position.z = rc.z;
-    ringMesh.userData.rotSpeed = rc.rot;
-    scene.add(ringMesh);
-    portalRings.push(ringMesh);
-  }
-
-  // Glow plane behind front ring — warm backlight bloom
-  var ringGlowGeo = new THREE.PlaneGeometry(10, 10);
-  var RING_GLOW_FRAG = [
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec2 uv = vUv - 0.5;',
-    '  float dist = length(uv);',
-    '  float glow = 1.0 / (1.0 + dist * 4.0);',
-    '  glow = pow(glow, 2.0) * 0.3;',
-    '  vec3 color = vec3(0.95, 0.7, 0.2);',
-    '  gl_FragColor = vec4(color * glow, glow);',
-    '}'
-  ].join('\n');
-  var ringGlowMat = new THREE.ShaderMaterial({
-    uniforms: {
-      uResolution: { value: parseFloat(resH) }
-    },
-    vertexShader: GLOW_VERT,
-    fragmentShader: RING_GLOW_FRAG,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-  var ringGlowMesh = new THREE.Mesh(ringGlowGeo, ringGlowMat);
-  ringGlowMesh.position.z = 3;
-  scene.add(ringGlowMesh);
-
-  // ─── Vortex Swirl Backdrop ─────────────────────────────────
-  var BACKDROP_FRAG = [
-    'uniform sampler2D uTexture;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec4 texColor = texture2D(uTexture, vUv);',
-    '  vec3 color = texColor.rgb * 0.2;',
-    '  gl_FragColor = vec4(color, 1.0);',
-    '}'
-  ].join('\n');
-
-  var vortexBackdrop = null;
-  var swirlUrl = config.swirlTexture;
-  if (swirlUrl) {
-    textureLoader.load(swirlUrl, function (tex) {
-      tex.minFilter = THREE.NearestFilter;
-      tex.magFilter = THREE.NearestFilter;
-      var geo = new THREE.PlaneGeometry(7, 7);
-      var mat = new THREE.ShaderMaterial({
-        uniforms: {
-          uResolution: { value: parseFloat(resH) },
-          uTexture: { value: tex }
-        },
-        vertexShader: GLOW_VERT,
-        fragmentShader: BACKDROP_FRAG,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      vortexBackdrop = new THREE.Mesh(geo, mat);
-      vortexBackdrop.position.set(0, 0, 37);
-      scene.add(vortexBackdrop);
-    });
-  }
-
-  // ─── Memphis Squiggle Backdrop ─────────────────────────────
-  // Full-frame procedural pattern inspired by 80s music-video drop
-  // cloths (Memphis style). Marks animate shrinking big→small on loop.
-  var MEMPHIS_VERT = [
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vUv = uv;',
-    '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
-    '}'
-  ].join('\n');
-
-  var MEMPHIS_FRAG = [
-    'uniform float uTime;',
-    'uniform float uAspect;',
-    'varying vec2 vUv;',
-    '',
-    'float mhash2(vec2 p) {',
-    '  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);',
-    '}',
-    '',
-    '// Leopard rosette: irregular blob made by unioning two offset',
-    '// ellipses per cell. Every parameter (rotation, aspect, lobe offset,',
-    '// lobe size, overall scale) drifts on its own slow sine with a',
-    '// per-cell phase, so each blob morphs uniquely and liquidly instead',
-    '// of just pulsing in size.',
-    'float stroke(vec2 p) {',
-    '  vec2 cell = floor(p);',
-    '  vec2 local = p - cell - 0.5;',
-    '  // Per-cell seeds for independent parameter drifts.',
-    '  float s1 = mhash2(cell * 7.13 + 0.17);',
-    '  float s2 = mhash2(cell * 4.31 + 1.23);',
-    '  float s3 = mhash2(cell * 8.77 + 2.91);',
-    '  float s4 = mhash2(cell * 11.7 + 3.55);',
-    '  float s5 = mhash2(cell * 13.3 + 4.77);',
-    '  float s6 = mhash2(cell * 9.13 + 5.19);',
-    '  float s7 = mhash2(cell * 6.59 + 6.83);',
-    '  float s8 = mhash2(cell * 5.41 + 7.41);',
-    '  float s9 = mhash2(cell * 3.11 + 8.13);',
-    '  float sA = mhash2(cell * 5.97 + 9.27);',
-    '  float sB = mhash2(cell * 1.93 + 4.21);',
-    '  // Drifting morph waves — slow, per-cell phase, varied frequencies.',
-    '  float w1 = sin(uTime * 0.9 + s1 * 6.2832);',
-    '  float w2 = sin(uTime * 1.3 + s2 * 6.2832);',
-    '  float w3 = sin(uTime * 0.7 + s3 * 6.2832);',
-    '  float w4 = sin(uTime * 1.1 + s4 * 6.2832);',
-    '  float w5 = cos(uTime * 0.8 + s5 * 6.2832);',
-    '  float w6 = cos(uTime * 1.2 + s6 * 6.2832);',
-    '  // Position drifts slightly so cells slosh inside their grid slot.',
-    '  vec2 baseOff = vec2(s9, sA) * 0.55 - 0.275;',
-    '  vec2 driftOff = vec2(w5, w6) * 0.06;',
-    '  vec2 q = local - baseOff - driftOff;',
-    '  // Rotation drifts over time.',
-    '  float angle = s1 * 6.2832 + w1 * 0.9;',
-    '  float ca = cos(angle);',
-    '  float sa = sin(angle);',
-    '  vec2 r = vec2(q.x * ca + q.y * sa, -q.x * sa + q.y * ca);',
-    '  // Overall pulse — large random size range, per-cell rate too.',
-    '  float pulse = 0.5 + 0.5 * sin(uTime * (3.5 + s4 * 3.0) + sB * 6.2832);',
-    '  float pulseScale = mix(0.40, 1.30, pulse);',
-    '  // Primary ellipse — wide variety of base sizes per cell.',
-    '  float rx = mix(0.09, 0.24, s2) * pulseScale * mix(0.85, 1.15, w2 * 0.5 + 0.5);',
-    '  float ry = mix(0.05, 0.16, s3) * pulseScale * mix(0.85, 1.15, w3 * 0.5 + 0.5);',
-    '  vec2 e1 = vec2(r.x / rx, r.y / ry);',
-    '  float d1 = length(e1) - 1.0;',
-    '  // Secondary lobe — offset, size, and aspect all drift over time.',
-    '  vec2 lobeBase = (vec2(s6, s7) - 0.5) * 0.18;',
-    '  vec2 lobeDrift = vec2(w4, w1) * 0.05;',
-    '  vec2 lobeOff = lobeBase + lobeDrift;',
-    '  float rx2 = rx * mix(0.45, 0.95, s4) * mix(0.8, 1.2, w4 * 0.5 + 0.5);',
-    '  float ry2 = ry * mix(0.45, 0.95, s5) * mix(0.8, 1.2, w2 * 0.5 + 0.5);',
-    '  vec2 e2 = vec2((r.x - lobeOff.x) / rx2, (r.y - lobeOff.y) / ry2);',
-    '  float d2 = length(e2) - 1.0;',
-    '  float d = min(d1, d2);',
-    '  float edge = mix(0.05, 0.12, s8);',
-    '  return 1.0 - smoothstep(-edge, edge, d);',
-    '}',
-    '',
-    'float strokeField(vec2 p) {',
-    '  float a = stroke(p);',
-    '  float b = stroke(p + vec2(0.5, 0.5));',
-    '  return max(a, b);',
-    '}',
-    '',
-    'void main() {',
-    '  vec2 uv = vUv - 0.5;',
-    '  uv.x *= uAspect;',
-    '  float rad = length(uv);',
-    '',
-    '  // Fixed grid — individual strokes pulse in stroke() with per-cell',
-    '  // phase, so the field shimmers without the whole graphic throbbing.',
-    '  float mask = strokeField(uv * 13.0);',
-    '',
-    '  // Center fade — no memphis inside the portal ring.',
-    '  float centerFade = smoothstep(0.18, 0.38, rad);',
-    '  mask *= centerFade;',
-    '',
-    '  // Amber bg + black ink, premultiplied so center is transparent.',
-    '  vec3 bg  = vec3(0.28, 0.14, 0.04);',
-    '  vec3 ink = vec3(0.0);',
-    '  vec3 color = mix(bg, ink, mask) * centerFade;',
-    '',
-    '  gl_FragColor = vec4(color, centerFade);',
-    '}'
-  ].join('\n');
-
-  // Rendered as a separate pre-pass with ortho camera so it fills the
-  // full frame behind the tunnel (which otherwise wraps the camera
-  // and occludes any in-scene backdrop mesh).
-  var memphisScene = new THREE.Scene();
-  var memphisCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  var memphisGeo = new THREE.PlaneGeometry(2, 2);
-  var memphisMat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0.0 },
-      uAspect: { value: resW / resH }
-    },
-    vertexShader: MEMPHIS_VERT,
-    fragmentShader: MEMPHIS_FRAG,
-    transparent: true,
-    depthWrite: false,
-    depthTest: false
-  });
-  var memphisBackdrop = new THREE.Mesh(memphisGeo, memphisMat);
-  memphisScene.add(memphisBackdrop);
 
   // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
   var GHOST_FRAG = [
@@ -1465,549 +1159,7 @@
     }
   }
 
-  // ─── PS1 Textured Material ───────────────────────────────────
-  var TEX_VERT = [
-    'uniform float uResolution;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
-    '  vec4 clipPos = projectionMatrix * viewPos;',
-    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
-    '             * clipPos.w / uResolution;',
-    '  gl_Position = clipPos;',
-    '}'
-  ].join('\n');
 
-  var TEX_FRAG = [
-    'uniform sampler2D uTexture;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  gl_FragColor = texture2D(uTexture, vUv);',
-    '}'
-  ].join('\n');
-
-  function makeTextureMaterial(texture) {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: parseFloat(resH) },
-        uTexture: { value: texture }
-      },
-      vertexShader: TEX_VERT,
-      fragmentShader: TEX_FRAG,
-      side: THREE.DoubleSide,
-      depthWrite: true
-    });
-  }
-
-  // ─── Flying Objects ──────────────────────────────────────────
-  var TUNNEL_RADIUS = 3;
-  var SPAWN_RADIUS = TUNNEL_RADIUS * 0.7;
-  var SPAWN_Z = -2;
-  var DESPAWN_Z = 36;
-  var OBJECT_SIZE = 0.4;
-  var SPAWN_INTERVAL = 2500;
-  var MAX_OBJECTS = 5;
-
-  var flyingObjects = [];
-  var loadedTextures = [];
-  var lastSpawnTime = 0;
-  var objectGeo = new THREE.PlaneGeometry(OBJECT_SIZE, OBJECT_SIZE);
-
-  var textureUrls = config.textures || [];
-
-  for (var ti = 0; ti < textureUrls.length; ti++) {
-    (function (url) {
-      textureLoader.load(url, function (tex) {
-        tex.minFilter = THREE.NearestFilter;
-        tex.magFilter = THREE.NearestFilter;
-        loadedTextures.push(tex);
-      });
-    })(textureUrls[ti]);
-  }
-
-  function spawnObject(time) {
-    if (loadedTextures.length === 0) return;
-    if (flyingObjects.length >= MAX_OBJECTS) return;
-    if (time - lastSpawnTime < SPAWN_INTERVAL) return;
-
-    lastSpawnTime = time;
-
-    var tex = loadedTextures[Math.floor(Math.random() * loadedTextures.length)];
-    var mat = makeTextureMaterial(tex);
-    var mesh = new THREE.Mesh(objectGeo, mat);
-
-    var angle = Math.random() * Math.PI * 2;
-    var r = Math.random() * SPAWN_RADIUS;
-    mesh.position.set(
-      Math.cos(angle) * r,
-      Math.sin(angle) * r,
-      SPAWN_Z
-    );
-
-    mesh.userData = {
-      velZ: 0.2 + Math.random() * 0.1,
-      accel: 0.002 + Math.random() * 0.001,
-      rotVelX: (Math.random() - 0.5) * 0.08,
-      rotVelY: (Math.random() - 0.5) * 0.08,
-      rotVelZ: (Math.random() - 0.5) * 0.08,
-      driftFreqX: 0.5 + Math.random() * 0.5,
-      driftFreqY: 0.4 + Math.random() * 0.4,
-      driftAmpX: 0.3 + Math.random() * 0.3,
-      driftAmpY: 0.3 + Math.random() * 0.3,
-      driftPhase: Math.random() * Math.PI * 2,
-      baseX: mesh.position.x,
-      baseY: mesh.position.y
-    };
-
-    scene.add(mesh);
-    flyingObjects.push(mesh);
-  }
-
-  function animateObjects(time) {
-    var t = time * 0.001;
-    var i = flyingObjects.length;
-
-    while (i--) {
-      var obj = flyingObjects[i];
-      var ud = obj.userData;
-
-      ud.velZ += ud.accel;
-      obj.position.z += ud.velZ;
-
-      var driftX = Math.sin(t * ud.driftFreqX + ud.driftPhase) * ud.driftAmpX;
-      var driftY = Math.sin(t * ud.driftFreqY + ud.driftPhase * 1.3) * ud.driftAmpY;
-      obj.position.x = ud.baseX + driftX;
-      obj.position.y = ud.baseY + driftY;
-
-      var dist = Math.sqrt(obj.position.x * obj.position.x + obj.position.y * obj.position.y);
-      if (dist > SPAWN_RADIUS) {
-        var scale = SPAWN_RADIUS / dist;
-        obj.position.x *= scale;
-        obj.position.y *= scale;
-      }
-
-      obj.rotation.x += ud.rotVelX;
-      obj.rotation.y += ud.rotVelY;
-      obj.rotation.z += ud.rotVelZ;
-
-      if (obj.position.z > DESPAWN_Z) {
-        scene.remove(obj);
-        obj.material.dispose();
-        flyingObjects.splice(i, 1);
-      }
-    }
-  }
-
-  // ─── Memory Fragments ──────────────────────────────────────────
-  var FRAG_VERT = [
-    'uniform float uResolution;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec4 viewPos = modelViewMatrix * vec4(position, 1.0);',
-    '  vec4 clipPos = projectionMatrix * viewPos;',
-    '  clipPos.xy = floor(clipPos.xy * uResolution / clipPos.w)',
-    '             * clipPos.w / uResolution;',
-    '  gl_Position = clipPos;',
-    '}'
-  ].join('\n');
-
-  var FRAG_FRAG = [
-    'uniform sampler2D uGifTex;',
-    'uniform sampler2D uMaskAtlas;',
-    'uniform float uMaskIndex;',
-    'uniform float uMaskCols;',
-    'uniform float uMaskRows;',
-    'uniform vec3 uFragTint;',
-    'uniform float uFragAlpha;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  float mCol = mod(uMaskIndex, uMaskCols);',
-    '  float mRow = floor(uMaskIndex / uMaskCols);',
-    '  vec2 mCellSize = vec2(1.0 / uMaskCols, 1.0 / uMaskRows);',
-    '  vec2 maskUV = vec2(mCol, mRow) * mCellSize + vUv * mCellSize;',
-    '',
-    '  vec4 sprite = texture2D(uGifTex, vUv);',
-    '  float mask = texture2D(uMaskAtlas, maskUV).a;',
-    '  gl_FragColor = vec4(sprite.rgb * uFragTint, sprite.a * mask * uFragAlpha);',
-    '}'
-  ].join('\n');
-
-  var fragmentMaskTex = null;
-
-  function makeFragmentMaterial(gifTex) {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: parseFloat(resH) },
-        uGifTex: { value: gifTex },
-        uMaskAtlas: { value: fragmentMaskTex },
-        uMaskIndex: { value: 0.0 },
-        uMaskCols: { value: 4.0 },
-        uMaskRows: { value: 2.0 },
-        uFragTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
-        uFragAlpha: { value: 1.0 }
-      },
-      vertexShader: FRAG_VERT,
-      fragmentShader: FRAG_FRAG,
-      transparent: true,
-      depthWrite: false,
-      depthTest: true,
-      blending: THREE.NormalBlending,
-      side: THREE.DoubleSide
-    });
-  }
-
-  // ─── Memory Fragment Layer Config & State ─────────────────────
-  var FRAG_LAYERS = [
-    // Background: slow, small, near walls
-    {
-      spawnInterval: 2500,
-      spawnRadiusMin: TUNNEL_RADIUS * 0.3,
-      spawnRadiusMax: TUNNEL_RADIUS * 0.5,
-      velZMin: 0.03, velZMax: 0.06,
-      accel: 0.0003,
-      scaleMin: 0.4, scaleMax: 0.6,
-      driftAmp: 0.1,
-      wobbleAmp: 0.087,
-      expandRate: 2.0,
-      alphaMult: 0.9,
-      maxCount: 5,
-      lastSpawn: 0,
-      nextInterval: 2500
-    },
-    // Mid: medium speed and size
-    {
-      spawnInterval: 3500,
-      spawnRadiusMin: TUNNEL_RADIUS * 0.2,
-      spawnRadiusMax: TUNNEL_RADIUS * 0.4,
-      velZMin: 0.08, velZMax: 0.14,
-      accel: 0.0005,
-      scaleMin: 0.6, scaleMax: 1.0,
-      driftAmp: 0.15,
-      wobbleAmp: 0.175,
-      expandRate: 2.5,
-      alphaMult: 1.0,
-      maxCount: 3,
-      lastSpawn: 0,
-      nextInterval: 3500
-    },
-    // Foreground: fast, large, closer to center
-    {
-      spawnInterval: 6000,
-      spawnRadiusMin: TUNNEL_RADIUS * 0.1,
-      spawnRadiusMax: TUNNEL_RADIUS * 0.3,
-      velZMin: 0.15, velZMax: 0.25,
-      accel: 0.001,
-      scaleMin: 0.9, scaleMax: 1.4,
-      driftAmp: 0.2,
-      wobbleAmp: 0.262,
-      expandRate: 3.5,
-      alphaMult: 1.0,
-      maxCount: 2,
-      lastSpawn: 0,
-      nextInterval: 6000
-    }
-  ];
-
-  var fragmentGeo = new THREE.PlaneGeometry(1, 1);
-  var fragmentPool = [];        // active fragments
-  var fragmentRecyclePool = []; // despawned, ready to reuse
-  var fragmentTextures = [];    // { tex: THREE.Texture, meta: {w,h}, url: string }
-  var fragmentManifest = config.fragments || [];
-  var fragmentMaskConfig = config.fragmentMasks || { count: 8, columns: 4, rows: 2 };
-
-  // ─── Memory Fragment Texture Loading ──────────────────────────
-  // Load mask atlas
-  if (config.fragmentMasks && config.fragmentMasks.url) {
-    textureLoader.load(config.fragmentMasks.url, function (tex) {
-      tex.minFilter = THREE.NearestFilter;
-      tex.magFilter = THREE.NearestFilter;
-      fragmentMaskTex = tex;
-      fragmentMaskConfig.columns = config.fragmentMasks.columns || 4;
-      fragmentMaskConfig.rows = config.fragmentMasks.rows || 2;
-      fragmentMaskConfig.count = config.fragmentMasks.count || 8;
-    });
-  }
-
-  // Load and decode GIFs using gifuct-js for frame-by-frame animation
-  function loadFragmentGifs() {
-    for (var gi = 0; gi < fragmentManifest.length; gi++) {
-      (function (entry) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', entry.url, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = function () {
-          if (xhr.status !== 200) return;
-          var gif = gifuct.parseGIF(xhr.response);
-          var frames = gifuct.decompressFrames(gif, true);
-          if (frames.length === 0) return;
-
-          var gifW = gif.lsd.width;
-          var gifH = gif.lsd.height;
-
-          // Build full-frame canvases for each frame (handles disposal + partial updates)
-          var frameCanvases = [];
-          var compCanvas = document.createElement('canvas');
-          compCanvas.width = gifW;
-          compCanvas.height = gifH;
-          var compCtx = compCanvas.getContext('2d');
-          var patchCanvas = document.createElement('canvas');
-          var patchCtx = patchCanvas.getContext('2d');
-
-          for (var fi = 0; fi < frames.length; fi++) {
-            var frame = frames[fi];
-            var dims = frame.dims;
-
-            // Handle disposal before drawing new frame
-            if (fi > 0) {
-              var prevDisposal = frames[fi - 1].disposalType;
-              if (prevDisposal === 2) {
-                // Restore to background (clear)
-                compCtx.clearRect(0, 0, gifW, gifH);
-              }
-              // disposalType 3 (restore to previous) not commonly used, ignore
-            }
-
-            // Draw this frame's patch
-            patchCanvas.width = dims.width;
-            patchCanvas.height = dims.height;
-            var imageData = new ImageData(frame.patch, dims.width, dims.height);
-            patchCtx.putImageData(imageData, 0, 0);
-            compCtx.drawImage(patchCanvas, dims.left, dims.top);
-
-            // Snapshot current composite into a stored canvas
-            var snapCanvas = document.createElement('canvas');
-            snapCanvas.width = gifW;
-            snapCanvas.height = gifH;
-            snapCanvas.getContext('2d').drawImage(compCanvas, 0, 0);
-            frameCanvases.push(snapCanvas);
-          }
-
-          // Create the display canvas and texture
-          var displayCanvas = document.createElement('canvas');
-          displayCanvas.width = gifW;
-          displayCanvas.height = gifH;
-          var displayCtx = displayCanvas.getContext('2d');
-          displayCtx.drawImage(frameCanvases[0], 0, 0);
-
-          var tex = new THREE.CanvasTexture(displayCanvas);
-          tex.minFilter = THREE.NearestFilter;
-          tex.magFilter = THREE.NearestFilter;
-          tex.generateMipmaps = false;
-
-          fragmentTextures.push({
-            tex: tex,
-            meta: { w: gifW, h: gifH },
-            url: entry.url,
-            frameCanvases: frameCanvases,
-            frameDelays: frames.map(function (f) { return Math.max(f.delay || 100, 33); }),
-            displayCanvas: displayCanvas,
-            displayCtx: displayCtx,
-            currentFrame: 0,
-            elapsed: 0
-          });
-        };
-        xhr.send();
-      })(fragmentManifest[gi]);
-    }
-  }
-
-  loadFragmentGifs();
-
-  // Advance GIF animations — only when fragments are visible on screen
-  function tickFragmentGifs(dt) {
-    if (fragmentPool.length === 0) return; // no active fragments, skip GPU work
-    var dtMs = dt * 1000;
-    for (var ti = 0; ti < fragmentTextures.length; ti++) {
-      var entry = fragmentTextures[ti];
-      var prevFrame = entry.currentFrame;
-      entry.elapsed += dtMs;
-      // Advance through multiple frames if needed (catches up after long dt)
-      while (entry.elapsed >= entry.frameDelays[entry.currentFrame]) {
-        entry.elapsed -= entry.frameDelays[entry.currentFrame];
-        entry.currentFrame = (entry.currentFrame + 1) % entry.frameCanvases.length;
-      }
-      // Only redraw + upload texture when frame actually changed
-      if (entry.currentFrame !== prevFrame) {
-        entry.displayCtx.clearRect(0, 0, entry.displayCanvas.width, entry.displayCanvas.height);
-        entry.displayCtx.drawImage(entry.frameCanvases[entry.currentFrame], 0, 0);
-        entry.tex.needsUpdate = true;
-      }
-    }
-  }
-
-  // ─── Memory Fragment Spawn Logic ──────────────────────────────
-  function countFragmentsInLayer(layerIdx) {
-    var count = 0;
-    for (var ci = 0; ci < fragmentPool.length; ci++) {
-      if (fragmentPool[ci].userData.layerIdx === layerIdx) count++;
-    }
-    return count;
-  }
-
-  function spawnFragment(time) {
-    if (fragmentTextures.length === 0 || !fragmentMaskTex) return;
-
-    for (var li = 0; li < FRAG_LAYERS.length; li++) {
-      var layer = FRAG_LAYERS[li];
-      if (time - layer.lastSpawn < layer.nextInterval) continue;
-      if (countFragmentsInLayer(li) >= layer.maxCount) continue;
-
-      layer.lastSpawn = time;
-      // Jitter next interval +-30%
-      layer.nextInterval = layer.spawnInterval * (0.7 + Math.random() * 0.6);
-
-      // Pick random texture from cache
-      var texIdx = Math.floor(Math.random() * fragmentTextures.length);
-      var texEntry = fragmentTextures[texIdx];
-      var meta = texEntry.meta;
-
-      // Vivid (60%) or ghost-tinted (40%)
-      var isVivid = Math.random() < 0.6;
-
-      // Spawn position
-      var angle = Math.random() * Math.PI * 2;
-      var r = layer.spawnRadiusMin + Math.random() * (layer.spawnRadiusMax - layer.spawnRadiusMin);
-      if (isProductPagePreset) {
-        // Force fragments to spawn hugging the tunnel wall so every one of
-        // them will visibly cross TUNNEL_RADIUS as it expands outward and
-        // trigger the emergence fade. Near-axis spawns would otherwise
-        // never leave the cylinder and stay invisible their whole life.
-        r = TUNNEL_RADIUS * (0.85 + Math.random() * 0.15);
-      }
-      var sx = Math.cos(angle) * r;
-      var sy = Math.sin(angle) * r;
-
-      // Scale from aspect ratio + layer size
-      var maxDim = Math.max(meta.w, meta.h);
-      var layerScale = layer.scaleMin + Math.random() * (layer.scaleMax - layer.scaleMin);
-      var meshScaleX = layerScale * (meta.w / maxDim);
-      var meshScaleY = layerScale * (meta.h / maxDim);
-
-      // Compute target alpha once so we can modulate it per-frame (e.g. the
-      // product-page emergence fade) without losing the spawn-time intent.
-      var targetAlpha = (isVivid ? 1.0 : (0.7 + Math.random() * 0.2)) * layer.alphaMult;
-
-      // Try to recycle
-      var mesh;
-      if (fragmentRecyclePool.length > 0) {
-        mesh = fragmentRecyclePool.pop();
-        mesh.material.uniforms.uGifTex.value = texEntry.tex;
-        mesh.material.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
-        mesh.material.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
-        mesh.material.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
-        mesh.material.uniforms.uFragTint.value.set(
-          isVivid ? 1.0 : 1.0,
-          isVivid ? 1.0 : 0.85,
-          isVivid ? 1.0 : 0.7
-        );
-        mesh.material.uniforms.uFragAlpha.value = targetAlpha;
-        scene.add(mesh);
-      } else {
-        var mat = makeFragmentMaterial(texEntry.tex);
-        mat.uniforms.uMaskIndex.value = Math.floor(Math.random() * fragmentMaskConfig.count);
-        mat.uniforms.uMaskCols.value = fragmentMaskConfig.columns;
-        mat.uniforms.uMaskRows.value = fragmentMaskConfig.rows;
-        mat.uniforms.uFragTint.value.set(
-          isVivid ? 1.0 : 1.0,
-          isVivid ? 1.0 : 0.85,
-          isVivid ? 1.0 : 0.7
-        );
-        mat.uniforms.uFragAlpha.value = targetAlpha;
-        mesh = new THREE.Mesh(fragmentGeo, mat);
-        scene.add(mesh);
-      }
-
-      mesh.layers.set(1); // render on fragment layer (no dither)
-      mesh.position.set(sx, sy, DESPAWN_Z);
-      mesh.scale.set(meshScaleX, meshScaleY, 1);
-
-      mesh.userData = {
-        layerIdx: li,
-        texIdx: texIdx,
-        velZ: -(layer.velZMin + Math.random() * (layer.velZMax - layer.velZMin)),
-        accel: -layer.accel,
-        // Product page: lateral sweep so fragments fly left across the
-        // angled camera view instead of straight at the viewer.
-        velX: isProductPagePreset ? (0.02 + Math.random() * 0.015) : 0,
-        driftFreqX: 0.3 + Math.random() * 0.4,
-        driftFreqY: 0.25 + Math.random() * 0.35,
-        driftAmp: layer.driftAmp,
-        driftPhase: Math.random() * Math.PI * 2,
-        baseX: sx,
-        baseY: sy,
-        expandRate: layer.expandRate || 2.0,
-        wobbleFreq: 0.3 + Math.random() * 0.5,
-        wobbleAmp: layer.wobbleAmp,
-        targetAlpha: targetAlpha
-      };
-
-      fragmentPool.push(mesh);
-    }
-  }
-
-  // ─── Memory Fragment Animation Loop ───────────────────────────
-  function animateFragments(time, dt) {
-    tickFragmentGifs(dt);
-    var t = time * 0.001;
-    var i = fragmentPool.length;
-
-    while (i--) {
-      var mesh = fragmentPool[i];
-      var ud = mesh.userData;
-
-      // Z movement (frame-based)
-      ud.velZ += ud.accel;
-      mesh.position.z += ud.velZ;
-
-      // Lateral sweep (product page: fragments drift left across view)
-      ud.baseX += ud.velX;
-
-      // Radial expansion — fragments fly outward toward screen edges as they approach
-      var zProgress = 1.0 - (mesh.position.z - SPAWN_Z) / (DESPAWN_Z - SPAWN_Z);
-      // zProgress: 0 at far end (DESPAWN_Z), 1 near camera (SPAWN_Z)
-      var expand = 1.0 + zProgress * zProgress * ud.expandRate;
-
-      // Lateral drift (sinusoidal) + expansion
-      var driftX = Math.sin(t * ud.driftFreqX + ud.driftPhase) * ud.driftAmp;
-      var driftY = Math.sin(t * ud.driftFreqY + ud.driftPhase * 1.3) * ud.driftAmp;
-      mesh.position.x = (ud.baseX + driftX) * expand;
-      mesh.position.y = (ud.baseY + driftY) * expand;
-
-      // Billboard facing + wobble
-      mesh.lookAt(camera.position);
-      mesh.rotateZ(ud.wobbleAmp * Math.sin(t * ud.wobbleFreq));
-
-      // GIF frame updates handled by tickFragmentGifs()
-
-      // Product-page emergence fade: the off-axis camera can see straight
-      // through the tunnel cylinder wall, so fragments spawned deep inside
-      // the funnel would otherwise appear as if they were showing *through*
-      // the portal. Keep them hidden while they're inside the cylinder and
-      // fade them in once they've radially expanded past the tunnel wall
-      // (i.e. they've visibly emerged from the funnel toward the camera).
-      if (isProductPagePreset) {
-        var fr = Math.sqrt(mesh.position.x * mesh.position.x + mesh.position.y * mesh.position.y);
-        // 0 while fully inside, ramps to 1 as radius crosses 1.0 units past wall.
-        var emerge = (fr - TUNNEL_RADIUS) / 1.0;
-        if (emerge < 0) emerge = 0;
-        else if (emerge > 1) emerge = 1;
-        mesh.material.uniforms.uFragAlpha.value = ud.targetAlpha * emerge;
-      }
-
-      // Despawn (fragments fly toward camera, despawn when past it)
-      if (mesh.position.z < SPAWN_Z) {
-        scene.remove(mesh);
-        fragmentPool.splice(i, 1);
-        fragmentRecyclePool.push(mesh);
-      }
-    }
-  }
 
   // ─── Offscreen Render Target ──────────────────────────────────
   var renderTarget = new THREE.WebGLRenderTarget(resW, resH, {
@@ -2047,36 +1199,25 @@
   ].join(';');
   canvas.parentNode.insertBefore(displayCanvas, canvas.nextSibling);
 
-  // Fragment overlay — composited on top of dithered background
-  var fragImageData = displayCtx.createImageData(resW, resH);
-  var fragBuffer = new Uint8Array(resW * resH * 4);
-  var fragCanvas = document.createElement('canvas');
-  fragCanvas.width = resW;
-  fragCanvas.height = resH;
-  var fragCtx = fragCanvas.getContext('2d');
-
   // Camera sees both layers by default
   camera.layers.enable(0);
   camera.layers.enable(1);
 
   // ─── Render one frame (reusable) ─────────────────────────────
   function renderOneFrame() {
-    // Pass 0 — memphis backdrop pre-pass fills the frame before the
-    // tunnel wraps the camera.
     camera.layers.set(0);
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
     var prevAutoClear = renderer.autoClear;
     renderer.autoClear = false;
-    renderer.render(memphisScene, memphisCamera);
-    renderer.render(scene, camera);
+    renderer.render(waxScene, waxCamera); // wax fills the frame first
+    renderer.render(scene, camera);       // bubbles + Tsuno on top
     renderer.autoClear = prevAutoClear;
     renderer.setRenderTarget(null);
 
     renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
 
-    // Copy pixels (WebGL reads bottom-up, flip vertically)
     var src = pixelBuffer;
     var dst = displayImageData.data;
     for (var row = 0; row < resH; row++) {
@@ -2087,42 +1228,10 @@
       }
     }
 
-    // VGA palette quantization + Floyd-Steinberg dither
     if (window.JJ_ScreensaverPost) {
       JJ_ScreensaverPost.dither(displayImageData);
     }
-
     displayCtx.putImageData(displayImageData, 0, 0);
-
-    // Pass 2 — fragments (layer 1): clean, composited on top
-    if (fragmentPool.length > 0) {
-      camera.layers.set(1);
-      renderer.setClearColor(0x000000, 0); // transparent clear
-      renderer.setRenderTarget(renderTarget);
-      renderer.clear();
-      renderer.render(scene, camera);
-      renderer.setRenderTarget(null);
-
-      renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, fragBuffer);
-
-      var fsrc = fragBuffer;
-      var fdst = fragImageData.data;
-      for (var frow = 0; frow < resH; frow++) {
-        var fSrcRow = (resH - 1 - frow) * resW * 4;
-        var fDstRow = frow * resW * 4;
-        for (var fcol = 0; fcol < resW * 4; fcol++) {
-          fdst[fDstRow + fcol] = fsrc[fSrcRow + fcol];
-        }
-      }
-
-      fragCtx.clearRect(0, 0, resW, resH);
-      fragCtx.putImageData(fragImageData, 0, 0);
-      displayCtx.drawImage(fragCanvas, 0, 0);
-    }
-
-    // Restore camera to see both layers
-    camera.layers.enable(0);
-    camera.layers.enable(1);
   }
 
   // ─── Mouse Parallax ──────────────────────────────────────────
@@ -2200,21 +1309,8 @@
 
     // Update shader time uniforms
     var t = time * 0.001;
-    tunnel.material.uniforms.uTime.value = t;
-    glow.material.uniforms.uTime.value = t;
+    updateWax(t, interval / 1000);
     sparkles.material.uniforms.uTime.value = t;
-    memphisBackdrop.material.uniforms.uTime.value = t;
-
-    // Spin portal rings + update time
-    for (var ri = 0; ri < portalRings.length; ri++) {
-      portalRings[ri].material.uniforms.uTime.value = t;
-      portalRings[ri].rotation.z += portalRings[ri].userData.rotSpeed * 0.02;
-    }
-
-    // Rotate vortex backdrop
-    if (vortexBackdrop) {
-      vortexBackdrop.rotation.z = t * 0.15;
-    }
 
     // Update Tsuno Daishi
     updateTsuno(t, targetInterval / 1000);
@@ -2224,14 +1320,6 @@
     if (tsunoState === 'idle' && !isMobile && config.mouseInteraction !== false) {
       updateTsunoMouse(mouseNorm);
     }
-
-    // Spawn and animate flying objects
-    spawnObject(time);
-    animateObjects(time);
-
-    // Spawn and animate memory fragments
-    spawnFragment(time);
-    animateFragments(time, targetInterval / 1000);
 
     // Update parallax
     updateParallax();
@@ -2307,11 +1395,9 @@
 
   // ─── Reduced Motion: Static Frame ─────────────────────────────
   if (prefersReducedMotion) {
-    // Render one static dithered frame, then stop
-    tunnel.material.uniforms.uTime.value = 0;
-    glow.material.uniforms.uTime.value = 0;
+    updateWax(0, 0.016);
     renderOneFrame();
-    return; // Exit IIFE — no animation loop
+    return;
   }
 
   // ─── Init ────────────────────────────────────────────────────
