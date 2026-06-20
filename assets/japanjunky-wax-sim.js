@@ -33,29 +33,33 @@
     };
   }
 
-  // Slow, syrupy lava-lamp convection. Blobs heat at the bottom, rise,
-  // cool, and sink — no hard walls bouncing them around. Tuned low so the
-  // motion reads as a real lava lamp; adjust live in the browser pass.
+  // Lava-lamp convection, real-physics style. A blob's temperature relaxes
+  // toward the ambient temperature of its current height — hot at the heated
+  // floor, cold at the top. Buoyancy is driven by (temp - neutral): warmer
+  // than neutral rises, cooler sinks. The slow `exchange` rate gives thermal
+  // lag, so a blob heated at the bottom stays buoyant well past mid-height and
+  // rides all the way up before cooling and sinking — a full cycle. No hard
+  // walls bounce them. Tuned slow + liquid; adjust live in the browser pass.
   var DEFAULTS = {
     seed: 1,
     count: 6,
-    heatBand: 0.18,   // y below this gains heat
-    heatRate: 0.6,    // temp/sec gained in heat band
-    coolRate: 0.10,   // base temp/sec lost (scaled up with height)
-    buoyancy: 0.18,   // upward accel per unit temp
-    gravity: 0.05,    // constant downward accel
-    drag: 1.6,        // velocity damping per second (viscosity)
-    maxTemp: 1.5,     // cap so buoyancy can't launch blobs fast
-    floor: 0.06,      // bottom; blobs stop here (no bounce) and reheat
-    ceil: 0.94,       // visible top reference
-    topRunoff: 0.30,  // how far above ceil a blob may run off before the cap
-    xMin: -0.5,       // far horizontal safety bound (no side bounce)
+    hotTemp: 1.0,      // ambient temp at the floor
+    coldTemp: 0.0,     // ambient temp at the top
+    neutralTemp: 0.5,  // temp at which buoyancy is zero
+    exchange: 0.035,   // how fast temp tracks ambient (low = more lag/glide)
+    buoyancy: 2.0,     // vertical accel per unit (temp - neutral)
+    drag: 0.7,         // velocity damping per second (lower = more liquid glide)
+    maxSpeed: 0.18,    // terminal velocity (viscosity cap) — keeps motion slow
+    floor: 0.06,       // bottom; blobs stop here (no bounce) and reheat
+    ceil: 0.94,        // visible top reference
+    topRunoff: 0.30,   // how far above ceil a blob may run off before the cap
+    xMin: -0.5,        // far horizontal safety bound (no side bounce)
     xMax: 1.5,
-    driftAmp: 0.012,  // lateral accel amplitude (gentle sway)
-    driftFreq: 0.35,  // lateral drift frequency
+    driftAmp: 0.012,   // lateral accel amplitude (gentle sway)
+    driftFreq: 0.35,   // lateral drift frequency
     minRadius: 0.10,
     maxRadius: 0.20,
-    zSpread: 0.25,    // depth slab half-range
+    zSpread: 0.25,     // depth slab half-range
     tsunoPush: 1.5,
     tsunoSplit: 1.0
   };
@@ -66,14 +70,19 @@
     var n = clamp(opts.count | 0, 1, MAX_BLOBS);
     var blobs = [];
     for (var i = 0; i < n; i++) {
+      var bx = 0.2 + rng() * 0.6;
+      var by = opts.floor + rng() * (opts.ceil - opts.floor);
+      var bz = (rng() * 2 - 1) * opts.zSpread;
+      var br = opts.minRadius + rng() * (opts.maxRadius - opts.minRadius);
       blobs.push({
-        x: 0.2 + rng() * 0.6,
-        y: opts.floor + rng() * (opts.ceil - opts.floor),
-        z: (rng() * 2 - 1) * opts.zSpread,
+        x: bx,
+        y: by,
+        z: bz,
         vx: 0,
         vy: 0,
-        radius: opts.minRadius + rng() * (opts.maxRadius - opts.minRadius),
-        temp: rng() * 0.5,
+        radius: br,
+        // Start in thermal equilibrium with the blob's height (no launch spike).
+        temp: opts.hotTemp + (opts.coldTemp - opts.hotTemp) * by,
         phase: rng() * 6.2832
       });
     }
@@ -82,13 +91,13 @@
 
   // Pure: advance one blob by dt. env = options, t = absolute sim time.
   function stepBlob(b, dt, env, t) {
-    var heat = (b.y < env.heatBand) ? env.heatRate : 0;
-    var cool = env.coolRate * (0.3 + b.y); // cools more when higher
-    var temp = b.temp + (heat - cool) * dt;
-    if (temp < 0) temp = 0;
-    if (temp > env.maxTemp) temp = env.maxTemp;
+    // Ambient temperature of this height: hot at the floor, cold at the top.
+    var yc = b.y < 0 ? 0 : (b.y > 1 ? 1 : b.y);
+    var ambient = env.hotTemp + (env.coldTemp - env.hotTemp) * yc;
+    // Relax toward ambient (thermal lag).
+    var temp = b.temp + (ambient - b.temp) * env.exchange * dt;
 
-    var accelY = env.buoyancy * temp - env.gravity;
+    var accelY = env.buoyancy * (temp - env.neutralTemp);
     var vy = b.vy + accelY * dt;
     var drift = Math.sin(t * env.driftFreq + b.phase) * env.driftAmp;
     var vx = b.vx + drift * dt;
@@ -97,6 +106,10 @@
     if (damp < 0) damp = 0;
     vy *= damp;
     vx *= damp;
+
+    // Terminal velocity (viscosity): wax never moves fast, no matter the force.
+    if (vy > env.maxSpeed) vy = env.maxSpeed; else if (vy < -env.maxSpeed) vy = -env.maxSpeed;
+    if (vx > env.maxSpeed) vx = env.maxSpeed; else if (vx < -env.maxSpeed) vx = -env.maxSpeed;
 
     var x = b.x + vx * dt;
     var y = b.y + vy * dt;

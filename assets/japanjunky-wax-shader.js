@@ -50,12 +50,12 @@
     '    vec4 b = uBlobs[i];',
     '    vec3 c = vec3((b.x - 0.5) * uAspect, b.y, b.z);',
     '    float ds = length(p - c) - b.w;',
-    '    d = smin(d, ds, 0.12);',
+    '    d = smin(d, ds, 0.20);',
     '  }',
     '  if (uTsunoActive > 0.5) {',
     '    vec3 tc = vec3((uTsuno.x - 0.5) * uAspect, uTsuno.y, uTsuno.z);',
     '    float dts = length(p - tc) - uTsuno.w;',
-    '    d = smax(d, -dts, 0.10);',          // wax parts/splits around Tsuno
+    '    d = smax(d, -dts, 0.14);',          // wax parts/splits around Tsuno
     '  }',
     '  return d;',
     '}',

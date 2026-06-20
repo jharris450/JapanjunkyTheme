@@ -51,17 +51,18 @@ describe('stepBlob — bounds and purity', () => {
     expect(out.vy).toBe(0); // stopped at the floor, not reflected upward
   });
 
-  it('lets a blob run off above the top, clamped at the cap without reflecting', () => {
-    var e = env({ buoyancy: 0, gravity: 0 });
-    var out = Sim.stepBlob({ x: 0.5, y: e.ceil + 0.1, z: 0, vx: 0, vy: 5, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
-    expect(out.y).toBeGreaterThan(e.ceil); // allowed past the visible top
+  it('runs off to the top cap and stops there without reflecting', () => {
+    var e = env({ buoyancy: 0 });
+    // start at the run-off cap, still drifting up
+    var out = Sim.stepBlob({ x: 0.5, y: e.ceil + e.topRunoff, z: 0, vx: 0, vy: 0.1, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
+    expect(out.y).toBeGreaterThan(e.ceil); // above the visible top
     expect(out.y).toBeLessThanOrEqual(e.ceil + e.topRunoff + 1e-9);
-    expect(out.vy).toBe(0); // clamped at the cap, not reflected downward into a bounce
+    expect(out.vy).toBe(0); // clamped at the cap, not reflected into a bounce
   });
 
   it('does not bounce off the sides (passes the old 0.92 wall without reversing)', () => {
-    var e = env({ buoyancy: 0, gravity: 0, drag: 0 });
-    var out = Sim.stepBlob({ x: 0.90, y: 0.5, z: 0, vx: 0.5, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
+    var e = env({ buoyancy: 0, drag: 0 });
+    var out = Sim.stepBlob({ x: 0.90, y: 0.5, z: 0, vx: 0.5, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.2, e, 0);
     expect(out.x).toBeGreaterThan(0.92); // crossed where the old wall used to bounce
     expect(out.vx).toBeGreaterThan(0);   // kept its direction, no reflection
   });
@@ -88,6 +89,42 @@ describe('step — stays within safety bounds over many frames', () => {
         expect(b.x).toBeLessThanOrEqual(o.xMax + 1e-6);
       }
     }
+  });
+});
+
+describe('convection — completes the full cycle in a reasonable time', () => {
+  // ~50s of sim. Hot wax must actually reach the top and run off, then a
+  // cooled blob must sink back to the heated floor — not stall mid-screen.
+  var STEPS = 1500;
+
+  it('a blob starting cold at the floor makes it past the top of the screen', () => {
+    var s = Sim.createState({ seed: 4, count: 3 });
+    for (var k = 0; k < s.blobs.length; k++) {
+      s.blobs[k].y = s.opts.floor; s.blobs[k].vy = 0; s.blobs[k].temp = 0;
+    }
+    var maxY = 0;
+    for (var i = 0; i < STEPS; i++) {
+      Sim.step(s, 0.033);
+      for (var j = 0; j < s.blobs.length; j++) {
+        if (s.blobs[j].y > maxY) maxY = s.blobs[j].y;
+      }
+    }
+    expect(maxY).toBeGreaterThan(1.0); // rises all the way up and runs off the visible top
+  });
+
+  it('a cooled blob at the top sinks back to the heated floor', () => {
+    var s = Sim.createState({ seed: 8, count: 3 });
+    for (var k = 0; k < s.blobs.length; k++) {
+      s.blobs[k].y = s.opts.ceil; s.blobs[k].vy = 0; s.blobs[k].temp = 0;
+    }
+    var minY = 1;
+    for (var i = 0; i < STEPS; i++) {
+      Sim.step(s, 0.033);
+      for (var j = 0; j < s.blobs.length; j++) {
+        if (s.blobs[j].y < minY) minY = s.blobs[j].y;
+      }
+    }
+    expect(minY).toBeLessThan(s.opts.floor + 0.05); // sinks back to the heated floor
   });
 });
 
