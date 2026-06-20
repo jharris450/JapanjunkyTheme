@@ -11,7 +11,7 @@ describe('wax-shader module', () => {
     expect(typeof Shader.vert).toBe('string');
     expect(typeof Shader.frag).toBe('string');
     ['uTime', 'uAspect', 'uHeatGlow', 'uBlobCount', 'uBlobs[8]', 'uBlobTemp[8]', 'uTsuno', 'uTsunoActive',
-     'uAsciiTex', 'uAsciiCount', 'uAsciiBlob', 'uAsciiCell', 'uResolution', 'uBlobStretch[8]']
+     'uAsciiTex', 'uAsciiCount', 'uAsciiCenter', 'uAsciiActive', 'uAsciiCell', 'uResolution', 'uBlobStretch[8]']
       .forEach(function (decl) {
         expect(Shader.frag).toContain(decl);
       });
