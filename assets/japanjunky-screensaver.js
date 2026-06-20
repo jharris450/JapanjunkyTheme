@@ -77,9 +77,10 @@
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
   var waxState = JJ_WaxSim.createState({ seed: 7, count: 4 });
   var waxAspect = resW / resH;
-  // Teardrop: a faster-moving blob stretches more along its motion.
-  var STRETCH_K = 4.0;
-  var MAX_STRETCH = 1.9;
+  // Teardrop: a faster-moving (hotter, more fluid) blob stretches into a tall
+  // thin column along its motion — the Rayleigh-Taylor plume look.
+  var STRETCH_K = 9.0;
+  var MAX_STRETCH = 2.6;
 
   // Dark→bright character ramp for the 3D ASCII glob. Drawn once into a 1-row
   // canvas atlas (one cell per glyph), NearestFilter for the pixel look.

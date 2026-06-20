@@ -57,8 +57,8 @@
     xMax: 1.5,
     driftAmp: 0.012,   // lateral accel amplitude (gentle sway)
     driftFreq: 0.35,   // lateral drift frequency
-    minRadius: 0.14,   // bigger, more varied globs
-    maxRadius: 0.32,
+    minRadius: 0.12,   // varied globs; columns stay thin once stretched
+    maxRadius: 0.28,
     zSpread: 0.25,     // depth slab half-range
     tsunoPush: 1.5,
     tsunoSplit: 1.0
