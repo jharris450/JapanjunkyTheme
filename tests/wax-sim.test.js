@@ -74,3 +74,41 @@ describe('step — stays in bounds over many frames', () => {
     }
   });
 });
+
+describe('applyTsuno — push and split', () => {
+  function e() { return Object.assign({}, Sim.DEFAULTS); }
+
+  it('is a no-op when inactive or out of range', () => {
+    var b = { x: 0.5, y: 0.5, z: 0, vx: 0, vy: 0, radius: 0.15, temp: 1, phase: 0 };
+    expect(Sim.applyTsuno(b, { active: false }, e())).toBe(b);
+    var far = { active: true, x: 0.0, y: 0.0, vx: 1, vy: 1, radius: 0.1 };
+    expect(Sim.applyTsuno(b, far, e())).toEqual(b);
+  });
+
+  it('pushes an in-range blob along Tsuno velocity and away from him', () => {
+    var env = e();
+    var b = { x: 0.55, y: 0.50, z: 0, vx: 0, vy: 0, radius: 0.15, temp: 1, phase: 0 };
+    var tsuno = { active: true, x: 0.50, y: 0.50, vx: 1.0, vy: 0.0, radius: 0.20 };
+    var out = Sim.applyTsuno(b, tsuno, env);
+    expect(out.vx).toBeGreaterThan(0); // along +x velocity AND away (+x, blob is right of Tsuno)
+    expect(out).not.toBe(b);
+  });
+
+  it('does not mutate the input blob', () => {
+    var b = { x: 0.55, y: 0.50, z: 0, vx: 0, vy: 0, radius: 0.15, temp: 1, phase: 0 };
+    var frozen = JSON.stringify(b);
+    Sim.applyTsuno(b, { active: true, x: 0.5, y: 0.5, vx: 1, vy: 0, radius: 0.2 }, e());
+    expect(JSON.stringify(b)).toBe(frozen);
+  });
+});
+
+describe('step — applies Tsuno when provided', () => {
+  it('moves a blob out of Tsuno path over frames', () => {
+    var s = Sim.createState({ seed: 5, count: 1, gravity: 0, buoyancy: 0 });
+    s.blobs[0].x = 0.52; s.blobs[0].y = 0.5; s.blobs[0].vx = 0; s.blobs[0].vy = 0;
+    var tsuno = { active: true, x: 0.5, y: 0.5, vx: 2.0, vy: 0, radius: 0.2 };
+    var startX = s.blobs[0].x;
+    for (var i = 0; i < 10; i++) Sim.step(s, 0.033, tsuno);
+    expect(s.blobs[0].x).toBeGreaterThan(startX);
+  });
+});

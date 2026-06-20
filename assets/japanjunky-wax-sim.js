@@ -101,12 +101,32 @@
     return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase };
   }
 
+  // Pure: Tsuno passing through shoves nearby blobs along his velocity
+  // (push) and radially away from his center (split).
+  function applyTsuno(b, tsuno, env) {
+    if (!tsuno || !tsuno.active) return b;
+    var dx = b.x - tsuno.x;
+    var dy = b.y - tsuno.y;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist >= tsuno.radius) return b;
+    var falloff = 1 - dist / tsuno.radius;
+    var nx = dist > 1e-4 ? dx / dist : 0;
+    var ny = dist > 1e-4 ? dy / dist : 1;
+    var pushK = env.tsunoPush;
+    var splitK = env.tsunoSplit;
+    var vx = b.vx + ((tsuno.vx || 0) * pushK + nx * splitK) * falloff;
+    var vy = b.vy + ((tsuno.vy || 0) * pushK + ny * splitK) * falloff;
+    return { x: b.x, y: b.y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: b.temp, phase: b.phase };
+  }
+
   // Advance the whole state in place. (Tsuno impulse added in Task 2.)
-  function step(state, dt) {
+  function step(state, dt, tsuno) {
     state.t += dt;
     var env = state.opts;
     for (var i = 0; i < state.blobs.length; i++) {
-      state.blobs[i] = stepBlob(state.blobs[i], dt, env, state.t);
+      var b = stepBlob(state.blobs[i], dt, env, state.t);
+      b = applyTsuno(b, tsuno, env);
+      state.blobs[i] = b;
     }
     return state;
   }
@@ -118,6 +138,7 @@
     DEFAULTS: DEFAULTS,
     createState: createState,
     stepBlob: stepBlob,
+    applyTsuno: applyTsuno,
     step: step
   };
 });
