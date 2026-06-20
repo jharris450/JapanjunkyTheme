@@ -105,14 +105,21 @@
 
   // Tsuno → wax field input (uv space, with frame-to-frame velocity)
   var lastTsunoUv = null;
+  // Tsuno only disturbs the wax when he is up close to the viewport (small z =
+  // near the camera). As he moves to the back the reaction fades out, then off.
+  var TSUNO_FRONT_Z = 4.5; // z <= this: full reaction
+  var TSUNO_BACK_Z = 8.0;  // z >= this: no reaction (deferred while in back)
   function computeTsunoInput(dt) {
     if (!tsunoMesh || dt <= 0) return { active: false };
+    var prox = (TSUNO_BACK_Z - tsunoMesh.position.z) / (TSUNO_BACK_Z - TSUNO_FRONT_Z);
+    if (prox > 1) prox = 1;
+    if (prox <= 0) { lastTsunoUv = null; return { active: false }; }
     var ndc = tsunoMesh.position.clone().project(camera);
     var uv = { x: ndc.x * 0.5 + 0.5, y: ndc.y * 0.5 + 0.5 };
     var vx = 0, vy = 0;
     if (lastTsunoUv) { vx = (uv.x - lastTsunoUv.x) / dt; vy = (uv.y - lastTsunoUv.y) / dt; }
     lastTsunoUv = uv;
-    return { active: true, x: uv.x, y: uv.y, vx: vx, vy: vy, radius: 0.16 };
+    return { active: true, x: uv.x, y: uv.y, vx: vx, vy: vy, radius: 0.16 * prox };
   }
 
   function updateWax(t, dt) {

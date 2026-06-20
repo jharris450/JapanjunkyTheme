@@ -33,24 +33,31 @@
     };
   }
 
+  // Slow, syrupy lava-lamp convection. Blobs heat at the bottom, rise,
+  // cool, and sink — no hard walls bouncing them around. Tuned low so the
+  // motion reads as a real lava lamp; adjust live in the browser pass.
   var DEFAULTS = {
     seed: 1,
     count: 6,
     heatBand: 0.18,   // y below this gains heat
-    heatRate: 1.6,    // temp/sec gained in heat band
-    coolRate: 0.5,    // base temp/sec lost (scaled up with height)
-    buoyancy: 0.9,    // upward accel per unit temp
-    gravity: 0.5,     // constant downward accel
-    drag: 1.2,        // velocity damping per second
-    floor: 0.06,
-    ceil: 0.94,
-    bounce: 0.4,
-    driftAmp: 0.05,   // lateral accel amplitude
+    heatRate: 0.6,    // temp/sec gained in heat band
+    coolRate: 0.10,   // base temp/sec lost (scaled up with height)
+    buoyancy: 0.18,   // upward accel per unit temp
+    gravity: 0.05,    // constant downward accel
+    drag: 1.6,        // velocity damping per second (viscosity)
+    maxTemp: 1.5,     // cap so buoyancy can't launch blobs fast
+    floor: 0.06,      // bottom; blobs stop here (no bounce) and reheat
+    ceil: 0.94,       // visible top reference
+    topRunoff: 0.30,  // how far above ceil a blob may run off before the cap
+    xMin: -0.5,       // far horizontal safety bound (no side bounce)
+    xMax: 1.5,
+    driftAmp: 0.012,  // lateral accel amplitude (gentle sway)
+    driftFreq: 0.35,  // lateral drift frequency
     minRadius: 0.10,
     maxRadius: 0.20,
     zSpread: 0.25,    // depth slab half-range
-    tsunoPush: 1.5,   // used in Task 2
-    tsunoSplit: 1.0   // used in Task 2
+    tsunoPush: 1.5,
+    tsunoSplit: 1.0
   };
 
   function createState(opts) {
@@ -76,13 +83,14 @@
   // Pure: advance one blob by dt. env = options, t = absolute sim time.
   function stepBlob(b, dt, env, t) {
     var heat = (b.y < env.heatBand) ? env.heatRate : 0;
-    var cool = env.coolRate * (0.4 + b.y); // cools more when higher
+    var cool = env.coolRate * (0.3 + b.y); // cools more when higher
     var temp = b.temp + (heat - cool) * dt;
     if (temp < 0) temp = 0;
+    if (temp > env.maxTemp) temp = env.maxTemp;
 
     var accelY = env.buoyancy * temp - env.gravity;
     var vy = b.vy + accelY * dt;
-    var drift = Math.sin(t * 0.6 + b.phase) * env.driftAmp;
+    var drift = Math.sin(t * env.driftFreq + b.phase) * env.driftAmp;
     var vx = b.vx + drift * dt;
 
     var damp = 1 - env.drag * dt;
@@ -93,10 +101,14 @@
     var x = b.x + vx * dt;
     var y = b.y + vy * dt;
 
-    if (y < env.floor) { y = env.floor; vy = -vy * env.bounce; }
-    if (y > env.ceil)  { y = env.ceil;  vy = -vy * env.bounce; }
-    if (x < 0.08) { x = 0.08; vx = -vx * env.bounce; }
-    if (x > 0.92) { x = 0.92; vx = -vx * env.bounce; }
+    // No bouncing. Bottom: stop and reheat. Top: let it run off above the
+    // visible edge up to a cap, then stop (cooling brings it back down).
+    // Sides: free drift within a far safety bound, never reflected.
+    if (y < env.floor) { y = env.floor; if (vy < 0) vy = 0; }
+    var topCap = env.ceil + env.topRunoff;
+    if (y > topCap) { y = topCap; if (vy > 0) vy = 0; }
+    if (x < env.xMin) { x = env.xMin; if (vx < 0) vx = 0; }
+    if (x > env.xMax) { x = env.xMax; if (vx > 0) vx = 0; }
 
     return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase };
   }
