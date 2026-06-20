@@ -43,6 +43,7 @@ Implementation note: confirm none of the above is referenced by product-selectio
 ## Keep & repurpose
 
 - **Sparkles → rising bubble motes.** Reuse the 30-point sparkle system, recolored to the warm palette (amber/gold), drifting slowly upward through the wax, twinkling. (Default decision; mix is a tunable constant.)
+- **ASCII glyph motes (easter egg).** At spawn, each mote rolls a probability (`GLYPH_MOTE_CHANCE`, default ~0.15) to render as a single ASCII/kana glyph instead of a soft dot. The chosen glyph is fixed for that mote's lifetime (static, no flicker). Glyph motes use a monospace bitmap-font atlas texture sampled by a point sprite in the same scene pass, so they pass through the VGA dither + PS1 snap and stay on-aesthetic. Rendered slightly larger than dot motes (`GLYPH_MOTE_SCALE`) for legibility at 240p — glyphs read as ~6–10px chunky pixel characters, consistent with the site's ASCII aesthetic. Default glyph set: katakana plus a few symbols (`: * . =`); tunable to Latin or mixed. Fits the site-wide ASCII-art design system.
 
 ## Architecture — three units
 
@@ -78,6 +79,7 @@ Implementation note: confirm none of the above is referenced by product-selectio
 - Build the wax pre-pass (ortho camera + full-frame quad using `JJ_WaxShader`), rendered first each frame to fill the background.
 - Each frame: advance `JJ_WaxSim.step(dt, tsuno)`; copy blob positions/radii/temps into the wax uniforms; project Tsuno's world position to screen/field space and compute his frame-to-frame velocity to build the `tsuno` input.
 - Keep the scene pass (bubble motes + Tsuno ghost) composited on top, then readPixels + dither as today.
+- **Glyph atlas:** build a small glyph-atlas texture at runtime — draw the curated glyph set into an offscreen 2D canvas (monospace font, one cell per glyph), upload as a `THREE.Texture` with `NearestFilter`. No new committed binary asset. Dot motes and glyph motes can share one `THREE.Points` system: a per-point attribute selects dot vs glyph-cell, and the fragment shader samples the atlas (or draws the soft dot) accordingly. Per-point glyph index + the dot/glyph flag are assigned at spawn from `GLYPH_MOTE_CHANCE`.
 - Drop `swirlTexture` from config consumption; leave `ghostTexture` as-is.
 
 ## Render order (per frame)
@@ -112,10 +114,11 @@ Raymarching is the main cost. Budget:
   - Tsuno input displaces in-range blob centers along his velocity and away from his center; out-of-range blobs unaffected; `active=false` is a no-op.
   - Blobs stay within soft bounds.
   - Determinism: same seed + same inputs → identical state.
-- **Visual NOT verified** — no headless WebGL. Raymarch surface shading, metaball merge/split feel, Tsuno carve depth, heat-glow balance, and bubble-mote recolor all need a live browser pass (same caveat as the cassette model). Tunable constants (convection speed, blob count, mote color mix, step count) exposed for that pass.
+- **Visual NOT verified** — no headless WebGL. Raymarch surface shading, metaball merge/split feel, Tsuno carve depth, heat-glow balance, bubble-mote recolor, and ASCII glyph-mote legibility/scale all need a live browser pass (same caveat as the cassette model). Tunable constants (convection speed, blob count, mote color mix, step count) exposed for that pass.
 
 ## Open tunables (defaulted, adjustable in the browser pass)
 
 - Bubble-mote color: default warm amber/gold.
 - Convection cadence: default slow & syrupy (~one rise per several seconds).
 - March step count, smooth-min factor, Fresnel strength, heat-glow height.
+- `GLYPH_MOTE_CHANCE` (default ~0.15), `GLYPH_MOTE_SCALE`, and the glyph set (default katakana + `: * . =`).
