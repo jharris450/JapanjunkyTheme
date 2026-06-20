@@ -44,11 +44,26 @@ describe('stepBlob — heat band', () => {
 });
 
 describe('stepBlob — bounds and purity', () => {
-  it('clamps below the floor and reflects vy', () => {
+  it('clamps at the floor without reflecting (no bounce)', () => {
     var e = env({ buoyancy: 0, gravity: 0 });
     var out = Sim.stepBlob({ x: 0.5, y: 0.0, z: 0, vx: 0, vy: -1, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
-    expect(out.y).toBeGreaterThanOrEqual(e.floor - 1e-9);
-    expect(out.vy).toBeGreaterThan(0); // reflected upward
+    expect(out.y).toBeCloseTo(e.floor, 9);
+    expect(out.vy).toBe(0); // stopped at the floor, not reflected upward
+  });
+
+  it('lets a blob run off above the top, clamped at the cap without reflecting', () => {
+    var e = env({ buoyancy: 0, gravity: 0 });
+    var out = Sim.stepBlob({ x: 0.5, y: e.ceil + 0.1, z: 0, vx: 0, vy: 5, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
+    expect(out.y).toBeGreaterThan(e.ceil); // allowed past the visible top
+    expect(out.y).toBeLessThanOrEqual(e.ceil + e.topRunoff + 1e-9);
+    expect(out.vy).toBe(0); // clamped at the cap, not reflected downward into a bounce
+  });
+
+  it('does not bounce off the sides (passes the old 0.92 wall without reversing)', () => {
+    var e = env({ buoyancy: 0, gravity: 0, drag: 0 });
+    var out = Sim.stepBlob({ x: 0.90, y: 0.5, z: 0, vx: 0.5, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.1, e, 0);
+    expect(out.x).toBeGreaterThan(0.92); // crossed where the old wall used to bounce
+    expect(out.vx).toBeGreaterThan(0);   // kept its direction, no reflection
   });
 
   it('does not mutate the input blob', () => {
@@ -59,19 +74,35 @@ describe('stepBlob — bounds and purity', () => {
   });
 });
 
-describe('step — stays in bounds over many frames', () => {
-  it('never escapes the field', () => {
+describe('step — stays within safety bounds over many frames', () => {
+  it('never escapes the generous safety field (no hard walls)', () => {
     var s = Sim.createState({ seed: 3, count: 8 });
+    var o = s.opts;
     for (var i = 0; i < 600; i++) {
       Sim.step(s, 0.033);
       for (var j = 0; j < s.blobs.length; j++) {
         var b = s.blobs[j];
-        expect(b.y).toBeGreaterThanOrEqual(s.opts.floor - 1e-6);
-        expect(b.y).toBeLessThanOrEqual(s.opts.ceil + 1e-6);
-        expect(b.x).toBeGreaterThanOrEqual(0.0);
-        expect(b.x).toBeLessThanOrEqual(1.0);
+        expect(b.y).toBeGreaterThanOrEqual(o.floor - 1e-6);
+        expect(b.y).toBeLessThanOrEqual(o.ceil + o.topRunoff + 1e-6);
+        expect(b.x).toBeGreaterThanOrEqual(o.xMin - 1e-6);
+        expect(b.x).toBeLessThanOrEqual(o.xMax + 1e-6);
       }
     }
+  });
+});
+
+describe('stepBlob — slow convection', () => {
+  it('keeps vertical velocity small (syrupy, not fast)', () => {
+    var s = Sim.createState({ seed: 2, count: 4 });
+    var maxAbsVy = 0;
+    for (var i = 0; i < 1200; i++) {
+      Sim.step(s, 0.033);
+      for (var j = 0; j < s.blobs.length; j++) {
+        var av = Math.abs(s.blobs[j].vy);
+        if (av > maxAbsVy) maxAbsVy = av;
+      }
+    }
+    expect(maxAbsVy).toBeLessThan(0.25); // slow drift, not a fast launch
   });
 });
 
