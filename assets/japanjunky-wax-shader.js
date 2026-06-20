@@ -40,7 +40,15 @@
     'uniform int   uAsciiBlob;',             // blob index drawn as ASCII (-1 = none)
     'uniform float uAsciiCell;',             // character cell size in pixels
     'uniform vec2  uResolution;',            // render target px (for the cell grid)
+    'uniform float uBlobStretch[' + N + '];', // per-blob vertical stretch (teardrop)
     'varying vec2 vUv;',
+    '',
+    // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
+    'const float POOL_Y = 0.0;',     // bottom reservoir center y (top ~ POOL_Y+POOL_H)
+    'const float POOL_W = 0.72;',    // pool x-radius as a fraction of aspect width
+    'const float POOL_H = 0.13;',    // pool y-radius (shallow, wide dome)
+    'const float POOL_D = 0.40;',    // pool z-radius
+    'const float BLEND  = 0.26;',    // metaball smooth-union (higher = gooier necks)
     '',
     'float smin(float a, float b, float k) {',
     '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
@@ -48,14 +56,29 @@
     '}',
     'float smax(float a, float b, float k) { return -smin(-a, -b, k); }',
     '',
+    'float sdEllipsoid(vec3 p, vec3 r) {',
+    '  float k0 = length(p / r);',
+    '  float k1 = length(p / (r * r));',
+    '  return k0 * (k0 - 1.0) / max(k1, 1e-5);',
+    '}',
+    '',
+    '// A blob as a teardrop ellipsoid: stretched along y by sy, squashed in',
+    '// x/z to roughly conserve volume, so a moving blob reads as a column.',
+    'float blobSD(vec3 p, vec4 b, float sy) {',
+    '  vec3 c = vec3((b.x - 0.5) * uAspect, b.y, b.z);',
+    '  float sx = inversesqrt(max(sy, 1e-4));',
+    '  return sdEllipsoid(p - c, vec3(b.w * sx, b.w * sy, b.w * sx));',
+    '}',
+    '',
+    'float poolSD(vec3 p) {',          // the always-present heated reservoir
+    '  return sdEllipsoid(p - vec3(0.0, POOL_Y, 0.0), vec3(uAspect * POOL_W, POOL_H, POOL_D));',
+    '}',
+    '',
     'float map(vec3 p) {',
-    '  float d = 1e5;',
+    '  float d = poolSD(p);',
     '  for (int i = 0; i < ' + N + '; i++) {',
     '    if (i >= uBlobCount) break;',
-    '    vec4 b = uBlobs[i];',
-    '    vec3 c = vec3((b.x - 0.5) * uAspect, b.y, b.z);',
-    '    float ds = length(p - c) - b.w;',
-    '    d = smin(d, ds, 0.20);',
+    '    d = smin(d, blobSD(p, uBlobs[i], uBlobStretch[i]), BLEND);',
     '  }',
     '  if (uTsunoActive > 0.5) {',
     '    vec3 tc = vec3((uTsuno.x - 0.5) * uAspect, uTsuno.y, uTsuno.z);',
@@ -114,13 +137,11 @@
     '    // characters from a brightness ramp instead of solid wax. Avoid dynamic',
     '    // uniform array indexing (GLSL ES 1.0) — pick the blob inside the loop.',
     '    if (uAsciiBlob >= 0) {',
-    '      float dA = 1e5; float dOther = 1e5; float abY = 0.0;',
+    '      float dA = 1e5; float dOther = poolSD(p); float abY = 0.0;',
     '      for (int i = 0; i < ' + N + '; i++) {',
     '        if (i >= uBlobCount) break;',
-    '        vec4 ob = uBlobs[i];',
-    '        vec3 oc = vec3((ob.x - 0.5) * uAspect, ob.y, ob.z);',
-    '        float dd = length(p - oc) - ob.w;',
-    '        if (i == uAsciiBlob) { dA = dd; abY = ob.y; }',
+    '        float dd = blobSD(p, uBlobs[i], uBlobStretch[i]);',
+    '        if (i == uAsciiBlob) { dA = dd; abY = uBlobs[i].y; }',
     '        else { dOther = min(dOther, dd); }',
     '      }',
     '      if (dA <= dOther + 0.001) {',

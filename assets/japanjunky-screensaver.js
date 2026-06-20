@@ -75,8 +75,11 @@
   textureLoader.crossOrigin = 'anonymous';
 
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
-  var waxState = JJ_WaxSim.createState({ seed: 7, count: 6 });
+  var waxState = JJ_WaxSim.createState({ seed: 7, count: 4 });
   var waxAspect = resW / resH;
+  // Teardrop: a faster-moving blob stretches more along its motion.
+  var STRETCH_K = 4.0;
+  var MAX_STRETCH = 1.9;
 
   // Dark→bright character ramp for the 3D ASCII glob. Drawn once into a 1-row
   // canvas atlas (one cell per glyph), NearestFilter for the pixel look.
@@ -116,11 +119,13 @@
     uAsciiCount: { value: ASCII_RAMP.length },
     uAsciiBlob: { value: 0 },          // blob 0 floats as the ASCII glob
     uAsciiCell: { value: 5.0 },        // character cell size in render px
-    uResolution: { value: new THREE.Vector2(resW, resH) }
+    uResolution: { value: new THREE.Vector2(resW, resH) },
+    uBlobStretch: { value: [] }
   };
   for (var wi = 0; wi < JJ_WaxSim.MAX_BLOBS; wi++) {
     waxUniforms.uBlobs.value.push(new THREE.Vector4(0, 0, 0, 0));
     waxUniforms.uBlobTemp.value.push(0.0);
+    waxUniforms.uBlobStretch.value.push(1.0);
   }
   var waxScene = new THREE.Scene();
   var waxCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -162,6 +167,8 @@
       var b = waxState.blobs[i];
       waxUniforms.uBlobs.value[i].set(b.x, b.y, b.z, b.radius);
       waxUniforms.uBlobTemp.value[i] = b.temp;
+      var sy = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
+      waxUniforms.uBlobStretch.value[i] = sy;
     }
     if (tsuno.active) {
       waxUniforms.uTsuno.value.set(tsuno.x, tsuno.y, 0.0, tsuno.radius);
