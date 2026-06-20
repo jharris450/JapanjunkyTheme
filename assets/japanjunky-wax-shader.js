@@ -46,9 +46,9 @@
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
     'const float POOL_Y = 0.0;',     // bottom reservoir center y (top ~ POOL_Y+POOL_H)
     'const float POOL_W = 0.72;',    // pool x-radius as a fraction of aspect width
-    'const float POOL_H = 0.13;',    // pool y-radius (shallow, wide dome)
+    'const float POOL_H = 0.16;',    // pool y-radius (rounded glowing base mound)
     'const float POOL_D = 0.40;',    // pool z-radius
-    'const float BLEND  = 0.26;',    // metaball smooth-union (higher = gooier necks)
+    'const float BLEND  = 0.30;',    // metaball smooth-union (higher = thinner, longer necks)
     '',
     'float smin(float a, float b, float k) {',
     '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
