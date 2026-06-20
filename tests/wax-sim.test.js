@@ -60,11 +60,18 @@ describe('stepBlob — bounds and purity', () => {
     expect(out.vy).toBe(0); // clamped at the cap, not reflected into a bounce
   });
 
-  it('does not bounce off the sides (passes the old 0.92 wall without reversing)', () => {
+  it('bounces off the right wall (clamps and reflects vx)', () => {
     var e = env({ buoyancy: 0, drag: 0 });
-    var out = Sim.stepBlob({ x: 0.90, y: 0.5, z: 0, vx: 0.5, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.2, e, 0);
-    expect(out.x).toBeGreaterThan(0.92); // crossed where the old wall used to bounce
-    expect(out.vx).toBeGreaterThan(0);   // kept its direction, no reflection
+    var out = Sim.stepBlob({ x: e.xMax - 0.01, y: 0.5, z: 0, vx: 0.1, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.2, e, 0);
+    expect(out.x).toBeLessThanOrEqual(e.xMax + 1e-9); // clamped at the wall
+    expect(out.vx).toBeLessThan(0);                   // reflected back left
+  });
+
+  it('bounces off the left wall (clamps and reflects vx)', () => {
+    var e = env({ buoyancy: 0, drag: 0 });
+    var out = Sim.stepBlob({ x: e.xMin + 0.01, y: 0.5, z: 0, vx: -0.1, vy: 0, radius: 0.15, temp: 0, phase: 0 }, 0.2, e, 0);
+    expect(out.x).toBeGreaterThanOrEqual(e.xMin - 1e-9);
+    expect(out.vx).toBeGreaterThan(0);                // reflected back right
   });
 
   it('does not mutate the input blob', () => {

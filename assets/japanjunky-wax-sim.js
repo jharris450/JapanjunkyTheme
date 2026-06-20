@@ -53,9 +53,11 @@
     floor: 0.06,       // bottom; blobs stop here (no bounce) and reheat
     ceil: 0.94,        // visible top reference
     topRunoff: 0.30,   // how far above ceil a blob may run off before the cap
-    xMin: -0.5,        // far horizontal safety bound (no side bounce)
-    xMax: 1.5,
-    driftAmp: 0.012,   // lateral accel amplitude (gentle sway)
+    xMin: 0.06,        // left wall (visible edge); blobs bounce off it
+    xMax: 0.94,        // right wall
+    wallBounce: 0.9,   // side-wall restitution (how bouncy the glass is)
+    biasSpeed: 0.045,  // persistent lateral drift so blobs traverse + hit walls
+    driftAmp: 0.012,   // small lateral wobble on top of the bias
     driftFreq: 0.35,   // lateral drift frequency
     minRadius: 0.12,   // varied globs; columns stay thin once stretched
     maxRadius: 0.28,
@@ -83,7 +85,9 @@
         radius: br,
         // Start in thermal equilibrium with the blob's height (no launch spike).
         temp: opts.hotTemp + (opts.coldTemp - opts.hotTemp) * by,
-        phase: rng() * 6.2832
+        phase: rng() * 6.2832,
+        // Persistent lateral current (random direction) so it traverses + bounces.
+        vxBias: (rng() * 2 - 1) * opts.biasSpeed
       });
     }
     return { blobs: blobs, opts: opts, t: 0 };
@@ -111,19 +115,28 @@
     if (vy > env.maxSpeed) vy = env.maxSpeed; else if (vy < -env.maxSpeed) vy = -env.maxSpeed;
     if (vx > env.maxSpeed) vx = env.maxSpeed; else if (vx < -env.maxSpeed) vx = -env.maxSpeed;
 
-    var x = b.x + vx * dt;
+    // Horizontal = damped transient (drift + Tsuno pushes) + persistent bias.
+    var bias = b.vxBias || 0;
+    var x = b.x + (vx + bias) * dt;
     var y = b.y + vy * dt;
 
-    // No bouncing. Bottom: stop and reheat. Top: let it run off above the
-    // visible edge up to a cap, then stop (cooling brings it back down).
-    // Sides: free drift within a far safety bound, never reflected.
+    // Bottom: stop and reheat. Top: run off above the visible edge to a cap.
     if (y < env.floor) { y = env.floor; if (vy < 0) vy = 0; }
     var topCap = env.ceil + env.topRunoff;
     if (y > topCap) { y = topCap; if (vy > 0) vy = 0; }
-    if (x < env.xMin) { x = env.xMin; if (vx < 0) vx = 0; }
-    if (x > env.xMax) { x = env.xMax; if (vx > 0) vx = 0; }
+    // Side walls: bounce (reflect the inward-moving components) like the glass.
+    if (x < env.xMin) {
+      x = env.xMin;
+      if (vx < 0) vx = -vx * env.wallBounce;
+      if (bias < 0) bias = -bias * env.wallBounce;
+    }
+    if (x > env.xMax) {
+      x = env.xMax;
+      if (vx > 0) vx = -vx * env.wallBounce;
+      if (bias > 0) bias = -bias * env.wallBounce;
+    }
 
-    return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase };
+    return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase, vxBias: bias };
   }
 
   // Pure: Tsuno passing through shoves nearby blobs along his velocity
