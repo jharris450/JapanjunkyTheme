@@ -178,11 +178,11 @@
       waxStretch[i] += (target - waxStretch[i]) * STRETCH_SMOOTH;
       waxUniforms.uBlobStretch.value[i] = waxStretch[i];
     }
-    // ASCII glob: centered, gentle bob — stable, always visible, never merges.
-    waxUniforms.uAsciiCenter.value.set(
-      0.5 + Math.sin(t * 0.25) * 0.04,
-      0.52 + Math.sin(t * 0.31) * 0.05,
-      -0.6, 0.22);
+    // ASCII glob = blob 0: a normal convecting blob, so it rises/merges/interacts
+    // with the lava. uAsciiCenter tracks it; the shader renders its region as
+    // characters via a soft mask (radius padded a touch so the zone reads).
+    var ab = waxState.blobs[0];
+    if (ab) waxUniforms.uAsciiCenter.value.set(ab.x, ab.y, ab.z, ab.radius * 1.15);
     if (tsuno.active) {
       waxUniforms.uTsuno.value.set(tsuno.x, tsuno.y, 0.0, tsuno.radius);
       waxUniforms.uTsunoActive.value = 1.0;
