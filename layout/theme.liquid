@@ -248,7 +248,6 @@
       {%- if template.suffix == 'login' -%}cameraPreset: 'login',{%- endif %}
       {%- comment -%} Storefront pages: Tsuno awake + moving (no hero scroll to wake him). {%- endcomment -%}
       tsunoActive: {% unless template == 'index' or template == 'product' or template.suffix == 'login' %}true{% else %}false{% endunless %},
-      swirlTexture: {{ 'vortex-swirl.jpg' | asset_url | json }},
       ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
       fragmentMasks: {
         url: {{ 'frag-masks.png' | asset_url | json }},
@@ -264,7 +263,6 @@
     };
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
-  <script src="{{ 'gifuct.min.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
   {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>

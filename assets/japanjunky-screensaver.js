@@ -71,10 +71,6 @@
   // reads as portal glow, aligned with the homepage's appearance.
   var mainClearColor = (isProductPagePreset || isLoginPreset) ? 0x3a1a08 : 0x000000;
 
-  // ─── Swirl Speed ─────────────────────────────────────────────
-  var SWIRL_SPEEDS = { slow: 0.3, medium: 0.6, fast: 1.0 };
-  var swirlSpeed = SWIRL_SPEEDS[config.orbitSpeed] || SWIRL_SPEEDS.slow;
-
   var textureLoader = new THREE.TextureLoader();
   textureLoader.crossOrigin = 'anonymous';
 
