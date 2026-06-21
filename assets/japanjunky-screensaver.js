@@ -97,6 +97,7 @@
     uSunActive: { value: 0.0 },          // flips to 1 when the PNG loads
     uPortalRot: { value: 0.82 },
     uSunRot: { value: 0.08 },
+    uSunAngle: { value: 0.0 },            // accumulated sun rotation (driven in animate from tempo)
     uSunSize: { value: 3.0 },
     uSunGlow: { value: 1.0 },             // music-reactive sun brightness (driven in animate)
     uHue: { value: 0.0 },                 // music-reactive hue rotation, radians (driven in animate)
@@ -1326,7 +1327,9 @@
   var throttledInterval = 1000 / 18; // 18fps during product viewing
   var productViewing = false;
   var lastFrame = 0;
-  var huePhase = 0; // accumulates the music-reactive hue drift
+  var huePhase = 0;          // accumulates the music-reactive hue drift
+  var sunAngle = 0;          // accumulated sun rotation
+  var sunRotSpeed = 0.08;    // current spin speed (rad/s), eased toward the song's pace
 
   function animate(time) {
     requestAnimationFrame(animate);
@@ -1361,6 +1364,16 @@
     waxUniforms.uHeatGlow.value = 1.0 + energy * 0.5 + beat * 0.5;
     waxUniforms.uRipple.value = 0.054 * (1.0 + energy * 1.2); // 0.054 = idle base — water agitates with energy
     sparkles.material.uniforms.uBeat.value = beat;            // motes twinkle on the beat
+    // Sun spin tracks the song's pace: BPM sets the target speed (a lively
+    // default when playing without a BPM); idle eases back to the gentle base.
+    // Speed is eased and the ANGLE accumulated so tempo changes never jump.
+    var dtSun = interval / 1000;
+    var bpm = ar ? ar.bpm : 0;
+    var paceSpeed = bpm > 0 ? Math.min(0.45, 0.06 + (bpm / 60) * 0.13) : 0.22;
+    var targetRot = 0.08 + (paceSpeed - 0.08) * energy; // 0.08 = idle base
+    sunRotSpeed += (targetRot - sunRotSpeed) * Math.min(1, dtSun * 2);
+    sunAngle += sunRotSpeed * dtSun;
+    waxUniforms.uSunAngle.value = sunAngle;
     // Hue drift across the whole scene + Tsuno: a sway that swings on the beat,
     // moves faster with energy, and is scaled by energy so it fully returns to
     // the tuned warm palette when nothing's playing.

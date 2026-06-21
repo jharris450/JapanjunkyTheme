@@ -98,6 +98,7 @@
     get beat() { return beat; },
     get bass() { return bass; },
     get treble() { return treble; },
+    get bpm() { return src ? (src.bpm || 0) : 0; },
     sample: function () { return { energy: energy, beat: beat, bass: bass, treble: treble }; }
   };
 })();

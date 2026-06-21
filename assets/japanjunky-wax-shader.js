@@ -40,7 +40,8 @@
     'uniform sampler2D uSunTex;',        // cut-out rising sun (alpha = sun)
     'uniform float uSunActive;',         // 1 = draw the sun
     'uniform float uPortalRot;',         // portal spin speed (rot term negated in jjPortal)
-    'uniform float uSunRot;',            // sun spin speed (CCW, opposite the portal)
+    'uniform float uSunRot;',            // sun spin speed (CCW, opposite the portal) — legacy, unused
+    'uniform float uSunAngle;',          // accumulated sun rotation (driven in JS so tempo can vary speed without jumps)
     'uniform float uSunSize;',           // sun scale (larger = covers more of the page)
     'uniform float uSunGlow;',           // music-reactive sun brightness (1 = idle)
     'uniform float uHue;',               // music-reactive hue rotation, radians (0 = idle/original)
@@ -136,7 +137,7 @@
     'vec4 jjSun(vec2 uv) {',
     '  if (uSunActive < 0.5) return vec4(0.0);',
     '  vec2 d = uv - vec2(0.5, uHorizon); d.x *= uAspect;',
-    '  float ang = uTime * uSunRot;',
+    '  float ang = uSunAngle;',
     '  float ca = cos(ang), sa = sin(ang);',
     '  vec2 r = vec2(d.x*ca - d.y*sa, d.x*sa + d.y*ca);',
     '  vec2 suv = r / uSunSize + 0.5;',
