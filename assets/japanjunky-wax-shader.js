@@ -49,7 +49,7 @@
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
     'const float POOL_TOP = 0.15;',  // y of the reservoir surface (dome top)
     'const float POOL_R   = 4.0;',   // big radius -> gentle wide dome (exact sphere SDF)
-    'const float ELONG    = 0.4;',   // mild column length (keep blobs round -> liquid, not pill)
+    'const float ELONG    = 0.55;',  // column length — blobs stretch into necks as they move
     'const float BLEND    = 0.30;',  // metaball smooth-union (higher = thinner, longer necks)
     'const float SUBMERGE = 0.5;',   // wax opacity below the horizon (blends with the reflective pool)
     '',
@@ -144,7 +144,7 @@
     '}',
     '',
     'vec3 jjSky(vec2 uv) {',
-    '  vec3 col = jjPortal(uv) * 0.72;',   // dim the portal so the bright amber sun stands out
+    '  vec3 col = jjPortal(uv) * 0.85;',   // slight dim so the amber sun keeps contrast
     '  vec4 s = jjSun(uv);',
     '  return mix(col, s.rgb, s.a);',
     '}',
