@@ -43,6 +43,7 @@
     'uniform float uSunRot;',            // sun spin speed (CCW, opposite the portal)
     'uniform float uSunSize;',           // sun scale (larger = covers more of the page)
     'uniform float uSunGlow;',           // music-reactive sun brightness (1 = idle)
+    'uniform float uHue;',               // music-reactive hue rotation, radians (0 = idle/original)
     'uniform float uRipple;',            // water ripple amplitude
     'uniform float uWaterDark;',         // water reflection darken factor
     'varying vec2 vUv;',
@@ -169,6 +170,13 @@
     '  return col;',
     '}',
     '',
+    '// Rotate a colour around the luminance axis (music-reactive hue).',
+    'vec3 jjHueShift(vec3 c, float a) {',
+    '  const vec3 k = vec3(0.57735);',          // 1/sqrt(3)
+    '  float cs = cos(a), sn = sin(a);',
+    '  return c * cs + cross(k, c) * sn + k * dot(k, c) * (1.0 - cs);',
+    '}',
+    '',
     'void main() {',
     '  vec3 ro = vec3((vUv.x - 0.5) * uAspect, vUv.y, -1.5);',
     '  vec3 rd = vec3(0.0, 0.0, 1.0);',
@@ -203,6 +211,7 @@
     '  float glow = (1.0 - smoothstep(0.0, 0.35, vUv.y)) * uHeatGlow;',
     '  col += vec3(0.95, 0.5, 0.12) * glow * (hit > 0.0 ? 0.25 : 0.0);',
     '',
+    '  if (uHue != 0.0) col = jjHueShift(col, uHue);',
     '  gl_FragColor = vec4(col, 1.0);',
     '}'
   ].join('\n');

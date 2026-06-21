@@ -99,6 +99,7 @@
     uSunRot: { value: 0.08 },
     uSunSize: { value: 3.0 },
     uSunGlow: { value: 1.0 },             // music-reactive sun brightness (driven in animate)
+    uHue: { value: 0.0 },                 // music-reactive hue rotation, radians (driven in animate)
     uRipple: { value: 0.054 },
     uWaterDark: { value: 0.78 }
   };
@@ -273,7 +274,14 @@
     'uniform float uTime;',
     'uniform vec3 uTint;',
     'uniform float uAlpha;',
+    'uniform float uHue;',                            // music-reactive hue rotation (0 = idle)
     'varying vec2 vUv;',
+    '',
+    'vec3 jjHueShift(vec3 c, float a) {',
+    '  const vec3 k = vec3(0.57735);',
+    '  float cs = cos(a), sn = sin(a);',
+    '  return c * cs + cross(k, c) * sn + k * dot(k, c) * (1.0 - cs);',
+    '}',
     '',
     'void main() {',
     '  vec2 uv = vUv;',
@@ -282,7 +290,8 @@
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',                       // black ink -> 1
     '  float cover = smoothstep(0.12, 0.5, mask);',    // solid silhouette (occludes)
-    '  vec3 glow = uTint * mask * uAlpha;',            // phosphor colour (premultiplied)
+    '  vec3 tint = uHue != 0.0 ? jjHueShift(uTint, uHue) : uTint;',
+    '  vec3 glow = tint * mask * uAlpha;',             // phosphor colour (premultiplied)
     // Occluding the sun removed the warm brightness it used to add into him, so
     // lift with a filmic curve: brightens dim values/moods toward a warm CRT
     // phosphor and compresses highs so it never clips (no deep-fried look). Keeps
@@ -827,7 +836,8 @@
           uTexture: { value: tex },
           uTime: { value: 0.0 },
           uTint: { value: new THREE.Vector3(1.0, 0.2, 0.08) },
-          uAlpha: { value: 0.8 }
+          uAlpha: { value: 0.8 },
+          uHue: { value: 0.0 }
         },
         vertexShader: GLOW_VERT,
         fragmentShader: GHOST_FRAG,
@@ -1311,6 +1321,7 @@
   var throttledInterval = 1000 / 18; // 18fps during product viewing
   var productViewing = false;
   var lastFrame = 0;
+  var huePhase = 0; // accumulates the music-reactive hue drift
 
   function animate(time) {
     requestAnimationFrame(animate);
@@ -1343,10 +1354,17 @@
     waxUniforms.uSunGlow.value = 1.0 + energy * 0.22 + beat * 0.7;
     waxUniforms.uSunSize.value = 3.0 * (1.0 + beat * 0.05 + energy * 0.02); // 3.0 = idle base
     waxUniforms.uHeatGlow.value = 1.0 + energy * 0.5 + beat * 0.5;
+    // Hue drift across the whole scene + Tsuno: a sway that swings on the beat,
+    // moves faster with energy, and is scaled by energy so it fully returns to
+    // the tuned warm palette when nothing's playing.
+    huePhase += (interval / 1000) * (0.2 + energy * 0.8);
+    var hue = (Math.sin(huePhase) * 0.5 + beat * 0.4) * energy;
+    waxUniforms.uHue.value = hue;
     // Tsuno glow pulse (idle state sets uAlpha each frame, so multiply is safe).
     if (tsunoMesh && tsunoState === 'idle') {
       tsunoMesh.material.uniforms.uAlpha.value *= (1.0 + beat * 0.5 + energy * 0.12);
     }
+    if (tsunoMesh) tsunoMesh.material.uniforms.uHue.value = hue;
 
     // Update parallax
     updateParallax();
