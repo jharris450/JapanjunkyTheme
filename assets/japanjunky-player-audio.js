@@ -1,7 +1,7 @@
 /**
  * japanjunky-player-audio.js
  * Web Audio engine for the toolbox player. Tranche 5 (this file):
- * Includes self-hosted file playback through an old-speaker distortion chain, YouTube IFrame playback with a crackle bed, and a generated static fallback.
+ * Includes self-hosted file playback through an old-speaker distortion chain, clean YouTube IFrame playback, and a generated static fallback.
  *
  * Exposes window.JJ_PlayerAudio = { play(opts), stop() }.
  * opts = { format, audioUrl, youtubeUrl }. Depends on window.JJ_AudioUtil.
@@ -140,37 +140,17 @@
     document.head.appendChild(tag);
   }
 
-  // A low, looping "old speaker" crackle/hum bed for the YouTube path, where we
-  // cannot process the clean stream directly.
-  function startCrackle(c) {
-    var chain = buildChain(c);
-    var trim = c.createGain(); trim.gain.value = 0.06; // subtle under the song
-    chain.output.connect(trim); trim.connect(c.destination);
-    var src = c.createBufferSource();
-    src.buffer = noiseBuffer(c, 3);
-    src.loop = true;
-    src.connect(chain.input);
-    src.start();
-    return function () {
-      try { src.stop(); } catch (e) {}
-      try { src.disconnect(); } catch (e) {}
-      try { trim.disconnect(); } catch (e) {}
-      try { chain.output.disconnect(); } catch (e) {}
-    };
-  }
-
   function playYouTube(c, url) {
     var Util = window.JJ_AudioUtil;
     var id = Util ? Util.parseYouTubeId(url) : '';
     if (!id) { playStatic(c); return; } // unparseable link → static
 
-    var stopCrackle = startCrackle(c);
+    // Clean YouTube playback — no crackle/hum bed over the song.
     var player = null;
     var stopped = false;
     active = {
       stop: function () {
         stopped = true;
-        try { stopCrackle(); } catch (e) {}
         try { if (player && player.stopVideo) player.stopVideo(); } catch (e) {}
         try { if (player && player.destroy) player.destroy(); } catch (e) {}
       }
