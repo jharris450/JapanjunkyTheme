@@ -281,7 +281,9 @@
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',                       // black ink -> 1
     '  float cover = smoothstep(0.12, 0.5, mask);',    // solid silhouette (occludes)
-    '  vec3 glow = uTint * mask * uAlpha * 1.7;',      // bright phosphor, premultiplied
+    // glow matches the original additive look exactly — over his now-occluded
+    // (black) body this equals additive-over-dark, so no clipping / deep-fried look.
+    '  vec3 glow = uTint * mask * uAlpha;',            // phosphor colour, premultiplied
     '  gl_FragColor = vec4(glow, cover);',
     '}'
   ].join('\n');
