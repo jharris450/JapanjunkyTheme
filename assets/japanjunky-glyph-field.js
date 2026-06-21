@@ -40,24 +40,24 @@
   resize();
   window.addEventListener('resize', resize);
 
-  var COUNT = 26;
+  var COUNT = 20;
   var parts = [];
   function spawn() {
     var type = Math.random() < 0.45 ? 'spinner' : 'kana';
     return {
       x: Math.random() * W,
       y: Math.random() * H,
-      size: 11 + Math.random() * 13,
+      size: 10 + Math.random() * 9,
       vx: (Math.random() - 0.5) * 10,        // px/s sway
       vy: -(5 + Math.random() * 18),          // px/s upward drift
       rot: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 1.6,  // rad/s
+      rotSpeed: (Math.random() - 0.5) * 2.8,  // rad/s — faster, loader-like spin
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      alpha: 0.22 + Math.random() * 0.33,
+      alpha: 0.10 + Math.random() * 0.16,     // subtle
       type: type,
       char: type === 'kana' ? randKana() : SPINNER[0],
       spin: Math.random() * SPINNER.length,   // spinner frame cursor
-      swap: 2 + Math.random() * 4,            // kana re-roll interval (s)
+      swap: 0.6 + Math.random() * 1.4,        // kana re-roll interval (s) — changes faster
       t: 0
     };
   }
@@ -93,7 +93,7 @@
       if (p.x < -24) p.x = W + 24; else if (p.x > W + 24) p.x = -24;
 
       if (p.type === 'spinner') {
-        p.spin += dt * (6 + energy * 10 + beat * 8);
+        p.spin += dt * (14 + energy * 12 + beat * 10); // loader-speed frame cycle
         p.char = SPINNER[Math.floor(p.spin) % SPINNER.length];
       } else if (p.t > p.swap) {
         p.t = 0; p.char = randKana();
@@ -102,7 +102,7 @@
       ctx.save();
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rot);
-      ctx.globalAlpha = Math.min(1, p.alpha * (1 + beat * 0.8));
+      ctx.globalAlpha = Math.min(1, p.alpha * (1 + beat * 0.5));
       ctx.fillStyle = p.color;
       ctx.font = p.size + "px 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace";
       ctx.fillText(p.char, 0, 0);
