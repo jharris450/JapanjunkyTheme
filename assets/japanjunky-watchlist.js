@@ -4,9 +4,10 @@
  * (custom.watchlist metafield) via the /apps/watchlist App Proxy. Optimistic UI
  * with revert on failure. Guests are routed to login.
  *
- * Binds any element with [data-watch] and a data-product-id. On a page that
- * lists the watchlist, a button with [data-watch-remove-row] removes its row
- * (closest [data-watch-item]) once an unwatch is confirmed.
+ * Uses event delegation on any element with [data-watch] + data-product-id, so
+ * it covers both Liquid-rendered buttons (PDP star, watchlist page) and the
+ * JS-rendered grid-card stars. Buttons with [data-watch-remove-row] remove their
+ * row (closest [data-watch-item]) once an unwatch is confirmed.
  */
 (function () {
   'use strict';
@@ -17,6 +18,7 @@
     btn.classList.toggle('jj-watch-btn--active', watched);
     btn.setAttribute('aria-pressed', watched ? 'true' : 'false');
     btn.title = watched ? 'Remove from watchlist' : 'Add to watchlist';
+    btn.setAttribute('aria-label', btn.title);
     var glyph = btn.querySelector('.jj-watch-btn__glyph');
     var label = btn.querySelector('.jj-watch-btn__label');
     if (glyph) glyph.innerHTML = watched ? '★' : '☆'; // ★ / ☆
@@ -33,8 +35,7 @@
     setTimeout(function () { if (row.parentNode) row.parentNode.removeChild(row); }, 220);
   }
 
-  function onClick(e) {
-    var btn = e.currentTarget;
+  function toggle(btn) {
     if (btn.getAttribute('data-guest') === 'true') {
       window.location.href = '/account/login';
       return;
@@ -68,20 +69,15 @@
     });
   }
 
-  function bind(root) {
-    var btns = (root || document).querySelectorAll('[data-watch]');
-    for (var i = 0; i < btns.length; i++) {
-      if (btns[i].__jjWatchBound) continue;
-      btns[i].__jjWatchBound = true;
-      btns[i].addEventListener('click', onClick);
-    }
-  }
+  // Delegated click — covers static + dynamically rendered toggles. The grid
+  // star lives inside the card's <a>, so stop the click from navigating.
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('[data-watch]') : null;
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggle(btn);
+  });
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { bind(); });
-  } else {
-    bind();
-  }
-
-  window.JJ_Watchlist = { bind: bind };
+  window.JJ_Watchlist = { toggle: toggle };
 })();

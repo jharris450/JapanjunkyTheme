@@ -263,6 +263,11 @@
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
+  {%- comment -%} Watchlist state for JS-rendered grid stars (ids the customer already watches + login flag). {%- endcomment -%}
+  <script>
+    window.JJ_LOGGED_IN = {% if customer %}true{% else %}false{% endif %};
+    window.JJ_WATCHLIST = [{% if customer %}{% for wp in customer.metafields.custom.watchlist.value %}{{ wp.id }}{% unless forloop.last %},{% endunless %}{% endfor %}{% endif %}];
+  </script>
   {% unless template == 'product' or template.suffix == 'login' %}
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>

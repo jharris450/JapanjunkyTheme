@@ -65,6 +65,8 @@
   {%- comment -%} Left: Product info panel {%- endcomment -%}
   <div class="jj-pdp-info" id="jj-pdp-info">
 
+    {% render 'jj-watch-star', product: p, corner: 'tl' %}
+
     <a href="/" class="jj-pdp-back" id="jj-pdp-back">[&larr; Catalog]</a>
 
     <div class="jj-pdp-artist" id="jj-pdp-artist">{{ p.metafields.custom.artist | default: p.vendor }}</div>
@@ -133,7 +135,6 @@
           {%- if current_variant.available -%}[Add to Cart]{%- else -%}[Unavailable]{%- endif -%}
         </button>
       </form>
-      {% render 'jj-watch-button', product: p %}
     </div>
 
     {%- if p.images.size > 0 -%}

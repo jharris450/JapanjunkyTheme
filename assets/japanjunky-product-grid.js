@@ -518,7 +518,27 @@
       card.appendChild(textDiv('jj-grid__card-soldout', 'SOLD OUT'));
     }
 
+    if (p.id != null) card.appendChild(createWatchStar(p));
+
     return card;
+  }
+
+  // Watchlist star, pinned to the card's upper-right. Symbol only. Initial state
+  // from window.JJ_WATCHLIST (ids the customer already watches); clicks handled
+  // by the delegated listener in japanjunky-watchlist.js.
+  function createWatchStar(p) {
+    var watched = !!(window.JJ_WATCHLIST && window.JJ_WATCHLIST.indexOf(p.id) >= 0);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'jj-watch-star jj-watch-star--tr' + (watched ? ' jj-watch-btn--active' : '');
+    btn.setAttribute('data-product-id', p.id);
+    btn.setAttribute('data-watch', '');
+    if (!window.JJ_LOGGED_IN) btn.setAttribute('data-guest', 'true');
+    btn.setAttribute('aria-pressed', watched ? 'true' : 'false');
+    btn.setAttribute('aria-label', watched ? 'Remove from watchlist' : 'Add to watchlist');
+    btn.title = btn.getAttribute('aria-label');
+    btn.innerHTML = '<span class="jj-watch-btn__glyph" aria-hidden="true">' + (watched ? '★' : '☆') + '</span>';
+    return btn;
   }
 
   function renderGrid() {

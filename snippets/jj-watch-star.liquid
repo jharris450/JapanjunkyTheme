@@ -1,9 +1,7 @@
 {%- comment -%}
-  Reusable watchlist toggle button. Pass `product`.
-  Initial state is read from the logged-in customer's custom.watchlist metafield
-  (list.product_reference). Toggling is handled by japanjunky-watchlist.js, which
-  POSTs to the /apps/watchlist App Proxy (the only way to WRITE the metafield).
-  Guests get a button that routes to login.
+  Star-only watchlist toggle (symbol, no text). Pass `product` and optional
+  `corner` ('tl' | 'tr'). Initial state from the customer's custom.watchlist
+  metafield; clicks handled by japanjunky-watchlist.js. Guests route to login.
 {%- endcomment -%}
 {%- assign is_watched = false -%}
 {%- if customer -%}
@@ -12,12 +10,12 @@
   {%- endfor -%}
 {%- endif -%}
 <button type="button"
-        class="jj-watch-btn{% if is_watched %} jj-watch-btn--active{% endif %}"
+        class="jj-watch-star jj-watch-star--{{ corner | default: 'tl' }}{% if is_watched %} jj-watch-btn--active{% endif %}"
         data-product-id="{{ product.id }}"
         data-watch
         {%- unless customer %} data-guest="true"{% endunless %}
         aria-pressed="{% if is_watched %}true{% else %}false{% endif %}"
+        aria-label="{% if is_watched %}Remove from watchlist{% else %}Add to watchlist{% endif %}"
         title="{% if is_watched %}Remove from watchlist{% else %}Add to watchlist{% endif %}">
   <span class="jj-watch-btn__glyph" aria-hidden="true">{% if is_watched %}&#9733;{% else %}&#9734;{% endif %}</span>
-  <span class="jj-watch-btn__label">{% if is_watched %}Watching{% else %}Watch{% endif %}</span>
 </button>
