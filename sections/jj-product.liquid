@@ -31,8 +31,8 @@
     code: {{ p.metafields.custom.code | default: '' | json }},
     label: {{ p.metafields.custom.label | default: '' | json }},
     formatLabel: {{ p.metafields.custom.format | default: '' | json }},
-    audioUrl: {{ p.metafields.custom.audio_url | default: '' | json }},
-    youtubeUrl: {{ p.metafields.custom.youtube_url | default: '' | json }},
+    audioUrl: {{ p.metafields.custom.audio_url.value | default: '' | json }},
+    youtubeUrl: {{ p.metafields.custom.youtube_url.value | default: '' | json }},
     year: {{ p.metafields.custom.year | default: '' | json }},
     description: {{ p.description | json }},
     images: [

@@ -17,8 +17,9 @@
       {%- assign m_jp_name = product.metafields.custom.jp_name | default: '' -%}
       {%- assign m_jp_title = product.metafields.custom.jp_title | default: '' -%}
       {%- assign m_genre = product.metafields.custom.genre | default: product.type | default: '' -%}
-      {%- assign m_audio = product.metafields.custom.audio_url | default: '' -%}
-      {%- assign m_youtube = product.metafields.custom.youtube_url | default: '' -%}
+      {%- comment -%} .value is required for URL-type metafields to serialize through | json {%- endcomment -%}
+      {%- assign m_audio = product.metafields.custom.audio_url.value | default: '' -%}
+      {%- assign m_youtube = product.metafields.custom.youtube_url.value | default: '' -%}
 
       {%- comment -%} Normalize format {%- endcomment -%}
       {%- assign p_format_lower = m_format | downcase -%}

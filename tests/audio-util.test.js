@@ -17,6 +17,16 @@ describe('parseYouTubeId', () => {
   it('parses /embed/ URLs', () => {
     expect(AU.parseYouTubeId('https://www.youtube.com/embed/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
   });
+  it('parses /shorts/ URLs', () => {
+    expect(AU.parseYouTubeId('https://www.youtube.com/shorts/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+  });
+  it('parses /live/ URLs', () => {
+    expect(AU.parseYouTubeId('https://www.youtube.com/live/dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+  });
+  it('accepts a bare 11-char video id (trimmed)', () => {
+    expect(AU.parseYouTubeId('dQw4w9WgXcQ')).toBe('dQw4w9WgXcQ');
+    expect(AU.parseYouTubeId('  dQw4w9WgXcQ  ')).toBe('dQw4w9WgXcQ');
+  });
   it('returns empty for non-YouTube / empty / null', () => {
     expect(AU.parseYouTubeId('https://example.com/song.mp3')).toBe('');
     expect(AU.parseYouTubeId('')).toBe('');
