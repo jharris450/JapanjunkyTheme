@@ -262,6 +262,11 @@
   scene.add(sparkles);
 
   // ─── Ghost Figures (Tsuno Daishi) ──────────────────────────
+  // Tsuno (a solid black ink figure) renders with PREMULTIPLIED-alpha custom
+  // blending: result = glow + dst*(1 - cover). `cover` is his silhouette, so his
+  // body removes whatever is behind it (the bright rising sun) while `glow` adds
+  // his phosphor colour on top — he occludes AND glows in a single pass, reading
+  // as clearly IN FRONT of the sun instead of additively washing into its rays.
   var GHOST_FRAG = [
     'uniform sampler2D uTexture;',
     'uniform float uTime;',
@@ -274,30 +279,10 @@
     '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
     '  vec4 texColor = texture2D(uTexture, uv);',
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
-    '  float mask = 1.0 - lum;',
-    '  vec3 color = uTint * mask * uAlpha;',
-    '  gl_FragColor = vec4(color, 1.0);',
-    '}'
-  ].join('\n');
-
-  // Occluder pass: punches Tsuno's silhouette out of whatever is behind him
-  // (notably the bright rising sun) so the additive glow above reads as IN
-  // FRONT. Must match GHOST_FRAG's swim distortion exactly to stay aligned.
-  // Alpha is the boosted mask (NOT scaled by uAlpha): his body must fully carve
-  // the sun, otherwise the additive glow just re-brightens the residual and he
-  // blends back into the rays. smoothstep keeps a soft anti-aliased edge.
-  var OCCLUDER_FRAG = [
-    'uniform sampler2D uTexture;',
-    'uniform float uTime;',
-    'varying vec2 vUv;',
-    '',
-    'void main() {',
-    '  vec2 uv = vUv;',
-    '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
-    '  vec4 texColor = texture2D(uTexture, uv);',
-    '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
-    '  float mask = 1.0 - lum;',
-    '  gl_FragColor = vec4(0.0, 0.0, 0.0, smoothstep(0.12, 0.5, mask));',
+    '  float mask = 1.0 - lum;',                       // black ink -> 1
+    '  float cover = smoothstep(0.12, 0.5, mask);',    // solid silhouette (occludes)
+    '  vec3 glow = uTint * mask * uAlpha * 1.7;',      // bright phosphor, premultiplied
+    '  gl_FragColor = vec4(glow, cover);',
     '}'
   ].join('\n');
 
@@ -838,31 +823,20 @@
         },
         vertexShader: GLOW_VERT,
         fragmentShader: GHOST_FRAG,
-        blending: THREE.AdditiveBlending,
+        // Premultiplied custom blend: src is already glow*coverage, so
+        // result = glow + dst*(1 - cover) — adds his phosphor while his
+        // silhouette removes the sun behind him. One pass, no occluder needed.
+        transparent: true,
+        blending: THREE.CustomBlending,
+        blendEquation: THREE.AddEquation,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneMinusSrcAlphaFactor,
         depthWrite: false,
         side: THREE.DoubleSide
       });
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
-
-      // Occluder child: same geometry, dark silhouette, drawn before the glow
-      // (renderOrder -1) so it carves the sun/background out behind Tsuno. Shares
-      // mat's uTexture/uTime/uAlpha uniform objects so it tracks the swim + fade.
-      var occMat = new THREE.ShaderMaterial({
-        uniforms: {
-          uTexture: mat.uniforms.uTexture,
-          uTime: mat.uniforms.uTime
-        },
-        vertexShader: GLOW_VERT,
-        fragmentShader: OCCLUDER_FRAG,
-        blending: THREE.NormalBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      var occMesh = new THREE.Mesh(ghostGeo, occMat);
-      occMesh.renderOrder = -1; // draw before the additive glow (renderOrder 0)
-      tsunoMesh.add(occMesh); // child → inherits Tsuno's transform automatically
       var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       scene.add(tsunoMesh);
