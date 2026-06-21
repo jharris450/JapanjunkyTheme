@@ -14,6 +14,7 @@
   var masterGain = null;
   var analyser = null; // FFT tap on the bus — sees self-hosted/static audio (not YouTube)
   var activeYT = null;
+  var endedCb = null;  // fired once when the current song finishes on its own
 
   function getCtx() {
     if (!ctx) {
@@ -114,6 +115,7 @@
         src = c.createBufferSource();
         src.buffer = buf;
         src.connect(chain.input);
+        src.onended = function () { if (!stopped) signalEnded(); }; // natural end (not teardown)
         src.start();
       })
       .catch(function () {
@@ -186,13 +188,25 @@
               if (v <= 0) { e.target.mute(); } else { e.target.unMute(); }
             } catch (err) {}
             try { e.target.playVideo(); } catch (err) {}
+          },
+          onStateChange: function (e) {
+            // 0 = ENDED — the video finished on its own (not a teardown).
+            if (e.data === 0 && !stopped) signalEnded();
           }
         }
       });
     });
   }
 
+  // Fire the "song finished on its own" callback exactly once.
+  function signalEnded() {
+    var cb = endedCb;
+    endedCb = null;
+    if (cb) cb();
+  }
+
   function stop() {
+    endedCb = null; // manual stop / replace — cancel any pending natural-end callback
     if (active) {
       try { active.stop(); } catch (e) {}
       active = null;
@@ -204,6 +218,7 @@
     var c = getCtx();
     if (!c) return; // no Web Audio support — silently no-op
     stop();
+    endedCb = opts.onEnded || null;
     var Util = window.JJ_AudioUtil;
     var path = Util ? Util.choosePath(opts) : 'static';
     if (path === 'file') {
