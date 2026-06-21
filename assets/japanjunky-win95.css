@@ -24,6 +24,21 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
 }
 
+/* Barrel skirt: the CRT barrel distortion pulls the bottom edge up a few px,
+   leaving a sliver below the taskbar. This same-colour strip sits just below the
+   taskbar (off-screen normally) so the barrel pulls it up to fill that gap.
+   Only present when the shader/barrel is active. */
+.jj-crt-shader-active .jj-taskbar::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: #0a0a0a; /* same as the taskbar so it reads as one piece */
+  pointer-events: none;
+}
+
 /* --- Start Button Wrapper --- */
 .jj-start-menu-wrapper {
   position: relative;
