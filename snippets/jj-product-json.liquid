@@ -77,7 +77,8 @@
         "priceCents": {{ variant.price | json }},
         "addedAt": {{ product.created_at | date: '%s' | json }},
         "audioUrl": {{ m_audio | json }},
-        "youtubeUrl": {{ m_youtube | json }}
+        "youtubeUrl": {{ m_youtube | json }},
+        "bpm": {{ product.metafields.custom.bpm | default: 0 | json }}
       }
     {%- endif -%}
   {%- endfor -%}

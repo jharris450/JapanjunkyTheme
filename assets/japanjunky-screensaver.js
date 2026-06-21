@@ -98,6 +98,7 @@
     uPortalRot: { value: 0.82 },
     uSunRot: { value: 0.08 },
     uSunSize: { value: 3.0 },
+    uSunGlow: { value: 1.0 },             // music-reactive sun brightness (driven in animate)
     uRipple: { value: 0.054 },
     uWaterDark: { value: 0.78 }
   };
@@ -1331,6 +1332,20 @@
     // Tsuno mouse interaction (idle only, desktop only, when mouse interaction is enabled)
     if (tsunoState === 'idle' && !isMobile && config.mouseInteraction !== false) {
       updateTsunoMouse(mouseNorm);
+    }
+
+    // ─── Music reactivity ───────────────────────────────────────
+    // One shared signal drives the sun (glow + breathe), the wax heat, and a
+    // Tsuno glow pulse — everything breathes together when a song plays.
+    var ar = window.JJ_AudioReact;
+    var energy = ar ? ar.energy : 0;
+    var beat = ar ? ar.beat : 0;
+    waxUniforms.uSunGlow.value = 1.0 + energy * 0.22 + beat * 0.7;
+    waxUniforms.uSunSize.value = 3.0 * (1.0 + beat * 0.05 + energy * 0.02); // 3.0 = idle base
+    waxUniforms.uHeatGlow.value = 1.0 + energy * 0.5 + beat * 0.5;
+    // Tsuno glow pulse (idle state sets uAlpha each frame, so multiply is safe).
+    if (tsunoMesh && tsunoState === 'idle') {
+      tsunoMesh.material.uniforms.uAlpha.value *= (1.0 + beat * 0.5 + energy * 0.12);
     }
 
     // Update parallax

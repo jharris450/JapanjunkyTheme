@@ -12,6 +12,7 @@
   var ctx = null;
   var active = null; // { stop: function } teardown for whatever is playing
   var masterGain = null;
+  var analyser = null; // FFT tap on the bus — sees self-hosted/static audio (not YouTube)
   var activeYT = null;
 
   function getCtx() {
@@ -32,7 +33,13 @@
     if (ctx && !masterGain) {
       masterGain = ctx.createGain();
       masterGain.gain.value = window.JJ_Volume ? window.JJ_Volume.getEffective() : 1;
-      masterGain.connect(ctx.destination);
+      // Bus: masterGain -> analyser -> destination, so JJ_AudioReact can read the
+      // spectrum of self-hosted/static audio (YouTube never reaches this graph).
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.7;
+      masterGain.connect(analyser);
+      analyser.connect(ctx.destination);
     }
     return ctx;
   }
@@ -190,6 +197,7 @@
       try { active.stop(); } catch (e) {}
       active = null;
     }
+    if (window.JJ_AudioReact) window.JJ_AudioReact.stop();
   }
 
   function play(opts) {
@@ -204,6 +212,22 @@
       playYouTube(c, opts.youtubeUrl);
     } else {
       playStatic(c);
+    }
+    // Feed the scene/Tsuno reactivity signal. YouTube audio is unreadable, so it
+    // syncs a beat to the product's BPM via the player's clock; file/static get
+    // real FFT off the analyser.
+    if (window.JJ_AudioReact) {
+      if (path === 'youtube') {
+        window.JJ_AudioReact.start({
+          bpm: opts.bpm || 0,
+          beatOffset: opts.beatOffset || 0,
+          getTime: function () {
+            return (activeYT && activeYT.getCurrentTime) ? activeYT.getCurrentTime() : null;
+          }
+        });
+      } else {
+        window.JJ_AudioReact.start({ analyser: analyser, bpm: opts.bpm || 0 });
+      }
     }
   }
 

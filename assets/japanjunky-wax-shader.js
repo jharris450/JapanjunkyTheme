@@ -42,6 +42,7 @@
     'uniform float uPortalRot;',         // portal spin speed (rot term negated in jjPortal)
     'uniform float uSunRot;',            // sun spin speed (CCW, opposite the portal)
     'uniform float uSunSize;',           // sun scale (larger = covers more of the page)
+    'uniform float uSunGlow;',           // music-reactive sun brightness (1 = idle)
     'uniform float uRipple;',            // water ripple amplitude
     'uniform float uWaterDark;',         // water reflection darken factor
     'varying vec2 vUv;',
@@ -140,7 +141,7 @@
     '  vec2 suv = r / uSunSize + 0.5;',
     '  if (suv.x < 0.0 || suv.x > 1.0 || suv.y < 0.0 || suv.y > 1.0) return vec4(0.0);',
     '  float alpha = texture2D(uSunTex, vec2(suv.x, 1.0 - suv.y)).a;',
-    '  return vec4(vec3(1.0, 0.667, 0.0), alpha);',   // amber phosphor #ffaa00
+    '  return vec4(vec3(1.0, 0.667, 0.0) * uSunGlow, alpha);',   // amber phosphor #ffaa00, music-pulsed
     '}',
     '',
     'vec3 jjSky(vec2 uv) {',

@@ -345,7 +345,8 @@
       window.JJ_PlayerAudio.play({
         format: fmt,
         audioUrl: product.audioUrl,
-        youtubeUrl: product.youtubeUrl
+        youtubeUrl: product.youtubeUrl,
+        bpm: product.bpm || 0
       });
     }
     if (model) { playInsertBeat(); model.setPlaying(true); }

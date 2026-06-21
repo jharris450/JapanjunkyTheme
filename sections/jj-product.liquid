@@ -33,6 +33,7 @@
     formatLabel: {{ p.metafields.custom.format | default: '' | json }},
     audioUrl: {{ p.metafields.custom.audio_url.value | default: '' | json }},
     youtubeUrl: {{ p.metafields.custom.youtube_url.value | default: '' | json }},
+    bpm: {{ p.metafields.custom.bpm | default: 0 | json }},
     year: {{ p.metafields.custom.year | default: '' | json }},
     description: {{ p.description | json }},
     images: [
