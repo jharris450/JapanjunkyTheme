@@ -47,7 +47,7 @@
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
     'const float POOL_TOP = 0.15;',  // y of the reservoir surface (dome top)
     'const float POOL_R   = 4.0;',   // big radius -> gentle wide dome (exact sphere SDF)
-    'const float ELONG    = 0.6;',   // how much stretch goes into column length
+    'const float ELONG    = 0.4;',   // mild column length (keep blobs round -> liquid, not pill)
     'const float BLEND    = 0.30;',  // metaball smooth-union (higher = thinner, longer necks)
     '',
     'float smin(float a, float b, float k) {',
@@ -89,12 +89,14 @@
     '  return d;',
     '}',
     '',
-    'vec3 calcNormal(vec3 p) {',
-    '  vec2 e = vec2(0.002, 0.0);',
-    '  return normalize(vec3(',
-    '    map(p + e.xyy) - map(p - e.xyy),',
-    '    map(p + e.yxy) - map(p - e.yxy),',
-    '    map(p + e.yyx) - map(p - e.yyx)));',
+    'vec3 calcNormal(vec3 p) {',          // 4-tap tetrahedron (cheaper than 6-tap)
+    '  vec2 k = vec2(1.0, -1.0);',
+    '  float h = 0.002;',
+    '  return normalize(',
+    '    k.xyy * map(p + k.xyy * h) +',
+    '    k.yyx * map(p + k.yyx * h) +',
+    '    k.yxy * map(p + k.yxy * h) +',
+    '    k.xxx * map(p + k.xxx * h));',
     '}',
     '',
     'vec3 waxColor(float h) {',              // h = height 0 (hot) .. 1 (cool)
@@ -109,12 +111,12 @@
     '  vec3 rd = vec3(0.0, 0.0, 1.0);',
     '  float t = 0.0;',
     '  float hit = -1.0;',
-    '  for (int s = 0; s < 56; s++) {',
+    '  for (int s = 0; s < 40; s++) {',          // exact SDFs converge fast -> fewer steps
     '    vec3 p = ro + rd * t;',
     '    float d = map(p);',
-    '    if (d < 0.002) { hit = t; break; }',
-    '    t += max(d, 0.01);',
-    '    if (t > 3.0) break;',
+    '    if (d < 0.0025) { hit = t; break; }',
+    '    t += max(d, 0.012);',
+    '    if (t > 2.5) break;',                    // wax sits within ~t=2.2; bail early
     '  }',
     '',
     '  // Warm background (no black void) — matches the portal\'s warm zone,',
