@@ -19,14 +19,34 @@ Admin → Settings → Custom data → **Customers** → Add definition:
 - Type: **Product** → *List of products* (`list.product_reference`)
 - Storefronts access: **expose to Storefront / Liquid** (so the theme can read it)
 
-## 2. Create a custom app (Admin token + secret)
+## 2. Create the app(s)
 
-Admin → Settings → Apps and sales channels → Develop apps → **Create an app**.
+Two capabilities are needed: an **App Proxy** (so storefront requests are signed
+and carry `logged_in_customer_id`) and an **Admin API token** (to write the
+metafield). Important: the admin **Develop apps** flow gives an Admin token but
+has **no App Proxy** — App Proxy lives only on a **Partner Dashboard app** (or is
+declared in `shopify.app.toml` via the Shopify CLI).
 
-- **Admin API access scopes:** `read_customers`, `write_customers`
-- Install it, then copy the **Admin API access token** → `SHOPIFY_ADMIN_TOKEN`.
-- On the app's **API credentials** tab copy the **API secret key** → `SHOPIFY_APP_SECRET`
-  (this signs App Proxy requests).
+**Recommended — one Partner app (CLI):**
+
+1. Free Partner account at <https://partners.shopify.com>.
+2. From `watchlist-proxy/`, link/create the app and register config (this fills
+   `client_id` in `shopify.app.toml` and registers the App Proxy + scopes):
+   ```bash
+   npm i -g @shopify/cli
+   shopify app config link      # creates/links the app, writes client_id
+   shopify app deploy           # registers app_proxy + access_scopes from the toml
+   ```
+   `shopify.app.toml` already declares the App Proxy (`apps/watchlist`) and scopes
+   (`read_customers,write_customers`) — edit the URLs to your deployed function.
+3. Install the app on the store. After install, get the **Admin API access token**
+   → `SHOPIFY_ADMIN_TOKEN`, and the app's **API secret key** (Partner Dashboard →
+   the app → API credentials) → `SHOPIFY_APP_SECRET` (this signs proxy requests).
+
+**Alternative — two apps:** a Partner app *only* for the App Proxy (its API secret
+→ `SHOPIFY_APP_SECRET`), plus an admin **Develop apps** custom app for the Admin
+token (`read_customers`,`write_customers` → `SHOPIFY_ADMIN_TOKEN`). Both env vars
+just need to come from the right place; they don't have to be the same app.
 
 ## 3. Deploy this function
 
@@ -53,7 +73,9 @@ After deploy you'll have a URL like `https://japanjunky-watchlist.vercel.app/api
 
 ## 4. Wire the App Proxy
 
-In the custom app → **App proxy**:
+Already declared in `shopify.app.toml` (`[app_proxy]`): prefix `apps`, subpath
+`watchlist`, URL = your function. `shopify app deploy` registers it. (Or set it
+by hand in Partner Dashboard → the app → **App proxy** with the same values.)
 
 - Subpath prefix: `apps`
 - Subpath: `watchlist`

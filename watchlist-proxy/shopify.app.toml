@@ -1,0 +1,22 @@
+# Shopify CLI app config for the watchlist App Proxy.
+# `shopify app config link` fills client_id; `shopify app deploy` registers the
+# app_proxy + access_scopes below. Replace the URLs with your deployed function.
+# Docs: https://shopify.dev/docs/apps/build/online-store/app-proxies
+
+name = "japanjunky-watchlist"
+# client_id = "..."            # written by `shopify app config link`
+application_url = "https://japanjunky-watchlist.vercel.app"
+embedded = false
+
+[access_scopes]
+# Needed to read/write the customer custom.watchlist metafield.
+scopes = "read_customers,write_customers"
+
+[app_proxy]
+# Storefront /apps/watchlist  ->  this function URL (signed by Shopify).
+url = "https://japanjunky-watchlist.vercel.app/api/watchlist"
+subpath = "watchlist"
+prefix = "apps"
+
+[webhooks]
+api_version = "2024-10"
