@@ -281,9 +281,12 @@
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',                       // black ink -> 1
     '  float cover = smoothstep(0.12, 0.5, mask);',    // solid silhouette (occludes)
-    // glow matches the original additive look exactly — over his now-occluded
-    // (black) body this equals additive-over-dark, so no clipping / deep-fried look.
-    '  vec3 glow = uTint * mask * uAlpha;',            // phosphor colour, premultiplied
+    '  vec3 glow = uTint * mask * uAlpha;',            // phosphor colour (premultiplied)
+    // Occluding the sun removed the warm brightness it used to add into him, so
+    // lift with a filmic curve: brightens dim values/moods toward a warm CRT
+    // phosphor and compresses highs so it never clips (no deep-fried look). Keeps
+    // each day's hue. Exposure 2.6 ≈ the warm glow the sun used to lend him.
+    '  glow = vec3(1.0) - exp(-glow * 2.6);',
     '  gl_FragColor = vec4(glow, cover);',
     '}'
   ].join('\n');
