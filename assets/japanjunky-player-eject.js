@@ -144,10 +144,27 @@
     return '';
   }
 
+  function overPlayer(clientX, clientY) {
+    if (!window.JJ_Player || !window.JJ_Player.getRect) return false;
+    var r = window.JJ_Player.getRect();
+    return !!r && clientX >= r.left && clientX <= r.right &&
+                  clientY >= r.top && clientY <= r.bottom;
+  }
+
   function endDrag(tk, e, cancelled) {
     tk.dragging = false;
     try { tk.el.releasePointerCapture(e.pointerId); } catch (err) {}
     tk.el.classList.remove('jj-media-token--grabbed');
+
+    // Dropped back onto the player — load it to play again. (A song already in
+    // the player gets ejected by tryLoadProduct, same as a normal drop.)
+    if (!cancelled && overPlayer(e.clientX, e.clientY)) {
+      if (window.JJ_Player.tryLoadProduct(tk.product) === 'accepted') {
+        dismiss(tk);
+        return;
+      }
+      // rejected / no player — fall through and let it drop.
+    }
 
     if (!cancelled && productKeyUnder(tk, e.clientX, e.clientY) === tk.key) {
       dismiss(tk); // dropped onto its own product — absorb it
