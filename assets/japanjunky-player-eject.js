@@ -192,6 +192,16 @@
     if (!product) return;
     var fmt = normFmt(product.format);
 
+    // Only one token per product — drop any existing token for this song first
+    // so re-loading/popping the same product can't pile up duplicates.
+    var key = keyOf(product);
+    for (var di = tokens.length - 1; di >= 0; di--) {
+      if (tokens[di].key === key) {
+        var dup = tokens.splice(di, 1)[0];
+        if (dup.el.parentNode) dup.el.parentNode.removeChild(dup.el);
+      }
+    }
+
     var el = document.createElement('div');
     el.className = 'jj-media-token';
     el.setAttribute('data-format', fmt);
