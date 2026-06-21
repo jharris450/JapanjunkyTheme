@@ -11,6 +11,8 @@
 
   var ctx = null;
   var active = null; // { stop: function } teardown for whatever is playing
+  var masterGain = null;
+  var activeYT = null;
 
   function getCtx() {
     if (!ctx) {
@@ -26,6 +28,11 @@
           console.warn('[JJ] AudioContext resume rejected — audio may not play');
         });
       } catch (e) {}
+    }
+    if (ctx && !masterGain) {
+      masterGain = ctx.createGain();
+      masterGain.gain.value = window.JJ_Volume ? window.JJ_Volume.getEffective() : 1;
+      masterGain.connect(ctx.destination);
     }
     return ctx;
   }
@@ -63,7 +70,7 @@
   function playStatic(c) {
     var chain = buildChain(c);
     var trim = c.createGain(); trim.gain.value = 0.18; // static is quieter
-    chain.output.connect(trim); trim.connect(c.destination);
+    chain.output.connect(trim); trim.connect(masterGain || c.destination);
     var src = c.createBufferSource();
     src.buffer = noiseBuffer(c, 2);
     src.loop = true;
@@ -81,7 +88,7 @@
 
   function playFile(c, url) {
     var chain = buildChain(c);
-    chain.output.connect(c.destination);
+    chain.output.connect(masterGain || c.destination);
     var src = null;
     var stopped = false;
     active = {
@@ -151,6 +158,7 @@
     active = {
       stop: function () {
         stopped = true;
+        activeYT = null;
         try { if (player && player.stopVideo) player.stopVideo(); } catch (e) {}
         try { if (player && player.destroy) player.destroy(); } catch (e) {}
       }
@@ -164,6 +172,12 @@
         events: {
           onReady: function (e) {
             if (stopped) { try { e.target.stopVideo(); } catch (err) {} return; }
+            activeYT = e.target;
+            var v = window.JJ_Volume ? window.JJ_Volume.getEffective() : 1;
+            try {
+              e.target.setVolume(Math.round(v * 100));
+              if (v <= 0) { e.target.mute(); } else { e.target.unMute(); }
+            } catch (err) {}
             try { e.target.playVideo(); } catch (err) {}
           }
         }
@@ -191,6 +205,18 @@
     } else {
       playStatic(c);
     }
+  }
+
+  if (window.JJ_Volume) {
+    window.JJ_Volume.subscribe(function (v) {
+      if (masterGain) masterGain.gain.value = v;
+      if (activeYT) {
+        try {
+          activeYT.setVolume(Math.round(v * 100));
+          if (v <= 0) { activeYT.mute(); } else { activeYT.unMute(); }
+        } catch (e) {}
+      }
+    });
   }
 
   window.JJ_PlayerAudio = { play: play, stop: stop };
