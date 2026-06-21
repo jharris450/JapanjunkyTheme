@@ -17,6 +17,13 @@
   var DEF_LEVEL = 0.8;
   var DEF_MUTED = false;
 
+  // Audio taper. The slider position is linear (0..1) but perceived loudness is
+  // roughly exponential, so a linear gain felt finicky — too quiet then suddenly
+  // too loud, with no useful control at the low end. MAX_GAIN caps the ceiling
+  // (max was unusably loud) and GAIN_EXP spreads fine control across the slider.
+  var MAX_GAIN = 0.5; // half of full-scale: slider at 100% = 0.5 gain
+  var GAIN_EXP = 2;   // square curve → finer resolution near the bottom
+
   function clamp01(v) {
     v = +v;
     if (!(v >= 0)) return 0; // NaN or < 0
@@ -24,8 +31,13 @@
     return v;
   }
 
+  // Map a raw slider level (0..1) to actual audio gain.
+  function taper(level) {
+    return MAX_GAIN * Math.pow(clamp01(level), GAIN_EXP);
+  }
+
   function effective(level, muted) {
-    return muted ? 0 : clamp01(level);
+    return muted ? 0 : taper(level);
   }
 
   function serialize(state) {
@@ -75,6 +87,8 @@
   try { ls = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage : null; } catch (e) { ls = null; }
   var instance = create(ls);
   instance.clamp01 = clamp01;
+  instance.taper = taper;
+  instance.MAX_GAIN = MAX_GAIN;
   instance.effective = effective;
   instance.serialize = serialize;
   instance.parse = parse;
