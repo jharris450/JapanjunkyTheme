@@ -225,6 +225,7 @@
       el.appendChild(label);
     }
     el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('dblclick', popOutLoaded);
 
     var opts = buildOpts();
     body = {
@@ -339,6 +340,18 @@
     }
     if (model) { playInsertBeat(); model.setPlaying(true); }
     return 'accepted';
+  }
+
+  // Double-click the active player to pop the loaded song out as a draggable
+  // token (drag it back to its product to dismiss) and stop playback, leaving
+  // the player empty on screen. No-op when nothing is loaded.
+  function popOutLoaded(e) {
+    if (e) e.preventDefault();
+    if (!el || !loadedProduct) return;
+    if (window.JJ_PlayerEject) window.JJ_PlayerEject.eject(loadedProduct, getRect());
+    if (window.JJ_PlayerAudio) window.JJ_PlayerAudio.stop();
+    if (model) model.setPlaying(false);
+    loadedProduct = null;
   }
 
   window.JJ_Player = {
