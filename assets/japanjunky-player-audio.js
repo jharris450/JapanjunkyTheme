@@ -161,8 +161,6 @@
         activeYT = null;
         try { if (player && player.stopVideo) player.stopVideo(); } catch (e) {}
         try { if (player && player.destroy) player.destroy(); } catch (e) {}
-        // Removing the iframe can also disturb the root barrel filter — re-assert.
-        if (window.JJ_CRT_refreshBarrel) window.JJ_CRT_refreshBarrel();
       }
     };
 
@@ -181,9 +179,6 @@
               if (v <= 0) { e.target.mute(); } else { e.target.unMute(); }
             } catch (err) {}
             try { e.target.playVideo(); } catch (err) {}
-            // The YT iframe just mounted — some engines drop the root <html>
-            // barrel filter when an iframe is injected; re-assert it.
-            if (window.JJ_CRT_refreshBarrel) window.JJ_CRT_refreshBarrel();
           }
         }
       });

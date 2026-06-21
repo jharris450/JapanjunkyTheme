@@ -136,6 +136,16 @@
 </head>
 
 <body class="jj-body{% if template == 'product' %} jj-body--product{% endif %}{% if template.suffix == 'login' %} jj-body--auth{% endif %} jj-body--scene-{{ settings.scene_mode | default: 'forest' }}">
+{%- comment -%}
+  Barrel-filter target. The CRT barrel is a root reference-filter; an <iframe>
+  injected under the filtered element (the YouTube audio player) silently drops
+  it in Chromium. So all visible UI lives in this wrapper and the filter is
+  applied here, while the JS-appended YouTube host (#jj-yt-host) is added to
+  <body> — OUTSIDE this wrapper — so it can never break the filter. The site is
+  app-like (html/body overflow:hidden, no document scroll), so a fixed,
+  viewport-sized wrapper keeps position:fixed descendants correct.
+{%- endcomment -%}
+<div id="jj-crt-content">
 {% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
 <button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
@@ -323,5 +333,6 @@
   position:fixed;inset:0;width:100%;height:100%;
   z-index:10002;pointer-events:none;
 "></canvas>
+</div><!-- /#jj-crt-content -->
 </body>
 </html>

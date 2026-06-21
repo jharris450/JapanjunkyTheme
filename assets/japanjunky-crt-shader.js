@@ -439,27 +439,6 @@
     };
   }
 
-  // ─── Barrel refresh ──────────────────────────────────────────
-  // The root <html> reference-filter (barrel) gets silently dropped by some
-  // engines when an <iframe> is injected into the page (e.g. the YouTube audio
-  // player on a song drop). Re-assert it inline, then clear next frame back to
-  // the CSS rule — both states keep the barrel visible (no flat flash) while
-  // forcing the browser to recomposite it. Kicked a few times so it catches the
-  // iframe's compositing settling.
-  function refreshBarrel() {
-    var el = document.documentElement;
-    if (!el.classList.contains('jj-crt-shader-active')) return;
-    var n = 0;
-    (function kick() {
-      el.style.filter = 'url(#jj-crt-barrel)';
-      requestAnimationFrame(function () {
-        el.style.filter = '';
-        if (++n < 3) setTimeout(kick, 120);
-      });
-    })();
-  }
-  window.JJ_CRT_refreshBarrel = refreshBarrel;
-
   // ─── Init ────────────────────────────────────────────────────
   function init() {
     // Accessibility: respect high-contrast preference

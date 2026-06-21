@@ -429,12 +429,20 @@
    Root element is exempt from creating a new containing block for
    fixed-positioned descendants (CSS Filter Effects spec), so
    position:fixed elements (taskbar, ring, screensaver) still work. */
-html.jj-crt-shader-active {
+/* Barrel applied to the #jj-crt-content wrapper (not <html>) so the JS-appended
+   YouTube iframe host, which lives outside the wrapper, can't drop the root
+   reference-filter. The wrapper is fixed + viewport-sized only while active, so
+   position:fixed descendants stay anchored to the viewport (the site is
+   app-like: html/body overflow:hidden, no document scroll). */
+html.jj-crt-shader-active #jj-crt-content {
   filter: url(#jj-crt-barrel);
+  position: fixed;
+  inset: 0;
+  overflow: visible;
 }
 
 @media (prefers-contrast: more) {
-  html.jj-crt-shader-active {
+  html.jj-crt-shader-active #jj-crt-content {
     filter: none;
   }
 }
