@@ -1358,7 +1358,9 @@
     // moves faster with energy, and is scaled by energy so it fully returns to
     // the tuned warm palette when nothing's playing.
     huePhase += (interval / 1000) * (0.2 + energy * 0.8);
-    var hue = (Math.sin(huePhase) * 0.5 + beat * 0.4) * energy;
+    // Negative-only: positive rotation pushes the warm palette toward green
+    // (hard on the eyes), so drift exclusively toward the magenta/warm side.
+    var hue = -(Math.abs(Math.sin(huePhase)) * 0.5 + beat * 0.4) * energy;
     waxUniforms.uHue.value = hue;
     // Tsuno glow pulse (idle state sets uAlpha each frame, so multiply is safe).
     if (tsunoMesh && tsunoState === 'idle') {
