@@ -122,8 +122,17 @@
     uAsciiActive: { value: 1.0 },
     uAsciiCell: { value: 6.0 },        // character cell size in render px
     uResolution: { value: new THREE.Vector2(resW, resH) },
-    uBlobStretch: { value: [] }
+    uBlobStretch: { value: [] },
+    uHorizon: { value: 0.27 },
+    uSunTex: { value: new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, THREE.RGBAFormat) },
+    uSunActive: { value: 0.0 },          // flips to 1 when the PNG loads
+    uPortalRot: { value: 0.82 },
+    uSunRot: { value: 0.08 },
+    uSunSize: { value: 3.0 },
+    uRipple: { value: 0.054 },
+    uWaterDark: { value: 0.78 }
   };
+  waxUniforms.uSunTex.value.needsUpdate = true; // DataTexture must be flagged before first use
   // Smoothed per-blob stretch (low-pass of the raw |vy|-driven target) so the
   // teardrop shape eases instead of snapping when velocity changes.
   var waxStretch = [];
@@ -145,6 +154,18 @@
   });
   var waxQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), waxMat);
   waxScene.add(waxQuad);
+
+  // Rising-sun overlay: load the cut-out PNG, then activate it in the shader.
+  if (config.risingSun) {
+    textureLoader.load(config.risingSun, function (tex) {
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      waxUniforms.uSunTex.value = tex;
+      waxUniforms.uSunActive.value = 1.0;
+    });
+  }
 
   // Tsuno → wax field input (uv space, with frame-to-frame velocity)
   var lastTsunoUv = null;
