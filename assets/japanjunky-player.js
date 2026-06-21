@@ -309,24 +309,34 @@
   // matching player. Tranche 4 stubs audio — accept = visual confirm only;
   // Tranche 5 routes the accept path to the audio engine.
   // Returns 'no-player' | 'rejected' | 'accepted'.
+  function rejectBounce() {
+    if (body) {
+      body.vy = -700;
+      body.vx = (Math.random() < 0.5 ? -260 : 260); // overwrite, don't accumulate
+    }
+    if (!dragging) startLoop(); // don't fight a user drag in progress
+    flashClass('jj-player--reject');
+  }
+
   function tryLoadProduct(product) {
     if (!el || !currentTool) return 'no-player';
     var MF = window.JJ_MediaFormat;
     if (!MF) return 'no-player'; // format module not loaded — silently no-op
     var fmt = product && product.format;
     if (!MF.matchesPlayer(currentTool, fmt)) {
-      if (body) {
-        body.vy = -700;
-        body.vx = (Math.random() < 0.5 ? -260 : 260); // overwrite, don't accumulate
-      }
-      if (!dragging) startLoop(); // don't fight a user drag in progress
-      flashClass('jj-player--reject');
+      rejectBounce();
+      return 'rejected';
+    }
+    // One copy per song: if this product's token is already out on the field,
+    // refuse to pull another (drag the existing token back to play it again).
+    var EJ = window.JJ_PlayerEject;
+    if (EJ && EJ.hasToken && EJ.hasToken(product)) {
+      rejectBounce();
       return 'rejected';
     }
     flashClass('jj-player--accept');
     // A different song replacing the current one ejects the old one as a
     // draggable token (drag it back to its product to clear the clutter).
-    var EJ = window.JJ_PlayerEject;
     if (EJ && loadedProduct && EJ.keyOf(loadedProduct) !== EJ.keyOf(product)) {
       EJ.eject(loadedProduct, getRect());
     }

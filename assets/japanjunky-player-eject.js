@@ -159,11 +159,15 @@
     // Dropped back onto the player — load it to play again. (A song already in
     // the player gets ejected by tryLoadProduct, same as a normal drop.)
     if (!cancelled && overPlayer(e.clientX, e.clientY)) {
+      // De-track first so hasToken() doesn't see this token and block its own
+      // reload (the "one copy on the field" guard in tryLoadProduct).
+      var idx = tokens.indexOf(tk);
+      if (idx >= 0) tokens.splice(idx, 1);
       if (window.JJ_Player.tryLoadProduct(tk.product) === 'accepted') {
         dismiss(tk);
         return;
       }
-      // rejected / no player — fall through and let it drop.
+      tokens.push(tk); // rejected / no player — keep it; fall through and drop.
     }
 
     if (!cancelled && productKeyUnder(tk, e.clientX, e.clientY) === tk.key) {
@@ -248,5 +252,14 @@
     if (tokens.length) startLoop();
   });
 
-  window.JJ_PlayerEject = { eject: eject, keyOf: keyOf };
+  // Is a token for this product currently out on the field?
+  function hasToken(product) {
+    var key = keyOf(product);
+    for (var i = 0; i < tokens.length; i++) {
+      if (tokens[i].key === key) return true;
+    }
+    return false;
+  }
+
+  window.JJ_PlayerEject = { eject: eject, keyOf: keyOf, hasToken: hasToken };
 })();
