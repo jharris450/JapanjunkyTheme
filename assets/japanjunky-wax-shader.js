@@ -35,12 +35,6 @@
     'uniform float uBlobTemp[' + N + '];',
     'uniform vec4  uTsuno;',                 // xy = uv, z = slab, w = radius
     'uniform float uTsunoActive;',
-    'uniform sampler2D uAsciiTex;',          // dark->bright glyph ramp atlas (1 row)
-    'uniform float uAsciiCount;',            // number of ramp glyphs
-    'uniform vec4  uAsciiCenter;',           // dedicated ASCII glob: xy uv, z slab, w radius
-    'uniform float uAsciiActive;',           // 1 = draw the ASCII glob
-    'uniform float uAsciiCell;',             // character cell size in pixels
-    'uniform vec2  uResolution;',            // render target px (for the cell grid)
     'uniform float uBlobStretch[' + N + '];', // per-blob vertical stretch (teardrop)
     'uniform float uHorizon;',           // horizon line (uv.y); sky above, water below
     'uniform sampler2D uSunTex;',        // cut-out rising sun (alpha = sun)
@@ -57,6 +51,7 @@
     'const float POOL_R   = 4.0;',   // big radius -> gentle wide dome (exact sphere SDF)
     'const float ELONG    = 0.4;',   // mild column length (keep blobs round -> liquid, not pill)
     'const float BLEND    = 0.30;',  // metaball smooth-union (higher = thinner, longer necks)
+    'const float SUBMERGE = 0.5;',   // wax opacity below the horizon (blends with the reflective pool)
     '',
     'float smin(float a, float b, float k) {',
     '  float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);',
@@ -128,14 +123,11 @@
     '  float pattern = s1*0.5 + s2*0.3 + s3*0.2;',
     '  vec3 w1=vec3(0.4,0.05,0.02), w2=vec3(0.85,0.35,0.05), w3=vec3(0.95,0.75,0.3);',
     '  vec3 warm=mix(w1,w2,smoothstep(0.0,0.5,pattern)); warm=mix(warm,w3,smoothstep(0.5,1.0,pattern));',
-    '  vec3 q1=vec3(0.25,0.05,0.35), q2=vec3(0.6,0.2,0.8), q3=vec3(0.8,0.6,0.95);',
-    '  vec3 cool=mix(q1,q2,smoothstep(0.0,0.5,pattern)); cool=mix(cool,q3,smoothstep(0.5,1.0,pattern));',
-    '  float depthMix = smoothstep(0.72, 1.0, depth);',
-    '  vec3 color = mix(warm, cool, depthMix);',
+    '  vec3 color = warm;',                 // warm/orange only — no purple at the rim
     '  float falloff = smoothstep(0.0,0.1,depth)*(1.0 - smoothstep(0.5,1.0,depth));',
     '  color *= 0.45 + 0.55*falloff;',
     '  float glow = smoothstep(0.7,1.0,depth);',
-    '  color += mix(vec3(0.95,0.75,0.5), vec3(0.7,0.5,0.95), depthMix)*glow*0.3;',
+    '  color += vec3(0.95,0.75,0.5)*glow*0.3;',
     '  return color;',
     '}',
     '',
@@ -148,11 +140,11 @@
     '  vec2 suv = r / uSunSize + 0.5;',
     '  if (suv.x < 0.0 || suv.x > 1.0 || suv.y < 0.0 || suv.y > 1.0) return vec4(0.0);',
     '  float alpha = texture2D(uSunTex, vec2(suv.x, 1.0 - suv.y)).a;',
-    '  return vec4(vec3(0.909, 0.192, 0.227), alpha);',
+    '  return vec4(vec3(1.0, 0.667, 0.0), alpha);',   // amber phosphor #ffaa00
     '}',
     '',
     'vec3 jjSky(vec2 uv) {',
-    '  vec3 col = jjPortal(uv);',
+    '  vec3 col = jjPortal(uv) * 0.72;',   // dim the portal so the bright amber sun stands out
     '  vec4 s = jjSun(uv);',
     '  return mix(col, s.rgb, s.a);',
     '}',
@@ -189,7 +181,8 @@
     '    if (t > 2.5) break;',                    // wax sits within ~t=2.2; bail early
     '  }',
     '',
-    '  vec3 col = jjSkyWater(vUv);',   // sky + reflective water behind the wax
+    '  vec3 bg = jjSkyWater(vUv);',   // sky + reflective water behind the wax
+    '  vec3 col = bg;',
     '  if (hit > 0.0) {',
     '    vec3 p = ro + rd * hit;',
     '    vec3 n = calcNormal(p);',
@@ -198,28 +191,12 @@
     '    float spec = pow(clamp(dot(reflect(-ld, n), -rd), 0.0, 1.0), 24.0);',
     '    float fres = pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 2.0);',
     '    vec3 base = waxColor(clamp(p.y, 0.0, 1.0));',
-    '    col = base * (0.35 + 0.65 * diff) + vec3(1.0, 0.9, 0.7) * spec * 0.5;',
-    '    col += base * fres * 0.4;',
-    '',
-    '    // ── ASCII glob ──  The ASCII blob is a normal convecting wax blob',
-    '    // (uAsciiCenter tracks its sim position) so it rises, merges and',
-    '    // interacts like the rest of the lava. Over a soft region around its',
-    '    // centre the wax surface IS rendered as characters: the character is',
-    '    // chosen by surface brightness (readable 3D shading) and the ink',
-    '    // modulates the lit wax colour — brighter strokes, dimmer gaps, no',
-    '    // black. Soft distance mask = no per-pixel flicker at merges.',
-    '    if (uAsciiActive > 0.5) {',
-    '      vec3 acen = vec3((uAsciiCenter.x - 0.5) * uAspect, uAsciiCenter.y, uAsciiCenter.z);',
-    '      float mask = 1.0 - smoothstep(uAsciiCenter.w * 0.9, uAsciiCenter.w * 1.6, length(p - acen));',
-    '      if (mask > 0.0) {',
-    '        float bright = clamp(0.2 + 0.8 * diff + 0.3 * spec, 0.0, 1.0);',
-    '        vec2 cellUv = fract((vUv * uResolution) / uAsciiCell);',
-    '        float ci = floor(bright * (uAsciiCount - 1.0));',
-    '        vec2 aUv = vec2((ci + cellUv.x) / uAsciiCount, cellUv.y);',
-    '        float ink = texture2D(uAsciiTex, aUv).r;',
-    '        col = mix(col, col * (0.5 + 0.6 * ink), mask);',
-    '      }',
-    '    }',
+    '    vec3 wax = base * (0.35 + 0.65 * diff) + vec3(1.0, 0.9, 0.7) * spec * 0.5;',
+    '    wax += base * fres * 0.4;',
+    '    // Below the horizon the wax is submerged — blend it with the reflective',
+    '    // pool so the bottom wax reservoir reads as one pool with the water.',
+    '    float waxAlpha = mix(SUBMERGE, 1.0, smoothstep(uHorizon - 0.06, uHorizon + 0.04, p.y));',
+    '    col = mix(bg, wax, waxAlpha);',
     '  }',
     '',
     '  float glow = (1.0 - smoothstep(0.0, 0.35, vUv.y)) * uHeatGlow;',
