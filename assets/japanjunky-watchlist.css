@@ -63,8 +63,6 @@
 /* Anchor the stars to their card / panel corner. */
 .jj-grid__card { position: relative; }
 .jj-pdp-info { position: relative; }
-/* Shift the [<- Catalog] link clear of the corner star. */
-.jj-pdp-info .jj-pdp-back { margin-left: 30px; }
 
 /* --- Watchlist page --- */
 .jj-watchlist {
