@@ -77,10 +77,10 @@
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
   var waxState = JJ_WaxSim.createState({ seed: 7, count: 4 });
   var waxAspect = resW / resH;
-  // Mild teardrop: blobs stay mostly round (liquid, not a rigid pill); the
-  // gooey metaball necks between blobs + pool give the column/plume look.
+  // Teardrop: moving blobs stretch into necks/columns; smoothing keeps it from
+  // snapping. Between rounded-ball (too low) and rigid-pill (too high).
   var STRETCH_K = 9.0;
-  var MAX_STRETCH = 1.4;
+  var MAX_STRETCH = 2.0;
 
   var waxUniforms = {
     uTime: { value: 0.0 },
