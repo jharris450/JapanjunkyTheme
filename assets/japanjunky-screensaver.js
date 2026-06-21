@@ -164,6 +164,7 @@
       tex.wrapT = THREE.ClampToEdgeWrapping;
       waxUniforms.uSunTex.value = tex;
       waxUniforms.uSunActive.value = 1.0;
+      if (prefersReducedMotion) { renderOneFrame(); }
     });
   }
 
