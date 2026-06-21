@@ -5,7 +5,7 @@
 
 name = "japanjunky-watchlist"
 # client_id = "..."            # written by `shopify app config link`
-application_url = "https://japanjunky-watchlist.vercel.app"
+application_url = "https://watchlist-proxy.vercel.app"
 embedded = false
 
 [access_scopes]
@@ -14,7 +14,7 @@ scopes = "read_customers,write_customers"
 
 [app_proxy]
 # Storefront /apps/watchlist  ->  this function URL (signed by Shopify).
-url = "https://japanjunky-watchlist.vercel.app/api/watchlist"
+url = "https://watchlist-proxy.vercel.app/api/watchlist"
 subpath = "watchlist"
 prefix = "apps"
 
