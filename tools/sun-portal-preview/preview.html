@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rising Sun / Portal — 2D preview</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:monospace;color:#eecfa0}
+  #gl{display:block;width:100vw;height:100vh}
+  #panel{position:fixed;top:8px;left:8px;background:rgba(20,8,4,.82);border:1px solid #aa5a22;
+    padding:10px 12px;font-size:12px;line-height:1.7;z-index:10;max-width:240px}
+  #panel h1{font-size:12px;margin:0 0 6px;color:#ffb84d;letter-spacing:1px}
+  #panel label{display:flex;justify-content:space-between;gap:8px;align-items:center}
+  #panel input[type=range]{width:110px}
+  #panel .v{color:#9fe06a;min-width:34px;text-align:right}
+  #panel .row{margin-top:4px}
+  #panel button{margin-top:8px;background:#2a1208;color:#eecfa0;border:1px solid #aa5a22;
+    font-family:monospace;cursor:pointer;padding:3px 8px}
+  #note{margin-top:8px;color:#c89a6a;font-size:11px}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="panel">
+  <h1>SUN / PORTAL — 2D</h1>
+  <label>horizon <input id="horizon" type="range" min="0.15" max="0.6" step="0.01" value="0.27"><span class="v" id="horizon_v"></span></label>
+  <label>portal spin <input id="prot" type="range" min="0" max="1.6" step="0.02" value="0.82"><span class="v" id="prot_v"></span></label>
+  <label>sun spin (CCW) <input id="srot" type="range" min="0" max="1.0" step="0.02" value="0.08"><span class="v" id="srot_v"></span></label>
+  <label>sun size <input id="ssize" type="range" min="0.2" max="3.0" step="0.02" value="3"><span class="v" id="ssize_v"></span></label>
+  <label>ripple <input id="ripple" type="range" min="0" max="0.06" step="0.002" value="0.054"><span class="v" id="ripple_v"></span></label>
+  <label>water dark <input id="wdark" type="range" min="0.3" max="0.95" step="0.02" value="0.78"><span class="v" id="wdark_v"></span></label>
+  <div class="row"><label><input id="dither" type="checkbox"> 240p pixelate</label></div>
+  <button id="copy">copy values</button>
+  <div id="note">Counter-rotating sun over the portal, mirrored in the rippling water at the horizon. Full-res (toggle pixelate to approximate the live 240p look).</div>
+</div>
+<script>
+var cv = document.getElementById('gl');
+var gl = cv.getContext('webgl');
+if (!gl) { document.body.innerHTML = '<p style="color:#fff;padding:20px">WebGL not available.</p>'; }
+
+var VERT = [
+  'attribute vec2 p;',
+  'void main(){ gl_Position = vec4(p, 0.0, 1.0); }'
+].join('\n');
+
+var FRAG = [
+  'precision highp float;',
+  'uniform float uTime;',
+  'uniform vec2  uRes;',
+  'uniform sampler2D uSun;',
+  'uniform float uHorizon, uPortalRot, uSunRot, uSunSize, uRipple, uWaterDark;',
+  '',
+  'vec3 portal(vec2 uv){',
+  '  vec2 c = vec2(0.5, uHorizon);',
+  '  vec2 d = uv - c; d.x *= uRes.x/uRes.y;',
+  '  float angle = atan(d.y, d.x) / 6.2832 + 0.5;',
+  '  float depth = clamp(length(d) / 1.1, 0.0, 1.0);',
+  '  float a = angle * 6.2832;',
+  '  float rot = -uTime * uPortalRot;',   // portal spins OPPOSITE the sun
+  '  float tightness = 3.0 + depth * 5.0;',
+  '  float s1 = sin(a*2.0 + depth*tightness*6.2832 - rot)*0.5+0.5;',
+  '  float s2 = sin(a*3.0 - depth*(tightness-1.0)*4.5 + rot*0.6)*0.5+0.5;',
+  '  float s3 = sin(a*5.0 + depth*tightness*8.0 - rot*1.4)*0.5+0.5;',
+  '  float pattern = s1*0.5 + s2*0.3 + s3*0.2;',
+  '  vec3 w1=vec3(0.4,0.05,0.02), w2=vec3(0.85,0.35,0.05), w3=vec3(0.95,0.75,0.3);',
+  '  vec3 warm=mix(w1,w2,smoothstep(0.0,0.5,pattern)); warm=mix(warm,w3,smoothstep(0.5,1.0,pattern));',
+  '  vec3 q1=vec3(0.25,0.05,0.35), q2=vec3(0.6,0.2,0.8), q3=vec3(0.8,0.6,0.95);',
+  '  vec3 cool=mix(q1,q2,smoothstep(0.0,0.5,pattern)); cool=mix(cool,q3,smoothstep(0.5,1.0,pattern));',
+  '  float depthMix = smoothstep(0.72, 1.0, depth);',
+  '  vec3 color = mix(warm, cool, depthMix);',
+  '  float falloff = smoothstep(0.0,0.1,depth)*smoothstep(1.0,0.5,depth);',
+  '  color *= 0.45 + 0.55*falloff;',
+  '  float glow = smoothstep(0.7,1.0,depth);',
+  '  color += mix(vec3(0.95,0.75,0.5), vec3(0.7,0.5,0.95), depthMix)*glow*0.3;',
+  '  return color;',
+  '}',
+  '',
+  'vec4 sun(vec2 uv){',
+  '  vec2 c = vec2(0.5, uHorizon);',
+  '  vec2 d = uv - c; d.x *= uRes.x/uRes.y;',
+  '  float ang = uTime * uSunRot;',          // CCW
+  '  float ca=cos(ang), sa=sin(ang);',
+  '  vec2 r = vec2(d.x*ca - d.y*sa, d.x*sa + d.y*ca);',
+  '  vec2 suv = r / uSunSize + 0.5;',
+  '  if(suv.x<0.0||suv.x>1.0||suv.y<0.0||suv.y>1.0) return vec4(0.0);',
+  '  vec3 tex = texture2D(uSun, vec2(suv.x, 1.0-suv.y)).rgb;',
+  '  float redness = clamp((tex.r - max(tex.g, tex.b)) * 3.0, 0.0, 1.0);', // key out light bg
+  '  return vec4(vec3(0.909, 0.192, 0.227), redness);',                    // theme red #e8313a
+
+  '}',
+  '',
+  'vec3 skyColor(vec2 uv){',
+  '  vec3 col = portal(uv);',
+  '  vec4 s = sun(uv);',
+  '  return mix(col, s.rgb, s.a);',
+  '}',
+  '',
+  'void main(){',
+  '  vec2 uv = gl_FragCoord.xy / uRes;',
+  '  vec3 col;',
+  '  if(uv.y >= uHorizon){',
+  '    col = skyColor(uv);',
+  '  } else {',
+  '    float below = (uHorizon - uv.y) / uHorizon;',
+  '    vec2 ref = vec2(uv.x, 2.0*uHorizon - uv.y);',
+  '    ref.x += sin(uv.y*60.0 - uTime*1.5) * uRipple * below;',
+  '    ref.y += sin(uv.x*40.0 - uTime*1.2) * uRipple * 0.3 * below;',
+  '    col = skyColor(ref) * uWaterDark;',
+  '  }',
+  '  float hg = exp(-pow((uv.y - uHorizon)*40.0, 2.0));',
+  '  col += vec3(0.95,0.6,0.2) * hg * 0.4;',
+  '  gl_FragColor = vec4(col, 1.0);',
+  '}'
+].join('\n');
+
+function sh(type, src){ var s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s)); return s; }
+var prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+gl.linkProgram(prog); gl.useProgram(prog);
+
+var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+var loc = gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+var U = {};
+['uTime','uRes','uSun','uHorizon','uPortalRot','uSunRot','uSunSize','uRipple','uWaterDark']
+  .forEach(function(n){ U[n] = gl.getUniformLocation(prog, n); });
+
+// sun texture
+var tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,0]));
+var img = new Image();
+img.onload = function(){
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+};
+img.src = 'risingsun.jpg';
+
+var ctrls = ['horizon','prot','srot','ssize','ripple','wdark'];
+function val(id){ return parseFloat(document.getElementById(id).value); }
+function syncLabels(){ ctrls.forEach(function(id){ var e=document.getElementById(id+'_v'); if(e) e.textContent = val(id).toFixed(3); }); }
+ctrls.forEach(function(id){ document.getElementById(id).addEventListener('input', syncLabels); });
+syncLabels();
+
+document.getElementById('copy').addEventListener('click', function(){
+  var s = 'horizon='+val('horizon')+' portalRot='+val('prot')+' sunRot='+val('srot')+
+          ' sunSize='+val('ssize')+' ripple='+val('ripple')+' waterDark='+val('wdark');
+  navigator.clipboard && navigator.clipboard.writeText(s);
+  this.textContent = 'copied!'; var b=this; setTimeout(function(){b.textContent='copy values';},900);
+});
+
+function resize(){
+  var px = document.getElementById('dither').checked ? 240 : 1;
+  if (px === 240) {
+    var aspect = window.innerWidth/window.innerHeight;
+    cv.width = Math.round(240*aspect); cv.height = 240;
+  } else {
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+  }
+  cv.style.width='100vw'; cv.style.height='100vh';
+  cv.style.imageRendering = px===240 ? 'pixelated' : 'auto';
+}
+window.addEventListener('resize', resize);
+document.getElementById('dither').addEventListener('change', resize);
+resize();
+
+var t0 = performance.now();
+function frame(){
+  gl.viewport(0,0,cv.width,cv.height);
+  gl.uniform1f(U.uTime, (performance.now()-t0)/1000);
+  gl.uniform2f(U.uRes, cv.width, cv.height);
+  gl.uniform1i(U.uSun, 0);
+  gl.uniform1f(U.uHorizon, val('horizon'));
+  gl.uniform1f(U.uPortalRot, val('prot'));
+  gl.uniform1f(U.uSunRot, val('srot'));
+  gl.uniform1f(U.uSunSize, val('ssize'));
+  gl.uniform1f(U.uRipple, val('ripple'));
+  gl.uniform1f(U.uWaterDark, val('wdark'));
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

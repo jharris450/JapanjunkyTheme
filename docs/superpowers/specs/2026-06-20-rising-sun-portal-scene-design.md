@@ -14,15 +14,17 @@ Turn the lava-lamp background into a Japanese **rising-sun-over-water** scene wi
        │   spiral, swirls CW      │   SKY  (top 62%)
        │   ◯ rising-sun overlay   │
        │     rotates CCW          │
- y=0.38├════ HORIZON / water ═════┤  reflective surface (ripple + glow)
-       │   reflection of the sky  │   WATER (bottom 38%)
+ y=0.27├════ HORIZON / water ═════┤  reflective surface (ripple + glow)
+       │   reflection of the sky  │   WATER (bottom 27%)
        │   (portal+sun mirrored)  │
  y=0.0 └──────────────────────────┘
    the lava wax stays full-screen, rising through the horizon
 ```
 
-- **Sky** (above the horizon): the portal vortex spiral (recovered from git) with the **rising-sun overlay** composited on top of it; the sun's background is removed and it **rotates counter-clockwise** while the portal swirls clockwise.
-- **Horizon** at 38% from the bottom (lower third): the reflective water surface — a glow line + ripple.
+Defaults below are validated in a standalone WebGL preview (`tools/sun-portal-preview/preview.html`) the user tuned: `horizon 0.27, portalRot 0.82, sunRot 0.08, sunSize 3.0 (covers the page), ripple 0.054, waterDark 0.78`.
+
+- **Sky** (above the horizon): the portal vortex spiral (recovered from git) with the **rising-sun overlay** composited on top of it; the sun's background is removed and it **rotates counter-clockwise** while the portal swirls the **opposite** way (the portal's `rot` term is negated so the two counter-rotate).
+- **Horizon** at 27% from the bottom: the reflective water surface — a glow line + ripple.
 - **Water** (below the horizon): a **mirror of the sky** (portal + sun reflected about the horizon), warm-tinted and rippling.
 - **Wax orbs**: full-screen, **unchanged** — they keep forming at the bottom pool, rising, cooling, falling, bouncing off the side walls; the ASCII glob and Tsuno carve are unchanged. The wax is the foreground subject; the sky+water is the environment behind it.
 
@@ -48,9 +50,9 @@ Per background pixel, by `vUv.y` vs `uHorizon` (0.38):
 - **uv.y ≥ horizon (sky):** `skyColor(uvSky)` = portal spiral (procedural) blended with the sun sample.
 - **uv.y < horizon (water):** reflect about the horizon → `uvRef = vec2(uv.x, 2*uHorizon - uv.y)`, add a horizontal ripple `uvRef.x += sin(uv.y*FREQ - uTime*SPEED) * AMP * (1 - uv.y/uHorizon)` (amplitude grows toward the bottom), then `skyColor(uvRef)` darkened/warm-tinted for water + a horizon glow band.
 
-`skyColor(uv)` (shared by sky and reflection):
-1. **Portal spiral** — ported from the recovered `TUNNEL_FRAG` (commit `35acd2e:assets/japanjunky-screensaver.js`). Evaluated in polar coordinates around a vanishing point on the horizon: `angle = atan(uv.y-horizon, uv.x-0.5)`, `radius = length(...)`; spiral arms `sin(angle*N ± radius*K - uTime*PORTAL_ROT)`; warm→purple palette exactly as recovered. Swirls clockwise (`PORTAL_ROT` sign).
-2. **Sun overlay** — sample `uSunTex` (the cut-out PNG, premultiplied alpha) at UV rotated counter-clockwise about the sun centre by `uTime*SUN_ROT` (opposite sign to the portal). Composite over the portal by the sun's alpha. The sun is centred in the sky band.
+`skyColor(uv)` (shared by sky and reflection), as validated in the preview:
+1. **Portal spiral** — ported from the recovered `TUNNEL_FRAG` (commit `35acd2e:assets/japanjunky-screensaver.js`) to 2D polar around a vanishing point on the horizon: `d = uv - vec2(0.5, uHorizon)` (aspect-corrected x), `angle = atan(d.y,d.x)/TAU + 0.5`, `depth = clamp(length(d)/1.1, 0, 1)`; the original spiral arms / warm + purple palettes are reused verbatim, BUT the warm→purple blend is pushed to the rim — `depthMix = smoothstep(0.72, 1.0, depth)` — so orange/warm dominates and purple only feathers in at the outer edge. The `rot` term is **negated** (`rot = -uTime*PORTAL_ROT`) so the portal counter-rotates the sun.
+2. **Sun overlay** — sample `uSunTex` (the cut-out PNG) at UV rotated **counter-clockwise** about the sun centre on the horizon by `uTime*SUN_ROT`. The sun's RGB is **replaced with the theme red `#e8313a` = `vec3(0.909,0.192,0.227)`** (not the image's pure red), with alpha from the cut-out. Composited over the portal by that alpha. Sun is centred on the horizon (bisected → top half sky, bottom half reflected) and sized to span the page (`uSunSize` ~3.0). Out-of-texture samples are transparent.
 
 Then the wax orbs raymarch on top (unchanged), so orbs occlude the sky/water where they are — the wax is the foreground.
 
@@ -92,6 +94,9 @@ No extra render target. The reflection is a second `skyColor()` evaluation only 
 - Wax-shader sanity test: FRAG contains the new uniforms (`uHorizon`, `uSunTex`, `uSunActive`, `uPortalRot`, `uSunRot`).
 - **Visual UNVERIFIED** — no headless WebGL. Horizon position, portal/sun rotation feel, ripple strength, sun size/placement, water tint, and the sun cut-out threshold all need a browser pass. All exposed as constants/uniforms. The user can also `/watch`-style screenshot for tuning.
 
-## Open tunables (defaulted, adjustable in the browser pass)
+## Validated defaults (from the preview) + open tunables
 
-- `uHorizon` 0.38; portal `PORTAL_ROT` (CW) and sun `SUN_ROT` (CCW) speeds; sun size + centre; ripple `FREQ`/`SPEED`/`AMP`; water darken/tint; horizon glow width; sun cut-out alpha threshold (`build.js`).
+Bake these as the shader/screensaver defaults:
+- `uHorizon` **0.27**, `PORTAL_ROT` **0.82** (negated → counter-rotates sun), `SUN_ROT` **0.08** (CCW), `uSunSize` **3.0** (covers page), ripple `AMP` **0.054**, `uWaterDark` **0.78**.
+- Portal warm→purple `depthMix = smoothstep(0.72, 1.0, depth)` (orange-dominant). Sun RGB = theme red `#e8313a`.
+- Still tunable in the live browser pass: exact ripple `FREQ`/`SPEED`, horizon glow width, sun centre, water tint, and the `build.js` cut-out alpha threshold. The preview tool (`tools/sun-portal-preview/preview.html`) is the reference for the intended look.
