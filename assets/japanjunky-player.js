@@ -27,6 +27,7 @@
   var modelRenderer = null, modelScene = null, modelCamera = null, modelRaf = null;
   var lidT = 0, lidTarget = 0; // current/target open fraction for the tween
   var insertBeatTimer = null;
+  var loadedProduct = null; // the product currently playing (for eject-on-replace)
 
   // html has zoom:2.5 — visual px (clientX, innerWidth) convert to layout px
   // (offsetWidth, transform) by dividing by this. Re-read on resize.
@@ -245,6 +246,7 @@
     el = null;
     body = null;
     currentTool = null;
+    loadedProduct = null;
     clearSaved();
   }
 
@@ -321,6 +323,13 @@
       return 'rejected';
     }
     flashClass('jj-player--accept');
+    // A different song replacing the current one ejects the old one as a
+    // draggable token (drag it back to its product to clear the clutter).
+    var EJ = window.JJ_PlayerEject;
+    if (EJ && loadedProduct && EJ.keyOf(loadedProduct) !== EJ.keyOf(product)) {
+      EJ.eject(loadedProduct, getRect());
+    }
+    loadedProduct = product;
     if (window.JJ_PlayerAudio) {
       window.JJ_PlayerAudio.play({
         format: fmt,
