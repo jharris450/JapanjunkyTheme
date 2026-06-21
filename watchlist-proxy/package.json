@@ -1,0 +1,7 @@
+{
+  "name": "japanjunky-watchlist-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shopify App Proxy handler that reads/writes the customer custom.watchlist metafield.",
+  "engines": { "node": ">=18" }
+}

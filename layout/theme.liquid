@@ -39,6 +39,7 @@
   {{ 'japanjunky-transitions.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-page.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-content.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-watchlist.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-scrollbar.css' | asset_url | stylesheet_tag }}
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
@@ -267,6 +268,7 @@
   <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-watchlist.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-volume.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-tsuno-bubble.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-win95-menu.js' | asset_url }}" defer></script>

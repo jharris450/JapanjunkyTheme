@@ -133,6 +133,7 @@
           {%- if current_variant.available -%}[Add to Cart]{%- else -%}[Unavailable]{%- endif -%}
         </button>
       </form>
+      {% render 'jj-watch-button', product: p %}
     </div>
 
     {%- if p.images.size > 0 -%}

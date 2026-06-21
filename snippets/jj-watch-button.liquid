@@ -1,0 +1,23 @@
+{%- comment -%}
+  Reusable watchlist toggle button. Pass `product`.
+  Initial state is read from the logged-in customer's custom.watchlist metafield
+  (list.product_reference). Toggling is handled by japanjunky-watchlist.js, which
+  POSTs to the /apps/watchlist App Proxy (the only way to WRITE the metafield).
+  Guests get a button that routes to login.
+{%- endcomment -%}
+{%- assign is_watched = false -%}
+{%- if customer -%}
+  {%- for wp in customer.metafields.custom.watchlist.value -%}
+    {%- if wp.id == product.id -%}{%- assign is_watched = true -%}{%- break -%}{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+<button type="button"
+        class="jj-watch-btn{% if is_watched %} jj-watch-btn--active{% endif %}"
+        data-product-id="{{ product.id }}"
+        data-watch
+        {%- unless customer %} data-guest="true"{% endunless %}
+        aria-pressed="{% if is_watched %}true{% else %}false{% endif %}"
+        title="{% if is_watched %}Remove from watchlist{% else %}Add to watchlist{% endif %}">
+  <span class="jj-watch-btn__glyph" aria-hidden="true">{% if is_watched %}&#9733;{% else %}&#9734;{% endif %}</span>
+  <span class="jj-watch-btn__label">{% if is_watched %}Watching{% else %}Watch{% endif %}</span>
+</button>

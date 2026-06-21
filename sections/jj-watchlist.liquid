@@ -1,0 +1,53 @@
+{%- comment -%}
+  Watchlist page — renders the logged-in customer's custom.watchlist metafield
+  (list.product_reference). Remove buttons reuse the shared watch toggle; the
+  row is removed by japanjunky-watchlist.js once the proxy confirms the unwatch.
+{%- endcomment -%}
+<section class="jj-watchlist">
+  <h1 class="jj-watchlist__title">// WATCHLIST</h1>
+
+  {%- if customer -%}
+    {%- assign items = customer.metafields.custom.watchlist.value -%}
+    {%- if items != blank and items.size > 0 -%}
+      <ul class="jj-watchlist__list" id="jj-watchlist-list">
+        {%- for wp in items -%}
+          <li class="jj-watchlist__item" data-watch-item>
+            <a class="jj-watchlist__link" href="{{ wp.url }}">
+              {%- if wp.featured_image -%}
+              <img class="jj-watchlist__thumb" src="{{ wp.featured_image | image_url: width: 96 }}" alt="" width="48" height="48" loading="lazy">
+              {%- else -%}
+              <span class="jj-watchlist__thumb jj-watchlist__thumb--empty" aria-hidden="true">?</span>
+              {%- endif -%}
+              <span class="jj-watchlist__meta">
+                <span class="jj-watchlist__artist">{{ wp.metafields.custom.artist | default: wp.vendor }}</span>
+                <span class="jj-watchlist__name">{{ wp.title }}</span>
+                <span class="jj-watchlist__price">{% if wp.available %}{{ wp.price | money }}{% else %}SOLD OUT{% endif %}</span>
+              </span>
+            </a>
+            <button type="button"
+                    class="jj-watch-btn jj-watch-btn--active"
+                    data-product-id="{{ wp.id }}"
+                    data-watch
+                    data-watch-remove-row
+                    aria-pressed="true"
+                    title="Remove from watchlist">
+              <span class="jj-watch-btn__glyph" aria-hidden="true">&#9733;</span>
+              <span class="jj-watch-btn__label">Remove</span>
+            </button>
+          </li>
+        {%- endfor -%}
+      </ul>
+    {%- else -%}
+      <p class="jj-watchlist__empty">Your watchlist is empty. Browse the <a href="/collections/all">catalog</a> and hit [&#9734; Watch] on anything you want to track.</p>
+    {%- endif -%}
+  {%- else -%}
+    <p class="jj-watchlist__empty">Please <a href="/account/login">log in</a> to view your watchlist.</p>
+  {%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Watchlist",
+  "settings": []
+}
+{% endschema %}

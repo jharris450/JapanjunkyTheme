@@ -1,0 +1,103 @@
+/* ============================================
+   JAPANJUNKY WATCHLIST
+   Watch toggle button + watchlist page (CRT theme)
+   ============================================ */
+
+/* --- Watch toggle button (PDP, watchlist page) --- */
+.jj-watch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--jj-secondary, #f5d742);
+  color: var(--jj-secondary, #f5d742);
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.jj-watch-btn:hover { border-color: var(--jj-amber, #ffaa00); color: var(--jj-amber, #ffaa00); }
+.jj-watch-btn:disabled { opacity: 0.6; cursor: default; }
+
+.jj-watch-btn__glyph { line-height: 1; font-size: 14px; }
+
+/* Active = on the watchlist: gold star with a soft phosphor glow. */
+.jj-watch-btn--active {
+  border-color: var(--jj-amber, #ffaa00);
+  color: var(--jj-amber, #ffaa00);
+  box-shadow: inset 0 0 0 9999px rgba(255, 170, 0, 0.06);
+}
+.jj-watch-btn--active .jj-watch-btn__glyph {
+  text-shadow: 0 0 4px var(--jj-amber, #ffaa00), 0 0 8px rgba(255, 170, 0, 0.5);
+}
+
+/* --- Watchlist page --- */
+.jj-watchlist {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  color: var(--jj-text, #e0d5c0);
+}
+.jj-watchlist__title {
+  font-size: 20px;
+  color: var(--jj-secondary, #f5d742);
+  text-transform: uppercase;
+  margin: 0 0 16px;
+}
+.jj-watchlist__empty {
+  color: var(--jj-text, #e0d5c0);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.jj-watchlist__empty a { color: var(--jj-amber, #ffaa00); }
+
+.jj-watchlist__list { list-style: none; margin: 0; padding: 0; }
+.jj-watchlist__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--jj-border, #333);
+  border-bottom: 0;
+}
+.jj-watchlist__item:last-child { border-bottom: 1px solid var(--jj-border, #333); }
+.jj-watchlist__item--removing { opacity: 0; transition: opacity 0.2s steps(2); }
+
+.jj-watchlist__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+.jj-watchlist__thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid var(--jj-border, #333);
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.jj-watchlist__thumb--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jj-muted, #666);
+  background: rgba(0, 0, 0, 0.4);
+}
+.jj-watchlist__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.jj-watchlist__artist { font-size: 11px; color: var(--jj-primary, #e8313a); text-transform: uppercase; }
+.jj-watchlist__name {
+  font-size: 13px;
+  color: var(--jj-text, #e0d5c0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jj-watchlist__price { font-size: 12px; color: var(--jj-secondary, #f5d742); }
