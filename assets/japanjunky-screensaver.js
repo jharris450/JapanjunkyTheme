@@ -82,31 +82,6 @@
   var STRETCH_K = 9.0;
   var MAX_STRETCH = 1.4;
 
-  // Dark→bright character ramp for the 3D ASCII glob. Drawn once into a 1-row
-  // canvas atlas (one cell per glyph), NearestFilter for the pixel look.
-  var ASCII_RAMP = [' ', '.', ',', ':', ';', '~', '=', '+', 'o', 'x', 'X', '$', '@', '#'];
-  function buildAsciiRamp(glyphs) {
-    var cell = 16;
-    var cv = document.createElement('canvas');
-    cv.width = cell * glyphs.length;
-    cv.height = cell;
-    var ctx = cv.getContext('2d');
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '14px "Fixedsys Excelsior 3.01", "DotGothic16", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (var i = 0; i < glyphs.length; i++) {
-      ctx.fillText(glyphs[i], i * cell + cell / 2, cell / 2);
-    }
-    var tex = new THREE.CanvasTexture(cv);
-    tex.minFilter = THREE.NearestFilter;
-    tex.magFilter = THREE.NearestFilter;
-    return tex;
-  }
-  var asciiRamp = buildAsciiRamp(ASCII_RAMP);
-
   var waxUniforms = {
     uTime: { value: 0.0 },
     uAspect: { value: waxAspect },
@@ -116,12 +91,6 @@
     uBlobTemp: { value: [] },
     uTsuno: { value: new THREE.Vector4(0, 0, 0, 0.16) },
     uTsunoActive: { value: 0.0 },
-    uAsciiTex: { value: asciiRamp },
-    uAsciiCount: { value: ASCII_RAMP.length },
-    uAsciiCenter: { value: new THREE.Vector4(0.5, 0.52, -0.6, 0.22) }, // separate front glob
-    uAsciiActive: { value: 1.0 },
-    uAsciiCell: { value: 6.0 },        // character cell size in render px
-    uResolution: { value: new THREE.Vector2(resW, resH) },
     uBlobStretch: { value: [] },
     uHorizon: { value: 0.27 },
     uSunTex: { value: new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1, THREE.RGBAFormat) },
@@ -200,11 +169,6 @@
       waxStretch[i] += (target - waxStretch[i]) * STRETCH_SMOOTH;
       waxUniforms.uBlobStretch.value[i] = waxStretch[i];
     }
-    // ASCII glob = blob 0: a normal convecting blob, so it rises/merges/interacts
-    // with the lava. uAsciiCenter tracks it; the shader renders its region as
-    // characters via a soft mask (radius padded a touch so the zone reads).
-    var ab = waxState.blobs[0];
-    if (ab) waxUniforms.uAsciiCenter.value.set(ab.x, ab.y, ab.z, ab.radius * 1.15);
     if (tsuno.active) {
       waxUniforms.uTsuno.value.set(tsuno.x, tsuno.y, 0.0, tsuno.radius);
       waxUniforms.uTsunoActive.value = 1.0;
