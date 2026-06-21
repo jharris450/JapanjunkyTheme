@@ -283,10 +283,12 @@
   // Occluder pass: punches Tsuno's silhouette out of whatever is behind him
   // (notably the bright rising sun) so the additive glow above reads as IN
   // FRONT. Must match GHOST_FRAG's swim distortion exactly to stay aligned.
+  // Alpha is the boosted mask (NOT scaled by uAlpha): his body must fully carve
+  // the sun, otherwise the additive glow just re-brightens the residual and he
+  // blends back into the rays. smoothstep keeps a soft anti-aliased edge.
   var OCCLUDER_FRAG = [
     'uniform sampler2D uTexture;',
     'uniform float uTime;',
-    'uniform float uAlpha;',
     'varying vec2 vUv;',
     '',
     'void main() {',
@@ -295,7 +297,7 @@
     '  vec4 texColor = texture2D(uTexture, uv);',
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',
-    '  gl_FragColor = vec4(0.0, 0.0, 0.0, mask * uAlpha);',
+    '  gl_FragColor = vec4(0.0, 0.0, 0.0, smoothstep(0.12, 0.5, mask));',
     '}'
   ].join('\n');
 
@@ -850,8 +852,7 @@
       var occMat = new THREE.ShaderMaterial({
         uniforms: {
           uTexture: mat.uniforms.uTexture,
-          uTime: mat.uniforms.uTime,
-          uAlpha: mat.uniforms.uAlpha
+          uTime: mat.uniforms.uTime
         },
         vertexShader: GLOW_VERT,
         fragmentShader: OCCLUDER_FRAG,
