@@ -332,19 +332,21 @@
     mouseSensitivity: [0.3, 1.0, 0.2, 0.8, 1.0, 0.7, 0.15],
     // Reaction style: 'shy' | 'curious' | 'lazy' | 'playful'
     reactionStyle: ['shy', 'curious', 'lazy', 'playful', 'curious', 'playful', 'shy'],
-    // Visual: glow alpha multiplier
-    glowMult: [0.6, 1.1, 0.7, 1.0, 1.0, 1.2, 0.8],
-    // Visual: tint vec3 [r, g, b]. Spread across the approved phosphor
-    // palette so each day reads as a distinct emotion (cyan stays reserved
-    // for the CD format indicator — never used here).
+    // Visual: glow alpha multiplier. Floors raised so even the low-energy days
+    // read as a lit phosphor against the warm rising-sun scene (no muddy/dark).
+    glowMult: [0.85, 1.1, 0.85, 1.05, 1.0, 1.2, 0.95],
+    // Visual: tint vec3 [r, g, b]. Spread across the approved phosphor palette
+    // so each day reads as a distinct emotion (cyan stays reserved for the CD
+    // format indicator). Retuned for the warm sunset scene: warmer/brighter
+    // bases so the filmic lift resolves to vivid phosphors, not dim mud.
     tint: [
-      [0.70, 0.10, 0.12],  // Sun shy        — faint dim red, withdrawn
-      [1.0,  0.45, 0.12],  // Mon curious    — bright warm amber-orange
-      [0.55, 0.16, 0.08],  // Tue lazy       — muted low-energy ember
-      [0.95, 0.20, 0.65],  // Wed mischievous— magenta
-      [0.35, 0.95, 0.30],  // Thu watchful   — green phosphor
-      [1.0,  0.78, 0.15],  // Fri energetic  — bright gold
-      [0.55, 0.30, 0.88]   // Sat dreamy     — soft cool purple
+      [1.0,  0.30, 0.18],  // Sun shy        — soft but warm red, withdrawn
+      [1.0,  0.50, 0.16],  // Mon curious    — bright warm amber-orange
+      [0.95, 0.42, 0.18],  // Tue lazy       — warm low-energy ember
+      [1.0,  0.28, 0.62],  // Wed mischievous— vivid warm magenta
+      [0.45, 1.0,  0.42],  // Thu watchful   — bright green phosphor
+      [1.0,  0.80, 0.20],  // Fri energetic  — bright gold
+      [0.72, 0.40, 0.95]   // Sat dreamy     — brighter dusk violet
     ],
     // Visual: bob amplitude
     bobAmp:  [0.08, 0.18, 0.1,  0.2,  0.15, 0.25, 0.12],
