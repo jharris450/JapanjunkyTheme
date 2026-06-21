@@ -406,6 +406,9 @@
       if (!running) return;
       requestAnimationFrame(animate);
       uniforms.uTime.value = (performance.now() - startTime) / 1000.0;
+      // Whole-screen bloom thump on the music beat.
+      var ar = window.JJ_AudioReact;
+      uniforms.uBloomIntensity.value = cfg.bloomIntensity + (ar ? ar.beat : 0) * 0.5;
       renderer.render(scene, camera);
     }
 

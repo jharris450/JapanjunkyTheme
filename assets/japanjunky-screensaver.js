@@ -160,7 +160,10 @@
 
   function updateWax(t, dt) {
     var tsuno = computeTsunoInput(dt);
-    JJ_WaxSim.step(waxState, dt, tsuno);
+    // World comes alive: the wax convects livelier as the music's energy rises.
+    var ar = window.JJ_AudioReact;
+    var e = ar ? ar.energy : 0;
+    JJ_WaxSim.step(waxState, dt * (1.0 + e * 0.7), tsuno);
     waxUniforms.uTime.value = t;
     waxUniforms.uBlobCount.value = waxState.blobs.length;
     for (var i = 0; i < waxState.blobs.length; i++) {
@@ -238,20 +241,22 @@
   ].join('\n');
 
   var SPARKLE_FRAG = [
+    'uniform float uBeat;',                 // music beat pulse (0 = idle)
     'varying float vAlpha;',
     'void main() {',
     '  vec3 warm = vec3(0.95, 0.72, 0.30);', // amber/gold mote
     '  float dist = length(gl_PointCoord - vec2(0.5));',
     '  if (dist > 0.5) discard;',
     '  float glow = 1.0 - dist * 2.0;',
-    '  gl_FragColor = vec4(warm, glow * vAlpha);',
+    '  gl_FragColor = vec4(warm * (1.0 + uBeat * 0.8), glow * vAlpha * (1.0 + uBeat * 0.5));',
     '}'
   ].join('\n');
 
   var sparkleMat = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0.0 },
-      uResolution: { value: parseFloat(resH) }
+      uResolution: { value: parseFloat(resH) },
+      uBeat: { value: 0.0 }
     },
     vertexShader: SPARKLE_VERT,
     fragmentShader: SPARKLE_FRAG,
@@ -1354,6 +1359,8 @@
     waxUniforms.uSunGlow.value = 1.0 + energy * 0.22 + beat * 0.7;
     waxUniforms.uSunSize.value = 3.0 * (1.0 + beat * 0.05 + energy * 0.02); // 3.0 = idle base
     waxUniforms.uHeatGlow.value = 1.0 + energy * 0.5 + beat * 0.5;
+    waxUniforms.uRipple.value = 0.054 * (1.0 + energy * 1.2); // 0.054 = idle base — water agitates with energy
+    sparkles.material.uniforms.uBeat.value = beat;            // motes twinkle on the beat
     // Hue drift across the whole scene + Tsuno: a sway that swings on the beat,
     // moves faster with energy, and is scaled by energy so it fully returns to
     // the tuned warm palette when nothing's playing.
@@ -1362,9 +1369,11 @@
     // (hard on the eyes), so drift exclusively toward the magenta/warm side.
     var hue = -(Math.abs(Math.sin(huePhase)) * 0.5 + beat * 0.4) * energy;
     waxUniforms.uHue.value = hue;
-    // Tsuno glow pulse (idle state sets uAlpha each frame, so multiply is safe).
+    // Tsuno: glow pulse + a beat hop so he grooves. Idle state resets uAlpha and
+    // position each frame, so the multiply/offset are safe (no compounding).
     if (tsunoMesh && tsunoState === 'idle') {
       tsunoMesh.material.uniforms.uAlpha.value *= (1.0 + beat * 0.5 + energy * 0.12);
+      tsunoMesh.position.y += beat * 0.25;
     }
     if (tsunoMesh) tsunoMesh.material.uniforms.uHue.value = hue;
 
