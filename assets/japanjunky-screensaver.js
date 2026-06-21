@@ -198,7 +198,7 @@
   ].join('\n');
 
   // ─── Sparkle Particles ─────────────────────────────────────
-  var SPARKLE_COUNT = 30;
+  var SPARKLE_COUNT = 60;
   var sparkleGeo = new THREE.BufferGeometry();
   var sparklePositions = new Float32Array(SPARKLE_COUNT * 3);
   var sparkleSizes = new Float32Array(SPARKLE_COUNT);
@@ -206,7 +206,7 @@
 
   for (var si = 0; si < SPARKLE_COUNT; si++) {
     var sAngle = Math.random() * Math.PI * 2;
-    var sRadius = Math.random() * 2.4;
+    var sRadius = Math.random() * 6.0; // wider spread across the screen
     var sDepth = 1 + Math.random() * 34;
     sparklePositions[si * 3] = Math.cos(sAngle) * sRadius;
     sparklePositions[si * 3 + 1] = Math.sin(sAngle) * sRadius;

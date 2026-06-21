@@ -159,6 +159,12 @@
   pointer-events:none;
 "></canvas>
 
+{%- comment -%} Drifting spinner/kana glyph particles over the scene {%- endcomment -%}
+<canvas id="jj-glyph-field" aria-hidden="true" tabindex="-1" style="
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:1;pointer-events:none;
+"></canvas>
+
   {%- comment -%} CRT overlay: aperture grille + scanlines above all UI {%- endcomment -%}
   <div class="jj-crt-overlay" aria-hidden="true"></div>
 
@@ -271,6 +277,7 @@
   <script src="{{ 'japanjunky-wax-sim.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-wax-shader.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-glyph-field.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   {%- comment -%} Watchlist state for JS-rendered grid stars (ids the customer already watches + login flag). {%- endcomment -%}
