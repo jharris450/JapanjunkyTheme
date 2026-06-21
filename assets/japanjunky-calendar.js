@@ -376,6 +376,8 @@
   });
 
   function open() {
+    // Only one taskbar panel up at a time — close start menu / volume / toolbox.
+    document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'calendar' } }));
     if (datePopover) datePopover.classList.remove('jj-clock-popover--open');
     clockTray.classList.add('jj-calendar-open');
 
@@ -409,6 +411,11 @@
   // Close on Escape
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && isOpen) close();
+  });
+
+  // Another taskbar panel opened — yield to it.
+  document.addEventListener('jj-panel-open', function (e) {
+    if (e.detail && e.detail.id !== 'calendar' && isOpen) close();
   });
 
   // Hover popover show/hide (the popover was reparented to <body>, so the old

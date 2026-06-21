@@ -14,6 +14,9 @@
   if (!toolbox || !btn || !fan) return;
 
   function open() {
+    // Tell the other taskbar panels (start menu, calendar, volume) to close —
+    // only one taskbar surface stays up at a time.
+    document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'toolbox' } }));
     fan.hidden = false;
     // Force a reflow so the browser paints the collapsed base state before the
     // open class applies — otherwise the fan-out transition is skipped.
@@ -52,6 +55,11 @@
       close();
       btn.focus();
     }
+  });
+
+  // Another taskbar panel opened — yield to it.
+  document.addEventListener('jj-panel-open', function (e) {
+    if (e.detail && e.detail.id !== 'toolbox' && isOpen()) close();
   });
 
   // --- Drag (or click) a fan tool to spawn its player (Tranche 2) ---

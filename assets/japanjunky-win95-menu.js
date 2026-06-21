@@ -18,6 +18,17 @@
       var isOpen = startMenu.classList.toggle('jj-start-menu--open');
       startBtn.classList.toggle('jj-start-btn--active', isOpen);
       startBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      // Only one taskbar panel up at a time — close calendar / volume / toolbox.
+      if (isOpen) document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'start' } }));
+    });
+
+    // Another taskbar panel opened — yield to it.
+    document.addEventListener('jj-panel-open', function (e) {
+      if (e.detail && e.detail.id !== 'start' && startMenu.classList.contains('jj-start-menu--open')) {
+        startMenu.classList.remove('jj-start-menu--open');
+        startBtn.classList.remove('jj-start-btn--active');
+        startBtn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     // Close on outside click
