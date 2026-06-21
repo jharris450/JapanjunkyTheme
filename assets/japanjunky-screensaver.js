@@ -280,6 +280,25 @@
     '}'
   ].join('\n');
 
+  // Occluder pass: punches Tsuno's silhouette out of whatever is behind him
+  // (notably the bright rising sun) so the additive glow above reads as IN
+  // FRONT. Must match GHOST_FRAG's swim distortion exactly to stay aligned.
+  var OCCLUDER_FRAG = [
+    'uniform sampler2D uTexture;',
+    'uniform float uTime;',
+    'uniform float uAlpha;',
+    'varying vec2 vUv;',
+    '',
+    'void main() {',
+    '  vec2 uv = vUv;',
+    '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
+    '  vec4 texColor = texture2D(uTexture, uv);',
+    '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
+    '  float mask = 1.0 - lum;',
+    '  gl_FragColor = vec4(0.0, 0.0, 0.0, mask * uAlpha);',
+    '}'
+  ].join('\n');
+
   // ─── Tsuno Daishi — Shopkeeper ──────────────────────────────
   var tsunoMesh = null;
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
@@ -824,6 +843,25 @@
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
+
+      // Occluder child: same geometry, dark silhouette, drawn before the glow
+      // (renderOrder -1) so it carves the sun/background out behind Tsuno. Shares
+      // mat's uTexture/uTime/uAlpha uniform objects so it tracks the swim + fade.
+      var occMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTexture: mat.uniforms.uTexture,
+          uTime: mat.uniforms.uTime,
+          uAlpha: mat.uniforms.uAlpha
+        },
+        vertexShader: GLOW_VERT,
+        fragmentShader: OCCLUDER_FRAG,
+        blending: THREE.NormalBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      var occMesh = new THREE.Mesh(ghostGeo, occMat);
+      occMesh.renderOrder = -1; // draw before the additive glow (renderOrder 0)
+      tsunoMesh.add(occMesh); // child → inherits Tsuno's transform automatically
       var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       scene.add(tsunoMesh);
