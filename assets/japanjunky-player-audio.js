@@ -168,7 +168,7 @@
       if (stopped) return;
       player = new window.YT.Player('jj-yt-host', {
         videoId: id,
-        playerVars: { autoplay: 1, controls: 0, disablekb: 1, playsinline: 1 },
+        playerVars: { controls: 0, disablekb: 1, playsinline: 1 },
         events: {
           onReady: function (e) {
             if (stopped) { try { e.target.stopVideo(); } catch (err) {} return; }
