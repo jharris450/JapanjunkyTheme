@@ -9,10 +9,13 @@
  *
  * Deploy target: Vercel serverless (default export handler). Node 18+ (global fetch).
  * Required env vars (see README):
- *   SHOPIFY_SHOP          e.g. japanjunky.myshopify.com
- *   SHOPIFY_ADMIN_TOKEN   Admin API access token (custom app), scopes:
- *                         read_customers, write_customers
- *   SHOPIFY_APP_SECRET    The app's API secret key (used to verify the proxy signature)
+ *   SHOPIFY_SHOP            e.g. japanjunky.myshopify.com
+ *   SHOPIFY_CLIENT_ID       Dev Dashboard app Client ID
+ *   SHOPIFY_CLIENT_SECRET   Dev Dashboard app Client Secret. Verifies the App
+ *                           Proxy signature AND (with the Client ID) fetches a
+ *                           short-lived Admin API token via the client-
+ *                           credentials grant. App must be installed on the
+ *                           store with read_customers + write_customers scopes.
  *
  * Contract:
  *   GET  /apps/watchlist            -> { ids: [numericProductId, ...] }
@@ -47,6 +50,32 @@ function verifyProxySignature(query, secret) {
 function gidToNumericId(gid) {
   const m = /Product\/(\d+)/.exec(gid || '');
   return m ? m[1] : null;
+}
+
+// ── Admin token via the client-credentials grant ───────────────────────────
+// New Dev Dashboard apps don't expose a static token; we exchange client
+// id+secret for a 24h Admin API token. Cache it across warm invocations.
+let cachedToken = null;
+let cachedTokenExp = 0; // epoch ms
+
+async function getAdminToken(shop, clientId, clientSecret) {
+  if (cachedToken && Date.now() < cachedTokenExp) return cachedToken;
+  const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret
+    })
+  });
+  if (!res.ok) throw new Error('client-credentials grant failed: ' + res.status);
+  const json = await res.json();
+  if (!json.access_token) throw new Error('no access_token in grant response');
+  cachedToken = json.access_token;
+  // refresh a few minutes before the 24h expiry
+  cachedTokenExp = Date.now() + Math.max(60, (json.expires_in || 86399) - 300) * 1000;
+  return cachedToken;
 }
 
 async function adminGraphQL(shop, token, queryStr, variables) {
@@ -107,15 +136,16 @@ async function writeWatchlist(shop, token, customerGid, ids) {
 
 module.exports = async function handler(req, res) {
   const shop = process.env.SHOPIFY_SHOP;
-  const token = process.env.SHOPIFY_ADMIN_TOKEN;
-  const secret = process.env.SHOPIFY_APP_SECRET;
-  if (!shop || !token || !secret) {
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!shop || !clientId || !clientSecret) {
     res.status(500).json({ error: 'server-misconfigured' });
     return;
   }
 
-  // req.query is provided by Vercel; verify Shopify signed this proxy request.
-  if (!verifyProxySignature(req.query, secret)) {
+  // req.query is provided by Vercel; verify Shopify signed this proxy request
+  // with the app's client secret.
+  if (!verifyProxySignature(req.query, clientSecret)) {
     res.status(401).json({ error: 'bad-signature' });
     return;
   }
@@ -128,6 +158,8 @@ module.exports = async function handler(req, res) {
   const customerGid = `gid://shopify/Customer/${customerId}`;
 
   try {
+    const token = await getAdminToken(shop, clientId, clientSecret);
+
     if (req.method === 'GET') {
       const ids = await readWatchlist(shop, token, customerGid);
       res.status(200).json({ ids });
