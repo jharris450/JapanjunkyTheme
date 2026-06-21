@@ -371,22 +371,23 @@
 /* --- Clock Date Popover --- */
 .jj-clock-popover {
   display: none;
-  position: absolute;
-  bottom: 100%;
-  right: 0;
+  /* Fixed to the viewport (reparented to <body> in JS) so it can paint above
+     the toolbox (10011). Anchored just above the 32px taskbar at the right edge,
+     matching its old anchor to the clock tray. Show/hide is JS-driven now. */
+  position: fixed;
+  bottom: 36px; /* 32px taskbar + 4px gap */
+  right: 8px;   /* matches the taskbar's 8px right padding */
   background: var(--jj-bg-panel, #0a0a0a);
   border: 1px solid #444;
   padding: 6px 12px;
-  margin-bottom: 4px;
   white-space: nowrap;
-  z-index: 2000;
+  z-index: 10015; /* above toolbox (10011), taskbar (10010), player (10009) */
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   color: var(--jj-text);
 }
 
-.jj-clock-popover--open,
-.jj-clock-tray:not(.jj-calendar-open):hover .jj-clock-popover {
+.jj-clock-popover--open {
   display: block;
 }
 
@@ -739,6 +740,61 @@
 .jj-media-ghost[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
 .jj-media-ghost[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
 
+/* --- Ejected-song token: the song that popped out when a new one was loaded.
+   A draggable physics chip; drag it back to its product card to absorb it. --- */
+.jj-media-token {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 72px;
+  min-height: 44px;
+  z-index: 10008; /* just under the player (10009) so the active player stays on top */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 3px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid var(--jj-secondary, #f5d742);
+  box-shadow: var(--jj-tactile);
+  color: var(--jj-secondary, #f5d742);
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  will-change: transform;
+}
+.jj-media-token--grabbed { cursor: grabbing; }
+.jj-media-token__fmt { font-size: 10px; font-weight: 700; line-height: 1; }
+.jj-media-token__title {
+  font-size: 8px;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.jj-media-token[data-format="record"]   { border-color: var(--jj-amber, #ffaa00); color: var(--jj-amber, #ffaa00); }
+.jj-media-token[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
+.jj-media-token[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
+
+/* Absorbed back into its product — quick CRT blink-out (no transform; physics
+   owns the token's transform until it's removed). */
+.jj-media-token--dismiss {
+  animation: jj-token-dismiss 0.24s steps(3) forwards;
+  pointer-events: none;
+}
+@keyframes jj-token-dismiss {
+  0%   { opacity: 1; box-shadow: var(--jj-tactile); }
+  40%  { opacity: 1; box-shadow: 0 0 12px rgba(51, 255, 51, 0.85); border-color: var(--jj-green, #33ff33); }
+  100% { opacity: 0; box-shadow: 0 0 12px rgba(51, 255, 51, 0); }
+}
+
 .jj-player__canvas {
   width: 100%;
   height: 100%;
@@ -788,9 +844,41 @@
     0 2px 6px rgba(0, 0, 0, 0.6);
 }
 .jj-vol-popup[hidden] { display: none; }
+/* Win95 trackbar: sunken channel + chunky raised beveled slug (no native chrome,
+   no rounded corners). Bevel matches .jj-vol-btn for a cohesive taskbar look. */
 .jj-vol-slider {
-  -webkit-appearance: slider-vertical; appearance: slider-vertical;
+  -webkit-appearance: none; appearance: none;
   writing-mode: vertical-lr; direction: rtl;
-  width: 18px; height: 90px; margin: 2px 0; accent-color: var(--jj-amber, #ffaa00);
+  width: 16px; height: 90px; margin: 2px 0; padding: 0;
+  background: transparent; cursor: pointer;
+}
+.jj-vol-slider::-webkit-slider-runnable-track {
+  width: 6px; height: 100%;
+  background: var(--jj-black, #000);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
+}
+.jj-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 11px; margin-left: -5px;
+  background: var(--jj-bg-elevated, #111); border: 1px solid var(--jj-black, #000);
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.5),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85);
+}
+.jj-vol-slider::-moz-range-track {
+  width: 6px; height: 100%;
+  background: var(--jj-black, #000);
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
+}
+.jj-vol-slider::-moz-range-thumb {
+  width: 16px; height: 11px; border-radius: 0;
+  background: var(--jj-bg-elevated, #111); border: 1px solid var(--jj-black, #000);
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.5),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85);
 }
 .jj-vol-mute { display: flex; align-items: center; gap: 4px; white-space: nowrap; }

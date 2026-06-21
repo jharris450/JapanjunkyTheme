@@ -16,6 +16,15 @@
   var datePopover = document.getElementById('jj-clock-popover');
   if (!clockTray || !calPopover) return;
 
+  // Both popovers ship inside the taskbar markup, but the taskbar is its own
+  // stacking context (z-index 10010) which traps them below the toolbox (10011).
+  // Reparent to <body> so their own z-index can sit above the toolbox. (All
+  // logic references them by id, so the move is transparent.) The hover popover
+  // loses its CSS descendant `:hover` trigger by moving, so it's driven by the
+  // mouseenter/mouseleave handlers below instead.
+  if (calPopover.parentNode !== document.body) document.body.appendChild(calPopover);
+  if (datePopover && datePopover.parentNode !== document.body) document.body.appendChild(datePopover);
+
   // ─── Load Upcoming Releases ───────────────────────────────
   var releases = [];
   try {
@@ -367,7 +376,7 @@
   });
 
   function open() {
-    if (datePopover) datePopover.style.display = 'none';
+    if (datePopover) datePopover.classList.remove('jj-clock-popover--open');
     clockTray.classList.add('jj-calendar-open');
 
     var jst = getJSTNow();
@@ -386,7 +395,6 @@
     clockTray.classList.remove('jj-calendar-open');
     calPopover.innerHTML = '';
     isOpen = false;
-    if (datePopover) datePopover.style.display = '';
     if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
     stopGlitch();
   }
@@ -403,8 +411,14 @@
     if (e.key === 'Escape' && isOpen) close();
   });
 
-  // Prevent hover popover when calendar is open
+  // Hover popover show/hide (the popover was reparented to <body>, so the old
+  // CSS descendant `:hover` rule no longer reaches it). Suppressed while the
+  // full calendar is open.
   clockTray.addEventListener('mouseenter', function () {
-    if (isOpen && datePopover) datePopover.style.display = 'none';
+    if (!datePopover) return;
+    datePopover.classList.toggle('jj-clock-popover--open', !isOpen);
+  });
+  clockTray.addEventListener('mouseleave', function () {
+    if (datePopover) datePopover.classList.remove('jj-clock-popover--open');
   });
 })();
