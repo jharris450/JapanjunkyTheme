@@ -750,3 +750,47 @@
 .jj-player--model {
   background: transparent;
 }
+
+/* ── Taskbar volume control ─────────────────────────────────── */
+.jj-vol-tray { position: relative; display: flex; align-items: center; }
+.jj-vol-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 20px; margin: 0 2px; padding: 0;
+  background: var(--jj-bg-elevated, #111); color: var(--jj-amber, #ffaa00);
+  border: 0; cursor: pointer;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85);
+}
+.jj-vol-btn:active,
+.jj-vol-tray--open .jj-vol-btn {
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
+}
+.jj-vol-btn__icon { position: relative; display: flex; line-height: 0; }
+.jj-vol-btn__x {
+  display: none; position: absolute; inset: 0; align-items: center; justify-content: center;
+  font: 12px/1 monospace; color: var(--jj-primary, #e8313a);
+}
+.jj-vol-btn--muted .jj-vol-wave { display: none; }
+.jj-vol-btn--muted .jj-vol-btn__x { display: flex; }
+
+.jj-vol-popup {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 6px; z-index: 10001;
+  background: var(--jj-bg-panel, #0a0a0a); color: var(--jj-white, #e0e0e0);
+  font: 11px/1.4 monospace;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.6);
+}
+.jj-vol-popup[hidden] { display: none; }
+.jj-vol-slider {
+  -webkit-appearance: slider-vertical; appearance: slider-vertical;
+  writing-mode: vertical-lr; direction: rtl;
+  width: 18px; height: 90px; margin: 2px 0; accent-color: var(--jj-amber, #ffaa00);
+}
+.jj-vol-mute { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
