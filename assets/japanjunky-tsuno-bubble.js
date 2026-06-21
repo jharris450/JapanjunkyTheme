@@ -71,8 +71,15 @@
     audio.preload = 'auto';
   } catch (e) { audio = null; }
 
+  if (window.JJ_Volume) {
+    window.JJ_Volume.subscribe(function (v) {
+      if (audio) { try { audio.volume = v; } catch (e) {} }
+    });
+  }
+
   function playAudio() {
     if (!audio || !audio.src) return;
+    try { audio.volume = window.JJ_Volume ? window.JJ_Volume.getEffective() : audio.volume; } catch (e) {}
     try {
       var p = audio.play();
       if (p && p.then) {
