@@ -3,7 +3,8 @@
   (list.product_reference). Remove buttons reuse the shared watch toggle; the
   row is removed by japanjunky-watchlist.js once the proxy confirms the unwatch.
 {%- endcomment -%}
-<section class="jj-watchlist">
+<div class="jj-page">
+  <div class="jj-watchlist">
   <h1 class="jj-watchlist__title">// WATCHLIST</h1>
 
   {%- if customer -%}
@@ -43,7 +44,8 @@
   {%- else -%}
     <p class="jj-watchlist__empty">Please <a href="/account/login">log in</a> to view your watchlist.</p>
   {%- endif -%}
-</section>
+  </div>
+</div>
 
 {% schema %}
 {
