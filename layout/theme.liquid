@@ -145,10 +145,18 @@
   app-like (html/body overflow:hidden, no document scroll), so a fixed,
   viewport-sized wrapper keeps position:fixed descendants correct.
 {%- endcomment -%}
+{%- comment -%}
+  ENTER button lives on <body>, OUTSIDE #jj-crt-content. The barrel filter makes
+  the wrapper a z-index:auto stacking context, which would trap the button below
+  the splash display canvas (a body-child at z-index:100000). Kept at body level
+  so its z-index:100001 competes in the root context and paints above the canvas.
+{%- endcomment -%}
+{% if settings.splash_enabled and template == 'index' %}
+<button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
+{% endif %}
 <div id="jj-crt-content">
 {% if settings.splash_enabled and template == 'index' %}
 <canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
-<button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
 <div id="jj-homepage" style="opacity:0;">
 <script>try{if(sessionStorage.getItem('jj-entered')){document.getElementById('jj-homepage').style.opacity='';}}catch(e){}</script>
 {% endif %}

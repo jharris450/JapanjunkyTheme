@@ -147,6 +147,14 @@
     feImage.setAttribute('result', 'displacementMap');
     feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', mapUrl);
     feImage.setAttribute('preserveAspectRatio', 'none');
+    // Explicit subregion = full filter region. Without width/height, Chromium
+    // renders a raster data-URL feImage at its intrinsic 256x256 at the origin,
+    // so only the top-left corner gets displaced (barrel curves the left/top
+    // edges, not the whole screen). These force it to stretch across the viewport.
+    feImage.setAttribute('x', '0');
+    feImage.setAttribute('y', '0');
+    feImage.setAttribute('width', '100%');
+    feImage.setAttribute('height', '100%');
 
     // feFlood: black fill behind displaced content (prevents white edges
     // where displacement samples outside the source graphic bounds)
