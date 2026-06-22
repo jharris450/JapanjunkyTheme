@@ -81,6 +81,10 @@
   // from snapping. Between rounded-ball (too low) and over-long teardrop (high).
   var STRETCH_K = 9.0;
   var MAX_STRETCH = 2.0;
+  // Rising wax is still pulled from the pool -> long upward strand/tail. A falling
+  // blob has detached, so surface tension rounds it; it barely tails (reads as an
+  // orb, not a down-pointing teardrop). FALL_TAIL scales the tail when sinking.
+  var FALL_TAIL = 0.22;
 
   var waxUniforms = {
     uTime: { value: 0.0 },
@@ -172,8 +176,10 @@
       waxUniforms.uBlobs.value[i].set(b.x, b.y, b.z, b.radius);
       waxUniforms.uBlobTemp.value[i] = b.temp;
       // Signed: magnitude = tail length (|vy|), sign = travel direction so the
-      // teardrop's tail trails the right way (rising vy>0 -> tail below).
-      var mag = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
+      // teardrop's tail trails the right way (rising vy>0 -> tail below). Falling
+      // blobs round up (FALL_TAIL) so they read as orbs, not down-teardrops.
+      var dirK = b.vy < 0 ? FALL_TAIL : 1.0;
+      var mag = 1 + Math.min(Math.abs(b.vy) * STRETCH_K * dirK, MAX_STRETCH - 1);
       var target = b.vy < 0 ? -mag : mag;
       waxStretch[i] += (target - waxStretch[i]) * STRETCH_SMOOTH;
       waxUniforms.uBlobStretch.value[i] = waxStretch[i];
