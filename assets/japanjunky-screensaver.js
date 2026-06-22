@@ -913,13 +913,14 @@
     '  return c * cs + cross(k, c) * sn + k * dot(k, c) * (1.0 - cs);',
     '}',
     'void main() {',
-    '  float a = texture2D(uTexture, vUv).a;',
-    '  if (a < 0.04) discard;',
-    '  float cover = smoothstep(0.10, 0.55, a);',     // his silhouette
+    '  vec4 c = texture2D(uTexture, vUv);',
+    '  if (c.a < 0.04) discard;',
+    '  float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));', // keep the figure shading
     '  vec3 tint = uHue != 0.0 ? jjHueShift(uTint, uHue) : uTint;',
-    '  vec3 glow = tint * a * 0.85;',
-    '  glow = vec3(1.0) - exp(-glow * 2.6);',          // same filmic lift as Tsuno
-    '  gl_FragColor = vec4(glow, cover);',             // premultiplied
+    '  vec3 glow = tint * (0.25 + 0.9 * lum) * c.a;',  // tinted, but detail survives
+    '  glow = vec3(1.0) - exp(-glow * 2.4);',          // filmic lift like Tsuno
+    '  float cover = smoothstep(0.06, 0.5, c.a) * 0.45;', // translucent — ghostly
+    '  gl_FragColor = vec4(glow * cover, cover);',     // premultiplied by opacity
     '}'
   ].join('\n');
 

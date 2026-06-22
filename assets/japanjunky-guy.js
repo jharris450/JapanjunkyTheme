@@ -211,8 +211,8 @@
       // Tipped 90° so only his head pokes past the left edge. Rotation is around
       // the element centre, so the rotated box is guyH wide; the visual right
       // edge = body.x + guyW/2 + guyH/2.
-      var headShow = guyH * 0.30;
-      var peekX = headShow - guyW / 2 - guyH / 2;     // head pokes ~headShow px in
+      var headShow = guyH * 0.55;                      // poke out enough to recognise him
+      var peekX = headShow - guyW / 2 - guyH / 2;     // pokes ~headShow px past the edge
       var offX = -(guyW / 2 + guyH / 2) - 20;          // fully hidden
       rotDeg = 90;
       if (phaseT < 1.2) {
