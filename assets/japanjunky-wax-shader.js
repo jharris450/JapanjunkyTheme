@@ -52,7 +52,8 @@
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
     'const float POOL_TOP = 0.15;',  // y of the reservoir surface (dome top)
     'const float POOL_R   = 4.0;',   // big radius -> gentle wide dome (exact sphere SDF)
-    'const float ELONG    = 0.55;',  // column length — blobs stretch into necks as they move
+    'const float TAIL_RATIO = 0.30;',// trailing-tail tip radius as a fraction of the body
+    'const float TAIL_LEN   = 0.80;',// how far the tail trails per unit of stretch
     'const float BLEND    = 0.30;',  // metaball smooth-union (higher = thinner, longer necks)
     'const float SUBMERGE = 0.5;',   // wax opacity below the horizon (blends with the reflective pool)
     '',
@@ -62,17 +63,34 @@
     '}',
     'float smax(float a, float b, float k) { return -smin(-a, -b, k); }',
     '',
-    '// A blob as a vertical capsule — an EXACT SDF, so no raymarch artifacts at',
-    '// high elongation (a stretched ellipsoid streaks/spikes). sy>1 extends the',
-    '// segment into a rounded column; sy=1 collapses it to a sphere.',
-    'float blobSD(vec3 p, vec4 b, float sy) {',
+    '// Exact round-cone SDF: two spheres (r1 at y=0, r2 at y=h) joined by a',
+    '// tangent cone. A true distance field, so no raymarch streaking the way a',
+    '// scaled ellipsoid would — but the unequal radii give an organic teardrop.',
+    'float sdRoundCone(vec3 p, float r1, float r2, float h) {',
+    '  vec2 q = vec2(length(p.xz), p.y);',
+    '  float bb = (r1 - r2) / h;',
+    '  float aa = sqrt(max(1.0 - bb * bb, 0.0));',
+    '  float k = dot(q, vec2(-bb, aa));',
+    '  if (k < 0.0)    return length(q) - r1;',
+    '  if (k > aa * h) return length(q - vec2(0.0, h)) - r2;',
+    '  return dot(q, vec2(aa, bb)) - r1;',
+    '}',
+    '',
+    '// A wax blob: a teardrop whose round body leads and whose tail trails',
+    '// opposite its motion (the SIGN of the stretch carries travel direction).',
+    '// |stretch| sets the tail length; at rest it relaxes to a soft egg. This',
+    '// replaces the old symmetric capsule that read as a rigid pill.',
+    'float blobSD(vec3 p, vec4 b, float sySigned) {',
     '  vec3 c = vec3((b.x - 0.5) * uAspect, b.y, b.z);',
-    '  float sx = inversesqrt(max(sy, 1e-4));',
-    '  float rr = b.w * sx;',
-    '  float h = b.w * (sy - 1.0) * ELONG;',
     '  vec3 q = p - c;',
-    '  q.y -= clamp(q.y, -h, h);',
-    '  return length(q) - rr;',
+    '  float sy  = max(abs(sySigned), 1.0);',
+    '  float dir = sySigned < 0.0 ? -1.0 : 1.0;',          // leading edge: +y rising, -y sinking
+    '  float rBody = b.w * (1.0 - 0.16 * (sy - 1.0));',    // barely thins when stretched (stays bulbous)
+    '  float rTail = rBody * TAIL_RATIO;',
+    '  float len   = (rBody - rTail) + b.w * (sy - 1.0) * TAIL_LEN;', // >= rBody-rTail keeps the cone valid
+    '  // Canonical cone space: body at y=0, tail tip at y=+len, trailing travel.',
+    '  vec3 qc = vec3(q.x, -dir * q.y, q.z);',
+    '  return sdRoundCone(qc, rBody, rTail, len);',
     '}',
     '',
     '// Wide gentle reservoir dome from a big sphere — exact SDF, no eccentricity',

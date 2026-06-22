@@ -77,8 +77,8 @@
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
   var waxState = JJ_WaxSim.createState({ seed: 7, count: 4 });
   var waxAspect = resW / resH;
-  // Teardrop: moving blobs stretch into necks/columns; smoothing keeps it from
-  // snapping. Between rounded-ball (too low) and rigid-pill (too high).
+  // Teardrop tail: faster blobs grow a longer trailing tail; smoothing keeps it
+  // from snapping. Between rounded-ball (too low) and over-long teardrop (high).
   var STRETCH_K = 9.0;
   var MAX_STRETCH = 2.0;
 
@@ -171,7 +171,10 @@
       var b = waxState.blobs[i];
       waxUniforms.uBlobs.value[i].set(b.x, b.y, b.z, b.radius);
       waxUniforms.uBlobTemp.value[i] = b.temp;
-      var target = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
+      // Signed: magnitude = tail length (|vy|), sign = travel direction so the
+      // teardrop's tail trails the right way (rising vy>0 -> tail below).
+      var mag = 1 + Math.min(Math.abs(b.vy) * STRETCH_K, MAX_STRETCH - 1);
+      var target = b.vy < 0 ? -mag : mag;
       waxStretch[i] += (target - waxStretch[i]) * STRETCH_SMOOTH;
       waxUniforms.uBlobStretch.value[i] = waxStretch[i];
     }
