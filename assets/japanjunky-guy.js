@@ -24,6 +24,7 @@
   // ── Tuning ──────────────────────────────────────────────────
   var PEEK_AFTER = 120;   // s of continuous music before the peek
   var ENTER_AFTER = 60;   // s after the peek before he jumps in
+  var RE_ENTER_AFTER = 6; // once he's kicked before, he returns this fast (no peek)
   var GRAVITY = 2600;     // layout px/s^2
   var HOP_VX = 190;       // horizontal hop speed
   var HOP_VY = 720;       // hop launch (up)
@@ -68,6 +69,8 @@
   var peekDoneAt = 0;
   var phaseT = 0;            // seconds in the current sub-step
   var hopPause = 0;
+  var rotDeg = 0;            // peek tips him on his side so only his head shows
+  var introduced = false;    // after his first kick he returns fast, no peek
   var goneForever = false;
   var dragId = null, grabDX = 0, grabDY = 0, lastPX = 0, lastPY = 0, lastPT = 0, velX = 0, velY = 0;
 
@@ -76,7 +79,7 @@
 
   function setFacing(f) { facing = f; }
   function render() {
-    el.style.transform = 'translate(' + body.x + 'px,' + body.y + 'px) scaleX(' + facing + ')';
+    el.style.transform = 'translate(' + body.x + 'px,' + body.y + 'px) rotate(' + rotDeg + 'deg) scaleX(' + facing + ')';
   }
   function airborne() { return body.y < groundY() - 0.5; }
 
@@ -108,6 +111,12 @@
     musicElapsed = 0; hasPeeked = false;
   }
   function goDormant() { phase = 'dormant'; body.x = -guyW - 20; body.y = groundY(); body.vx = body.vy = 0; }
+
+  function enterHunting() {
+    phase = 'hunting'; phaseT = 0; hopPause = 0; rotDeg = 0;
+    body.x = -guyW * 0.5; body.y = groundY(); setFacing(1);
+    body.vx = HOP_VX; body.vy = -HOP_VY; // leap in
+  }
 
   function vanish() {
     goneForever = true;
@@ -187,34 +196,39 @@
     }
 
     phaseT += dt;
+    rotDeg = 0; // upright unless the peek tips him over
 
     if (phase === 'dormant') {
       body.x = -guyW - 20; body.y = groundY();
-      if (playing && musicElapsed >= PEEK_AFTER) { phase = 'peeking'; phaseT = 0; }
+      if (playing) {
+        // Already kicked once -> skip the whole peek and come running fast.
+        if (introduced && musicElapsed >= RE_ENTER_AFTER) { enterHunting(); }
+        else if (!introduced && musicElapsed >= PEEK_AFTER) { phase = 'peeking'; phaseT = 0; }
+      }
 
     } else if (phase === 'peeking') {
-      // 0–1.2s slide in to peek, 1.2–3.2s flip/look, 3.2–4.4s slide out.
-      var peekX = -guyW * 0.62; // head/shoulder showing
+      // Tipped 90° so only his head pokes past the left edge. Rotation is around
+      // the element centre, so the rotated box is guyH wide; the visual right
+      // edge = body.x + guyW/2 + guyH/2.
+      var headShow = guyH * 0.30;
+      var peekX = headShow - guyW / 2 - guyH / 2;     // head pokes ~headShow px in
+      var offX = -(guyW / 2 + guyH / 2) - 20;          // fully hidden
+      rotDeg = 90;
       if (phaseT < 1.2) {
-        body.x = -guyW + (peekX + guyW) * (phaseT / 1.2);
+        body.x = offX + (peekX - offX) * (phaseT / 1.2);
       } else if (phaseT < 3.2) {
         body.x = peekX;
-        setFacing(Math.sin(phaseT * 6) > 0 ? 1 : -1); // glance side to side
+        rotDeg = 90 + Math.sin(phaseT * 5) * 12;        // head glances around
       } else if (phaseT < 4.4) {
-        body.x = peekX + (-guyW - peekX) * ((phaseT - 3.2) / 1.2);
+        body.x = peekX + (offX - peekX) * ((phaseT - 3.2) / 1.2);
       } else {
         hasPeeked = true; peekDoneAt = musicElapsed; phase = 'waiting'; phaseT = 0;
-        setFacing(1);
       }
       body.y = groundY();
 
     } else if (phase === 'waiting') {
       body.x = -guyW - 20; body.y = groundY();
-      if (musicElapsed - peekDoneAt >= ENTER_AFTER) {
-        phase = 'hunting'; phaseT = 0; hopPause = 0;
-        body.x = -guyW * 0.5; setFacing(1);
-        body.vx = HOP_VX; body.vy = -HOP_VY; // leap in
-      }
+      if (musicElapsed - peekDoneAt >= ENTER_AFTER) enterHunting();
 
     } else if (phase === 'hunting') {
       physicsStep(dt);
@@ -235,6 +249,7 @@
       // brief wind-up, then the kick connects and the song pops out
       if (phaseT > 0.18 && !el.__kicked) {
         el.__kicked = true;
+        introduced = true; // next time he skips the peek and returns fast
         if (window.JJ_Player && window.JJ_Player.ejectCurrent) window.JJ_Player.ejectCurrent();
       }
       if (phaseT > 0.5) { el.classList.remove('jj-guy--kick'); el.__kicked = false; retreat(); }

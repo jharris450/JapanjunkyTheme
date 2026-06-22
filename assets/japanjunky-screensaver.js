@@ -900,14 +900,26 @@
 
   // ─── Guy companion (3D) ─────────────────────────────────────
   // When Guy is thrown out of the page he joins the scene, drifting near Tsuno.
-  // Plain textured sprite (guy.png is a colour cut-out, so sample it straight).
+  // Rendered like Tsuno: his alpha is the silhouette, filled with a hue-shifting
+  // phosphor glow (premultiplied) so he matches the scene's reactive colours.
   var GUY3D_FRAG = [
     'uniform sampler2D uTexture;',
+    'uniform vec3 uTint;',
+    'uniform float uHue;',
     'varying vec2 vUv;',
+    'vec3 jjHueShift(vec3 c, float a) {',
+    '  const vec3 k = vec3(0.57735);',
+    '  float cs = cos(a), sn = sin(a);',
+    '  return c * cs + cross(k, c) * sn + k * dot(k, c) * (1.0 - cs);',
+    '}',
     'void main() {',
-    '  vec4 c = texture2D(uTexture, vUv);',
-    '  if (c.a < 0.04) discard;',
-    '  gl_FragColor = c;',
+    '  float a = texture2D(uTexture, vUv).a;',
+    '  if (a < 0.04) discard;',
+    '  float cover = smoothstep(0.10, 0.55, a);',     // his silhouette
+    '  vec3 tint = uHue != 0.0 ? jjHueShift(uTint, uHue) : uTint;',
+    '  vec3 glow = tint * a * 0.85;',
+    '  glow = vec3(1.0) - exp(-glow * 2.6);',          // same filmic lift as Tsuno
+    '  gl_FragColor = vec4(glow, cover);',             // premultiplied
     '}'
   ].join('\n');
 
@@ -921,10 +933,19 @@
         ? tex.image.width / tex.image.height : 0.53;
       var gh = 4.6, gw = gh * aspect;
       var gmat = new THREE.ShaderMaterial({
-        uniforms: { uResolution: { value: parseFloat(resH) }, uTexture: { value: tex } },
+        uniforms: {
+          uResolution: { value: parseFloat(resH) },
+          uTexture: { value: tex },
+          uTint: { value: new THREE.Vector3(1.0, 0.78, 0.22) }, // gold phosphor
+          uHue: { value: 0.0 }
+        },
         vertexShader: GLOW_VERT,
         fragmentShader: GUY3D_FRAG,
         transparent: true,
+        blending: THREE.CustomBlending,
+        blendEquation: THREE.AddEquation,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.OneMinusSrcAlphaFactor,
         depthWrite: false,
         side: THREE.DoubleSide
       });
@@ -1426,11 +1447,13 @@
     }
     if (tsunoMesh) tsunoMesh.material.uniforms.uHue.value = hue;
 
-    // Guy companion drifts near Tsuno once summoned (thrown out of the page).
+    // Guy companion drifts near Tsuno once summoned (thrown out of the page),
+    // hue-shifting with the scene like Tsuno does.
     if (guyMesh) {
       guyMesh.position.x = -4.0 + Math.sin(t * 0.3) * 1.6;
       guyMesh.position.y = Math.sin(t * 0.5) * 0.7;
       guyMesh.lookAt(camera.position);
+      guyMesh.material.uniforms.uHue.value = hue;
     }
 
     // Update parallax
