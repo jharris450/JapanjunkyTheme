@@ -924,8 +924,20 @@
   ].join('\n');
 
   var guyMesh = null;
-  function summonCompanion() {
-    if (guyMesh || !config.guyTexture) return;
+  var guySummoned = false;
+  var guyX = -4.0, guyY = 0, guyVx = 0, guyVy = 0, guyFlying = false;
+  function summonCompanion(vx, vy) {
+    if (guySummoned || !config.guyTexture) return;
+    guySummoned = true;
+    // Carry the throw's velocity into the scene (layout px/s -> scene units;
+    // screen +y is down, scene +y is up, so invert). He flies in from the edge
+    // he's heading toward, decelerates, then eases into the drift near Tsuno.
+    var SC = 0.006, MAX = 14;
+    guyVx = Math.max(-MAX, Math.min(MAX, (vx || 0) * SC));
+    guyVy = Math.max(-MAX, Math.min(MAX, -(vy || 0) * SC));
+    guyX = guyVx >= 0 ? -8.5 : 8.5;
+    guyY = 0;
+    guyFlying = (Math.abs(guyVx) + Math.abs(guyVy)) > 0.5;
     textureLoader.load(config.guyTexture, function (tex) {
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
@@ -950,7 +962,7 @@
         side: THREE.DoubleSide
       });
       guyMesh = new THREE.Mesh(new THREE.PlaneGeometry(gw, gh), gmat);
-      guyMesh.position.set(-4.0, 0, 10);
+      guyMesh.position.set(guyX, guyY, 10);
       scene.add(guyMesh);
     });
   }
@@ -1447,11 +1459,23 @@
     }
     if (tsunoMesh) tsunoMesh.material.uniforms.uHue.value = hue;
 
-    // Guy companion drifts near Tsuno once summoned (thrown out of the page),
-    // hue-shifting with the scene like Tsuno does.
+    // Guy companion: flies in carrying the throw's momentum, decelerates, then
+    // eases into a drift near Tsuno — hue-shifting with the scene like Tsuno.
     if (guyMesh) {
-      guyMesh.position.x = -4.0 + Math.sin(t * 0.3) * 1.6;
-      guyMesh.position.y = Math.sin(t * 0.5) * 0.7;
+      if (guyFlying) {
+        guyX += guyVx * dtSun;
+        guyY += guyVy * dtSun;
+        var gdamp = Math.pow(0.12, dtSun); // strong deceleration
+        guyVx *= gdamp; guyVy *= gdamp;
+        if (Math.abs(guyVx) + Math.abs(guyVy) < 0.4) guyFlying = false;
+      } else {
+        // ease from wherever he stopped into the ambient drift orbit
+        var tx = -4.0 + Math.sin(t * 0.3) * 1.6;
+        var ty = Math.sin(t * 0.5) * 0.7;
+        guyX += (tx - guyX) * Math.min(1, dtSun * 1.2);
+        guyY += (ty - guyY) * Math.min(1, dtSun * 1.2);
+      }
+      guyMesh.position.set(guyX, guyY, 10);
       guyMesh.lookAt(camera.position);
       guyMesh.material.uniforms.uHue.value = hue;
     }

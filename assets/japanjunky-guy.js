@@ -120,8 +120,9 @@
 
   function vanish() {
     goneForever = true;
+    var vx = body.vx, vy = body.vy; // throw velocity at the moment he leaves
     if (el.parentNode) el.parentNode.removeChild(el);
-    if (window.JJ_Portal && window.JJ_Portal.summonCompanion) window.JJ_Portal.summonCompanion();
+    if (window.JJ_Portal && window.JJ_Portal.summonCompanion) window.JJ_Portal.summonCompanion(vx, vy);
     stopLoop();
   }
 
