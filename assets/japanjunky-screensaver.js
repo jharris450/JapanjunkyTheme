@@ -898,6 +898,42 @@
     });
   }
 
+  // ─── Guy companion (3D) ─────────────────────────────────────
+  // When Guy is thrown out of the page he joins the scene, drifting near Tsuno.
+  // Plain textured sprite (guy.png is a colour cut-out, so sample it straight).
+  var GUY3D_FRAG = [
+    'uniform sampler2D uTexture;',
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vec4 c = texture2D(uTexture, vUv);',
+    '  if (c.a < 0.04) discard;',
+    '  gl_FragColor = c;',
+    '}'
+  ].join('\n');
+
+  var guyMesh = null;
+  function summonCompanion() {
+    if (guyMesh || !config.guyTexture) return;
+    textureLoader.load(config.guyTexture, function (tex) {
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      var aspect = (tex.image && tex.image.width && tex.image.height)
+        ? tex.image.width / tex.image.height : 0.53;
+      var gh = 4.6, gw = gh * aspect;
+      var gmat = new THREE.ShaderMaterial({
+        uniforms: { uResolution: { value: parseFloat(resH) }, uTexture: { value: tex } },
+        vertexShader: GLOW_VERT,
+        fragmentShader: GUY3D_FRAG,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      guyMesh = new THREE.Mesh(new THREE.PlaneGeometry(gw, gh), gmat);
+      guyMesh.position.set(-4.0, 0, 10);
+      scene.add(guyMesh);
+    });
+  }
+
   if (tsunoLoginPageMode) {
     document.addEventListener('jj-auth-keystroke', function () {
       if (!tsunoMesh) return;
@@ -1390,6 +1426,13 @@
     }
     if (tsunoMesh) tsunoMesh.material.uniforms.uHue.value = hue;
 
+    // Guy companion drifts near Tsuno once summoned (thrown out of the page).
+    if (guyMesh) {
+      guyMesh.position.x = -4.0 + Math.sin(t * 0.3) * 1.6;
+      guyMesh.position.y = Math.sin(t * 0.5) * 0.7;
+      guyMesh.lookAt(camera.position);
+    }
+
     // Update parallax
     updateParallax();
     var lookX = LOOK_TARGET.x + parallaxOffset.x;
@@ -1426,6 +1469,7 @@
     setProductViewing: function (viewing) {
       productViewing = !!viewing;
     },
+    summonCompanion: summonCompanion,
     setTalking: function (talking) {
       tsunoTalking = !!talking;
     },

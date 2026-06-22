@@ -266,7 +266,8 @@
       {%- comment -%} Storefront pages: Tsuno awake + moving (no hero scroll to wake him). {%- endcomment -%}
       tsunoActive: {% unless template == 'index' or template == 'product' or template.suffix == 'login' %}true{% else %}false{% endunless %},
       ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
-      risingSun: {{ 'risingsun.png' | asset_url | json }}
+      risingSun: {{ 'risingsun.png' | asset_url | json }},
+      guyTexture: {{ 'guy.png' | asset_url | json }}
     };
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
@@ -278,6 +279,7 @@
   <script src="{{ 'japanjunky-wax-shader.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-glyph-field.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-guy.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
   {%- comment -%} Watchlist state for JS-rendered grid stars (ids the customer already watches + login flag). {%- endcomment -%}

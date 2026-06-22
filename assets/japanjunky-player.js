@@ -371,7 +371,8 @@
     despawn: despawn,
     getType: function () { return currentTool; },
     getRect: getRect,
-    tryLoadProduct: tryLoadProduct
+    tryLoadProduct: tryLoadProduct,
+    ejectCurrent: popOutLoaded // pop the loaded song out + stop (used by Guy's kick)
   };
 
   if (document.readyState === 'loading') {

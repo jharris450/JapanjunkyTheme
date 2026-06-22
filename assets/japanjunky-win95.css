@@ -696,6 +696,24 @@
   cursor: grabbing;
 }
 
+/* ── Guy (the song-interrupting samurai) ─────────────────────── */
+.jj-guy {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 92px;
+  width: auto;
+  z-index: 10008; /* above the scene/UI, just below the player (10009) */
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform; /* JS owns transform (translate + scaleX) */
+}
+.jj-guy--grabbed { cursor: grabbing; }
+/* Kick feedback — must not touch transform (JS owns it). */
+.jj-guy--kick { filter: brightness(1.5) drop-shadow(0 0 6px rgba(255, 170, 0, 0.7)); }
+
 .jj-player__label {
   padding: 2px;
   pointer-events: none;
