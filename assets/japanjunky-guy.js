@@ -219,7 +219,8 @@
         body.x = offX + (peekX - offX) * (phaseT / 1.2);
       } else if (phaseT < 3.2) {
         body.x = peekX;
-        rotDeg = 90 + Math.sin(phaseT * 5) * 12;        // head glances around
+        rotDeg = 90;
+        setFacing(Math.sin(phaseT * 4) > 0 ? 1 : -1);   // full flip side to side
       } else if (phaseT < 4.4) {
         body.x = peekX + (offX - peekX) * ((phaseT - 3.2) / 1.2);
       } else {
