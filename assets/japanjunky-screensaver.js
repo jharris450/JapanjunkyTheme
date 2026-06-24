@@ -75,12 +75,13 @@
   textureLoader.crossOrigin = 'anonymous';
 
   // ─── Lava-lamp wax (replaces the portal) ───────────────────
-  var waxState = JJ_WaxSim.createState({ seed: 7, count: 4 });
+  var waxState = JJ_WaxSim.createState({ seed: 7, count: 6 });
   var waxAspect = resW / resH;
   // Teardrop tail: faster blobs grow a longer trailing tail; smoothing keeps it
-  // from snapping. Between rounded-ball (too low) and over-long teardrop (high).
-  var STRETCH_K = 9.0;
-  var MAX_STRETCH = 2.0;
+  // from snapping. Kept gentle now — the liquid read comes from metaball necking
+  // + coalescence (BLEND) and desynced cycles, not a permanent balloon teardrop.
+  var STRETCH_K = 5.0;
+  var MAX_STRETCH = 1.5;
   // Rising wax is still pulled from the pool -> long upward strand/tail. A falling
   // blob has detached, so surface tension rounds it; it barely tails (reads as an
   // orb, not a down-pointing teardrop). FALL_TAIL scales the tail when sinking.

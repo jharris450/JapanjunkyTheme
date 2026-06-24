@@ -54,7 +54,7 @@
     'const float POOL_R   = 4.0;',   // big radius -> gentle wide dome (exact sphere SDF)
     'const float TAIL_RATIO = 0.30;',// trailing-tail tip radius as a fraction of the body
     'const float TAIL_LEN   = 0.80;',// how far the tail trails per unit of stretch
-    'const float BLEND    = 0.30;',  // metaball smooth-union (higher = thinner, longer necks)
+    'const float BLEND    = 0.42;',  // metaball smooth-union (higher = blobs coalesce + neck like liquid)
     'const float SUBMERGE = 0.5;',   // wax opacity below the horizon (blends with the reflective pool)
     '',
     'float smin(float a, float b, float k) {',
@@ -121,6 +121,26 @@
     '    k.yyx * map(p + k.yyx * h) +',
     '    k.yxy * map(p + k.yxy * h) +',
     '    k.xxx * map(p + k.xxx * h));',
+    '}',
+    '',
+    '// Phong reflectance for the molten wax: ambient + Lambert diffuse from a',
+    '// warm key light and a dim cool fill, plus a tight specular highlight that',
+    '// gives the surface a wet, glossy sheen, and a fresnel rim for the glassy',
+    '// edge. base = the height-graded wax colour.',
+    'vec3 phong(vec3 n, vec3 rd, vec3 base) {',
+    '  vec3 viewDir = -rd;',
+    '  vec3 L1 = normalize(vec3(0.4, 0.7, -0.6));',   // warm key, upper-front
+    '  vec3 L2 = normalize(vec3(-0.5, -0.25, -0.8));',// cool fill, lower-left
+    '  float amb = 0.20;',
+    '  float d1 = clamp(dot(n, L1), 0.0, 1.0);',
+    '  float d2 = clamp(dot(n, L2), 0.0, 1.0) * 0.30;',
+    '  float s1 = pow(clamp(dot(reflect(-L1, n), viewDir), 0.0, 1.0), 48.0);', // tight wet highlight
+    '  float s2 = pow(clamp(dot(reflect(-L2, n), viewDir), 0.0, 1.0), 14.0) * 0.35;',
+    '  float fres = pow(1.0 - clamp(dot(n, viewDir), 0.0, 1.0), 3.0);',
+    '  vec3 col = base * (amb + d1 + d2);',
+    '  col += vec3(1.0, 0.92, 0.78) * (s1 + s2);',    // glossy specular bloom
+    '  col += base * fres * 0.5;',                    // glassy rim light
+    '  return col;',
     '}',
     '',
     'vec3 waxColor(float h) {',              // h = height 0 (hot) .. 1 (cool)
@@ -214,13 +234,8 @@
     '  if (hit > 0.0) {',
     '    vec3 p = ro + rd * hit;',
     '    vec3 n = calcNormal(p);',
-    '    vec3 ld = normalize(vec3(0.4, 0.7, -0.6));',
-    '    float diff = clamp(dot(n, ld), 0.0, 1.0);',
-    '    float spec = pow(clamp(dot(reflect(-ld, n), -rd), 0.0, 1.0), 24.0);',
-    '    float fres = pow(1.0 - clamp(dot(n, -rd), 0.0, 1.0), 2.0);',
     '    vec3 base = waxColor(clamp(p.y, 0.0, 1.0));',
-    '    vec3 wax = base * (0.35 + 0.65 * diff) + vec3(1.0, 0.9, 0.7) * spec * 0.5;',
-    '    wax += base * fres * 0.4;',
+    '    vec3 wax = phong(n, rd, base);',
     '    // Below the horizon the wax is submerged — blend it with the reflective',
     '    // pool so the bottom wax reservoir reads as one pool with the water.',
     '    float waxAlpha = mix(SUBMERGE, 1.0, smoothstep(uHorizon - 0.06, uHorizon + 0.04, p.y));',

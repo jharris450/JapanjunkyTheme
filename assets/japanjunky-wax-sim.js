@@ -87,7 +87,12 @@
         temp: opts.hotTemp + (opts.coldTemp - opts.hotTemp) * by,
         phase: rng() * 6.2832,
         // Persistent lateral current (random direction) so it traverses + bounces.
-        vxBias: (rng() * 2 - 1) * opts.biasSpeed
+        vxBias: (rng() * 2 - 1) * opts.biasSpeed,
+        // Per-blob buoyancy + thermal-lag multipliers. Each glob rises/cools at
+        // its own rate, so the column never pulses in lockstep — the cycles
+        // desync and the field reads as live liquid instead of repeating balloons.
+        buMul: 0.78 + rng() * 0.44,
+        exMul: 0.7 + rng() * 0.6
       });
     }
     return { blobs: blobs, opts: opts, t: 0 };
@@ -98,10 +103,12 @@
     // Ambient temperature of this height: hot at the floor, cold at the top.
     var yc = b.y < 0 ? 0 : (b.y > 1 ? 1 : b.y);
     var ambient = env.hotTemp + (env.coldTemp - env.hotTemp) * yc;
-    // Relax toward ambient (thermal lag).
-    var temp = b.temp + (ambient - b.temp) * env.exchange * dt;
+    // Relax toward ambient (thermal lag), scaled by this blob's own exchange rate.
+    var exMul = b.exMul || 1;
+    var temp = b.temp + (ambient - b.temp) * env.exchange * exMul * dt;
 
-    var accelY = env.buoyancy * (temp - env.neutralTemp);
+    var buMul = b.buMul || 1;
+    var accelY = env.buoyancy * buMul * (temp - env.neutralTemp);
     var vy = b.vy + accelY * dt;
     var drift = Math.sin(t * env.driftFreq + b.phase) * env.driftAmp;
     var vx = b.vx + drift * dt;
@@ -136,7 +143,7 @@
       if (bias > 0) bias = -bias * env.wallBounce;
     }
 
-    return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase, vxBias: bias };
+    return { x: x, y: y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: temp, phase: b.phase, vxBias: bias, buMul: b.buMul, exMul: b.exMul };
   }
 
   // Pure: Tsuno passing through shoves nearby blobs along his velocity
@@ -154,7 +161,7 @@
     var splitK = env.tsunoSplit;
     var vx = b.vx + ((tsuno.vx || 0) * pushK + nx * splitK) * falloff;
     var vy = b.vy + ((tsuno.vy || 0) * pushK + ny * splitK) * falloff;
-    return { x: b.x, y: b.y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: b.temp, phase: b.phase };
+    return { x: b.x, y: b.y, z: b.z, vx: vx, vy: vy, radius: b.radius, temp: b.temp, phase: b.phase, vxBias: b.vxBias, buMul: b.buMul, exMul: b.exMul };
   }
 
   // Advance the whole state in place. (Tsuno impulse added in Task 2.)
