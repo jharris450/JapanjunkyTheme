@@ -33,6 +33,7 @@
         title: t ? t.textContent : '',
         audioUrl: card.getAttribute('data-audio-url') || '',
         youtubeUrl: card.getAttribute('data-youtube-url') || '',
+        labelUrl: card.getAttribute('data-label-url') || '',
         bpm: parseFloat(card.getAttribute('data-bpm')) || 0,
         srcEl: card
       };
@@ -44,6 +45,7 @@
         title: window.JJ_PRODUCT_DATA.title || '',
         audioUrl: window.JJ_PRODUCT_DATA.audioUrl || '',
         youtubeUrl: window.JJ_PRODUCT_DATA.youtubeUrl || '',
+        labelUrl: (window.JJ_PRODUCT_DATA.images && window.JJ_PRODUCT_DATA.images[2]) || '',
         bpm: window.JJ_PRODUCT_DATA.bpm || 0,
         srcEl: info
       };

@@ -816,6 +816,85 @@
 .jj-media-token[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
 .jj-media-token[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
 
+/* --- Vinyl-record token: mirrors the product-page record. The 3rd product
+   image is the spinning record's center label (set on the Shopify backend);
+   with no 3rd image the center stays bare grooves, same as the product page.
+   Physics owns the outer token's transform; the disc spins on a child so the
+   two never fight. --- */
+.jj-media-token--vinyl {
+  width: 68px;
+  min-height: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 3px;
+}
+.jj-media-token__disc {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%,
+    #0c0c0c 0, #0c0c0c 1px, #1c1c1c 1px, #1c1c1c 2px);
+  box-shadow:
+    0 0 0 1px #000,
+    inset 0 0 6px rgba(0, 0, 0, 0.9),
+    0 1px 4px rgba(0, 0, 0, 0.6);
+  animation: jj-vinyl-spin 9s linear infinite;
+}
+/* Single rotating sheen sweep, matching the product page's angular highlight. */
+.jj-media-token__disc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0.10) 40deg,
+    rgba(255, 255, 255, 0) 95deg,
+    rgba(255, 255, 255, 0) 235deg,
+    rgba(255, 255, 255, 0.07) 270deg,
+    rgba(255, 255, 255, 0) 320deg);
+  pointer-events: none;
+}
+.jj-media-token__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+.jj-media-token__hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  z-index: 2;
+}
+.jj-media-token--vinyl .jj-media-token__title {
+  max-width: 68px;
+  color: var(--jj-amber, #ffaa00);
+}
+@keyframes jj-vinyl-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jj-media-token__disc { animation: none; }
+}
+
 /* Absorbed back into its product — quick CRT blink-out (no transform; physics
    owns the token's transform until it's removed). */
 .jj-media-token--dismiss {

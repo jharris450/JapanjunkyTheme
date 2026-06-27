@@ -50,6 +50,11 @@
       {%- if product.images.size > 1 -%}
         {%- assign second_image_url = product.images[1] | image_url: width: 480 -%}
       {%- endif -%}
+      {%- comment -%} 3rd image is the vinyl label (matches the product page). {%- endcomment -%}
+      {%- assign label_image_url = '' -%}
+      {%- if product.images.size > 2 -%}
+        {%- assign label_image_url = product.images[2] | image_url: width: 480 -%}
+      {%- endif -%}
 
       {%- unless first_item -%},{%- endunless -%}
       {%- assign first_item = false -%}
@@ -70,6 +75,7 @@
         "jpTitle": {{ m_jp_title | json }},
         "image": {%- if product.featured_image -%}{{ product.featured_image | image_url: width: 480 | json }}{%- else -%}""{%- endif -%},
         "imageBack": {{ second_image_url | json }},
+        "labelUrl": {{ label_image_url | json }},
         "type3d": {{ p_3d_type | json }},
         "variantId": {{ variant.id | json }},
         "available": {{ variant.available }},

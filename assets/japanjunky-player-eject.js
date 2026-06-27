@@ -209,14 +209,38 @@
     var el = document.createElement('div');
     el.className = 'jj-media-token';
     el.setAttribute('data-format', fmt);
-    var fmtEl = document.createElement('span');
-    fmtEl.className = 'jj-media-token__fmt';
-    fmtEl.textContent = (fmt || '?').toUpperCase();
-    var titleEl = document.createElement('span');
-    titleEl.className = 'jj-media-token__title';
-    titleEl.textContent = product.title || '';
-    el.appendChild(fmtEl);
-    el.appendChild(titleEl);
+
+    if (fmt === 'record') {
+      // Vinyl token: same spinning record as the product page. The 3rd product
+      // image is the center label (set on the Shopify backend); with none, the
+      // center stays bare grooves — the product page's default behavior.
+      el.classList.add('jj-media-token--vinyl');
+      var disc = document.createElement('div');
+      disc.className = 'jj-media-token__disc';
+      if (product.labelUrl) {
+        var labelEl = document.createElement('span');
+        labelEl.className = 'jj-media-token__label';
+        labelEl.style.backgroundImage = 'url("' + product.labelUrl.replace(/"/g, '%22') + '")';
+        disc.appendChild(labelEl);
+      }
+      var holeEl = document.createElement('span');
+      holeEl.className = 'jj-media-token__hole';
+      disc.appendChild(holeEl);
+      el.appendChild(disc);
+      var vTitleEl = document.createElement('span');
+      vTitleEl.className = 'jj-media-token__title';
+      vTitleEl.textContent = product.title || '';
+      el.appendChild(vTitleEl);
+    } else {
+      var fmtEl = document.createElement('span');
+      fmtEl.className = 'jj-media-token__fmt';
+      fmtEl.textContent = (fmt || '?').toUpperCase();
+      var titleEl = document.createElement('span');
+      titleEl.className = 'jj-media-token__title';
+      titleEl.textContent = product.title || '';
+      el.appendChild(fmtEl);
+      el.appendChild(titleEl);
+    }
     document.body.appendChild(el);
 
     // Spawn at the player's position (layout px), or top-right if unknown.

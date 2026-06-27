@@ -406,6 +406,7 @@
     card.setAttribute('data-format', p.format || '');
     if (p.audioUrl) card.setAttribute('data-audio-url', p.audioUrl);
     if (p.youtubeUrl) card.setAttribute('data-youtube-url', p.youtubeUrl);
+    if (p.labelUrl) card.setAttribute('data-label-url', p.labelUrl);
     if (p.bpm) card.setAttribute('data-bpm', p.bpm);
     if (!p.available) card.className += ' jj-grid__card--soldout';
 
