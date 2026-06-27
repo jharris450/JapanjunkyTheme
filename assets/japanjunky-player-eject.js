@@ -232,13 +232,30 @@
       vTitleEl.textContent = product.title || '';
       el.appendChild(vTitleEl);
     } else {
+      // Round 3D coin token: a spinning, floating disc with the format stamped
+      // on both faces. Physics owns the outer token's transform (translate), so
+      // the float bob lives on a wrapper and the 3D spin on the coin itself —
+      // the three transforms never fight.
+      el.classList.add('jj-media-token--coin');
+      var floatEl = document.createElement('div');
+      floatEl.className = 'jj-media-token__float';
+      var coin = document.createElement('div');
+      coin.className = 'jj-media-token__coin';
+      var faceFront = document.createElement('span');
+      faceFront.className = 'jj-media-token__face jj-media-token__face--front';
       var fmtEl = document.createElement('span');
       fmtEl.className = 'jj-media-token__fmt';
       fmtEl.textContent = (fmt || '?').toUpperCase();
+      faceFront.appendChild(fmtEl);
+      var faceBack = document.createElement('span');
+      faceBack.className = 'jj-media-token__face jj-media-token__face--back';
+      coin.appendChild(faceFront);
+      coin.appendChild(faceBack);
+      floatEl.appendChild(coin);
+      el.appendChild(floatEl);
       var titleEl = document.createElement('span');
       titleEl.className = 'jj-media-token__title';
       titleEl.textContent = product.title || '';
-      el.appendChild(fmtEl);
       el.appendChild(titleEl);
     }
     document.body.appendChild(el);

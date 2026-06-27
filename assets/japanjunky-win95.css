@@ -816,6 +816,61 @@
 .jj-media-token[data-format="cassette"] { border-color: var(--jj-green, #33ff33); color: var(--jj-green, #33ff33); }
 .jj-media-token[data-format="cd"]       { border-color: var(--jj-cyan, #00e5e5); color: var(--jj-cyan, #00e5e5); }
 
+/* --- Coin token: non-record formats as a round, 3D, floating, spinning disc.
+   The chip is no longer a flat square — it reads as a solid coin tumbling on
+   its vertical axis while bobbing in place. The token's format color drives the
+   rim + glow via currentColor. Physics owns the outer translate; __float bobs;
+   __coin spins in 3D; two backface-hidden faces give it real thickness. --- */
+.jj-media-token--coin {
+  width: 68px;
+  min-height: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  gap: 4px;
+  perspective: 340px; /* depth for the rotateY tumble */
+}
+.jj-media-token__float {
+  animation: jj-token-float 3.2s ease-in-out infinite;
+}
+.jj-media-token__coin {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  transform-style: preserve-3d;
+  animation: jj-coin-spin 5s linear infinite;
+}
+.jj-media-token__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
+    radial-gradient(circle at 50% 50%, #1c1c1c 0%, #050505 80%);
+  box-shadow:
+    inset 0 0 8px rgba(0, 0, 0, 0.85),
+    0 0 9px currentColor;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.jj-media-token__face--front { transform: translateZ(2px); }
+.jj-media-token__face--back  { transform: rotateY(180deg) translateZ(2px); }
+.jj-media-token--coin .jj-media-token__title {
+  max-width: 68px;
+}
+@keyframes jj-token-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes jj-coin-spin {
+  to { transform: rotateY(360deg); }
+}
+
 /* --- Vinyl-record token: mirrors the product-page record. The 3rd product
    image is the spinning record's center label (set on the Shopify backend);
    with no 3rd image the center stays bare grooves, same as the product page.
@@ -893,6 +948,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .jj-media-token__disc { animation: none; }
+  .jj-media-token__float,
+  .jj-media-token__coin { animation: none; }
 }
 
 /* Absorbed back into its product — quick CRT blink-out (no transform; physics
