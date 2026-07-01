@@ -43,6 +43,7 @@
       {%- assign p_3d_type = 'plane' -%}
       {%- for tag in product.tags -%}
         {%- if tag == '3d-box' -%}{%- assign p_3d_type = 'box' -%}{%- endif -%}
+        {%- if tag == '3d-recordbox' -%}{%- assign p_3d_type = 'recordbox' -%}{%- endif -%}
       {%- endfor -%}
 
       {%- comment -%} Images {%- endcomment -%}
