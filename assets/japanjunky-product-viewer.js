@@ -323,6 +323,13 @@
         drawSeam();
         texture.needsUpdate = true;
       };
+      img.onerror = function () {
+        // Failed half: keep the grey base, still draw the seam so the lid
+        // reads, and surface a diagnostic instead of degrading silently.
+        if (window.console) console.warn('recordbox: front texture failed to load', url);
+        drawSeam();
+        texture.needsUpdate = true;
+      };
       img.src = url;
     }
     loadHalf(tex.frontLeft, layout && layout.left);
