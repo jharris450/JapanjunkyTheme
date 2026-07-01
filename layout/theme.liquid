@@ -299,6 +299,18 @@
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>
   {% endunless %}
+  <script>
+    window.JJ_RECORDBOX_TEX = {
+      back:       "{{ 'recordbox-back.png' | asset_url }}",
+      frontLeft:  "{{ 'recordbox-front-left.png' | asset_url }}",
+      frontRight: "{{ 'recordbox-front-right.png' | asset_url }}",
+      sideLeft:   "{{ 'recordbox-side-left.png' | asset_url }}",
+      sideRight:  "{{ 'recordbox-side-right.png' | asset_url }}",
+      top:        "{{ 'recordbox-top-side.png' | asset_url }}",
+      bottom:     "{{ 'recordbox-bottom-side.png' | asset_url }}"
+    };
+  </script>
+  <script src="{{ 'japanjunky-recordbox.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-watchlist.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-volume.js' | asset_url }}" defer></script>
