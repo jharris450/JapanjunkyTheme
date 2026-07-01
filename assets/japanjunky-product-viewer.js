@@ -157,6 +157,23 @@
   function createModel(data) {
     removeModel();
 
+    if (data.type3d === 'recordbox') {
+      var box = buildRecordboxMesh();
+      box.position.set(0, 0, 0);
+      box.userData.isProductModel = true;
+      scene.add(box);
+      currentModel = box;
+      currentData = data;
+
+      idle.time = 0;
+      spring.velX = 0;
+      spring.velZ = 0;
+      spring.active = false;
+      box.rotation.y = -0.3; // entrance angle
+      startAnimating();
+      return;
+    }
+
     var geometry;
     if (data.type3d === 'box') {
       geometry = new THREE.BoxGeometry(2.0, 2.0, 0.3);
@@ -268,6 +285,85 @@
     tex.minFilter = THREE.NearestFilter;
     tex.magFilter = THREE.NearestFilter;
     return tex;
+  }
+
+  // ─── Recordbox (flagship 3D box) ───────────────────────────────────────────
+
+  // Composite the two lid-half textures onto one square canvas, with a
+  // center seam, and return a CanvasTexture that refreshes as each half
+  // loads. crossOrigin='anonymous' keeps the canvas untainted so WebGL can
+  // upload it (Shopify's asset CDN sends permissive CORS headers).
+  function buildRecordboxFrontTexture(tex) {
+    var RB = window.JJ_Recordbox;
+    var size = 512;
+    var layout = RB ? RB.frontCompositeLayout(size) : null;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#8a8a86'; // cardboard grey base (shows until halves load)
+    ctx.fillRect(0, 0, size, size);
+
+    var texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.NearestFilter;
+    texture.magFilter = THREE.NearestFilter;
+
+    function drawSeam() {
+      if (!layout) return;
+      ctx.fillStyle = 'rgba(20,20,20,0.85)';
+      ctx.fillRect(layout.seam.x, layout.seam.y, layout.seam.w, layout.seam.h);
+    }
+    function loadHalf(url, rect) {
+      if (!url || !rect) { drawSeam(); texture.needsUpdate = true; return; }
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function () {
+        ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h);
+        drawSeam();
+        texture.needsUpdate = true;
+      };
+      img.src = url;
+    }
+    loadHalf(tex.frontLeft, layout && layout.left);
+    loadHalf(tex.frontRight, layout && layout.right);
+    return texture;
+  }
+
+  function buildRecordboxMesh() {
+    var RB = window.JJ_Recordbox;
+    var TEX = window.JJ_RECORDBOX_TEX || {};
+    var dims = (RB && RB.DIMS) || { w: 2.0, h: 2.0, d: 0.5 };
+    var order = (RB && RB.FACE_ORDER) ||
+                ['sideRight', 'sideLeft', 'top', 'bottom', 'front', 'back'];
+
+    var geometry = new THREE.BoxGeometry(dims.w, dims.h, dims.d);
+
+    function psMat(tex) {
+      return new THREE.ShaderMaterial({
+        uniforms: {
+          uResolution: { value: shaderRes },
+          uTexture: { value: tex || createFallbackTexture() }
+        },
+        vertexShader: PS1_VERT,
+        fragmentShader: PS1_FRAG,
+        side: THREE.FrontSide
+      });
+    }
+    function loadFace(url) {
+      if (!url) return null;
+      var t = textureLoader.load(url);
+      t.minFilter = THREE.NearestFilter;
+      t.magFilter = THREE.NearestFilter;
+      return t;
+    }
+
+    var materials = order.map(function (key) {
+      if (key === 'front') return psMat(buildRecordboxFrontTexture(TEX));
+      return psMat(loadFace(TEX[key])); // sideRight, sideLeft, top, bottom, back
+    });
+
+    return new THREE.Mesh(geometry, materials);
   }
 
   // ─── Vinyl Disc ─────────────────────────────────────────────────
