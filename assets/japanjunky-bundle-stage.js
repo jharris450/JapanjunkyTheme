@@ -66,6 +66,7 @@
   var BOX_TEX_LUMA = 168;      // shared brightness target across faces
   var BOX_TEX_CONTRAST = 1.4;  // amplifies cardboard grain past the palette step
   var BOX_TEX_DIM = 256;       // plenty next to the 240px shader res
+  var TAPE_FRAC = 0.14;        // kraft half-strip width, fraction of a flap face
 
   function normalizeLuma(data, target) {
     var sum = 0;
@@ -77,15 +78,18 @@
     for (var j = 0; j < data.length; j += 4) {
       var L = data[j] * 0.299 + data[j + 1] * 0.587 + data[j + 2] * 0.114;
       var Lc = target + (L * gain - target) * BOX_TEX_CONTRAST;
-      // neutral luma + fixed warm kraft tint — no per-pixel chroma, so the
-      // dither only mixes greys/warm tones
-      data[j] = Math.max(0, Math.min(255, Lc * 1.02));
-      data[j + 1] = Math.max(0, Math.min(255, Lc));
-      data[j + 2] = Math.max(0, Math.min(255, Lc * 0.96));
+      // per-pixel chroma survives (safe against the NEUTRAL palette —
+      // greys/warm tones only, nothing to confetti into)
+      data[j] = Math.max(0, Math.min(255, Lc + (data[j] - L) * 1.2));
+      data[j + 1] = Math.max(0, Math.min(255, Lc + (data[j + 1] - L) * 1.2));
+      data[j + 2] = Math.max(0, Math.min(255, Lc + (data[j + 2] - L) * 1.2));
     }
   }
 
-  function loadBoxTex(url) {
+  // tapeEdge ('left'|'right'): composite half of the kraft tape strip along
+  // that edge — the two front flaps each carry one half, joining into a
+  // single strip down the box's center seam.
+  function loadBoxTex(url, tapeEdge) {
     if (!url) return null;
     // One fixed-size canvas for the texture's whole life: the image is
     // drawn + processed into it in place. Swapping in a DIFFERENT canvas
@@ -98,13 +102,30 @@
     var tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.NearestFilter;
     tex.magFilter = THREE.NearestFilter;
-    var img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function () {
+
+    function compose(img, tapeImg) {
       x.drawImage(img, 0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
       try {
+        // Normalize the cardboard FIRST — the tape must not skew the face
+        // mean, and both flaps' tape halves must get identical treatment.
         var id = x.getImageData(0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
         normalizeLuma(id.data, BOX_TEX_LUMA);
+        x.putImageData(id, 0, 0);
+        if (tapeImg) {
+          // Adjacent CENTER slices of the kraft photo, so the two halves
+          // join into one continuous strip at the seam.
+          var wpx = Math.round(BOX_TEX_DIM * TAPE_FRAC);
+          var kw = tapeImg.naturalWidth;
+          var slice = kw * 0.15;
+          if (tapeEdge === 'right') {
+            x.drawImage(tapeImg, kw * 0.5 - slice, 0, slice, tapeImg.naturalHeight,
+              BOX_TEX_DIM - wpx, 0, wpx, BOX_TEX_DIM);
+          } else {
+            x.drawImage(tapeImg, kw * 0.5, 0, slice, tapeImg.naturalHeight,
+              0, 0, wpx, BOX_TEX_DIM);
+          }
+        }
+        id = x.getImageData(0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
         if (window.JJ_Dither && window.JJ_Dither.ditherImageData) {
           window.JJ_Dither.ditherImageData(id, BOX_TEX_DIM, BOX_TEX_DIM,
             window.JJ_Dither.NEUTRAL_PALETTE);
@@ -112,6 +133,20 @@
         x.putImageData(id, 0, 0);
       } catch (e) { /* tainted canvas — keep the raw draw */ }
       tex.needsUpdate = true;
+    }
+
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      if (tapeEdge && TEX.kraft) {
+        var tapeImg = new Image();
+        tapeImg.crossOrigin = 'anonymous';
+        tapeImg.onload = function () { compose(img, tapeImg); };
+        tapeImg.onerror = function () { compose(img, null); };
+        tapeImg.src = TEX.kraft;
+      } else {
+        compose(img, null);
+      }
     };
     img.src = url;
     return tex;
@@ -158,7 +193,7 @@
     leftFlap = new THREE.Object3D();
     leftFlap.position.set(-halfW, 0, frontZ);
     var lGeo = new THREE.PlaneGeometry(halfW, h);
-    var lMesh = new THREE.Mesh(lGeo, psMat(loadBoxTex(TEX.frontLeft)));
+    var lMesh = new THREE.Mesh(lGeo, psMat(loadBoxTex(TEX.frontLeft, 'right')));
     lMesh.position.set(halfW / 2, 0, 0); // shift so inner edge meets center
     leftFlap.add(lMesh);
     boxGroup.add(leftFlap);
@@ -179,7 +214,7 @@
     // Front-right flap: faces +Z, attached at the panel's front corner,
     // spans corner → box center.
     var rGeo = new THREE.PlaneGeometry(halfW, h);
-    var rMesh = new THREE.Mesh(rGeo, psMat(loadBoxTex(TEX.frontRight)));
+    var rMesh = new THREE.Mesh(rGeo, psMat(loadBoxTex(TEX.frontRight, 'left')));
     rMesh.position.set(-halfW / 2, 0, d + 0.001);
     endLid.add(rMesh);
 
