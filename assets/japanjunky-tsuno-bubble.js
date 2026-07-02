@@ -247,14 +247,6 @@
     }
   });
 
-  // ─── Early dissolve on mystery-box open ─────────────────────
-  // The ring no longer dispatches jj:product-selected (hover cards took
-  // over), so the box click is the greeting's end signal on the homepage.
-  document.addEventListener('jj:bundle-opened', function () {
-    if (phase !== 'done' && !dissolved) {
-      dissolve();
-    }
-  });
 
   // ─── Init ───────────────────────────────────────────────────
   // Wait for JJ_Portal to be available, then start

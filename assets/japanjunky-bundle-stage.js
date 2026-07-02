@@ -361,27 +361,14 @@
   showBundleInfo(); // reveals the panel — the canvas gets layout here
   startLoop();
 
-  // Send Tsuno back to his dormant idle bob: deactivate() ends judging AND
-  // the roaming personality system (glides home). If he's orbiting (thrown),
-  // deactivate() no-ops — pull him back via 'returning' instead.
-  function tsunoIdle() {
-    var portal = window.JJ_Portal;
-    if (!portal || !portal.tsuno) return;
-    if (portal.tsuno.deactivate) portal.tsuno.deactivate();
-    if (portal.tsuno.getState && portal.tsuno.setState &&
-        portal.tsuno.getState() === 'orbiting') {
-      portal.tsuno.setState('returning'); // glides home, lands in idle
-    }
-  }
-
   canvas.addEventListener('click', function () {
     if (FSM.isLocked(state) || state !== 'closed') return;
     boxGroup.rotation.y = 0;
     boxGroup.position.y = 0;
-    tsunoIdle();
-    // Ends the greeting bubble (it used to dissolve on jj:product-selected,
-    // which the hover-card ring no longer emits).
-    document.dispatchEvent(new CustomEvent('jj:bundle-opened'));
+    // Wake Tsuno exactly like the scroll-to-grid does: dissolves the
+    // greeting bubble AND engages his roaming personality (peek gesture).
+    // No-op if he's already awake.
+    document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
     var pool = pickPool();
     buildStack(pool);
     openFlaps(function () { dealOut(pool); });
