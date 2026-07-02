@@ -67,8 +67,19 @@
     [60, 80, 140]
   ];
 
+  // Neutral subset (grayscale ramp + cream + warm cardboard tones) — for
+  // near-flat neutral surfaces like the bundle box, where the saturated
+  // phosphor entries would speckle in as confetti via error diffusion.
+  var NEUTRAL_PALETTE = PALETTE.slice(0, 10).concat([
+    [90, 55, 30],
+    [140, 90, 50],
+    [180, 130, 80],
+    [210, 175, 130]
+  ]);
+
   // ─── Nearest palette color (Euclidean distance in RGB) ─────────
-  function nearestColor(r, g, b) {
+  function nearestColor(r, g, b, palette) {
+    var PALETTE = palette;
     var minDist = Infinity;
     var best = PALETTE[0];
     for (var i = 0; i < PALETTE.length; i++) {
@@ -97,8 +108,11 @@
   //  3/16  5/16  1/16
   //
   // Core: dither an ImageData buffer in place (also reused by the bundle
-  // box texture pipeline via JJ_Dither.ditherImageData).
-  function ditherImageData(imageData, w, h) {
+  // box texture pipeline via JJ_Dither.ditherImageData). `palette` is
+  // optional — defaults to the full phosphor palette; pass
+  // JJ_Dither.NEUTRAL_PALETTE for neutral surfaces.
+  function ditherImageData(imageData, w, h, palette) {
+    palette = palette || PALETTE;
     var data = imageData.data;
 
     // Work with a float buffer so error accumulation stays precise
@@ -120,7 +134,7 @@
         oldG = Math.max(0, Math.min(255, oldG));
         oldB = Math.max(0, Math.min(255, oldB));
 
-        var newC = nearestColor(oldR, oldG, oldB);
+        var newC = nearestColor(oldR, oldG, oldB, palette);
 
         // Write the palette color
         buf[idx] = newC[0];
@@ -239,7 +253,8 @@
   window.JJ_Dither = {
     ditherAll: ditherAll,
     ditherSingle: ditherSingle,
-    ditherImageData: ditherImageData
+    ditherImageData: ditherImageData,
+    NEUTRAL_PALETTE: NEUTRAL_PALETTE
   };
 
   // ─── Auto-init ─────────────────────────────────────────────────

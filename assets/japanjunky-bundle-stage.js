@@ -57,12 +57,15 @@
 
   // ─── Box texture pipeline ─────────────────────────────────────
   // The cardboard photos were shot under uneven light, so each face reads
-  // a different shade. Normalize every face to a common mean luminance,
-  // then run the same Floyd-Steinberg CRT-palette dither the product
-  // images get (JJ_Dither.ditherImageData) before handing it to the
-  // PS1 shader.
-  var BOX_TEX_LUMA = 150;   // shared brightness target across faces
-  var BOX_TEX_DIM = 256;    // plenty next to the 240px shader res
+  // a different shade. Normalize every face to a common mean luminance
+  // (with a mild grain-preserving contrast boost + fixed warm kraft tint),
+  // then Floyd-Steinberg dither with the product-image kernel against the
+  // palette's NEUTRAL subset (full phosphor palette speckles a near-flat
+  // neutral surface with green/red confetti). Knobs tuned via headless
+  // A/B renders against the raw photos.
+  var BOX_TEX_LUMA = 168;      // shared brightness target across faces
+  var BOX_TEX_CONTRAST = 1.4;  // amplifies cardboard grain past the palette step
+  var BOX_TEX_DIM = 256;       // plenty next to the 240px shader res
 
   function normalizeLuma(data, target) {
     var sum = 0;
@@ -72,33 +75,42 @@
     var mean = sum / (data.length / 4) || 1;
     var gain = Math.max(0.6, Math.min(1.8, target / mean)); // no blowouts
     for (var j = 0; j < data.length; j += 4) {
-      data[j] = Math.min(255, data[j] * gain);
-      data[j + 1] = Math.min(255, data[j + 1] * gain);
-      data[j + 2] = Math.min(255, data[j + 2] * gain);
+      var L = data[j] * 0.299 + data[j + 1] * 0.587 + data[j + 2] * 0.114;
+      var Lc = target + (L * gain - target) * BOX_TEX_CONTRAST;
+      // neutral luma + fixed warm kraft tint — no per-pixel chroma, so the
+      // dither only mixes greys/warm tones
+      data[j] = Math.max(0, Math.min(255, Lc * 1.02));
+      data[j + 1] = Math.max(0, Math.min(255, Lc));
+      data[j + 2] = Math.max(0, Math.min(255, Lc * 0.96));
     }
   }
 
   function loadBoxTex(url) {
     if (!url) return null;
-    var tex = fallbackTex(); // grey placeholder until the image processes
+    // One fixed-size canvas for the texture's whole life: the image is
+    // drawn + processed into it in place. Swapping in a DIFFERENT canvas
+    // after upload never reaches the GPU (immutable texture storage) —
+    // that bug rendered the box as a solid grey slab.
+    var c = document.createElement('canvas');
+    c.width = BOX_TEX_DIM; c.height = BOX_TEX_DIM;
+    var x = c.getContext('2d');
+    x.fillStyle = '#8a8a86'; x.fillRect(0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
+    var tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
     var img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function () {
-      var scale = Math.min(1, BOX_TEX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
-      var w = Math.max(1, Math.round(img.naturalWidth * scale));
-      var h = Math.max(1, Math.round(img.naturalHeight * scale));
-      var c = document.createElement('canvas'); c.width = w; c.height = h;
-      var x = c.getContext('2d');
-      x.drawImage(img, 0, 0, w, h);
+      x.drawImage(img, 0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
       try {
-        var id = x.getImageData(0, 0, w, h);
+        var id = x.getImageData(0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
         normalizeLuma(id.data, BOX_TEX_LUMA);
         if (window.JJ_Dither && window.JJ_Dither.ditherImageData) {
-          window.JJ_Dither.ditherImageData(id, w, h);
+          window.JJ_Dither.ditherImageData(id, BOX_TEX_DIM, BOX_TEX_DIM,
+            window.JJ_Dither.NEUTRAL_PALETTE);
         }
         x.putImageData(id, 0, 0);
       } catch (e) { /* tainted canvas — keep the raw draw */ }
-      tex.image = c;
       tex.needsUpdate = true;
     };
     img.src = url;
