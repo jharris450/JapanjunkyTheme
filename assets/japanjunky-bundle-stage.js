@@ -61,19 +61,20 @@
     });
   }
 
-  // ─── Box: body (5 faces) + two hinged front flaps ────────────
+  // ─── Box: body (4 faces) + hinged front flaps + right side door ──
   var boxGroup = new THREE.Group();
-  var leftFlap, rightFlap; // pivot Object3Ds
+  var leftFlap, rightFlap, sideDoor; // pivot Object3Ds
 
   function buildBox() {
     var w = DIMS.w, h = DIMS.h, d = DIMS.d;
 
-    // Body: BoxGeometry with the front (+Z) face transparent; other 5 faces textured.
+    // Body: BoxGeometry with the front (+Z) and right (+X) faces transparent
+    // — front is covered by the flaps, right by the hinged side door.
     var bodyGeo = new THREE.BoxGeometry(w, h, d);
     var invisible = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
     // BoxGeometry face order [+X,-X,+Y,-Y,+Z,-Z]:
     var bodyMats = [
-      psMat(loadTex(TEX.sideRight)), // +X
+      invisible,                     // +X right (covered by side door)
       psMat(loadTex(TEX.sideLeft)),  // -X
       psMat(loadTex(TEX.top)),       // +Y
       psMat(loadTex(TEX.bottom)),    // -Y
@@ -106,15 +107,30 @@
     rightFlap.add(rMesh);
     boxGroup.add(rightFlap);
 
+    // Right side door: the whole +X panel, hinged on its REAR vertical edge
+    // (like a record box's end opening out). Swings outward with the flap;
+    // records slide out through the opened side.
+    sideDoor = new THREE.Object3D();
+    sideDoor.position.set(halfW + 0.001, 0, -d / 2);
+    var sGeo = new THREE.PlaneGeometry(d, h);
+    var sMesh = new THREE.Mesh(sGeo, psMat(loadTex(TEX.sideRight)));
+    sMesh.rotation.y = Math.PI / 2;   // face +X; width now runs along z
+    sMesh.position.set(0, 0, d / 2);  // span the hinge (z=-d/2) → front (z=+d/2)
+    sideDoor.add(sMesh);
+    boxGroup.add(sideDoor);
+
     scene.add(boxGroup);
   }
 
   // ─── Flap open/close (t: 0 closed → 1 open) ──────────────────
-  // Only the RIGHT flap swings; the left stays shut so the opening reads
-  // like a record crate mouth on the right side.
-  var OPEN_ANGLE = 1.92; // ~110deg
+  // Only the RIGHT front flap swings — OUTWARD (toward the viewer, then
+  // folded back right, staying outstretched) — and the right side door
+  // opens with it, like a real record box's end.
+  var OPEN_ANGLE = 1.92;      // flap ~110deg outward
+  var DOOR_ANGLE = 1.75;      // side door ~100deg outward
   function setFlaps(t) {
-    if (rightFlap) rightFlap.rotation.y = -OPEN_ANGLE * t;
+    if (rightFlap) rightFlap.rotation.y = OPEN_ANGLE * t;
+    if (sideDoor) sideDoor.rotation.y = DOOR_ANGLE * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
@@ -152,7 +168,6 @@
   var stack = []; // meshes (children of boxGroup)
   var STACK_SIZE = 1.5;
   var SLIDE_OUT_X = 4.2;      // box-local x well outside the 550px canvas
-  var SLIDE_OUT_Z = 1.2;      // forward out of the mouth, in front of the +X wall
   var STACK_STAGGER_MS = 90;  // matches the DOM deal stagger
 
   function clearStack() {
@@ -194,12 +209,11 @@
     for (var i = 0; i < stack.length; i++) {
       (function (mesh, idx) {
         setTimeout(function () {
-          var sx = mesh.position.x, sz = mesh.position.z;
-          // Out the open front mouth (z forward clears the +X wall by the
-          // time the plane crosses it), then off to the right.
+          var sx = mesh.position.x;
+          // Straight out through the opened right side, like sliding a
+          // record out of a crate's end.
           tween(450, function (e) {
             mesh.position.x = sx + (SLIDE_OUT_X - sx) * e;
-            mesh.position.z = sz + (SLIDE_OUT_Z - sz) * e;
           }, function () {
             mesh.visible = false;
             pending--;
@@ -218,10 +232,9 @@
         setTimeout(function () {
           mesh.visible = true;
           mesh.position.x = SLIDE_OUT_X;
-          mesh.position.z = SLIDE_OUT_Z;
+          mesh.position.z = mesh.userData.homeZ;
           tween(400, function (e) {
             mesh.position.x = SLIDE_OUT_X + (mesh.userData.homeX - SLIDE_OUT_X) * e;
-            mesh.position.z = SLIDE_OUT_Z + (mesh.userData.homeZ - SLIDE_OUT_Z) * e;
           }, function () {
             pending--;
             if (pending === 0 && done) done();

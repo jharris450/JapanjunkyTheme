@@ -35,12 +35,31 @@
     { offset: -3, x: -110, y: -210, scale: 0.58, opacity: 0.35 }
   ];
 
-  // Spawn transform: parked at the box mouth (left of the stage), shrunk.
-  // Deal/retract transitions run between this and the arc slots.
-  var SPAWN_TRANSFORM = 'translate(-280px, 0px) scale(0.2)';
   var DEAL_STAGGER_MS = 90;   // per-cover delay on deal-out
+  var DEAL_BASE_DELAY_MS = 120; // lets the crate's mesh slide lead the hand-off
   var SETTLE_MS = 420;        // > the 0.4s CSS transform transition
   var END_RELEASE_MS = 600;   // wheel momentum settle before page scroll takes over
+  var SPAWN_SCALE = 0.75;     // ≈ the crate's record-stack size on screen
+
+  // Spawn transform: at the mystery box's actual screen position (its canvas
+  // sits across the page, in the product-info zone), so covers fly the WHOLE
+  // box→crescent path with no vanish/reappear gap. Falls back to just left
+  // of the stage if the box canvas isn't there.
+  function spawnTransform() {
+    var boxCanvas = document.getElementById('jj-bundle-canvas');
+    if (boxCanvas) {
+      var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+      var b = boxCanvas.getBoundingClientRect();
+      var s = stage.getBoundingClientRect();
+      if (b.width && s.width) {
+        // +110px: records leave through the box's opened RIGHT side, not its center
+        var dx = ((b.left + b.width / 2) - (s.left + s.width / 2)) / zoom + 110;
+        var dy = ((b.top + b.height / 2) - (s.top + s.height / 2)) / zoom;
+        return 'translate(' + dx + 'px, ' + dy + 'px) scale(' + SPAWN_SCALE + ')';
+      }
+    }
+    return 'translate(-280px, 0px) scale(' + SPAWN_SCALE + ')';
+  }
 
   // Per-cover random jitter (applied once on creation)
   var coverJitter = {}; // keyed by product handle+variantId
@@ -244,10 +263,11 @@
     centerIndex = Math.floor(records.length / 2); // middle record centered
     locked = true;
 
-    // Create every cover parked at the box mouth…
+    // Create every cover parked at the box…
+    var spawn = spawnTransform();
     for (var i = 0; i < records.length; i++) {
       var el = createCoverEl(records[i], i);
-      el.style.transform = SPAWN_TRANSFORM;
+      el.style.transform = spawn;
       el.style.opacity = '0';
       el.style.zIndex = 10 - Math.abs(i - centerIndex);
       coverEls[i] = el;
@@ -262,29 +282,38 @@
         setTimeout(function () {
           var slot = slotForOffset(idx - centerIndex);
           if (slot && coverEls[idx]) applySlot(coverEls[idx], slot, records[idx]);
-        }, idx * DEAL_STAGGER_MS);
+        }, DEAL_BASE_DELAY_MS + idx * DEAL_STAGGER_MS);
       })(j);
     }
 
     setTimeout(function () {
       locked = false;
       positionCovers(); // normalize (center class, aria, z-index)
-    }, records.length * DEAL_STAGGER_MS + SETTLE_MS);
+    }, DEAL_BASE_DELAY_MS + records.length * DEAL_STAGGER_MS + SETTLE_MS);
   }
 
   function retract(done) {
     hideCard();
     if (!records.length) { if (done) done(); return; }
     locked = true;
-    for (var key in coverEls) {
-      coverEls[key].style.transform = SPAWN_TRANSFORM;
-      coverEls[key].style.opacity = '0';
+    // Staggered flight back to the box's screen position — each cover
+    // shrinks + fades on arrival, then the crate's mesh stack piles in.
+    var spawn = spawnTransform();
+    var count = 0;
+    for (var i = 0; i < records.length; i++) {
+      (function (el, idx) {
+        if (!el) return;
+        setTimeout(function () {
+          el.style.transform = spawn;
+          el.style.opacity = '0';
+        }, idx * DEAL_STAGGER_MS);
+      })(coverEls[i], count++);
     }
     setTimeout(function () {
       clearCovers();
       locked = false;
       if (done) done();
-    }, SETTLE_MS);
+    }, (count > 0 ? (count - 1) * DEAL_STAGGER_MS : 0) + SETTLE_MS);
   }
 
   // ─── Navigation (clamped — no wrap with only 5 records) ────────

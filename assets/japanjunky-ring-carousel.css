@@ -24,7 +24,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  /* visible: covers fly the whole box→crescent path on deal/retract —
+     hidden would make them vanish at the stage edge mid-flight */
+  overflow: visible;
   pointer-events: auto;
   position: relative;
 }

@@ -5,6 +5,12 @@
    puts #jj-viewer-canvas by default (centered on the card's right edge,
    centered on its top edge). */
 
+/* Raise the info card (box canvas rides along, it's anchored to the card)
+   so the box graphic lines up with the crescent's selected center cover. */
+#jj-product-zone .jj-product-info {
+  margin-bottom: 104px;
+}
+
 #jj-bundle-canvas {
   position: absolute;
   left: calc(100% - 275px);
