@@ -250,12 +250,55 @@
     }
   }
 
+  // ─── Preview selection (raycast) ─────────────────────────────
+  var raycaster = new THREE.Raycaster();
+  var focused = null; // { rec, homeX, homeY, homeScale }
+
+  function recordDetail(data) {
+    return {
+      handle: data.handle, title: data.title, artist: data.artist, vendor: data.vendor,
+      price: data.price, code: data.code, condition: data.condition, format: data.format,
+      formatLabel: data.formatLabel, year: data.year, label: data.label,
+      jpName: data.jpName, jpTitle: data.jpTitle, imageUrl: data.image,
+      imageBackUrl: data.imageBack, type3d: data.type3d, variantId: String(data.variantId),
+      available: data.available, preview: true
+    };
+  }
+
+  function focusRecord(rec) {
+    if (focused && focused.rec === rec) return;
+    deselect();
+    focused = { rec: rec, homeX: rec.slot.x, homeY: rec.slot.y, homeScale: rec.slot.scale };
+    tween(300, function (e) {
+      rec.mesh.position.x = focused.homeX * (1 - e) + 0 * e;
+      rec.mesh.position.y = focused.homeY * (1 - e) + 0 * e;
+      rec.mesh.position.z = 0.1 + 1.4 * e; // pull toward camera
+      rec.mesh.scale.setScalar(focused.homeScale + (1.3 - focused.homeScale) * e);
+    });
+    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: recordDetail(rec.data) }));
+  }
+
+  function deselect() {
+    if (!focused) return;
+    var rec = focused.rec, hx = focused.homeX, hy = focused.homeY, hs = focused.homeScale;
+    var sx = rec.mesh.position.x, sy = rec.mesh.position.y, sz = rec.mesh.position.z, ss = rec.mesh.scale.x;
+    focused = null;
+    tween(280, function (e) {
+      rec.mesh.position.x = sx + (hx - sx) * e;
+      rec.mesh.position.y = sy + (hy - sy) * e;
+      rec.mesh.position.z = sz + (0.1 - sz) * e;
+      rec.mesh.scale.setScalar(ss + (hs - ss) * e);
+    });
+    document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
+  }
+
   function updateRecords(now) {
     if (!recordsOut) return;
     for (var i = 0; i < records.length; i++) {
       var rec = records[i];
       rec.mesh.position.y = rec.slot.y + Math.sin(now * 0.001 + rec.phase) * 0.04;
     }
+    if (focused) focused.rec.mesh.rotation.y += 0.01;
   }
 
   // ─── Init ────────────────────────────────────────────────────
@@ -263,9 +306,25 @@
   setFlaps(0); // closed
   startLoop();
 
-  // Temporary wiring so open is testable in-browser this task; refined in Task 7.
-  canvas.addEventListener('click', function () {
+  canvas.addEventListener('click', function (e) {
     if (FSM.isLocked(state)) return;
+    var r = canvas.getBoundingClientRect();
+    var mx = ((e.clientX - r.left) / r.width) * 2 - 1;
+    var my = -((e.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera({ x: mx, y: my }, camera);
+
+    if (state === 'open' && records.length) {
+      var meshes = records.map(function (rec) { return rec.mesh; });
+      var hits = raycaster.intersectObjects(meshes, false);
+      if (hits.length) {
+        var hitMesh = hits[0].object;
+        for (var i = 0; i < records.length; i++) {
+          if (records[i].mesh === hitMesh) { focusRecord(records[i]); return; }
+        }
+      }
+      deselect(); // clicked empty space while open
+      return;
+    }
     if (state === 'closed') {
       dealRecords();
       openFlaps(function () { slideOut(); });

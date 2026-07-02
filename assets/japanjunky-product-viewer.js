@@ -1024,6 +1024,12 @@
 
   document.addEventListener('jj:product-selected', function (e) {
     var data = e.detail;
+    if (data.preview) {
+      showProductInfo(data);
+      if (piAddToCart) { piAddToCart.style.display = 'none'; }
+      return;
+    }
+    if (piAddToCart) { piAddToCart.style.display = ''; }
     coordSelect();
     createModel(data);
     showProductInfo(data);
