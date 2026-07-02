@@ -54,6 +54,56 @@
     t.minFilter = THREE.NearestFilter; t.magFilter = THREE.NearestFilter;
     return t;
   }
+
+  // ─── Box texture pipeline ─────────────────────────────────────
+  // The cardboard photos were shot under uneven light, so each face reads
+  // a different shade. Normalize every face to a common mean luminance,
+  // then run the same Floyd-Steinberg CRT-palette dither the product
+  // images get (JJ_Dither.ditherImageData) before handing it to the
+  // PS1 shader.
+  var BOX_TEX_LUMA = 150;   // shared brightness target across faces
+  var BOX_TEX_DIM = 256;    // plenty next to the 240px shader res
+
+  function normalizeLuma(data, target) {
+    var sum = 0;
+    for (var i = 0; i < data.length; i += 4) {
+      sum += data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    }
+    var mean = sum / (data.length / 4) || 1;
+    var gain = Math.max(0.6, Math.min(1.8, target / mean)); // no blowouts
+    for (var j = 0; j < data.length; j += 4) {
+      data[j] = Math.min(255, data[j] * gain);
+      data[j + 1] = Math.min(255, data[j + 1] * gain);
+      data[j + 2] = Math.min(255, data[j + 2] * gain);
+    }
+  }
+
+  function loadBoxTex(url) {
+    if (!url) return null;
+    var tex = fallbackTex(); // grey placeholder until the image processes
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      var scale = Math.min(1, BOX_TEX_DIM / Math.max(img.naturalWidth, img.naturalHeight));
+      var w = Math.max(1, Math.round(img.naturalWidth * scale));
+      var h = Math.max(1, Math.round(img.naturalHeight * scale));
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.drawImage(img, 0, 0, w, h);
+      try {
+        var id = x.getImageData(0, 0, w, h);
+        normalizeLuma(id.data, BOX_TEX_LUMA);
+        if (window.JJ_Dither && window.JJ_Dither.ditherImageData) {
+          window.JJ_Dither.ditherImageData(id, w, h);
+        }
+        x.putImageData(id, 0, 0);
+      } catch (e) { /* tainted canvas — keep the raw draw */ }
+      tex.image = c;
+      tex.needsUpdate = true;
+    };
+    img.src = url;
+    return tex;
+  }
   function psMat(tex) {
     return new THREE.ShaderMaterial({
       uniforms: { uResolution: { value: shaderRes }, uTexture: { value: tex || fallbackTex() } },
@@ -78,12 +128,12 @@
     var invisible = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
     // BoxGeometry face order [+X,-X,+Y,-Y,+Z,-Z]:
     var bodyMats = [
-      invisible,                     // +X right (covered by side door)
-      psMat(loadTex(TEX.sideLeft)),  // -X
-      psMat(loadTex(TEX.top)),       // +Y
-      psMat(loadTex(TEX.bottom)),    // -Y
-      invisible,                     // +Z front (covered by flaps)
-      psMat(loadTex(TEX.back))       // -Z
+      invisible,                        // +X right (covered by side door)
+      psMat(loadBoxTex(TEX.sideLeft)),  // -X
+      psMat(loadBoxTex(TEX.top)),       // +Y
+      psMat(loadBoxTex(TEX.bottom)),    // -Y
+      invisible,                        // +Z front (covered by flaps)
+      psMat(loadBoxTex(TEX.back))       // -Z
     ];
     var body = new THREE.Mesh(bodyGeo, bodyMats);
     boxGroup.add(body);
@@ -96,7 +146,7 @@
     leftFlap = new THREE.Object3D();
     leftFlap.position.set(-halfW, 0, frontZ);
     var lGeo = new THREE.PlaneGeometry(halfW, h);
-    var lMesh = new THREE.Mesh(lGeo, psMat(loadTex(TEX.frontLeft)));
+    var lMesh = new THREE.Mesh(lGeo, psMat(loadBoxTex(TEX.frontLeft)));
     lMesh.position.set(halfW / 2, 0, 0); // shift so inner edge meets center
     leftFlap.add(lMesh);
     boxGroup.add(leftFlap);
@@ -109,7 +159,7 @@
 
     // Right side panel: faces +X, spans hinge (rear) → front edge.
     var sGeo = new THREE.PlaneGeometry(d, h);
-    var sMesh = new THREE.Mesh(sGeo, psMat(loadTex(TEX.sideRight)));
+    var sMesh = new THREE.Mesh(sGeo, psMat(loadBoxTex(TEX.sideRight)));
     sMesh.rotation.y = Math.PI / 2; // face +X; width now runs along z
     sMesh.position.set(0.001, 0, d / 2);
     endLid.add(sMesh);
@@ -117,7 +167,7 @@
     // Front-right flap: faces +Z, attached at the panel's front corner,
     // spans corner → box center.
     var rGeo = new THREE.PlaneGeometry(halfW, h);
-    var rMesh = new THREE.Mesh(rGeo, psMat(loadTex(TEX.frontRight)));
+    var rMesh = new THREE.Mesh(rGeo, psMat(loadBoxTex(TEX.frontRight)));
     rMesh.position.set(-halfW / 2, 0, d + 0.001);
     endLid.add(rMesh);
 

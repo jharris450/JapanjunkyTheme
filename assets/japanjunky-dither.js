@@ -96,37 +96,9 @@
   //        *    7/16
   //  3/16  5/16  1/16
   //
-  function ditherImage(img) {
-    if (!img || !img.naturalWidth || img.dataset.dithered === 'true') return;
-
-    var w = img.naturalWidth;
-    var h = img.naturalHeight;
-
-    // Cap dimensions for performance
-    var maxDim = 480;
-    var scale = 1;
-    if (w > maxDim || h > maxDim) {
-      scale = maxDim / Math.max(w, h);
-      w = Math.round(w * scale);
-      h = Math.round(h * scale);
-    }
-
-    var canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    var ctx = canvas.getContext('2d');
-
-    ctx.drawImage(img, 0, 0, w, h);
-
-    var imageData;
-    try {
-      imageData = ctx.getImageData(0, 0, w, h);
-    } catch (e) {
-      // CORS or tainted canvas
-      img.dataset.dithered = 'failed';
-      return;
-    }
-
+  // Core: dither an ImageData buffer in place (also reused by the bundle
+  // box texture pipeline via JJ_Dither.ditherImageData).
+  function ditherImageData(imageData, w, h) {
     var data = imageData.data;
 
     // Work with a float buffer so error accumulation stays precise
@@ -196,6 +168,40 @@
     for (var j = 0; j < data.length; j++) {
       data[j] = Math.max(0, Math.min(255, Math.round(buf[j])));
     }
+  }
+
+  function ditherImage(img) {
+    if (!img || !img.naturalWidth || img.dataset.dithered === 'true') return;
+
+    var w = img.naturalWidth;
+    var h = img.naturalHeight;
+
+    // Cap dimensions for performance
+    var maxDim = 480;
+    var scale = 1;
+    if (w > maxDim || h > maxDim) {
+      scale = maxDim / Math.max(w, h);
+      w = Math.round(w * scale);
+      h = Math.round(h * scale);
+    }
+
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d');
+
+    ctx.drawImage(img, 0, 0, w, h);
+
+    var imageData;
+    try {
+      imageData = ctx.getImageData(0, 0, w, h);
+    } catch (e) {
+      // CORS or tainted canvas
+      img.dataset.dithered = 'failed';
+      return;
+    }
+
+    ditherImageData(imageData, w, h);
 
     ctx.putImageData(imageData, 0, 0);
 
@@ -232,7 +238,8 @@
 
   window.JJ_Dither = {
     ditherAll: ditherAll,
-    ditherSingle: ditherSingle
+    ditherSingle: ditherSingle,
+    ditherImageData: ditherImageData
   };
 
   // ─── Auto-init ─────────────────────────────────────────────────
