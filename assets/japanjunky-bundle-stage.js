@@ -207,7 +207,9 @@
   var selectTimer = null;
 
   function slotFor(i) {
-    return (CAR && CAR.slotForIndex(i, centerIndex, records.length)) || CAR.SLOTS['0'];
+    return (CAR && CAR.slotForIndex(i, centerIndex, records.length)) ||
+           (CAR && CAR.SLOTS && CAR.SLOTS['0']) ||
+           { x: 0, y: 0, scale: 1 };
   }
 
   function dealRecords() {
@@ -302,6 +304,7 @@
   }
 
   // ─── Rotation + selection (ported from ring-carousel.js) ─────
+  var rotateUntil = 0; // suppress idle-bob until the rotation tween settles
   function rotateTo(newIndex) {
     if (!records.length) return;
     if (newIndex < 0) newIndex = records.length - 1;
@@ -310,6 +313,7 @@
     deselectCurrent();
     centerIndex = newIndex;
     layoutRecords(true);
+    rotateUntil = performance.now() + 340; // > tween duration (320ms)
     armSelect();
   }
   function rotateBy(delta) { rotateTo(centerIndex + delta); }
@@ -347,6 +351,7 @@
   // Idle bob for non-centered records; centered one holds still (it's selected).
   function updateRecords(now) {
     if (!recordsOut) return;
+    if (now < rotateUntil) return; // don't fight the rotation tween's y writes
     for (var i = 0; i < records.length; i++) {
       if (i === centerIndex) continue;
       var rec = records[i];
