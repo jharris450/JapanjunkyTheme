@@ -41,8 +41,9 @@
     shaderRes = parseInt(window.JJ_SCREENSAVER_CONFIG.resolution, 10) || 240;
   }
 
-  // ─── PS1 Shaders ──────────────────────────────────────────────
-  var PS1_VERT = [
+  // ─── PS1 Shaders (shared module, with inline fallback) ────────
+  var _PS1 = (typeof window !== 'undefined' && window.JJ_PS1) || null;
+  var PS1_VERT = _PS1 ? _PS1.vert : [
     'uniform float uResolution;',
     'varying vec2 vUv;',
     'void main() {',
@@ -54,8 +55,7 @@
     '  gl_Position = clipPos;',
     '}'
   ].join('\n');
-
-  var PS1_FRAG = [
+  var PS1_FRAG = _PS1 ? _PS1.frag : [
     'uniform sampler2D uTexture;',
     'varying vec2 vUv;',
     'void main() {',
@@ -1024,6 +1024,12 @@
 
   document.addEventListener('jj:product-selected', function (e) {
     var data = e.detail;
+    if (data.preview) {
+      showProductInfo(data);
+      if (piAddToCart) { piAddToCart.style.display = 'none'; }
+      return;
+    }
+    if (piAddToCart) { piAddToCart.style.display = ''; }
     coordSelect();
     createModel(data);
     showProductInfo(data);

@@ -30,7 +30,6 @@
   {{ 'japanjunky-crt.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-ascii.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-win95.css' | asset_url | stylesheet_tag }}
-  {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-grid.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-product-info.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-tsuno-bubble.css' | asset_url | stylesheet_tag }}
@@ -41,6 +40,7 @@
   {{ 'japanjunky-content.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-watchlist.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-scrollbar.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-bundle.css' | asset_url | stylesheet_tag }}
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
   {% endif %}
@@ -201,9 +201,15 @@
     </div>
   </div>
 
-  {%- comment -%} Ring carousel: featured picks arc {%- endcomment -%}
-  <div class="jj-ring" id="jj-ring" role="listbox" aria-roledescription="carousel" aria-label="Featured products">
-    <div class="jj-ring__stage" id="jj-ring-stage"></div>
+  {%- comment -%} Mystery-box bundle hero {%- endcomment -%}
+  <div class="jj-ring jj-ring--bundle" id="jj-ring" aria-label="Five Random Records bundle">
+    <div class="jj-ring__stage" id="jj-ring-stage">
+      <canvas id="jj-bundle-canvas" aria-label="3D mystery box with sample records"></canvas>
+    </div>
+    <div class="jj-bundle-controls">
+      <button class="jj-action-btn" id="jj-bundle-reroll" type="button">[Reroll]</button>
+      <button class="jj-action-btn" id="jj-bundle-add" type="button" disabled>[Add to Cart]</button>
+    </div>
   </div>
 
   {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = product grid {%- endcomment -%}
@@ -296,7 +302,6 @@
     window.JJ_WATCHLIST = [{% if customer %}{% for wp in customer.metafields.custom.watchlist.value %}{{ wp.id }}{% unless forloop.last %},{% endunless %}{% endfor %}{% endif %}];
   </script>
   {% unless template == 'product' or template.suffix == 'login' %}
-  <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>
   {% endunless %}
   <script>
@@ -310,7 +315,14 @@
       bottom:     "{{ 'recordbox-bottom-side.png' | asset_url }}"
     };
   </script>
+  <script src="{{ 'japanjunky-ps1-shader.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-recordbox.js' | asset_url }}" defer></script>
+  {%- comment -%} Bundle hero chain: loads after ps1-shader + recordbox so JJ_PS1/JJ_Recordbox exist before bundle-stage evaluates. {%- endcomment -%}
+  {% unless template == 'product' or template.suffix == 'login' %}
+  <script src="{{ 'japanjunky-bundle-pool.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
+  {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-watchlist.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-volume.js' | asset_url }}" defer></script>
