@@ -65,10 +65,12 @@
   var boxGroup = new THREE.Group();
   var leftFlap, endLid; // pivot Object3Ds
 
+  // Slimmer crate: depth (the side panels' width) reduced twice by 30%
+  // (×0.7 → ×0.49 of the flagship recordbox) — vertical size unchanged.
+  var BOX_DEPTH = DIMS.d * 0.49;
+
   function buildBox() {
-    // Slimmer crate: 30% off the DEPTH (the side panels' width) — vertical
-    // size stays the flagship recordbox's.
-    var w = DIMS.w, h = DIMS.h, d = DIMS.d * 0.7;
+    var w = DIMS.w, h = DIMS.h, d = BOX_DEPTH;
 
     // Body: BoxGeometry with the front (+Z) and right (+X) faces transparent
     // — front is covered by the flaps, right by the hinged side door.
@@ -190,10 +192,14 @@
     for (var i = 0; i < pool.length; i++) {
       var geo = new THREE.PlaneGeometry(STACK_SIZE, STACK_SIZE);
       var mesh = new THREE.Mesh(geo, psMat(loadTex(pool[i].image)));
+      // Stacked front-to-back, spread across whatever depth the crate has
+      // (small margin keeps the front plane behind the flap).
+      var zFront = BOX_DEPTH / 2 - 0.015;
+      var zStep = pool.length > 1 ? (zFront * 2) / (pool.length - 1) : 0;
       mesh.position.set(
         (Math.random() - 0.5) * 0.06,
         (Math.random() - 0.5) * 0.06 - 0.1, // sit slightly low in the crate
-        0.16 - i * 0.08                     // stacked front-to-back
+        zFront - i * zStep
       );
       mesh.rotation.z = (Math.random() - 0.5) * 0.08;
       boxGroup.add(mesh);
