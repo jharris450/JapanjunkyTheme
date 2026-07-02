@@ -1,24 +1,29 @@
 {%- assign catalog = section.settings.collection | default: collections['all'] -%}
-{%- assign featured = section.settings.featured_collection -%}
+{%- assign bundle_handle = section.settings.bundle_handle | default: 'five-random-records' -%}
+{%- assign bundle = all_products[bundle_handle] -%}
 
 {%- comment -%}
   JJ_PRODUCTS: full catalog — consumed by japanjunky-product-grid.js
-  JJ_FEATURED: curated ring items — consumed by japanjunky-ring-carousel.js
+  JJ_BUNDLE: mystery-box bundle product — consumed by japanjunky-bundle-stage.js
 {%- endcomment -%}
 <script>
 window.JJ_PRODUCTS = [
   {% render 'jj-product-json', items: catalog.products, limit: section.settings.products_to_show, include_unavailable: true %}
 ];
-{%- if featured != blank and featured.products.size > 0 %}
-window.JJ_FEATURED = [
-  {% render 'jj-product-json', items: featured.products, limit: 10 %}
-];
-{%- comment -%} Curated collection may be entirely sold out — variants are filtered server-side.
-    Fallback filters client-side: JJ_PRODUCTS now includes sold-out variants. {%- endcomment -%}
-if (!window.JJ_FEATURED.length) window.JJ_FEATURED = window.JJ_PRODUCTS.filter(function (p) { return p.available; }).slice(0, 8);
-{%- else %}
-window.JJ_FEATURED = window.JJ_PRODUCTS.filter(function (p) { return p.available; }).slice(0, 8);
-{%- endif %}
+{%- if bundle != blank -%}
+  {%- assign bundle_variant = bundle.selected_or_first_available_variant | default: bundle.variants.first -%}
+window.JJ_BUNDLE = {
+  "handle": {{ bundle.handle | json }},
+  "productId": {{ bundle.id | json }},
+  "variantId": {{ bundle_variant.id | json }},
+  "price": {{ bundle_variant.price | money | json }},
+  "priceCents": {{ bundle_variant.price | json }},
+  "available": {{ bundle_variant.available }},
+  "title": {{ bundle.title | json }}
+};
+{%- else -%}
+window.JJ_BUNDLE = null;
+{%- endif -%}
 </script>
 
 {% schema %}
@@ -31,10 +36,11 @@ window.JJ_FEATURED = window.JJ_PRODUCTS.filter(function (p) { return p.available
       "label": "Catalog collection (grid)"
     },
     {
-      "type": "collection",
-      "id": "featured_collection",
-      "label": "Featured collection (ring)",
-      "info": "Curated picks for the ring carousel, max 10. Falls back to first 8 catalog items."
+      "type": "text",
+      "id": "bundle_handle",
+      "label": "Bundle product handle (ring hero)",
+      "default": "five-random-records",
+      "info": "The flagship bundle shown as the 3D mystery box."
     },
     {
       "type": "range",
