@@ -15,6 +15,7 @@
   var PS1 = window.JJ_PS1 || { vert: '', frag: '' };
   var FSM = window.JJ_BundleFSM;
   var shaderRes = 240;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ─── Renderer / scene / camera ───────────────────────────────
   var renderer, scene, camera, rafId = null, animating = false, lastTime = 0;
@@ -110,6 +111,7 @@
 
   // Generic eased tween driver (0→1) used by open/close/slide.
   function tween(durationMs, onUpdate, onDone) {
+    if (reduceMotion) durationMs = Math.min(durationMs, 80);
     var start = performance.now();
     function step(now) {
       var p = Math.min((now - start) / durationMs, 1);
@@ -303,6 +305,38 @@
     if (focused) focused.rec.mesh.rotation.y += 0.01;
   }
 
+  // ─── Reroll ──────────────────────────────────────────────────
+  function shakeBox(done) {
+    var start = performance.now();
+    function step(now) {
+      var p = Math.min((now - start) / 420, 1);
+      boxGroup.rotation.z = Math.sin(p * Math.PI * 6) * 0.12 * (1 - p);
+      if (p < 1) requestAnimationFrame(step);
+      else { boxGroup.rotation.z = 0; if (done) done(); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function reroll() {
+    if (state !== 'open') return;
+    deselect();
+    setState(FSM.next(state, 'reroll')); // → retracting
+    slideIn(function () {
+      setState(FSM.next(state, 'retracted')); // → closing
+      closeFlaps(function () {
+        setState(FSM.next(state, 'closed')); // → shaking
+        shakeBox(function () {
+          setState(FSM.next(state, 'shaken')); // → opening
+          dealRecords();
+          tween(600, function (e) { setFlaps(e); }, function () {
+            setState(FSM.next(state, 'opened')); // → open
+            slideOut();
+          });
+        });
+      });
+    });
+  }
+
   // ─── Init ────────────────────────────────────────────────────
   buildBox();
   setFlaps(0); // closed
@@ -332,6 +366,54 @@
       openFlaps(function () { slideOut(); });
     }
   });
+
+  // ─── Controls ────────────────────────────────────────────────
+  var rerollBtn = document.getElementById('jj-bundle-reroll');
+  if (rerollBtn) {
+    rerollBtn.addEventListener('click', function () {
+      if (FSM.isLocked(state) || state !== 'open') return;
+      reroll();
+    });
+  }
+
+  var addBtn = document.getElementById('jj-bundle-add');
+  var BUNDLE = window.JJ_BUNDLE || null;
+  if (addBtn) {
+    if (!BUNDLE) {
+      addBtn.style.display = 'none';
+    } else if (!BUNDLE.available) {
+      addBtn.textContent = '[Unavailable]';
+      addBtn.disabled = true;
+    } else {
+      addBtn.textContent = '[Add 5 Random Records — ' + BUNDLE.price + ']';
+      addBtn.disabled = false;
+      addBtn.addEventListener('click', function () {
+        if (addBtn.disabled) return;
+        addBtn.textContent = '[Adding...]';
+        addBtn.disabled = true;
+        fetch('/cart/add.js', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: parseInt(BUNDLE.variantId, 10), quantity: 1 })
+        }).then(function (res) {
+          if (!res.ok) throw new Error('cart');
+          return res.json();
+        }).then(function () {
+          addBtn.textContent = '[OK]';
+          if (window.jjRefreshCart) window.jjRefreshCart();
+          setTimeout(function () {
+            addBtn.textContent = '[Add 5 Random Records — ' + BUNDLE.price + ']';
+            addBtn.disabled = false;
+          }, 1500);
+        }).catch(function () {
+          addBtn.textContent = '[ERR]';
+          setTimeout(function () {
+            addBtn.textContent = '[Add 5 Random Records — ' + BUNDLE.price + ']';
+            addBtn.disabled = false;
+          }, 1500);
+        });
+      });
+    }
+  }
 
   // Expose internals for later tasks in this same file (they extend this IIFE).
   window.__JJ_BUNDLE_STAGE__ = {
