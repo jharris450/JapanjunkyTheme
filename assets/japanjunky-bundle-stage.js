@@ -379,6 +379,9 @@
     boxGroup.rotation.y = 0;
     boxGroup.position.y = 0;
     tsunoIdle();
+    // Ends the greeting bubble (it used to dissolve on jj:product-selected,
+    // which the hover-card ring no longer emits).
+    document.dispatchEvent(new CustomEvent('jj:bundle-opened'));
     var pool = pickPool();
     buildStack(pool);
     openFlaps(function () { dealOut(pool); });
