@@ -66,7 +66,8 @@
   var leftFlap, endLid; // pivot Object3Ds
 
   function buildBox() {
-    var w = DIMS.w, h = DIMS.h, d = DIMS.d;
+    // Squatter crate: 30% off the flagship recordbox height (user spec).
+    var w = DIMS.w, h = DIMS.h * 0.7, d = DIMS.d;
 
     // Body: BoxGeometry with the front (+Z) and right (+X) faces transparent
     // — front is covered by the flaps, right by the hinged side door.
@@ -161,13 +162,12 @@
   }
 
   // ─── Record stack inside the box ──────────────────────────────
-  // Thin textured planes stacked front-to-back behind the flaps; on open
-  // they slide out to the RIGHT (clipped by the canvas edge) while the DOM
-  // crescent deals in — sells the records leaving the box.
+  // Thin textured planes stacked front-to-back behind the flaps. They never
+  // animate: each mesh blinks off the instant its DOM cover launches from
+  // the same screen spot (ring's onLaunch callback) — one record, one
+  // continuous motion. The stack is rebuilt only while the box is CLOSED.
   var stack = []; // meshes (children of boxGroup)
-  var STACK_SIZE = 1.5;
-  var SLIDE_OUT_X = 4.2;      // box-local x well outside the 550px canvas
-  var STACK_STAGGER_MS = 90;  // matches the DOM deal stagger
+  var STACK_SIZE = 1.2; // fits the squatter crate
 
   function clearStack() {
     for (var i = 0; i < stack.length; i++) {
@@ -195,51 +195,8 @@
         0.16 - i * 0.08                     // stacked front-to-back
       );
       mesh.rotation.z = (Math.random() - 0.5) * 0.08;
-      mesh.userData.homeX = mesh.position.x;
-      mesh.userData.homeZ = mesh.position.z;
       boxGroup.add(mesh);
       stack.push(mesh);
-    }
-  }
-
-  function slideStackOut(done) {
-    var pending = stack.length;
-    if (!pending) { if (done) done(); return; }
-    for (var i = 0; i < stack.length; i++) {
-      (function (mesh, idx) {
-        setTimeout(function () {
-          var sx = mesh.position.x;
-          // Straight out through the opened right side, like sliding a
-          // record out of a crate's end.
-          tween(450, function (e) {
-            mesh.position.x = sx + (SLIDE_OUT_X - sx) * e;
-          }, function () {
-            mesh.visible = false;
-            pending--;
-            if (pending === 0 && done) done();
-          });
-        }, idx * STACK_STAGGER_MS);
-      })(stack[i], i);
-    }
-  }
-
-  function slideStackIn(done) {
-    var pending = stack.length;
-    if (!pending) { if (done) done(); return; }
-    for (var i = 0; i < stack.length; i++) {
-      (function (mesh, idx) {
-        setTimeout(function () {
-          mesh.visible = true;
-          mesh.position.x = SLIDE_OUT_X;
-          mesh.position.z = mesh.userData.homeZ;
-          tween(400, function (e) {
-            mesh.position.x = SLIDE_OUT_X + (mesh.userData.homeX - SLIDE_OUT_X) * e;
-          }, function () {
-            pending--;
-            if (pending === 0 && done) done();
-          });
-        }, idx * STACK_STAGGER_MS);
-      })(stack[i], i);
     }
   }
 
@@ -306,9 +263,15 @@
   }
 
   function dealOut(pool) {
-    slideStackOut();
     var ring = ringAPI();
-    if (ring) ring.deal(pool);
+    if (ring) {
+      // Hide each stack mesh the instant its cover launches — the cover
+      // spawns at the same screen spot/size, so the record reads as one
+      // continuous object leaving the box.
+      ring.deal(pool, function (idx) {
+        if (stack[idx]) stack[idx].visible = false;
+      });
+    }
   }
 
   function reroll() {
@@ -318,18 +281,18 @@
     setState(FSM.next(state, 'reroll')); // → retracting
     var retractFn = ring ? ring.retract : function (cb) { cb(); };
     retractFn(function () {
-      slideStackIn(function () {
-        setState(FSM.next(state, 'retracted')); // → closing
-        closeFlaps(function () {
-          setState(FSM.next(state, 'closed')); // → shaking
-          shakeBox(function () {
-            setState(FSM.next(state, 'shaken')); // → opening
-            var pool = pickPool();
-            buildStack(pool);
-            tween(600, function (e) { setFlaps(e); }, function () {
-              setState(FSM.next(state, 'opened')); // → open
-              dealOut(pool);
-            });
+      // Covers have flown back inside — shut the lid, THEN restock the
+      // crate (new random 5) while it's closed, out of sight.
+      setState(FSM.next(state, 'retracted')); // → closing
+      closeFlaps(function () {
+        setState(FSM.next(state, 'closed')); // → shaking
+        var pool = pickPool();
+        buildStack(pool);
+        shakeBox(function () {
+          setState(FSM.next(state, 'shaken')); // → opening
+          tween(600, function (e) { setFlaps(e); }, function () {
+            setState(FSM.next(state, 'opened')); // → open
+            dealOut(pool);
           });
         });
       });

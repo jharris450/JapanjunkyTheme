@@ -35,16 +35,21 @@
     { offset: -3, x: -110, y: -210, scale: 0.58, opacity: 0.35 }
   ];
 
-  var DEAL_STAGGER_MS = 90;   // per-cover delay on deal-out
-  var DEAL_BASE_DELAY_MS = 120; // lets the crate's mesh slide lead the hand-off
-  var SETTLE_MS = 420;        // > the 0.4s CSS transform transition
+  var DEAL_STAGGER_MS = 140;  // per-cover delay — records leave/return one by one
+  var SETTLE_MS = 500;        // > the 0.45s flight transition
   var END_RELEASE_MS = 600;   // wheel momentum settle before page scroll takes over
-  var SPAWN_SCALE = 0.75;     // ≈ the crate's record-stack size on screen
+  var SPAWN_SCALE = 0.65;     // ≈ the crate's record-stack size on screen
+
+  // Flight transitions (inline overrides of the CSS default):
+  // deal — cover pops in fast at the box and eases out to its slot;
+  // retract — cover accelerates into the box and only fades at arrival.
+  var FLY_OUT_TRANSITION = 'transform 0.45s ease-out, opacity 0.12s ease-out';
+  var FLY_IN_TRANSITION = 'transform 0.45s ease-in, opacity 0.15s ease-in 0.3s';
 
   // Spawn transform: at the mystery box's actual screen position (its canvas
-  // sits across the page, in the product-info zone), so covers fly the WHOLE
-  // box→crescent path with no vanish/reappear gap. Falls back to just left
-  // of the stage if the box canvas isn't there.
+  // sits across the page, in the product-info zone) so a launching cover
+  // seamlessly replaces the crate's stack mesh, then flies the whole
+  // box→crescent path. Falls back to just left of the stage.
   function spawnTransform() {
     var boxCanvas = document.getElementById('jj-bundle-canvas');
     if (boxCanvas) {
@@ -52,8 +57,7 @@
       var b = boxCanvas.getBoundingClientRect();
       var s = stage.getBoundingClientRect();
       if (b.width && s.width) {
-        // +110px: records leave through the box's opened RIGHT side, not its center
-        var dx = ((b.left + b.width / 2) - (s.left + s.width / 2)) / zoom + 110;
+        var dx = ((b.left + b.width / 2) - (s.left + s.width / 2)) / zoom;
         var dy = ((b.top + b.height / 2) - (s.top + s.height / 2)) / zoom;
         return 'translate(' + dx + 'px, ' + dy + 'px) scale(' + SPAWN_SCALE + ')';
       }
@@ -252,7 +256,10 @@
 
   // ─── Deal / Retract (driven by the mystery box) ────────────────
 
-  function deal(products) {
+  // onLaunch(idx) fires the instant cover idx leaves the box — the box
+  // stage hides its matching stack mesh there, so each record reads as ONE
+  // object swapping from mesh to cover mid-air (no unload/reload).
+  function deal(products, onLaunch) {
     clearCovers();
     records = (products || []).slice();
     if (!records.length) return;
@@ -272,34 +279,43 @@
     // …flush styles so the spawn transform is the transition start point…
     void stage.offsetWidth;
 
-    // …then release each to its arc slot, staggered (CSS animates the deal).
+    // …then release each to its arc slot, one by one.
     for (var j = 0; j < records.length; j++) {
       (function (idx) {
         setTimeout(function () {
           var slot = slotForOffset(idx - centerIndex);
-          if (slot && coverEls[idx]) applySlot(coverEls[idx], slot, records[idx]);
-        }, DEAL_BASE_DELAY_MS + idx * DEAL_STAGGER_MS);
+          var el = coverEls[idx];
+          if (el) {
+            el.style.transition = FLY_OUT_TRANSITION;
+            if (slot) applySlot(el, slot, records[idx]);
+          }
+          if (onLaunch) onLaunch(idx);
+        }, idx * DEAL_STAGGER_MS);
       })(j);
     }
 
     setTimeout(function () {
       locked = false;
+      // Back to the CSS default transition for rotation moves
+      for (var key in coverEls) coverEls[key].style.transition = '';
       positionCovers(); // normalize (center class, aria, z-index)
-    }, DEAL_BASE_DELAY_MS + records.length * DEAL_STAGGER_MS + SETTLE_MS);
+    }, records.length * DEAL_STAGGER_MS + SETTLE_MS);
   }
 
   function retract(done) {
     hideCard();
     if (!records.length) { if (done) done(); return; }
     locked = true;
-    // Staggered flight back to the box's screen position — each cover
-    // shrinks + fades on arrival, then the crate's mesh stack piles in.
+    // Staggered flight back into the box — each cover accelerates home and
+    // only fades in the last stretch (FLY_IN_TRANSITION delays the opacity),
+    // so it visibly enters the box instead of vanishing mid-flight.
     var spawn = spawnTransform();
     var count = 0;
     for (var i = 0; i < records.length; i++) {
       (function (el, idx) {
         if (!el) return;
         setTimeout(function () {
+          el.style.transition = FLY_IN_TRANSITION;
           el.style.transform = spawn;
           el.style.opacity = '0';
         }, idx * DEAL_STAGGER_MS);
