@@ -151,7 +151,6 @@
   function tick(now) {
     if (!animating) return;
     rafId = requestAnimationFrame(tick);
-    var dt = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
     updateRecords(now);
     renderer.render(scene, camera);
