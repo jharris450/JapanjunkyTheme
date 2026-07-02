@@ -361,11 +361,13 @@
   showBundleInfo(); // reveals the panel — the canvas gets layout here
   startLoop();
 
-  // Send Tsuno back to his idle float (ends judging, returns from orbit).
+  // Send Tsuno back to his dormant idle bob: deactivate() ends judging AND
+  // the roaming personality system (glides home). If he's orbiting (thrown),
+  // deactivate() no-ops — pull him back via 'returning' instead.
   function tsunoIdle() {
     var portal = window.JJ_Portal;
     if (!portal || !portal.tsuno) return;
-    if (portal.tsuno.onProductDeselected) portal.tsuno.onProductDeselected();
+    if (portal.tsuno.deactivate) portal.tsuno.deactivate();
     if (portal.tsuno.getState && portal.tsuno.setState &&
         portal.tsuno.getState() === 'orbiting') {
       portal.tsuno.setState('returning'); // glides home, lands in idle

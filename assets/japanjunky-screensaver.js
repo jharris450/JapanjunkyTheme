@@ -321,6 +321,7 @@
   var tsunoMesh = null;
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
   var tsunoActivated = false; // true after first product selection — personality system engages
+  var tsunoReturnLerp = 1;    // <1 while gliding home after deactivate() (idle-bob eases in)
   var tsunoTransition = { progress: 0, startPos: null, endPos: null };
 
   // Idle position: left side of viewport, inline with selected product
@@ -521,9 +522,23 @@
       var im = tsunoMoodIdx;
       var iTint = TSUNO_MOODS.tint[im];
       tsunoMesh.scale.set(-1, 1, 1);
-      tsunoMesh.position.x = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
-      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      var ix = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
+      var iy = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
+      if (tsunoReturnLerp < 1) {
+        // Deactivated mid-roam: glide home instead of snapping to the bob
+        tsunoMesh.position.x += (ix - tsunoMesh.position.x) * 0.06;
+        tsunoMesh.position.y += (iy - tsunoMesh.position.y) * 0.06;
+        tsunoMesh.position.z += (TSUNO_IDLE_POS.z - tsunoMesh.position.z) * 0.06;
+        if (Math.abs(tsunoMesh.position.x - ix) < 0.05 &&
+            Math.abs(tsunoMesh.position.y - iy) < 0.05 &&
+            Math.abs(tsunoMesh.position.z - TSUNO_IDLE_POS.z) < 0.05) {
+          tsunoReturnLerp = 1;
+        }
+      } else {
+        tsunoMesh.position.x = ix;
+        tsunoMesh.position.y = iy;
+        tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      }
       tsunoMesh.material.uniforms.uTint.value.set(iTint[0], iTint[1], iTint[2]);
       tsunoMesh.material.uniforms.uAlpha.value = 0.8 * TSUNO_MOODS.glowMult[im];
       tsunoMesh.lookAt(camera.position);
@@ -887,6 +902,20 @@
             tsunoMesh.scale.set(-1, 1, 1);
             var t = performance.now() * 0.001;
             startBehavior(t, pickNextBehavior(tsunoMoodIdx, -1));
+          }
+        };
+        // Full stand-down: end judging AND shut off the personality system
+        // so Tsuno glides back to his dormant idle bob (bundle-box open).
+        // No-op while orbiting/thrown — physics owns him there.
+        window.JJ_Portal.tsuno.deactivate = function () {
+          if (tsunoState !== 'idle') return;
+          if (tsunoJudging) {
+            tsunoJudging = false;
+            tsunoMesh.scale.set(-1, 1, 1);
+          }
+          if (tsunoActivated) {
+            tsunoActivated = false;
+            tsunoReturnLerp = 0;
           }
         };
       }
