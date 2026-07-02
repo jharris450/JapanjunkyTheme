@@ -66,8 +66,9 @@
   var leftFlap, endLid; // pivot Object3Ds
 
   function buildBox() {
-    // Squatter crate: 30% off the flagship recordbox height (user spec).
-    var w = DIMS.w, h = DIMS.h * 0.7, d = DIMS.d;
+    // Slimmer crate: 30% off the DEPTH (the side panels' width) — vertical
+    // size stays the flagship recordbox's.
+    var w = DIMS.w, h = DIMS.h, d = DIMS.d * 0.7;
 
     // Body: BoxGeometry with the front (+Z) and right (+X) faces transparent
     // — front is covered by the flaps, right by the hinged side door.
@@ -167,7 +168,7 @@
   // the same screen spot (ring's onLaunch callback) — one record, one
   // continuous motion. The stack is rebuilt only while the box is CLOSED.
   var stack = []; // meshes (children of boxGroup)
-  var STACK_SIZE = 1.2; // fits the squatter crate
+  var STACK_SIZE = 1.5;
 
   function clearStack() {
     for (var i = 0; i < stack.length; i++) {
