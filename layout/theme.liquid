@@ -40,6 +40,7 @@
   {{ 'japanjunky-content.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-watchlist.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-scrollbar.css' | asset_url | stylesheet_tag }}
+  {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-bundle.css' | asset_url | stylesheet_tag }}
   {% if settings.splash_enabled %}
   {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
@@ -203,13 +204,14 @@
 
   {%- comment -%} Mystery-box bundle hero {%- endcomment -%}
   <div class="jj-ring jj-ring--bundle" id="jj-ring" aria-label="Five Random Records bundle">
-    <div class="jj-ring__stage" id="jj-ring-stage">
-      <canvas id="jj-bundle-canvas" aria-label="3D mystery box with sample records"></canvas>
+    <div class="jj-ring__box">
+      <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
+      <div class="jj-bundle-controls">
+        <button class="jj-action-btn" id="jj-bundle-reroll" type="button">[Reroll]</button>
+        <button class="jj-action-btn" id="jj-bundle-add" type="button" disabled>[Add to Cart]</button>
+      </div>
     </div>
-    <div class="jj-bundle-controls">
-      <button class="jj-action-btn" id="jj-bundle-reroll" type="button">[Reroll]</button>
-      <button class="jj-action-btn" id="jj-bundle-add" type="button" disabled>[Add to Cart]</button>
-    </div>
+    <div class="jj-ring__stage" id="jj-ring-stage" role="listbox" aria-label="Bundle sample records"></div>
   </div>
 
   {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = product grid {%- endcomment -%}
@@ -321,7 +323,7 @@
   {% unless template == 'product' or template.suffix == 'login' %}
   <script src="{{ 'japanjunky-bundle-pool.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-bundle-carousel.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>

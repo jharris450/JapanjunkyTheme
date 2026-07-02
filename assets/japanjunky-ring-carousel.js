@@ -1,16 +1,16 @@
 /**
  * japanjunky-ring-carousel.js
- * Radial crescent carousel of album covers.
+ * Radial crescent carousel of album covers — revived for the bundle hero.
  *
- * Consumes: window.JJ_FEATURED (from jj-homepage-body.liquid)
- * Emits:    jj:product-selected, jj:product-deselected
+ * The mystery box (japanjunky-bundle-stage.js) deals the 5 sampled records
+ * in via JJ_RingCarousel.deal(products); Reroll retracts them via
+ * JJ_RingCarousel.retract(done). Look/animation preserved from the original
+ * featured-ring carousel (arc slots, jitter, 0.4s ease-out transitions).
+ *
+ * Emits: jj:product-selected (preview: true), jj:product-deselected
  */
 (function () {
   'use strict';
-
-  // ─── Data ──────────────────────────────────────────────────────
-  var allProducts = window.JJ_FEATURED || [];
-  if (!allProducts.length) return;
 
   // ─── DOM ───────────────────────────────────────────────────────
   var ring = document.getElementById('jj-ring');
@@ -18,10 +18,11 @@
   if (!ring || !stage) return;
 
   // ─── Arc Config (vertical increscent) ──────────────────────────
-  // Covers stacked vertically along an increscent curve (opens left).
-  // x: horizontal offset (positive = right, further from viewer)
+  // Covers stacked vertically along an increscent curve (opens LEFT,
+  // toward the box mouth — records read as dealt out of the box).
+  // x: horizontal offset (negative = left, toward the box)
   // y: vertical offset from center (positive = down)
-  // Center cover is largest; covers shrink + shift right toward edges.
+  // Center cover is largest; covers shrink + shift left toward edges.
   var ARC = [
     { offset: 0,  x: 0,    y: 0,    scale: 1.15, opacity: 1.0  },
     { offset: 1,  x: -18,  y: 75,   scale: 0.88, opacity: 0.85 },
@@ -31,7 +32,12 @@
     { offset: 3,  x: -110, y: 210,  scale: 0.58, opacity: 0.35 },
     { offset: -3, x: -110, y: -210, scale: 0.58, opacity: 0.35 }
   ];
-  var VISIBLE_RANGE = 3; // covers visible on each side of center
+
+  // Spawn transform: parked at the box mouth (left of the stage), shrunk.
+  // Deal/retract transitions run between this and the arc slots.
+  var SPAWN_TRANSFORM = 'translate(-280px, 0px) scale(0.2)';
+  var DEAL_STAGGER_MS = 90;   // per-cover delay on deal-out
+  var SETTLE_MS = 420;        // > the 0.4s CSS transform transition
 
   // Per-cover random jitter (applied once on creation)
   var coverJitter = {}; // keyed by product handle+variantId
@@ -49,11 +55,12 @@
   }
 
   // ─── State ─────────────────────────────────────────────────────
-  var filteredProducts = allProducts.slice(); // static snapshot — featured list never narrows
-  var centerIndex = 0;       // index into filteredProducts
-  var coverEls = {};         // keyed by filteredProducts index → DOM element
-  var selectedProduct = null; // currently selected product data (after 300ms delay)
+  var records = [];           // product data for the current bundle deal
+  var centerIndex = 0;        // index into records
+  var coverEls = {};          // keyed by records index → DOM element
+  var selectedIndex = -1;     // records index currently selected (after 300ms)
   var selectTimer = null;
+  var locked = false;         // true while dealing/retracting
 
   // ─── Cover Creation ────────────────────────────────────────────
 
@@ -69,44 +76,44 @@
     var imgWrap = document.createElement('div');
     imgWrap.className = 'jj-ring__cover-img-wrap';
 
-    var img = document.createElement('img');
-    img.className = 'jj-ring__cover-img';
-    img.alt = (product.artist ? product.artist + ' - ' : '') + product.title;
-    img.width = 180;
-    img.height = 180;
-
-    // Lazy loading: only eager-load covers within visible range
-    var dist = Math.abs(idx - centerIndex);
-    if (dist <= VISIBLE_RANGE + 2) {
-      img.src = product.image || '';
-      img.loading = 'eager';
-    } else {
-      img.loading = 'lazy';
-      img.setAttribute('data-src', product.image || '');
-      // Do NOT set img.src — browsers resolve empty src to page URL
-    }
-
     if (!product.image) {
       imgWrap.innerHTML = '<span style="font-size:10px;color:var(--jj-secondary);display:flex;align-items:center;justify-content:center;height:100%;">&#9670;</span>';
     } else {
+      var img = document.createElement('img');
+      img.className = 'jj-ring__cover-img';
+      img.alt = (product.artist ? product.artist + ' - ' : '') + product.title;
+      img.width = 180;
+      img.height = 180;
+      img.src = product.image; // only 5 covers per deal — eager-load all
       imgWrap.appendChild(img);
     }
 
     div.appendChild(imgWrap);
-
     return div;
   }
 
   // ─── Arc Positioning ───────────────────────────────────────────
 
+  function slotForOffset(offset) {
+    for (var i = 0; i < ARC.length; i++) {
+      if (ARC[i].offset === offset) return ARC[i];
+    }
+    return null;
+  }
+
+  function applySlot(el, slot, product) {
+    var jit = getJitter(product);
+    el.style.transform = 'translate(' + (slot.x + jit.tx) + 'px, ' + (slot.y + jit.ty) + 'px) scale(' + slot.scale + ') rotate(' + jit.rotate + 'deg)';
+    el.style.opacity = slot.opacity;
+    el.style.zIndex = 10 - Math.abs(slot.offset);
+  }
+
   function positionCovers() {
-    // Remove covers that are out of range
+    // Remove covers that are out of arc range
     var keepSet = {};
     for (var a = 0; a < ARC.length; a++) {
       var dataIdx = centerIndex + ARC[a].offset;
-      if (dataIdx >= 0 && dataIdx < filteredProducts.length) {
-        keepSet[dataIdx] = true;
-      }
+      if (dataIdx >= 0 && dataIdx < records.length) keepSet[dataIdx] = true;
     }
     for (var key in coverEls) {
       if (!keepSet.hasOwnProperty(key)) {
@@ -119,26 +126,16 @@
     for (var i = 0; i < ARC.length; i++) {
       var slot = ARC[i];
       var dIdx = centerIndex + slot.offset;
-      if (dIdx < 0 || dIdx >= filteredProducts.length) continue;
+      if (dIdx < 0 || dIdx >= records.length) continue;
 
       var el = coverEls[dIdx];
       if (!el) {
-        el = createCoverEl(filteredProducts[dIdx], dIdx);
+        el = createCoverEl(records[dIdx], dIdx);
         coverEls[dIdx] = el;
         stage.appendChild(el);
       }
 
-      // Lazy-load images entering visible range
-      var img = el.querySelector('.jj-ring__cover-img');
-      if (img && img.getAttribute('data-src')) {
-        img.src = img.getAttribute('data-src');
-        img.removeAttribute('data-src');
-      }
-
-      var jit = getJitter(filteredProducts[dIdx]);
-      el.style.transform = 'translate(' + (slot.x + jit.tx) + 'px, ' + (slot.y + jit.ty) + 'px) scale(' + slot.scale + ') rotate(' + jit.rotate + 'deg)';
-      el.style.opacity = slot.opacity;
-      el.style.zIndex = 10 - Math.abs(slot.offset);
+      applySlot(el, slot, records[dIdx]);
 
       // Mark center as selected
       if (slot.offset === 0) {
@@ -151,52 +148,83 @@
     }
   }
 
-  function renderRing() {
-    // Clear all existing covers
+  function clearCovers() {
     for (var key in coverEls) {
       if (coverEls[key].parentNode) coverEls[key].parentNode.removeChild(coverEls[key]);
     }
     coverEls = {};
-
-    if (filteredProducts.length === 0) {
-      stage.innerHTML = '<div class="jj-ring__empty">NO ITEMS FOUND</div>';
-      return;
-    }
-
-    // Remove empty state if present
-    var empty = stage.querySelector('.jj-ring__empty');
-    if (empty) empty.parentNode.removeChild(empty);
-
-    positionCovers();
+    records = [];
+    centerIndex = 0;
   }
 
-  // ─── Navigation ────────────────────────────────────────────────
+  // ─── Deal / Retract (driven by the mystery box) ────────────────
+
+  function deal(products) {
+    clearSelectTimer();
+    selectedIndex = -1;
+    clearCovers();
+    records = (products || []).slice();
+    if (!records.length) return;
+    centerIndex = Math.floor(records.length / 2); // middle record centered
+    locked = true;
+
+    // Create every cover parked at the box mouth…
+    for (var i = 0; i < records.length; i++) {
+      var el = createCoverEl(records[i], i);
+      el.style.transform = SPAWN_TRANSFORM;
+      el.style.opacity = '0';
+      el.style.zIndex = 10 - Math.abs(i - centerIndex);
+      coverEls[i] = el;
+      stage.appendChild(el);
+    }
+    // …flush styles so the spawn transform is the transition start point…
+    void stage.offsetWidth;
+
+    // …then release each to its arc slot, staggered (CSS animates the deal).
+    for (var j = 0; j < records.length; j++) {
+      (function (idx) {
+        setTimeout(function () {
+          var slot = slotForOffset(idx - centerIndex);
+          if (slot && coverEls[idx]) applySlot(coverEls[idx], slot, records[idx]);
+        }, idx * DEAL_STAGGER_MS);
+      })(j);
+    }
+
+    setTimeout(function () {
+      locked = false;
+      positionCovers(); // normalize (selected class, aria, z-index)
+      startSelectTimer();
+    }, records.length * DEAL_STAGGER_MS + SETTLE_MS);
+  }
+
+  function retract(done) {
+    deselectCurrent();
+    if (!records.length) { if (done) done(); return; }
+    locked = true;
+    for (var key in coverEls) {
+      coverEls[key].style.transform = SPAWN_TRANSFORM;
+      coverEls[key].style.opacity = '0';
+    }
+    setTimeout(function () {
+      clearCovers();
+      locked = false;
+      if (done) done();
+    }, SETTLE_MS);
+  }
+
+  // ─── Navigation (clamped — no wrap with only 5 records) ────────
 
   function rotateTo(newIndex) {
-    if (filteredProducts.length === 0) return;
-    // Wrap around
-    if (newIndex < 0) newIndex = filteredProducts.length - 1;
-    if (newIndex >= filteredProducts.length) newIndex = 0;
-    // Deselect previous product when rotating away
-    if (selectedProduct) {
-      var prev = filteredProducts[centerIndex];
-      if (!prev || prev.handle !== filteredProducts[newIndex].handle ||
-          prev.variantId !== filteredProducts[newIndex].variantId) {
-        deselectCurrent();
-      }
-    }
+    if (!records.length || locked) return;
+    if (newIndex < 0 || newIndex >= records.length) return;
+    if (newIndex === centerIndex) return;
+    deselectCurrent();
     centerIndex = newIndex;
     positionCovers();
     startSelectTimer();
   }
 
-  function rotateLeft() {
-    rotateTo(centerIndex - 1);
-  }
-
-  function rotateRight() {
-    rotateTo(centerIndex + 1);
-  }
+  function rotateBy(delta) { rotateTo(centerIndex + delta); }
 
   // ─── Selection Delay (300ms) ───────────────────────────────────
 
@@ -216,20 +244,14 @@
   }
 
   function selectCurrent() {
-    if (filteredProducts.length === 0) return;
-    var product = filteredProducts[centerIndex];
+    if (!records.length || selectedIndex === centerIndex) return;
+    var product = records[centerIndex];
     if (!product) return;
+    selectedIndex = centerIndex;
 
-    // Already selected? Skip
-    if (selectedProduct &&
-        selectedProduct.handle === product.handle &&
-        selectedProduct.variantId === product.variantId) return;
-
-    selectedProduct = product;
-
-    // Map JJ_FEATURED fields to event detail shape expected by product-viewer.js
-    var el = coverEls[centerIndex] || null;
-    var detail = {
+    // Map product fields to the detail shape expected by product-viewer.js.
+    // preview: true — info panel only, no Add-to-Cart (bundle samples).
+    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: {
       handle: product.handle,
       productId: product.id,
       title: product.title,
@@ -244,47 +266,46 @@
       label: product.label,
       jpName: product.jpName,
       jpTitle: product.jpTitle,
-      imageUrl: product.image,       // mapped: image → imageUrl
-      imageBackUrl: product.imageBack, // mapped: imageBack → imageBackUrl
+      imageUrl: product.image,
+      imageBackUrl: product.imageBack,
       type3d: product.type3d,
       variantId: String(product.variantId),
       available: product.available,
-      el: el
-    };
-
-    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: detail }));
+      preview: true,
+      el: coverEls[centerIndex] || null
+    }}));
   }
 
   function deselectCurrent() {
     clearSelectTimer();
-    if (!selectedProduct) return;
-    selectedProduct = null;
+    if (selectedIndex === -1) return;
+    selectedIndex = -1;
     document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
   }
 
   // ─── Keyboard Input ────────────────────────────────────────────
 
   document.addEventListener('keydown', function (e) {
+    if (!records.length || locked) return;
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     // Grid screen owns input while hero UI is hidden — don't rotate/select blind
     if (document.body.classList.contains('jj-grid-active')) return;
-    // Let focused links/buttons activate natively (e.g. grid cards, taskbar)
+    // Let focused links/buttons activate natively (Reroll, bundle Add-to-Cart)
     if (e.key === 'Enter' && e.target.closest('a, button')) return;
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault();
-      rotateRight();
+      rotateBy(1);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault();
-      rotateLeft();
+      rotateBy(-1);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       clearSelectTimer();
       selectCurrent();
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      clearSelectTimer();
       deselectCurrent();
     }
   });
@@ -292,6 +313,7 @@
   // ─── Mouse Click on Covers ─────────────────────────────────────
 
   stage.addEventListener('click', function (e) {
+    if (locked) return;
     var cover = e.target.closest('.jj-ring__cover');
     if (!cover) return;
 
@@ -308,67 +330,69 @@
     }
   });
 
-  // ─── Scroll Wheel (throttled to prevent rapid-fire) ─────────────
+  // ─── Scroll Wheel (locked to the crescent while records are out) ─
 
   var wheelCooldown = false;
 
   ring.addEventListener('wheel', function (e) {
-    // Only capture when hovering an actual cover — elsewhere the wheel
-    // falls through to the page-scroll handler (japanjunky-product-grid.js)
-    if (!e.target.closest('.jj-ring__cover')) return;
+    if (!records.length) return; // box closed — page scroll owns the wheel
+    if (document.body.classList.contains('jj-grid-active')) return;
+    if (!e.target.closest('.jj-ring__stage')) return; // box side falls through
+    // Own the gesture: no page scroll under the crescent, and keep the
+    // document-level page-scroll handler (japanjunky-product-grid.js) off it.
     e.preventDefault();
-    if (wheelCooldown) return;
+    e.stopPropagation();
+    if (locked || wheelCooldown) return;
     wheelCooldown = true;
     setTimeout(function () { wheelCooldown = false; }, 150);
 
     var delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
     if (delta > 0) {
-      rotateRight();
+      rotateBy(1);
     } else if (delta < 0) {
-      rotateLeft();
+      rotateBy(-1);
     }
   }, { passive: false });
 
-  // ─── Touch Swipe ───────────────────────────────────────────────
+  // ─── Touch Swipe (vertical, one rotation per gesture) ──────────
 
   var touchStartX = 0;
   var touchStartY = 0;
-  var touchMoved = false;
-  var touchLocked = false; // prevent multiple rotations per swipe
+  var touchLocked = false;
 
   stage.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
-    touchMoved = false;
     touchLocked = false;
   }, { passive: true });
 
   stage.addEventListener('touchmove', function (e) {
-    if (e.touches.length !== 1 || touchLocked) return;
+    if (!records.length || locked || touchLocked || e.touches.length !== 1) return;
     var dx = e.touches[0].clientX - touchStartX;
     var dy = e.touches[0].clientY - touchStartY;
     // Only register vertical swipes, one rotation per gesture
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
       e.preventDefault();
-      touchMoved = true;
       touchLocked = true;
       if (dy > 0) {
-        rotateRight();
+        rotateBy(1);
       } else {
-        rotateLeft();
+        rotateBy(-1);
       }
     }
   }, { passive: false });
 
-  stage.addEventListener('touchend', function (e) {
+  stage.addEventListener('touchend', function () {
     touchLocked = false;
-    if (!touchMoved) {
-      // Tap: treat as click — handled by click event
-    }
   }, { passive: true });
 
-  // ─── Init ──────────────────────────────────────────────────────
-  renderRing();
+  // ─── Public API (consumed by japanjunky-bundle-stage.js) ──────
+  window.JJ_RingCarousel = {
+    deal: deal,
+    retract: retract,
+    isBusy: function () { return locked; },
+    hasRecords: function () { return records.length > 0; }
+  };
 
 })();
