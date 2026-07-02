@@ -301,9 +301,6 @@
     window.JJ_WATCHLIST = [{% if customer %}{% for wp in customer.metafields.custom.watchlist.value %}{{ wp.id }}{% unless forloop.last %},{% endunless %}{% endfor %}{% endif %}];
   </script>
   {% unless template == 'product' or template.suffix == 'login' %}
-  <script src="{{ 'japanjunky-bundle-pool.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-grid.js' | asset_url }}" defer></script>
   {% endunless %}
   <script>
@@ -319,6 +316,12 @@
   </script>
   <script src="{{ 'japanjunky-ps1-shader.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-recordbox.js' | asset_url }}" defer></script>
+  {%- comment -%} Bundle hero chain: loads after ps1-shader + recordbox so JJ_PS1/JJ_Recordbox exist before bundle-stage evaluates. {%- endcomment -%}
+  {% unless template == 'product' or template.suffix == 'login' %}
+  <script src="{{ 'japanjunky-bundle-pool.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
+  {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-watchlist.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-volume.js' | asset_url }}" defer></script>
