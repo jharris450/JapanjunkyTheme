@@ -30,7 +30,12 @@
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-  camera.position.set(0, 0, 6);
+  // Composition = box (right, at the crescent mouth) + record crescent
+  // (center/left, ring-carousel shape). Aim the camera at the midpoint so the
+  // whole thing sits centered in the canvas rather than skewed to one side.
+  var BOX_X = 2.2;     // box position: right of the crescent mouth
+  var CENTER_X = 1.05; // midpoint of box + crescent → camera + focus target
+  camera.position.set(CENTER_X, 0, 6);
 
   var textureLoader = new THREE.TextureLoader();
   function loadTex(url) {
@@ -98,6 +103,7 @@
     rightFlap.add(rMesh);
     boxGroup.add(rightFlap);
 
+    boxGroup.position.x = BOX_X;
     scene.add(boxGroup);
   }
 
@@ -154,6 +160,7 @@
     if (!animating) return;
     rafId = requestAnimationFrame(tick);
     lastTime = now;
+    updateBox(now);
     updateRecords(now);
     renderer.render(scene, camera);
   }
@@ -164,14 +171,15 @@
   }
 
   // ─── Sample records (crescent fold-out) ──────────────────────
-  // 5 slots down a vertical crescent to the box's right, mirroring the
-  // ring-carousel ARC (px offsets / 90 → scene units).
+  // Symmetric vertical crescent matching the retired ring-carousel ARC
+  // (px offsets / 90 → scene units): center cover biggest at x=0, pairs
+  // arcing up/down and shifting left with a scale falloff. Opens left.
   var ARC_TARGETS = [
-    { x: 2.0, y: 0.83,  scale: 0.98 },
-    { x: 2.0, y: 0.28,  scale: 0.98 },
-    { x: 2.4, y: -0.28, scale: 0.86 },
-    { x: 2.4, y: -0.83, scale: 0.86 },
-    { x: 2.9, y: -1.38, scale: 0.72 }
+    { x: -0.61, y:  1.61, scale: 0.72 },
+    { x: -0.20, y:  0.83, scale: 0.88 },
+    { x:  0.00, y:  0.00, scale: 1.15 },
+    { x: -0.20, y: -0.83, scale: 0.88 },
+    { x: -0.61, y: -1.61, scale: 0.72 }
   ];
 
   var records = []; // { mesh, slot, data, phase }
@@ -197,7 +205,7 @@
     var geo = new THREE.PlaneGeometry(RECORD_SIZE, RECORD_SIZE);
     var mesh = new THREE.Mesh(geo, psMat(loadTex(data.image)));
     // Start hidden at the box's front-center (inside the box mouth).
-    mesh.position.set(0, 0, 0.1);
+    mesh.position.set(BOX_X, 0, 0.1);
     mesh.scale.setScalar(0.2);
     mesh.visible = false;
     mesh.userData.isRecord = true;
@@ -223,7 +231,7 @@
     for (var i = 0; i < records.length; i++) {
       (function (rec, idx) {
         rec.mesh.visible = true;
-        var sx = 0, sy = 0, ss = 0.2;
+        var sx = BOX_X, sy = 0, ss = 0.2;
         var tx = rec.slot.x, ty = rec.slot.y, ts = rec.slot.scale;
         setTimeout(function () {
           tween(500, function (e) {
@@ -245,8 +253,8 @@
       (function (rec) {
         var sx = rec.mesh.position.x, sy = rec.mesh.position.y, ss = rec.mesh.scale.x;
         tween(360, function (e) {
-          rec.mesh.position.x = sx * (1 - e);
-          rec.mesh.position.y = sy * (1 - e);
+          rec.mesh.position.x = sx + (BOX_X - sx) * e; // retract into the box
+          rec.mesh.position.y = sy + (0 - sy) * e;
           rec.mesh.scale.setScalar(ss + (0.2 - ss) * e);
         }, function () { rec.mesh.visible = false; pending--; if (pending === 0 && done) done(); });
       })(records[i]);
@@ -273,8 +281,8 @@
     deselect();
     focused = { rec: rec, homeX: rec.slot.x, homeY: rec.slot.y, homeScale: rec.slot.scale };
     tween(300, function (e) {
-      rec.mesh.position.x = focused.homeX * (1 - e) + 0 * e;
-      rec.mesh.position.y = focused.homeY * (1 - e) + 0 * e;
+      rec.mesh.position.x = focused.homeX + (CENTER_X - focused.homeX) * e; // to composition center
+      rec.mesh.position.y = focused.homeY * (1 - e);
       rec.mesh.position.z = 0.1 + 1.4 * e; // pull toward camera
       rec.mesh.scale.setScalar(focused.homeScale + (1.3 - focused.homeScale) * e);
     });
@@ -293,6 +301,16 @@
       rec.mesh.scale.setScalar(ss + (hs - ss) * e);
     });
     document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
+  }
+
+  // Box floats + slowly spins while closed (idle attract state), inviting a
+  // click. Stops once opening begins so the flaps unfold facing the viewer.
+  function updateBox(now) {
+    if (!boxGroup) return;
+    if (state === 'closed') {
+      boxGroup.rotation.y += 0.008;
+      boxGroup.position.y = Math.sin(now * 0.0011) * 0.08;
+    }
   }
 
   function updateRecords(now) {
@@ -363,6 +381,9 @@
       return;
     }
     if (state === 'closed') {
+      // Snap out of the idle float/spin so the flaps unfold facing the viewer.
+      boxGroup.rotation.y = 0;
+      boxGroup.position.y = 0;
       dealRecords();
       openFlaps(function () { slideOut(); });
     }
