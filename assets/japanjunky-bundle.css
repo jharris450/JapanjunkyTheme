@@ -44,3 +44,25 @@
 @media (max-width: 640px) {
   .jj-bundle-controls { bottom: 8px; }
 }
+
+/* --- Product Zone (left side) — ported from retired ring-carousel.css so the
+   info panel keeps its fixed top-left position instead of dropping into flow. */
+.jj-product-zone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 24vw;
+  height: calc(40vh - 12.8px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding-left: 16px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+#jj-viewer-canvas.jj-viewer--dragging {
+  cursor: grabbing;
+}

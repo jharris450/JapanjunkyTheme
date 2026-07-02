@@ -33,8 +33,9 @@
   // Composition = box (right, at the crescent mouth) + record crescent
   // (center/left, ring-carousel shape). Aim the camera at the midpoint so the
   // whole thing sits centered in the canvas rather than skewed to one side.
-  var BOX_X = 2.2;     // box position: right of the crescent mouth
-  var CENTER_X = 1.05; // midpoint of box + crescent → camera + focus target
+  var CAR = window.JJ_BundleCarousel;
+  var BOX_X = -1.8;    // box parked on the left (source of the records)
+  var CENTER_X = -0.55; // midpoint of box (left) + crescent (right) for framing
   camera.position.set(CENTER_X, 0, 6);
 
   var textureLoader = new THREE.TextureLoader();
@@ -170,23 +171,12 @@
     rafId = requestAnimationFrame(tick);
   }
 
-  // ─── Sample records (crescent fold-out) ──────────────────────
-  // Symmetric vertical crescent matching the retired ring-carousel ARC
-  // (px offsets / 90 → scene units): center cover biggest at x=0, pairs
-  // arcing up/down and shifting left with a scale falloff. Opens left.
-  var ARC_TARGETS = [
-    { x: -0.61, y:  1.61, scale: 0.72 },
-    { x: -0.20, y:  0.83, scale: 0.88 },
-    { x:  0.00, y:  0.00, scale: 1.15 },
-    { x: -0.20, y: -0.83, scale: 0.88 },
-    { x: -0.61, y: -1.61, scale: 0.72 }
-  ];
-
-  var records = []; // { mesh, slot, data, phase }
+  // ─── Sample records (crescent carousel) ──────────────────────
+  var records = []; // { mesh, data, phase }
   var RECORD_SIZE = 1.4;
 
   function clearRecords() {
-    focused = null;
+    deselectCurrent();
     for (var i = 0; i < records.length; i++) {
       var m = records[i].mesh;
       if (m.parent) m.parent.remove(m);
@@ -213,57 +203,27 @@
     return mesh;
   }
 
+  var centerIndex = 0;   // index into records that is currently centered/selected
+  var selectTimer = null;
+
+  function slotFor(i) {
+    return (CAR && CAR.slotForIndex(i, centerIndex, records.length)) ||
+           (CAR && CAR.SLOTS && CAR.SLOTS['0']) ||
+           { x: 0, y: 0, scale: 1 };
+  }
+
   function dealRecords() {
     clearRecords();
     var pool = (window.JJ_BundlePool && window.JJ_PRODUCTS)
       ? window.JJ_BundlePool.pickRecords(window.JJ_PRODUCTS, 5, (window.JJ_BUNDLE && window.JJ_BUNDLE.productId))
       : [];
-    for (var i = 0; i < pool.length && i < ARC_TARGETS.length; i++) {
-      records.push({ mesh: buildRecordMesh(pool[i]), slot: ARC_TARGETS[i], data: pool[i], phase: Math.random() * Math.PI * 2 });
+    for (var i = 0; i < pool.length; i++) {
+      records.push({ mesh: buildRecordMesh(pool[i]), data: pool[i], phase: Math.random() * Math.PI * 2 });
     }
+    centerIndex = Math.floor(records.length / 2); // middle record centered
   }
 
-  var recordsOut = false;
-
-  function slideOut(done) {
-    var pending = records.length;
-    if (!pending) { if (done) done(); return; }
-    for (var i = 0; i < records.length; i++) {
-      (function (rec, idx) {
-        rec.mesh.visible = true;
-        var sx = BOX_X, sy = 0, ss = 0.2;
-        var tx = rec.slot.x, ty = rec.slot.y, ts = rec.slot.scale;
-        setTimeout(function () {
-          tween(500, function (e) {
-            rec.mesh.position.x = sx + (tx - sx) * e;
-            rec.mesh.position.y = sy + (ty - sy) * e;
-            var s = ss + (ts - ss) * e;
-            rec.mesh.scale.setScalar(s);
-          }, function () { pending--; if (pending === 0) { recordsOut = true; if (done) done(); } });
-        }, idx * 90); // staggered deal
-      })(records[i], i);
-    }
-  }
-
-  function slideIn(done) {
-    recordsOut = false;
-    var pending = records.length;
-    if (!pending) { if (done) done(); return; }
-    for (var i = 0; i < records.length; i++) {
-      (function (rec) {
-        var sx = rec.mesh.position.x, sy = rec.mesh.position.y, ss = rec.mesh.scale.x;
-        tween(360, function (e) {
-          rec.mesh.position.x = sx + (BOX_X - sx) * e; // retract into the box
-          rec.mesh.position.y = sy + (0 - sy) * e;
-          rec.mesh.scale.setScalar(ss + (0.2 - ss) * e);
-        }, function () { rec.mesh.visible = false; pending--; if (pending === 0 && done) done(); });
-      })(records[i]);
-    }
-  }
-
-  // ─── Preview selection (raycast) ─────────────────────────────
   var raycaster = new THREE.Raycaster();
-  var focused = null; // { rec, homeX, homeY, homeScale }
 
   function recordDetail(data) {
     return {
@@ -276,30 +236,105 @@
     };
   }
 
-  function focusRecord(rec) {
-    if (focused && focused.rec === rec) return;
-    deselect();
-    focused = { rec: rec, homeX: rec.slot.x, homeY: rec.slot.y, homeScale: rec.slot.scale };
-    tween(300, function (e) {
-      rec.mesh.position.x = focused.homeX + (CENTER_X - focused.homeX) * e; // to composition center
-      rec.mesh.position.y = focused.homeY * (1 - e);
-      rec.mesh.position.z = 0.1 + 1.4 * e; // pull toward camera
-      rec.mesh.scale.setScalar(focused.homeScale + (1.3 - focused.homeScale) * e);
-    });
-    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: recordDetail(rec.data) }));
+  var recordsOut = false;
+
+  // Animate every record to the slot for its offset from centerIndex.
+  function layoutRecords(animated) {
+    for (var i = 0; i < records.length; i++) {
+      (function (rec, idx) {
+        var slot = slotFor(idx);
+        var mesh = rec.mesh;
+        mesh.visible = true;
+        var sx = mesh.position.x, sy = mesh.position.y, ss = mesh.scale.x;
+        if (!animated) {
+          mesh.position.set(slot.x, slot.y, 0);
+          mesh.scale.setScalar(slot.scale);
+          return;
+        }
+        tween(320, function (e) {
+          mesh.position.x = sx + (slot.x - sx) * e;
+          mesh.position.y = sy + (slot.y - sy) * e;
+          mesh.position.z = (1 - e) * mesh.position.z; // ease any z back to 0
+          mesh.scale.setScalar(ss + (slot.scale - ss) * e);
+        });
+      })(records[i], i);
+    }
   }
 
-  function deselect() {
-    if (!focused) return;
-    var rec = focused.rec, hx = focused.homeX, hy = focused.homeY, hs = focused.homeScale;
-    var sx = rec.mesh.position.x, sy = rec.mesh.position.y, sz = rec.mesh.position.z, ss = rec.mesh.scale.x;
-    focused = null;
-    tween(280, function (e) {
-      rec.mesh.position.x = sx + (hx - sx) * e;
-      rec.mesh.position.y = sy + (hy - sy) * e;
-      rec.mesh.position.z = sz + (0.1 - sz) * e;
-      rec.mesh.scale.setScalar(ss + (hs - ss) * e);
-    });
+  // Deal-out: records fly from the box (BOX_X) to their carousel slots, staggered.
+  function slideOut(done) {
+    var pending = records.length;
+    if (!pending) { if (done) done(); return; }
+    for (var i = 0; i < records.length; i++) {
+      (function (rec, idx) {
+        var slot = slotFor(idx);
+        rec.mesh.visible = true;
+        var sx = BOX_X, sy = 0, ss = 0.2;
+        setTimeout(function () {
+          tween(500, function (e) {
+            rec.mesh.position.x = sx + (slot.x - sx) * e;
+            rec.mesh.position.y = sy + (slot.y - sy) * e;
+            rec.mesh.scale.setScalar(ss + (slot.scale - ss) * e);
+          }, function () {
+            pending--;
+            if (pending === 0) { recordsOut = true; armSelect(); if (done) done(); }
+          });
+        }, idx * 90);
+      })(records[i], i);
+    }
+  }
+
+  // Retract all records back into the box.
+  function slideIn(done) {
+    recordsOut = false;
+    clearSelectTimer();
+    deselectCurrent();
+    var pending = records.length;
+    if (!pending) { if (done) done(); return; }
+    for (var i = 0; i < records.length; i++) {
+      (function (rec) {
+        var sx = rec.mesh.position.x, sy = rec.mesh.position.y, ss = rec.mesh.scale.x;
+        tween(360, function (e) {
+          rec.mesh.position.x = sx + (BOX_X - sx) * e;
+          rec.mesh.position.y = sy + (0 - sy) * e;
+          rec.mesh.scale.setScalar(ss + (0.2 - ss) * e);
+        }, function () { rec.mesh.visible = false; pending--; if (pending === 0 && done) done(); });
+      })(records[i]);
+    }
+  }
+
+  // ─── Rotation + selection (ported from ring-carousel.js) ─────
+  var rotateUntil = 0; // suppress idle-bob until the rotation tween settles
+  function rotateTo(newIndex) {
+    if (!records.length) return;
+    if (newIndex < 0) newIndex = records.length - 1;
+    if (newIndex >= records.length) newIndex = 0;
+    if (newIndex === centerIndex) return;
+    deselectCurrent();
+    centerIndex = newIndex;
+    layoutRecords(true);
+    rotateUntil = performance.now() + 340; // > tween duration (320ms)
+    armSelect();
+  }
+  function rotateBy(delta) { rotateTo(centerIndex + delta); }
+
+  function armSelect() {
+    clearSelectTimer();
+    selectTimer = setTimeout(function () { selectTimer = null; selectCentered(); }, 300);
+  }
+  function clearSelectTimer() {
+    if (selectTimer) { clearTimeout(selectTimer); selectTimer = null; }
+  }
+  var selectedIndex = -1;
+  function selectCentered() {
+    if (!records.length || centerIndex === selectedIndex) return;
+    selectedIndex = centerIndex;
+    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: recordDetail(records[centerIndex].data) }));
+  }
+  function deselectCurrent() {
+    clearSelectTimer();
+    if (selectedIndex === -1) return;
+    selectedIndex = -1;
     document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
   }
 
@@ -313,14 +348,16 @@
     }
   }
 
+  // Idle bob for non-centered records; centered one holds still (it's selected).
   function updateRecords(now) {
     if (!recordsOut) return;
+    if (now < rotateUntil) return; // don't fight the rotation tween's y writes
     for (var i = 0; i < records.length; i++) {
+      if (i === centerIndex) continue;
       var rec = records[i];
-      if (focused && focused.rec === rec) continue; // don't fight the focus tween
-      rec.mesh.position.y = rec.slot.y + Math.sin(now * 0.001 + rec.phase) * 0.04;
+      var slot = slotFor(i);
+      rec.mesh.position.y = slot.y + Math.sin(now * 0.001 + rec.phase) * 0.04;
     }
-    if (focused) focused.rec.mesh.rotation.y += 0.01;
   }
 
   // ─── Reroll ──────────────────────────────────────────────────
@@ -338,7 +375,7 @@
 
   function reroll() {
     if (state !== 'open') return;
-    deselect();
+    deselectCurrent();
     setState(FSM.next(state, 'reroll')); // → retracting
     slideIn(function () {
       setState(FSM.next(state, 'retracted')); // → closing
@@ -363,31 +400,72 @@
 
   canvas.addEventListener('click', function (e) {
     if (FSM.isLocked(state)) return;
-    var r = canvas.getBoundingClientRect();
-    var mx = ((e.clientX - r.left) / r.width) * 2 - 1;
-    var my = -((e.clientY - r.top) / r.height) * 2 + 1;
-    raycaster.setFromCamera({ x: mx, y: my }, camera);
-
-    if (state === 'open' && records.length) {
-      var meshes = records.map(function (rec) { return rec.mesh; });
-      var hits = raycaster.intersectObjects(meshes, false);
-      if (hits.length) {
-        var hitMesh = hits[0].object;
-        for (var i = 0; i < records.length; i++) {
-          if (records[i].mesh === hitMesh) { focusRecord(records[i]); return; }
-        }
-      }
-      deselect(); // clicked empty space while open
-      return;
-    }
     if (state === 'closed') {
-      // Snap out of the idle float/spin so the flaps unfold facing the viewer.
       boxGroup.rotation.y = 0;
       boxGroup.position.y = 0;
       dealRecords();
       openFlaps(function () { slideOut(); });
+      return;
+    }
+    if (state === 'open' && records.length) {
+      var r = canvas.getBoundingClientRect();
+      var mx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      var my = -((e.clientY - r.top) / r.height) * 2 + 1;
+      raycaster.setFromCamera({ x: mx, y: my }, camera);
+      var meshes = records.map(function (rec) { return rec.mesh; });
+      var hits = raycaster.intersectObjects(meshes, false);
+      if (hits.length) {
+        for (var i = 0; i < records.length; i++) {
+          if (records[i].mesh === hits[0].object) {
+            if (i === centerIndex) { clearSelectTimer(); selectCentered(); }
+            else { rotateTo(i); }
+            return;
+          }
+        }
+      }
     }
   });
+
+  // Keyboard (mirrors ring-carousel guards)
+  document.addEventListener('keydown', function (e) {
+    if (state !== 'open' || FSM.isLocked(state)) return;
+    var tag = (e.target.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (document.body.classList.contains('jj-grid-active')) return;
+    // Let a focused link/button activate natively (Reroll, bundle Add-to-Cart).
+    if (e.key === 'Enter' && e.target.closest('a, button')) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); rotateBy(1); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); rotateBy(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); clearSelectTimer(); selectCentered(); }
+    else if (e.key === 'Escape') { e.preventDefault(); deselectCurrent(); }
+  });
+
+  // Scroll wheel over the canvas (throttled, one step per event)
+  var wheelCooldown = false;
+  canvas.addEventListener('wheel', function (e) {
+    if (state !== 'open' || FSM.isLocked(state)) return;
+    e.preventDefault();
+    if (wheelCooldown) return;
+    wheelCooldown = true;
+    setTimeout(function () { wheelCooldown = false; }, 150);
+    var delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+    if (delta > 0) rotateBy(1); else if (delta < 0) rotateBy(-1);
+  }, { passive: false });
+
+  // Touch swipe (vertical, one rotation per gesture)
+  var touchStartY = 0, touchLocked = false;
+  canvas.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) return;
+    touchStartY = e.touches[0].clientY; touchLocked = false;
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function (e) {
+    if (state !== 'open' || FSM.isLocked(state) || touchLocked || e.touches.length !== 1) return;
+    var dy = e.touches[0].clientY - touchStartY;
+    if (Math.abs(dy) > 50) {
+      e.preventDefault(); touchLocked = true;
+      if (dy > 0) rotateBy(1); else rotateBy(-1);
+    }
+  }, { passive: false });
 
   // ─── Controls ────────────────────────────────────────────────
   var rerollBtn = document.getElementById('jj-bundle-reroll');
