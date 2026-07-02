@@ -307,9 +307,10 @@
 
   // ─── Reroll ──────────────────────────────────────────────────
   function shakeBox(done) {
+    var shakeDur = reduceMotion ? 80 : 420;
     var start = performance.now();
     function step(now) {
-      var p = Math.min((now - start) / 420, 1);
+      var p = Math.min((now - start) / shakeDur, 1);
       boxGroup.rotation.z = Math.sin(p * Math.PI * 6) * 0.12 * (1 - p);
       if (p < 1) requestAnimationFrame(step);
       else { boxGroup.rotation.z = 0; if (done) done(); }
