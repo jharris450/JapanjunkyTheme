@@ -153,7 +153,7 @@
     rafId = requestAnimationFrame(tick);
     var dt = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
-    updateRecords(dt, now);
+    updateRecords(now);
     renderer.render(scene, camera);
   }
   function startLoop() {
@@ -216,7 +216,6 @@
   var recordsOut = false;
 
   function slideOut(done) {
-    recordsOut = true;
     var pending = records.length;
     if (!pending) { if (done) done(); return; }
     for (var i = 0; i < records.length; i++) {
@@ -230,7 +229,7 @@
             rec.mesh.position.y = sy + (ty - sy) * e;
             var s = ss + (ts - ss) * e;
             rec.mesh.scale.setScalar(s);
-          }, function () { pending--; if (pending === 0 && done) done(); });
+          }, function () { pending--; if (pending === 0) { recordsOut = true; if (done) done(); } });
         }, idx * 90); // staggered deal
       })(records[i], i);
     }
@@ -252,7 +251,7 @@
     }
   }
 
-  function updateRecords(dt, now) {
+  function updateRecords(now) {
     if (!recordsOut) return;
     for (var i = 0; i < records.length; i++) {
       var rec = records[i];
