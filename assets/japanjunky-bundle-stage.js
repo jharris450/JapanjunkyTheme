@@ -98,23 +98,24 @@
     boxGroup.add(leftFlap);
 
     // End lid: front-right flap + right side panel as ONE attached L-piece
-    // (like a real record box end), hinged along the box's bottom-right
-    // edge — it folds down-and-out, clearing the records' exit path.
+    // (like a real record box end), hinged on the side panel's REAR
+    // vertical edge — swings open rightward/back as a unit.
     endLid = new THREE.Object3D();
-    endLid.position.set(halfW, -h / 2, 0);
+    endLid.position.set(halfW, 0, -d / 2);
 
-    // Front-right flap: faces +Z, spans center→right edge, full height.
-    var rGeo = new THREE.PlaneGeometry(halfW, h);
-    var rMesh = new THREE.Mesh(rGeo, psMat(loadTex(TEX.frontRight)));
-    rMesh.position.set(-halfW / 2, h / 2, d / 2 + 0.001);
-    endLid.add(rMesh);
-
-    // Right side panel: faces +X, spans the box depth, full height.
+    // Right side panel: faces +X, spans hinge (rear) → front edge.
     var sGeo = new THREE.PlaneGeometry(d, h);
     var sMesh = new THREE.Mesh(sGeo, psMat(loadTex(TEX.sideRight)));
     sMesh.rotation.y = Math.PI / 2; // face +X; width now runs along z
-    sMesh.position.set(0.001, h / 2, 0);
+    sMesh.position.set(0.001, 0, d / 2);
     endLid.add(sMesh);
+
+    // Front-right flap: faces +Z, attached at the panel's front corner,
+    // spans corner → box center.
+    var rGeo = new THREE.PlaneGeometry(halfW, h);
+    var rMesh = new THREE.Mesh(rGeo, psMat(loadTex(TEX.frontRight)));
+    rMesh.position.set(-halfW / 2, 0, d + 0.001);
+    endLid.add(rMesh);
 
     boxGroup.add(endLid);
 
@@ -122,12 +123,13 @@
   }
 
   // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
-  // The attached flap+side end lid folds DOWN-AND-OUT about the box's
-  // bottom-right edge (negative z-rotation swings it outward), landing
-  // ~120° open and staying outstretched below the records' exit path.
-  var OPEN_ANGLE = 2.1; // ~120deg
+  // The attached flap+side end lid swings OUTWARD about its rear vertical
+  // hinge and stays outstretched. ~150°: any less and the outstretched
+  // flap ends up crossing the records' straight +x exit path (they'd
+  // visibly slide through the cardboard).
+  var OPEN_ANGLE = 2.6; // ~150deg
   function setFlaps(t) {
-    if (endLid) endLid.rotation.z = -OPEN_ANGLE * t;
+    if (endLid) endLid.rotation.y = OPEN_ANGLE * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
@@ -389,10 +391,22 @@
   showBundleInfo(); // reveals the panel — the canvas gets layout here
   startLoop();
 
+  // Send Tsuno back to his idle float (ends judging, returns from orbit).
+  function tsunoIdle() {
+    var portal = window.JJ_Portal;
+    if (!portal || !portal.tsuno) return;
+    if (portal.tsuno.onProductDeselected) portal.tsuno.onProductDeselected();
+    if (portal.tsuno.getState && portal.tsuno.setState &&
+        portal.tsuno.getState() === 'orbiting') {
+      portal.tsuno.setState('returning'); // glides home, lands in idle
+    }
+  }
+
   canvas.addEventListener('click', function () {
     if (FSM.isLocked(state) || state !== 'closed') return;
     boxGroup.rotation.y = 0;
     boxGroup.position.y = 0;
+    tsunoIdle();
     var pool = pickPool();
     buildStack(pool);
     openFlaps(function () { dealOut(pool); });

@@ -148,13 +148,6 @@
 }
 .jj-ring-card__meta:empty { display: none; }
 
-.jj-ring-card__price {
-  font-size: 13px;
-  color: var(--jj-secondary, #f5d742);
-  margin-top: 6px;
-  text-shadow: 0 0 6px rgba(245, 215, 66, 0.4);
-}
-
 /* --- Empty State --- */
 .jj-ring__empty {
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;

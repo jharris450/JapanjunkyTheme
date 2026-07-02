@@ -92,8 +92,7 @@
     '<div class="jj-ring-card__jp-name"></div>' +
     '<div class="jj-ring-card__title"></div>' +
     '<div class="jj-ring-card__jp-title"></div>' +
-    '<div class="jj-ring-card__meta"></div>' +
-    '<div class="jj-ring-card__price"></div>';
+    '<div class="jj-ring-card__meta"></div>';
   ring.appendChild(card);
 
   function cardField(cls) { return card.querySelector('.' + cls); }
@@ -123,10 +122,7 @@
     if (product.label) rows.push(metaRow('Label', esc(product.label)));
     if (product.formatLabel) rows.push(metaRow('Format', esc(product.formatLabel)));
     if (product.year) rows.push(metaRow('Year', esc(product.year)));
-    if (product.condition) rows.push(metaRow('Condition', esc(String(product.condition).toUpperCase())));
     cardField('jj-ring-card__meta').innerHTML = rows.join('');
-
-    cardField('jj-ring-card__price').textContent = product.price || '';
 
     card.classList.add('jj-ring-card--visible');
     card.setAttribute('aria-hidden', 'false');
