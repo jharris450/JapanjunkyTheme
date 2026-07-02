@@ -176,6 +176,7 @@
   var RECORD_SIZE = 1.4;
 
   function clearRecords() {
+    focused = null;
     for (var i = 0; i < records.length; i++) {
       var m = records[i].mesh;
       if (m.parent) m.parent.remove(m);
@@ -296,6 +297,7 @@
     if (!recordsOut) return;
     for (var i = 0; i < records.length; i++) {
       var rec = records[i];
+      if (focused && focused.rec === rec) continue; // don't fight the focus tween
       rec.mesh.position.y = rec.slot.y + Math.sin(now * 0.001 + rec.phase) * 0.04;
     }
     if (focused) focused.rec.mesh.rotation.y += 0.01;
