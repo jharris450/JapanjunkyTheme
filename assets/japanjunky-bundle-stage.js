@@ -151,13 +151,113 @@
   function tick(now) {
     if (!animating) return;
     rafId = requestAnimationFrame(tick);
+    var dt = Math.min((now - lastTime) / 1000, 0.1);
     lastTime = now;
+    updateRecords(dt, now);
     renderer.render(scene, camera);
   }
   function startLoop() {
     if (animating) return;
     animating = true; lastTime = performance.now(); resize();
     rafId = requestAnimationFrame(tick);
+  }
+
+  // ─── Sample records (crescent fold-out) ──────────────────────
+  // 5 slots down a vertical crescent to the box's right, mirroring the
+  // ring-carousel ARC (px offsets / 90 → scene units).
+  var ARC_TARGETS = [
+    { x: 2.0, y: 0.83,  scale: 0.98 },
+    { x: 2.0, y: 0.28,  scale: 0.98 },
+    { x: 2.4, y: -0.28, scale: 0.86 },
+    { x: 2.4, y: -0.83, scale: 0.86 },
+    { x: 2.9, y: -1.38, scale: 0.72 }
+  ];
+
+  var records = []; // { mesh, slot, data, phase }
+  var RECORD_SIZE = 1.4;
+
+  function clearRecords() {
+    for (var i = 0; i < records.length; i++) {
+      var m = records[i].mesh;
+      if (m.parent) m.parent.remove(m);
+      if (m.geometry) m.geometry.dispose();
+      if (m.material) {
+        if (m.material.uniforms && m.material.uniforms.uTexture && m.material.uniforms.uTexture.value) {
+          m.material.uniforms.uTexture.value.dispose();
+        }
+        m.material.dispose();
+      }
+    }
+    records = [];
+  }
+
+  function buildRecordMesh(data) {
+    var geo = new THREE.PlaneGeometry(RECORD_SIZE, RECORD_SIZE);
+    var mesh = new THREE.Mesh(geo, psMat(loadTex(data.image)));
+    // Start hidden at the box's front-center (inside the box mouth).
+    mesh.position.set(0, 0, 0.1);
+    mesh.scale.setScalar(0.2);
+    mesh.visible = false;
+    mesh.userData.isRecord = true;
+    scene.add(mesh);
+    return mesh;
+  }
+
+  function dealRecords() {
+    clearRecords();
+    var pool = (window.JJ_BundlePool && window.JJ_PRODUCTS)
+      ? window.JJ_BundlePool.pickRecords(window.JJ_PRODUCTS, 5, (window.JJ_BUNDLE && window.JJ_BUNDLE.productId))
+      : [];
+    for (var i = 0; i < pool.length && i < ARC_TARGETS.length; i++) {
+      records.push({ mesh: buildRecordMesh(pool[i]), slot: ARC_TARGETS[i], data: pool[i], phase: Math.random() * Math.PI * 2 });
+    }
+  }
+
+  var recordsOut = false;
+
+  function slideOut(done) {
+    recordsOut = true;
+    var pending = records.length;
+    if (!pending) { if (done) done(); return; }
+    for (var i = 0; i < records.length; i++) {
+      (function (rec, idx) {
+        rec.mesh.visible = true;
+        var sx = 0, sy = 0, ss = 0.2;
+        var tx = rec.slot.x, ty = rec.slot.y, ts = rec.slot.scale;
+        setTimeout(function () {
+          tween(500, function (e) {
+            rec.mesh.position.x = sx + (tx - sx) * e;
+            rec.mesh.position.y = sy + (ty - sy) * e;
+            var s = ss + (ts - ss) * e;
+            rec.mesh.scale.setScalar(s);
+          }, function () { pending--; if (pending === 0 && done) done(); });
+        }, idx * 90); // staggered deal
+      })(records[i], i);
+    }
+  }
+
+  function slideIn(done) {
+    recordsOut = false;
+    var pending = records.length;
+    if (!pending) { if (done) done(); return; }
+    for (var i = 0; i < records.length; i++) {
+      (function (rec) {
+        var sx = rec.mesh.position.x, sy = rec.mesh.position.y, ss = rec.mesh.scale.x;
+        tween(360, function (e) {
+          rec.mesh.position.x = sx * (1 - e);
+          rec.mesh.position.y = sy * (1 - e);
+          rec.mesh.scale.setScalar(ss + (0.2 - ss) * e);
+        }, function () { rec.mesh.visible = false; pending--; if (pending === 0 && done) done(); });
+      })(records[i]);
+    }
+  }
+
+  function updateRecords(dt, now) {
+    if (!recordsOut) return;
+    for (var i = 0; i < records.length; i++) {
+      var rec = records[i];
+      rec.mesh.position.y = rec.slot.y + Math.sin(now * 0.001 + rec.phase) * 0.04;
+    }
   }
 
   // ─── Init ────────────────────────────────────────────────────
@@ -168,7 +268,10 @@
   // Temporary wiring so open is testable in-browser this task; refined in Task 7.
   canvas.addEventListener('click', function () {
     if (FSM.isLocked(state)) return;
-    if (state === 'closed') openFlaps();
+    if (state === 'closed') {
+      dealRecords();
+      openFlaps(function () { slideOut(); });
+    }
   });
 
   // Expose internals for later tasks in this same file (they extend this IIFE).
