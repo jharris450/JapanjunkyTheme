@@ -7,7 +7,9 @@
  * JJ_RingCarousel.retract(done). Look/animation preserved from the original
  * featured-ring carousel (arc slots, jitter, 0.4s ease-out transitions).
  *
- * Emits: jj:product-selected (preview: true), jj:product-deselected
+ * Hovering a cover shows a floating product-info card next to it — the
+ * fixed info panel (top-left) belongs to the bundle product itself, so the
+ * ring no longer dispatches jj:product-selected.
  */
 (function () {
   'use strict';
@@ -38,6 +40,7 @@
   var SPAWN_TRANSFORM = 'translate(-280px, 0px) scale(0.2)';
   var DEAL_STAGGER_MS = 90;   // per-cover delay on deal-out
   var SETTLE_MS = 420;        // > the 0.4s CSS transform transition
+  var END_RELEASE_MS = 600;   // wheel momentum settle before page scroll takes over
 
   // Per-cover random jitter (applied once on creation)
   var coverJitter = {}; // keyed by product handle+variantId
@@ -58,9 +61,83 @@
   var records = [];           // product data for the current bundle deal
   var centerIndex = 0;        // index into records
   var coverEls = {};          // keyed by records index → DOM element
-  var selectedIndex = -1;     // records index currently selected (after 300ms)
-  var selectTimer = null;
   var locked = false;         // true while dealing/retracting
+
+  // ─── Hover Card ────────────────────────────────────────────────
+  // Floating per-record info card, shown next to the hovered cover.
+  var card = document.createElement('div');
+  card.className = 'jj-ring-card';
+  card.setAttribute('aria-hidden', 'true');
+  card.innerHTML =
+    '<div class="jj-ring-card__artist"></div>' +
+    '<div class="jj-ring-card__jp-name"></div>' +
+    '<div class="jj-ring-card__title"></div>' +
+    '<div class="jj-ring-card__jp-title"></div>' +
+    '<div class="jj-ring-card__meta"></div>' +
+    '<div class="jj-ring-card__price"></div>';
+  ring.appendChild(card);
+
+  function cardField(cls) { return card.querySelector('.' + cls); }
+
+  function metaRow(label, value) {
+    return '<div class="jj-meta-row"><span class="jj-meta-row__label">' + label +
+           ': </span><span class="jj-meta-row__value">' + value + '</span></div>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function showCard(coverEl) {
+    var idx = parseInt(coverEl.getAttribute('data-ring-index'), 10);
+    var product = records[idx];
+    if (!product) return;
+
+    cardField('jj-ring-card__artist').textContent = (product.artist || product.vendor || '---').toUpperCase();
+    cardField('jj-ring-card__jp-name').textContent = product.jpName || '';
+    cardField('jj-ring-card__title').textContent = product.title || '';
+    cardField('jj-ring-card__jp-title').textContent = product.jpTitle || '';
+
+    var rows = [];
+    if (product.code) rows.push(metaRow('Code', esc(product.code)));
+    if (product.label) rows.push(metaRow('Label', esc(product.label)));
+    if (product.formatLabel) rows.push(metaRow('Format', esc(product.formatLabel)));
+    if (product.year) rows.push(metaRow('Year', esc(product.year)));
+    if (product.condition) rows.push(metaRow('Condition', esc(String(product.condition).toUpperCase())));
+    cardField('jj-ring-card__meta').innerHTML = rows.join('');
+
+    cardField('jj-ring-card__price').textContent = product.price || '';
+
+    card.classList.add('jj-ring-card--visible');
+    card.setAttribute('aria-hidden', 'false');
+
+    // Position: to the LEFT of the hovered cover, vertically centered on it.
+    // Style px are pre-zoom, rects are post-zoom — divide rect math by zoom
+    // (same trick as product-viewer's positionCanvasOverBox).
+    var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    var ringRect = ring.getBoundingClientRect();
+    var coverRect = coverEl.getBoundingClientRect();
+    card.style.right = ((ringRect.right - coverRect.left) / zoom + 12) + 'px';
+    var top = (coverRect.top + coverRect.height / 2 - ringRect.top) / zoom - card.offsetHeight / 2;
+    card.style.top = top + 'px';
+  }
+
+  function hideCard() {
+    card.classList.remove('jj-ring-card--visible');
+    card.setAttribute('aria-hidden', 'true');
+  }
+
+  stage.addEventListener('mouseover', function (e) {
+    if (locked) return;
+    var cover = e.target.closest('.jj-ring__cover');
+    if (cover) showCard(cover);
+  });
+
+  stage.addEventListener('mouseout', function (e) {
+    var to = e.relatedTarget;
+    if (!(to && to.closest && to.closest('.jj-ring__cover'))) hideCard();
+  });
 
   // ─── Cover Creation ────────────────────────────────────────────
 
@@ -137,7 +214,7 @@
 
       applySlot(el, slot, records[dIdx]);
 
-      // Mark center as selected
+      // Mark center cover (biggest, glowing border)
       if (slot.offset === 0) {
         el.classList.add('jj-ring__cover--selected');
         el.setAttribute('aria-selected', 'true');
@@ -149,6 +226,7 @@
   }
 
   function clearCovers() {
+    hideCard();
     for (var key in coverEls) {
       if (coverEls[key].parentNode) coverEls[key].parentNode.removeChild(coverEls[key]);
     }
@@ -160,8 +238,6 @@
   // ─── Deal / Retract (driven by the mystery box) ────────────────
 
   function deal(products) {
-    clearSelectTimer();
-    selectedIndex = -1;
     clearCovers();
     records = (products || []).slice();
     if (!records.length) return;
@@ -192,13 +268,12 @@
 
     setTimeout(function () {
       locked = false;
-      positionCovers(); // normalize (selected class, aria, z-index)
-      startSelectTimer();
+      positionCovers(); // normalize (center class, aria, z-index)
     }, records.length * DEAL_STAGGER_MS + SETTLE_MS);
   }
 
   function retract(done) {
-    deselectCurrent();
+    hideCard();
     if (!records.length) { if (done) done(); return; }
     locked = true;
     for (var key in coverEls) {
@@ -218,70 +293,12 @@
     if (!records.length || locked) return;
     if (newIndex < 0 || newIndex >= records.length) return;
     if (newIndex === centerIndex) return;
-    deselectCurrent();
+    hideCard();
     centerIndex = newIndex;
     positionCovers();
-    startSelectTimer();
   }
 
   function rotateBy(delta) { rotateTo(centerIndex + delta); }
-
-  // ─── Selection Delay (300ms) ───────────────────────────────────
-
-  function startSelectTimer() {
-    clearSelectTimer();
-    selectTimer = setTimeout(function () {
-      selectTimer = null;
-      selectCurrent();
-    }, 300);
-  }
-
-  function clearSelectTimer() {
-    if (selectTimer) {
-      clearTimeout(selectTimer);
-      selectTimer = null;
-    }
-  }
-
-  function selectCurrent() {
-    if (!records.length || selectedIndex === centerIndex) return;
-    var product = records[centerIndex];
-    if (!product) return;
-    selectedIndex = centerIndex;
-
-    // Map product fields to the detail shape expected by product-viewer.js.
-    // preview: true — info panel only, no Add-to-Cart (bundle samples).
-    document.dispatchEvent(new CustomEvent('jj:product-selected', { detail: {
-      handle: product.handle,
-      productId: product.id,
-      title: product.title,
-      artist: product.artist,
-      vendor: product.vendor,
-      price: product.price,
-      code: product.code,
-      condition: product.condition,
-      format: product.format,
-      formatLabel: product.formatLabel,
-      year: product.year,
-      label: product.label,
-      jpName: product.jpName,
-      jpTitle: product.jpTitle,
-      imageUrl: product.image,
-      imageBackUrl: product.imageBack,
-      type3d: product.type3d,
-      variantId: String(product.variantId),
-      available: product.available,
-      preview: true,
-      el: coverEls[centerIndex] || null
-    }}));
-  }
-
-  function deselectCurrent() {
-    clearSelectTimer();
-    if (selectedIndex === -1) return;
-    selectedIndex = -1;
-    document.dispatchEvent(new CustomEvent('jj:product-deselected', { detail: {} }));
-  }
 
   // ─── Keyboard Input ────────────────────────────────────────────
 
@@ -289,10 +306,8 @@
     if (!records.length || locked) return;
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-    // Grid screen owns input while hero UI is hidden — don't rotate/select blind
+    // Grid screen owns input while hero UI is hidden — don't rotate blind
     if (document.body.classList.contains('jj-grid-active')) return;
-    // Let focused links/buttons activate natively (Reroll, bundle Add-to-Cart)
-    if (e.key === 'Enter' && e.target.closest('a, button')) return;
 
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       e.preventDefault();
@@ -300,13 +315,6 @@
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       e.preventDefault();
       rotateBy(-1);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      clearSelectTimer();
-      selectCurrent();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      deselectCurrent();
     }
   });
 
@@ -318,35 +326,44 @@
     if (!cover) return;
 
     var idx = parseInt(cover.getAttribute('data-ring-index'), 10);
-    if (isNaN(idx)) return;
-
-    if (idx === centerIndex) {
-      // Clicking center cover: immediate select
-      clearSelectTimer();
-      selectCurrent();
-    } else {
-      // Clicking side cover: rotate it to center
-      rotateTo(idx);
-    }
+    if (isNaN(idx) || idx === centerIndex) return;
+    rotateTo(idx); // clicking a side cover centers it
   });
 
-  // ─── Scroll Wheel (locked to the crescent while records are out) ─
+  // ─── Scroll Wheel ──────────────────────────────────────────────
+  // Captured only while the pointer is over an actual cover; at the
+  // crescent's ends (once momentum settles) the gesture is released to the
+  // page-scroll handler so the user can keep scrolling down to the catalog.
 
   var wheelCooldown = false;
+  var lastRotateAt = 0;
 
   ring.addEventListener('wheel', function (e) {
-    if (!records.length) return; // box closed — page scroll owns the wheel
+    if (!records.length || locked) return;
     if (document.body.classList.contains('jj-grid-active')) return;
-    if (!e.target.closest('.jj-ring__stage')) return; // box side falls through
-    // Own the gesture: no page scroll under the crescent, and keep the
-    // document-level page-scroll handler (japanjunky-product-grid.js) off it.
+    if (!e.target.closest('.jj-ring__cover')) return;
+
+    var delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+    var atEnd = (delta > 0 && centerIndex >= records.length - 1) ||
+                (delta < 0 && centerIndex <= 0);
+    if (atEnd) {
+      // Swallow trailing momentum from the rotation that reached the end,
+      // then hand the wheel back to the page scroll.
+      if (performance.now() - lastRotateAt <= END_RELEASE_MS) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+
+    // Own the gesture: no page scroll while rotating through the crescent.
     e.preventDefault();
     e.stopPropagation();
-    if (locked || wheelCooldown) return;
+    if (wheelCooldown) return;
     wheelCooldown = true;
     setTimeout(function () { wheelCooldown = false; }, 150);
 
-    var delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+    lastRotateAt = performance.now();
     if (delta > 0) {
       rotateBy(1);
     } else if (delta < 0) {
@@ -373,13 +390,13 @@
     var dy = e.touches[0].clientY - touchStartY;
     // Only register vertical swipes, one rotation per gesture
     if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
+      // At the ends let the swipe fall through to the page scroll
+      var dir = dy > 0 ? 1 : -1;
+      var next = centerIndex + dir;
+      if (next < 0 || next >= records.length) return;
       e.preventDefault();
       touchLocked = true;
-      if (dy > 0) {
-        rotateBy(1);
-      } else {
-        rotateBy(-1);
-      }
+      rotateBy(dir);
     }
   }, { passive: false });
 

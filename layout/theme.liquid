@@ -183,6 +183,8 @@
     <div class="jj-product-info" id="jj-product-info" style="display:none;">
       {%- comment -%} Canvas lives inside the box so its stacking context is local — lets the graphic paint in front of the box bg while keeping actions on top of the graphic. {%- endcomment -%}
       <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
+      {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
+      <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
       <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>
       <div class="jj-product-info__title" id="jj-pi-title"></div>
@@ -190,6 +192,7 @@
       <div class="jj-product-info__meta" id="jj-pi-meta"></div>
       <div class="jj-product-info__price" id="jj-pi-price"></div>
       <div class="jj-product-info__actions" id="jj-pi-actions">
+        <button class="jj-action-btn" id="jj-bundle-reroll" type="button" style="display:none;">[Reroll]</button>
         <button class="jj-action-btn" id="jj-pi-add-to-cart" disabled>[Add to Cart]</button>
         <a class="jj-action-btn" id="jj-pi-view" href="#" style="display:none;">[View]</a>
         <input type="hidden" id="jj-pi-variant-id" value="">
@@ -204,13 +207,6 @@
 
   {%- comment -%} Mystery-box bundle hero {%- endcomment -%}
   <div class="jj-ring jj-ring--bundle" id="jj-ring" aria-label="Five Random Records bundle">
-    <div class="jj-ring__box">
-      <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
-      <div class="jj-bundle-controls">
-        <button class="jj-action-btn" id="jj-bundle-reroll" type="button">[Reroll]</button>
-        <button class="jj-action-btn" id="jj-bundle-add" type="button" disabled>[Add to Cart]</button>
-      </div>
-    </div>
     <div class="jj-ring__stage" id="jj-ring-stage" role="listbox" aria-label="Bundle sample records"></div>
   </div>
 

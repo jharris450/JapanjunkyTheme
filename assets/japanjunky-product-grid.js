@@ -61,7 +61,8 @@
 
     document.addEventListener('wheel', function (e) {
       if (window.JJ_SPLASH_ACTIVE) return;                       // splash owns first interaction
-      if (e.target.closest('.jj-ring__cover')) return;           // ring rotation owns covers only
+      // Ring rotation owns covers via stopPropagation (ring-carousel.js);
+      // wheel events it releases at the crescent ends land here → catalog.
       if (e.target.closest('.jj-grid__dropdown')) return;        // dropdown scrolls natively
       if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
       e.preventDefault(); // we drive the wrapper ourselves — no native double-scroll
