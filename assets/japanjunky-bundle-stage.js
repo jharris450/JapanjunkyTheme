@@ -61,9 +61,9 @@
     });
   }
 
-  // ─── Box: body (4 faces) + hinged front flaps + right side door ──
+  // ─── Box: body (4 faces) + fixed left flap + hinged end lid ──
   var boxGroup = new THREE.Group();
-  var leftFlap, rightFlap, sideDoor; // pivot Object3Ds
+  var leftFlap, endLid; // pivot Object3Ds
 
   function buildBox() {
     var w = DIMS.w, h = DIMS.h, d = DIMS.d;
@@ -84,12 +84,11 @@
     var body = new THREE.Mesh(bodyGeo, bodyMats);
     boxGroup.add(body);
 
-    // Two front flaps, each a half-width plane hinged on its OUTER vertical edge.
     var halfW = w / 2;
     var frontZ = d / 2 + 0.001;
 
-    // Left flap: pivot at the box's left edge (x = -w/2); plane spans pivot→center.
-    // Stays CLOSED — only the right flap opens (records slide out to the right).
+    // Left flap: half-width plane covering the front-left quadrant.
+    // Stays CLOSED — the box opens on its right end only.
     leftFlap = new THREE.Object3D();
     leftFlap.position.set(-halfW, 0, frontZ);
     var lGeo = new THREE.PlaneGeometry(halfW, h);
@@ -98,39 +97,37 @@
     leftFlap.add(lMesh);
     boxGroup.add(leftFlap);
 
-    // Right flap: pivot at the box's right edge (x = +w/2); plane spans center→pivot.
-    rightFlap = new THREE.Object3D();
-    rightFlap.position.set(halfW, 0, frontZ);
+    // End lid: front-right flap + right side panel as ONE attached L-piece
+    // (like a real record box end), hinged along the box's bottom-right
+    // edge — it folds down-and-out, clearing the records' exit path.
+    endLid = new THREE.Object3D();
+    endLid.position.set(halfW, -h / 2, 0);
+
+    // Front-right flap: faces +Z, spans center→right edge, full height.
     var rGeo = new THREE.PlaneGeometry(halfW, h);
     var rMesh = new THREE.Mesh(rGeo, psMat(loadTex(TEX.frontRight)));
-    rMesh.position.set(-halfW / 2, 0, 0);
-    rightFlap.add(rMesh);
-    boxGroup.add(rightFlap);
+    rMesh.position.set(-halfW / 2, h / 2, d / 2 + 0.001);
+    endLid.add(rMesh);
 
-    // Right side door: the whole +X panel, hinged on its REAR vertical edge
-    // (like a record box's end opening out). Swings outward with the flap;
-    // records slide out through the opened side.
-    sideDoor = new THREE.Object3D();
-    sideDoor.position.set(halfW + 0.001, 0, -d / 2);
+    // Right side panel: faces +X, spans the box depth, full height.
     var sGeo = new THREE.PlaneGeometry(d, h);
     var sMesh = new THREE.Mesh(sGeo, psMat(loadTex(TEX.sideRight)));
-    sMesh.rotation.y = Math.PI / 2;   // face +X; width now runs along z
-    sMesh.position.set(0, 0, d / 2);  // span the hinge (z=-d/2) → front (z=+d/2)
-    sideDoor.add(sMesh);
-    boxGroup.add(sideDoor);
+    sMesh.rotation.y = Math.PI / 2; // face +X; width now runs along z
+    sMesh.position.set(0.001, h / 2, 0);
+    endLid.add(sMesh);
+
+    boxGroup.add(endLid);
 
     scene.add(boxGroup);
   }
 
-  // ─── Flap open/close (t: 0 closed → 1 open) ──────────────────
-  // Only the RIGHT front flap swings — OUTWARD (toward the viewer, then
-  // folded back right, staying outstretched) — and the right side door
-  // opens with it, like a real record box's end.
-  var OPEN_ANGLE = 1.92;      // flap ~110deg outward
-  var DOOR_ANGLE = 1.75;      // side door ~100deg outward
+  // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
+  // The attached flap+side end lid folds DOWN-AND-OUT about the box's
+  // bottom-right edge (negative z-rotation swings it outward), landing
+  // ~120° open and staying outstretched below the records' exit path.
+  var OPEN_ANGLE = 2.1; // ~120deg
   function setFlaps(t) {
-    if (rightFlap) rightFlap.rotation.y = OPEN_ANGLE * t;
-    if (sideDoor) sideDoor.rotation.y = DOOR_ANGLE * t;
+    if (endLid) endLid.rotation.z = -OPEN_ANGLE * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
