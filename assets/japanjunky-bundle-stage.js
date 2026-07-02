@@ -432,6 +432,8 @@
     var tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
     if (document.body.classList.contains('jj-grid-active')) return;
+    // Let a focused link/button activate natively (Reroll, bundle Add-to-Cart).
+    if (e.key === 'Enter' && e.target.closest('a, button')) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); rotateBy(1); }
     else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); rotateBy(-1); }
     else if (e.key === 'Enter') { e.preventDefault(); clearSelectTimer(); selectCentered(); }
