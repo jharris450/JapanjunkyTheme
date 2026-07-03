@@ -30,10 +30,11 @@
 }
 
 /* --- Comic pop burst behind the box/card ---
-   80s POP/BANG explosion (generated, site palette + pixel grid), two
-   copies flicker-alternating on a steps() cycle (CRT rules: no easing).
+   80s POP/BANG explosion (generated, site palette + pixel grid; art is
+   landscape and bbox-centered in the file), two copies
+   flicker-alternating on a steps() cycle (CRT rules: no easing).
    Negative z-index tucks them behind the card's content. Centered on
-   the product-info card itself, base copy flipped 180deg. */
+   the product-info card itself. */
 .jj-pop {
   position: absolute;
   left: calc(50% - 310px);
@@ -44,12 +45,11 @@
   opacity: 0.55;
   pointer-events: none;
   image-rendering: pixelated;
-  transform: rotate(180deg);
   animation: jj-pop-flicker 0.36s steps(1) infinite;
 }
 
 .jj-pop--alt {
-  transform: rotate(190deg) scale(1.06);
+  transform: rotate(8deg) scale(1.06);
   opacity: 0; /* hidden until its delayed animation takes over */
   animation-delay: 0.18s;
 }
