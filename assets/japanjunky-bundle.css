@@ -40,6 +40,7 @@
   left: calc(50% - 310px);
   top: calc(50% - 310px);
   width: 620px;
+  max-width: none; /* base.css img{max-width:100%} clamps to the 392px card -> squeezed tall + shoved left */
   height: 620px;
   z-index: -1;
   opacity: 0.55;
