@@ -30,26 +30,26 @@
 }
 
 /* --- Comic pop burst behind the box/card ---
-   Two copies of the same starburst (background keyed out to alpha), the
-   second slightly rotated/scaled, flicker-alternating on a steps() cycle
-   (CRT rules: no easing). Negative z-index tucks them behind the card's
-   content. Centered on the box (card's top-right anchor, same as
-   #jj-bundle-canvas). */
+   80s POP/BANG explosion (generated, site palette + pixel grid), two
+   copies flicker-alternating on a steps() cycle (CRT rules: no easing).
+   Negative z-index tucks them behind the card's content. Centered on
+   the product-info card itself, base copy flipped 180deg. */
 .jj-pop {
   position: absolute;
-  left: calc(100% - 310px);
-  top: -310px;
+  left: calc(50% - 310px);
+  top: calc(50% - 310px);
   width: 620px;
   height: 620px;
   z-index: -1;
   opacity: 0.55;
   pointer-events: none;
   image-rendering: pixelated;
+  transform: rotate(180deg);
   animation: jj-pop-flicker 0.36s steps(1) infinite;
 }
 
 .jj-pop--alt {
-  transform: rotate(10deg) scale(1.06);
+  transform: rotate(190deg) scale(1.06);
   opacity: 0; /* hidden until its delayed animation takes over */
   animation-delay: 0.18s;
 }
