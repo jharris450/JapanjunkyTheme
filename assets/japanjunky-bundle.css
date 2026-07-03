@@ -28,3 +28,41 @@
   pointer-events: auto;
   cursor: pointer;
 }
+
+/* --- Comic pop burst behind the box/card ---
+   Two copies of the same starburst, the second slightly rotated/scaled,
+   flicker-alternating on a steps() cycle (CRT rules: no easing). Negative
+   z-index tucks them behind the card's content; screen blend drops the
+   image's black corners into the scene. Centered on the box (card's
+   top-right anchor, same as #jj-bundle-canvas). */
+.jj-pop {
+  position: absolute;
+  left: calc(100% - 310px);
+  top: -310px;
+  width: 620px;
+  height: 620px;
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  image-rendering: pixelated;
+  /* melt the square image bounds into the scene */
+  -webkit-mask-image: radial-gradient(circle farthest-corner, #000 45%, transparent 90%);
+  mask-image: radial-gradient(circle farthest-corner, #000 45%, transparent 90%);
+  animation: jj-pop-flicker 0.36s steps(1) infinite;
+}
+
+.jj-pop--alt {
+  transform: rotate(10deg) scale(1.06);
+  opacity: 0; /* hidden until its delayed animation takes over */
+  animation-delay: 0.18s;
+}
+
+@keyframes jj-pop-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-pop { animation: none; }
+  .jj-pop--alt { display: none; }
+}
