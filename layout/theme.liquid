@@ -184,8 +184,8 @@
       {%- comment -%} Canvas lives inside the box so its stacking context is local — lets the graphic paint in front of the box bg while keeping actions on top of the graphic. {%- endcomment -%}
       <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
       {%- comment -%} Comic pop burst behind the box/card — two offset copies flicker-alternate. {%- endcomment -%}
-      <img class="jj-pop" src="{{ 'pop-burst.jpg' | asset_url }}" alt="" aria-hidden="true">
-      <img class="jj-pop jj-pop--alt" src="{{ 'pop-burst.jpg' | asset_url }}" alt="" aria-hidden="true">
+      <img class="jj-pop" src="{{ 'pop-burst.png' | asset_url }}" alt="" aria-hidden="true">
+      <img class="jj-pop jj-pop--alt" src="{{ 'pop-burst.png' | asset_url }}" alt="" aria-hidden="true">
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
