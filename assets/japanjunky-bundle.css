@@ -5,10 +5,15 @@
    puts #jj-viewer-canvas by default (centered on the card's right edge,
    centered on its top edge). */
 
-/* Raise the info card (box canvas rides along, it's anchored to the card)
-   so the box graphic lines up with the crescent's selected center cover. */
+/* Center the composition: the card's TOP sits at the zone's vertical
+   center — the box canvas is centered on the card's top edge, so the box
+   lands exactly mid-screen, level with the crescent's center cover (the
+   ring stage centers its arc at the same halfway line). Info text reads
+   below the box. (20vh - 6.4px = half of the 40vh - 12.8px usable height
+   under the site's 2.5 zoom.) */
 #jj-product-zone .jj-product-info {
-  margin-bottom: 104px;
+  margin-top: calc(20vh - 6.4px);
+  margin-bottom: auto;
 }
 
 #jj-bundle-canvas {

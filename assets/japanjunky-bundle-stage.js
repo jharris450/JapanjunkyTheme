@@ -337,18 +337,66 @@
       : [];
   }
 
+  // ─── Drag-spin (open box) ─────────────────────────────────────
+  // While open, the cursor can grab and spin the box; released momentum
+  // decays and the gentle swivel keeps breathing around the spun angle.
+  var TWO_PI = Math.PI * 2;
+  var dragging = false, dragLastX = 0, spinVel = 0, userSpin = 0;
+
+  canvas.addEventListener('pointerdown', function (e) {
+    if (state !== 'open') return;
+    dragging = true;
+    dragLastX = e.clientX;
+    spinVel = 0;
+    canvas.style.cursor = 'grabbing';
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var d = (e.clientX - dragLastX) * 0.012;
+    dragLastX = e.clientX;
+    userSpin += d;
+    spinVel = d;
+  });
+  window.addEventListener('pointerup', function () {
+    if (!dragging) return;
+    dragging = false;
+    canvas.style.cursor = state === 'open' ? 'grab' : 'pointer';
+  });
+
+  // Spin the box the rest of the way forward to face front (no snap),
+  // easing the idle bob out at the same time. Resets any user spin.
+  var aligning = false;
+  function alignFront(ms, done) {
+    aligning = true;
+    userSpin = 0;
+    spinVel = 0;
+    var r = ((boxGroup.rotation.y % TWO_PI) + TWO_PI) % TWO_PI;
+    var remaining = (TWO_PI - r) % TWO_PI;
+    var sr = boxGroup.rotation.y, sy = boxGroup.position.y;
+    tween(ms, function (e) {
+      boxGroup.rotation.y = sr + remaining * e;
+      boxGroup.position.y = sy * (1 - e);
+    }, function () {
+      aligning = false;
+      if (done) done();
+    });
+  }
+
   // Closed: box floats + slowly spins (idle attract state), inviting a click.
-  // Open: gentle float + slight swivel (eased toward a slow sine so there is
-  // no jump when the state flips mid-phase).
+  // Open: gentle float + slight swivel around the user's spun angle.
   function updateBox(now) {
-    if (!boxGroup) return;
+    if (!boxGroup || aligning) return;
     if (state === 'closed') {
       boxGroup.rotation.y += 0.008;
       boxGroup.position.y = Math.sin(now * 0.0011) * 0.08;
     } else if (state === 'open') {
-      var targetRot = Math.sin(now * 0.0007) * 0.10;
+      if (!dragging) {
+        userSpin += spinVel;   // release momentum…
+        spinVel *= 0.94;       // …decaying
+      }
+      var targetRot = Math.sin(now * 0.0007) * 0.10 + userSpin;
       var targetY = Math.sin(now * 0.0011) * 0.05;
-      boxGroup.rotation.y += (targetRot - boxGroup.rotation.y) * 0.04;
+      boxGroup.rotation.y += (targetRot - boxGroup.rotation.y) * (dragging ? 0.35 : 0.04);
       boxGroup.position.y += (targetY - boxGroup.position.y) * 0.04;
     }
   }
@@ -383,6 +431,7 @@
     var ring = ringAPI();
     if (ring && ring.isBusy()) return;
     setState(FSM.next(state, 'reroll')); // → retracting
+    canvas.style.cursor = 'pointer';
     var retractFn = ring ? ring.retract : function (cb) { cb(); };
     retractFn(function () {
       // Covers have flown back inside — shut the lid, THEN restock the
@@ -392,11 +441,15 @@
         setState(FSM.next(state, 'closed')); // → shaking
         var pool = pickPool();
         buildStack(pool);
-        shakeBox(function () {
-          setState(FSM.next(state, 'shaken')); // → opening
-          tween(600, function (e) { setFlaps(e); }, function () {
-            setState(FSM.next(state, 'opened')); // → open
-            dealOut(pool);
+        // Spin any user drag-rotation back to front before the shake
+        alignFront(350, function () {
+          shakeBox(function () {
+            setState(FSM.next(state, 'shaken')); // → opening
+            tween(600, function (e) { setFlaps(e); }, function () {
+              setState(FSM.next(state, 'opened')); // → open
+              canvas.style.cursor = 'grab';
+              dealOut(pool);
+            });
           });
         });
       });
@@ -459,16 +512,20 @@
   startLoop();
 
   canvas.addEventListener('click', function () {
-    if (FSM.isLocked(state) || state !== 'closed') return;
-    boxGroup.rotation.y = 0;
-    boxGroup.position.y = 0;
+    if (FSM.isLocked(state) || state !== 'closed' || aligning) return;
     // Wake Tsuno exactly like the scroll-to-grid does: dissolves the
     // greeting bubble AND engages his roaming personality (peek gesture).
     // No-op if he's already awake.
     document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
     var pool = pickPool();
     buildStack(pool);
-    openFlaps(function () { dealOut(pool); });
+    // Finish the idle spin forward to face front (no snap), then open.
+    alignFront(500, function () {
+      openFlaps(function () {
+        canvas.style.cursor = 'grab';
+        dealOut(pool);
+      });
+    });
   });
 
   var rerollBtn = document.getElementById('jj-bundle-reroll');
