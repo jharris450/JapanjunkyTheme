@@ -438,7 +438,12 @@ html.jj-crt-shader-active #jj-crt-content {
   filter: url(#jj-crt-barrel);
   position: fixed;
   inset: 0;
-  overflow: visible;
+  /* Clip at the viewport BEFORE the barrel filter runs: the filter makes
+     this wrapper the containing block for fixed descendants, so hidden
+     cuts anything hanging past the screen edge (pop burst spikes, ring
+     covers) instead of letting the barrel curve it back into view —
+     content ends at the tube face like a real CRT. */
+  overflow: hidden;
 }
 
 @media (prefers-contrast: more) {

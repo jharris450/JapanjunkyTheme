@@ -325,7 +325,9 @@
 
   // Idle position: left side of viewport, inline with selected product
   // v2 — positive x = screen-left confirmed
-  var TSUNO_IDLE_POS = { x: 4.0, y: 0.0, z: 6 };
+  // Idle on the screen-RIGHT side (world +x = screen left with the default
+  // camera): the pop burst behind the product card covers the old left spot.
+  var TSUNO_IDLE_POS = { x: -4.0, y: 0.0, z: 6 };
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
   var tsunoLoginPageMode = config.cameraPreset === 'login';
@@ -520,7 +522,9 @@
     if (!tsunoActivated) {
       var im = tsunoMoodIdx;
       var iTint = TSUNO_MOODS.tint[im];
-      tsunoMesh.scale.set(-1, 1, 1);
+      // Mirrored (+1, not the usual -1): he idles on the right now, so he
+      // faces back in toward the page center.
+      tsunoMesh.scale.set(1, 1, 1);
       tsunoMesh.position.x = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
       tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
       tsunoMesh.position.z = TSUNO_IDLE_POS.z;
@@ -1042,6 +1046,10 @@
   });
 
   var bubbleMesh = new THREE.Mesh(bubbleGeo, bubbleMat);
+  // Mirror the border/tail texture so the tail sits bottom-RIGHT, pointing
+  // at Tsuno now that the bubble hangs on his left. Text mesh stays
+  // unmirrored (separate canvas) so it reads normally.
+  bubbleMesh.scale.set(-1, 1, 1);
   bubbleMesh.visible = false;
   scene.add(bubbleMesh);
 
@@ -1064,8 +1072,9 @@
   textMesh.visible = false;
   scene.add(textMesh);
 
-  // Bubble offset from Tsuno (3D units)
-  var BUBBLE_OFFSET = { x: -2.0, y: 2.0, z: 0 };
+  // Bubble offset from Tsuno (3D units). +x = screen LEFT of him: with the
+  // idle spot on the screen-right side, the bubble hangs toward page center.
+  var BUBBLE_OFFSET = { x: 2.0, y: 2.0, z: 0 };
 
   function drawBubble(text) {
     var ctx = bubbleCtx;
