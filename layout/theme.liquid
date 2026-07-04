@@ -183,9 +183,15 @@
     <div class="jj-product-info" id="jj-product-info" style="display:none;">
       {%- comment -%} Canvas lives inside the box so its stacking context is local — lets the graphic paint in front of the box bg while keeping actions on top of the graphic. {%- endcomment -%}
       <canvas id="jj-viewer-canvas" aria-label="3D product viewer"></canvas>
-      {%- comment -%} Comic pop burst behind the box/card — two offset copies flicker-alternate. {%- endcomment -%}
-      <img class="jj-pop" src="{{ 'pop-burst.png' | asset_url }}" alt="" aria-hidden="true">
-      <img class="jj-pop jj-pop--alt" src="{{ 'pop-burst.png' | asset_url }}" alt="" aria-hidden="true">
+      {%- comment -%} Kyogen mask + swirl portal behind the box/card (replaces the pop burst).
+          Swirl canvas sits underneath, mask above it; pupils are DOM dots driven by
+          japanjunky-info-swirl.js so the eyes can track the cursor. {%- endcomment -%}
+      <canvas id="jj-swirl-canvas" aria-hidden="true" tabindex="-1"></canvas>
+      <div class="jj-kyogen" id="jj-kyogen" aria-hidden="true">
+        <img class="jj-kyogen__img" id="jj-kyogen-img" src="{{ 'kyogen-head.png' | asset_url }}" alt="">
+        <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-l"></div>
+        <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-r"></div>
+      </div>
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
@@ -325,6 +331,7 @@
   <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-info-swirl.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-watchlist.js' | asset_url }}" defer></script>
