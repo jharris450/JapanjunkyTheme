@@ -15,10 +15,10 @@
 (function () {
   'use strict';
 
-  var BUFFER = 220;      // render buffer px; CSS upscales to 660 = chunky pixels
+  var BUFFER = 220;      // render buffer px; CSS upscales to 460 = chunky pixels
   var TEX = 256;         // stripe texture size
-  var STRIPE_SPIN = 0.055;  // texture u scroll = rotation around the axis
-  var STRIPE_FLOW = 0.028;  // texture v scroll = flow toward the core
+  var STRIPE_SPIN = 0.07;  // texture u scroll = rotation around the axis
+  var PARTICLES = 42;      // sparks shed off the swirl rim
 
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -123,11 +123,16 @@
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    camera.position.set(0, 0, -1);
+    // Camera sits OUTSIDE the tunnel mouth: the swirl reads as a floating
+    // disc (~70% of the frame) instead of wallpapering the whole buffer,
+    // leaving transparent margin for the rim sparks.
+    camera.position.set(0, 0, 0);
     camera.lookAt(0, 0, 30);
 
     // Slanted-stripe swirl texture, grain-dithered like the swirl.jpg
     // reference (noisy band edges instead of clean gradients).
+    // Alpha ramps to 0 at BOTH v ends so the near rim of the cylinder
+    // dissolves — no hard circle edge, the swirl just floats.
     function makeStripeTexture() {
       var c = document.createElement('canvas');
       c.width = c.height = TEX;
@@ -154,11 +159,15 @@
             base = (base === dark) ? red : (n < 0.08 ? gold : dark);
           }
           var shade = 0.75 + 0.25 * Math.random();
+          // soft dissolve at both cylinder ends (v 0..0.22 and 0.78..1)
+          var fadeIn = Math.min(1, v / 0.22);
+          var fadeOut = Math.min(1, (1 - v) / 0.22);
+          var a = fadeIn * fadeIn * (3 - 2 * fadeIn) * fadeOut * fadeOut * (3 - 2 * fadeOut);
           var i = (y * TEX + x) * 4;
           img.data[i] = base[0] * shade;
           img.data[i + 1] = base[1] * shade;
           img.data[i + 2] = base[2] * shade;
-          img.data[i + 3] = 255;
+          img.data[i + 3] = a * 255;
         }
       }
       ctx.putImageData(img, 0, 0);
@@ -171,13 +180,19 @@
 
     var stripeTex = makeStripeTexture();
 
-    // The tunnel: cylinder axis along Z, camera looking down the barrel.
+    // The tunnel: cylinder axis along Z, mouth at z=8 so the whole thing
+    // stays in front of the camera and shows as a receding disc.
     var tunnel = new THREE.Mesh(
       new THREE.CylinderGeometry(3, 3, 40, 24, 1, true),
-      new THREE.MeshBasicMaterial({ map: stripeTex, side: THREE.BackSide, depthWrite: false })
+      new THREE.MeshBasicMaterial({
+        map: stripeTex,
+        side: THREE.BackSide,
+        transparent: true,
+        depthWrite: false
+      })
     );
     tunnel.rotation.x = Math.PI / 2;
-    tunnel.position.z = 18;
+    tunnel.position.z = 28;
     scene.add(tunnel);
 
     // Core planes: gold glow at the vanishing point + a wider dim red
@@ -209,8 +224,73 @@
       return mesh;
     }
 
-    var glowCore = makeGlowPlane(parseColor(GOLD), 0.95, 2.4, 34);
-    var glowHalo = makeGlowPlane(parseColor(RED), 0.5, 5.5, 26);
+    var glowCore = makeGlowPlane(parseColor(GOLD), 0.95, 2.2, 44);
+    var glowHalo = makeGlowPlane(parseColor(RED), 0.5, 4.0, 24);
+
+    /* ---------- rim sparks: particles shed off the swirl's edge ---------- */
+    var spark = (function () {
+      var geo = new THREE.BufferGeometry();
+      var pos = new Float32Array(PARTICLES * 3);
+      var col = new Float32Array(PARTICLES * 3);
+      var p = [];
+      var redC = parseColor(RED), goldC = parseColor(GOLD);
+      function reset(i, scatterLife) {
+        var s = p[i] = p[i] || {};
+        s.theta = Math.random() * Math.PI * 2;
+        s.r = 2.9 + Math.random() * 0.3;          // spawn on the rim
+        s.z = 9 + Math.random() * 6;              // near the mouth
+        s.vr = 0.9 + Math.random() * 0.9;         // drift outward
+        s.omega = 0.5 + Math.random() * 0.5;      // keep swirling
+        s.life = s.maxLife = 1.4 + Math.random() * 1.2;
+        if (scatterLife) s.life *= Math.random(); // stagger initial batch
+        s.gold = Math.random() < 0.45;
+      }
+      for (var i = 0; i < PARTICLES; i++) reset(i, true);
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+      // tiny round sprite so points aren't squares
+      var dot = document.createElement('canvas');
+      dot.width = dot.height = 16;
+      var dctx = dot.getContext('2d');
+      var dg = dctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+      dg.addColorStop(0, 'rgba(255,255,255,1)');
+      dg.addColorStop(1, 'rgba(255,255,255,0)');
+      dctx.fillStyle = dg;
+      dctx.fillRect(0, 0, 16, 16);
+
+      var pts = new THREE.Points(geo, new THREE.PointsMaterial({
+        size: 0.28,
+        map: new THREE.CanvasTexture(dot),
+        vertexColors: true,
+        transparent: true,
+        blending: THREE.AdditiveBlending, // color fades to black = invisible
+        depthWrite: false
+      }));
+      scene.add(pts);
+
+      return {
+        update: function (dt) {
+          for (var i = 0; i < PARTICLES; i++) {
+            var s = p[i];
+            s.life -= dt;
+            if (s.life <= 0) reset(i, false);
+            s.theta += s.omega * dt;
+            s.r += s.vr * dt;
+            var fade = Math.max(0, s.life / s.maxLife);
+            var c = s.gold ? goldC : redC;
+            pos[i * 3] = Math.cos(s.theta) * s.r;
+            pos[i * 3 + 1] = Math.sin(s.theta) * s.r;
+            pos[i * 3 + 2] = s.z;
+            col[i * 3] = (c[0] / 255) * fade;
+            col[i * 3 + 1] = (c[1] / 255) * fade;
+            col[i * 3 + 2] = (c[2] / 255) * fade;
+          }
+          geo.attributes.position.needsUpdate = true;
+          geo.attributes.color.needsUpdate = true;
+        }
+      };
+    })();
 
     /* ---------- loop, with visibility pausing ---------- */
     var running = false;
@@ -223,9 +303,11 @@
       if (!running) return;
       var dt = Math.min(0.1, (now - last) / 1000 || 0.016);
       last = now;
+      // u-scroll only: the v axis carries the baked rim fade, so scrolling
+      // it would make the dissolve edge crawl.
       stripeTex.offset.x = (stripeTex.offset.x + STRIPE_SPIN * dt) % 1;
-      stripeTex.offset.y = (stripeTex.offset.y - STRIPE_FLOW * dt + 1) % 1;
       glowHalo.rotation.z += dt * 0.4;
+      spark.update(dt);
       renderer.render(scene, camera);
       updatePupils();
       rafId = requestAnimationFrame(frame);
