@@ -16,9 +16,11 @@
   'use strict';
 
   var BUFFER = 220;      // render buffer px; CSS upscales to 460 = chunky pixels
-  var TEX = 256;         // stripe texture size
-  var STRIPE_SPIN = 0.07;  // texture u scroll = rotation around the axis
-  var PARTICLES = 42;      // sparks shed off the swirl rim
+  var TEX = 256;         // ray texture size
+  var STRIPE_SPIN = 0.09;  // texture u scroll = slow rotation of the burst
+  var PARTICLES = 42;      // sparks shed off the burst rim
+  var BANG_PERIOD = 3.4;   // seconds between flash pulses
+  var BANG_LEN = 0.45;     // pulse duration
 
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -129,10 +131,12 @@
     camera.position.set(0, 0, 0);
     camera.lookAt(0, 0, 30);
 
-    // Slanted-stripe swirl texture, grain-dithered like the swirl.jpg
-    // reference (noisy band edges instead of clean gradients).
-    // Alpha ramps to 0 at BOTH v ends so the near rim of the cylinder
-    // dissolves — no hard circle edge, the swirl just floats.
+    // Bang texture: same grain-dithered stripe machinery as the swirl,
+    // but the stripes run straight along v (no slant) so wrapped on the
+    // cylinder they read as jagged radial RAYS — a comic starburst when
+    // viewed down the axis. Per-ray width/length jitter keeps it spiky.
+    // Alpha still ramps to 0 at BOTH v ends so the rim stays dissolved —
+    // no hard circle edge, the burst just floats.
     function makeStripeTexture() {
       var c = document.createElement('canvas');
       c.width = c.height = TEX;
@@ -140,28 +144,37 @@
       var img = ctx.createImageData(TEX, TEX);
       var red = parseColor(RED);
       var gold = parseColor(GOLD);
-      var dark = [10, 2, 2]; // near-black red, keeps the tunnel on the site's black
-      var BANDS = 6;   // stripe pairs around the circumference
-      var SLANT = 2;   // v twist -> how tightly the spiral winds
+      var dark = [10, 2, 2]; // near-black red, keeps the burst on the site's black
+      var BANDS = 9;   // ray pairs around the circumference
+      function hash(k, salt) {
+        var h = Math.sin(k * 127.1 + salt * 311.7) * 43758.5453;
+        return h - Math.floor(h);
+      }
       for (var y = 0; y < TEX; y++) {
         for (var x = 0; x < TEX; x++) {
           var u = x / TEX, v = y / TEX;
-          var t = (u * BANDS + v * SLANT) % 1;
-          // three zones per band: dark gap, red, thin gold rim
+          var band = Math.floor(u * BANDS);
+          var t = (u * BANDS) % 1;
+          // per-ray jitter: gap/red/gold zone widths differ ray to ray
+          var edge1 = 0.3 + 0.25 * hash(band, 1);
+          var edge2 = edge1 + 0.28 + 0.16 * hash(band, 2);
           var base;
-          if (t < 0.45) base = dark;
-          else if (t < 0.82) base = red;
+          if (t < edge1) base = dark;
+          else if (t < edge2) base = red;
           else base = gold;
           // grain: flip pixels near zone edges, plus overall speckle
-          var edge = Math.min(Math.abs(t - 0.45), Math.abs(t - 0.82), Math.min(t, 1 - t));
+          var edge = Math.min(Math.abs(t - edge1), Math.abs(t - edge2), Math.min(t, 1 - t));
           var n = Math.random();
           if (n < 0.35 - edge * 2.2) {
             base = (base === dark) ? red : (n < 0.08 ? gold : dark);
           }
           var shade = 0.75 + 0.25 * Math.random();
-          // soft dissolve at both cylinder ends (v 0..0.22 and 0.78..1)
-          var fadeIn = Math.min(1, v / 0.22);
-          var fadeOut = Math.min(1, (1 - v) / 0.22);
+          // soft dissolve at both cylinder ends, cut shorter per ray so
+          // the burst edge is spiky instead of a clean ring
+          var s0 = 0.06 + 0.16 * hash(band, 3);
+          var s1 = 1 - (0.06 + 0.16 * hash(band, 4));
+          var fadeIn = Math.max(0, Math.min(1, (v - s0) / 0.22));
+          var fadeOut = Math.max(0, Math.min(1, (s1 - v) / 0.22));
           var a = fadeIn * fadeIn * (3 - 2 * fadeIn) * fadeOut * fadeOut * (3 - 2 * fadeOut);
           var i = (y * TEX + x) * 4;
           img.data[i] = base[0] * shade;
@@ -270,6 +283,16 @@
       scene.add(pts);
 
       return {
+        // kick n sparks off the rim fast — fired at each bang pulse
+        burst: function (n) {
+          for (var k = 0, i = 0; i < PARTICLES && k < n; i++) {
+            if (p[i].life < p[i].maxLife * 0.4) {
+              reset(i, false);
+              p[i].vr = 2.6 + Math.random() * 1.6;
+              k++;
+            }
+          }
+        },
         update: function (dt) {
           for (var i = 0; i < PARTICLES; i++) {
             var s = p[i];
@@ -297,6 +320,7 @@
     var rafId = 0;
     var last = 0;
     var inView = true;
+    var banging = false;
 
     function frame(now) {
       rafId = 0;
@@ -307,6 +331,22 @@
       // it would make the dissolve edge crawl.
       stripeTex.offset.x = (stripeTex.offset.x + STRIPE_SPIN * dt) % 1;
       glowHalo.rotation.z += dt * 0.4;
+
+      // BANG pulse: periodic core flash, quantized to steps (CRT flash,
+      // not a smooth ease), with a spark burst on the attack.
+      var ph = (now / 1000) % BANG_PERIOD;
+      var inBang = ph < BANG_LEN;
+      if (inBang) {
+        var f = Math.ceil((1 - ph / BANG_LEN) * 4) / 4;
+        glowCore.scale.setScalar(1 + f * 1.7);
+        glowHalo.scale.setScalar(1 + f * 0.8);
+        if (!banging) spark.burst(10);
+      } else {
+        glowCore.scale.setScalar(1);
+        glowHalo.scale.setScalar(1);
+      }
+      banging = inBang;
+
       spark.update(dt);
       renderer.render(scene, camera);
       updatePupils();

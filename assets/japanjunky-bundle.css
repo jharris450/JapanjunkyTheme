@@ -64,6 +64,18 @@
   opacity: 0.6;
   pointer-events: none;
   transform: perspective(700px) rotateY(14deg) rotate(-2deg);
+  /* subtle float; keyframes restate the full transform because animation
+     replaces it wholesale. Pupil JS reads live rects, so the eyes ride along. */
+  animation: jj-kyogen-float 7s ease-in-out infinite;
+}
+
+@keyframes jj-kyogen-float {
+  0%, 100% { transform: perspective(700px) rotateY(14deg) rotate(-2deg) translateY(0); }
+  50% { transform: perspective(700px) rotateY(14deg) rotate(-2.6deg) translateY(-11px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-kyogen { animation: none; }
 }
 
 .jj-kyogen__img {
