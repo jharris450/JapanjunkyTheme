@@ -15,8 +15,8 @@
 (function () {
   'use strict';
 
-  var BUFFER = 220;      // render buffer px; CSS upscales to 640 = chunky pixels
-  var TEX = 256;         // burst texture size
+  var BUFFER = 512;      // render buffer px; CSS upscale ~2.4x keeps pixels but kills grain-mush
+  var TEX = 512;         // burst texture size
   var FLICKER = 0.18;    // seconds per frame of the two-pattern flicker
   var PARTICLES = 42;    // sparks shed off the burst rim
   var BANG_PERIOD = 3.4; // seconds between flash pulses
@@ -124,11 +124,13 @@
     renderer.setClearColor(0x000000, 0);
 
     var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    // Camera sits OUTSIDE the tunnel mouth: the swirl reads as a floating
-    // disc (~70% of the frame) instead of wallpapering the whole buffer,
-    // leaving transparent margin for the rim sparks.
-    camera.position.set(0, 0, 0);
+    // Long lens from far back (near-orthographic): with the camera at the
+    // mouth the far tunnel half collapses to ~17% of the disc and there is
+    // no room for a big interior. Pulled back, v maps almost linearly to
+    // screen radius, so the burst ring can hug the edge and the whole
+    // center stays a black field for the product info to sit in.
+    var camera = new THREE.PerspectiveCamera(12.5, 1, 0.1, 150);
+    camera.position.set(0, 0, -32);
     camera.lookAt(0, 0, 30);
 
     // Bang texture: pop-burst SHAPE on the swirl's machinery. Not radial
@@ -165,28 +167,37 @@
           var amp = 0.5 + 0.5 * hash(spike, 1 + variant * 7);
           var jag = tri * amp * 0.16;
           // layer boundaries in v, all echoing the same jagged outline
-          // (smaller v = further out; tips push the whole shape outward)
-          var edge0 = 0.24 - jag * 1.3;  // silhouette edge
-          var edge1 = edge0 + 0.09;      // dark halo -> red body
-          var edge2 = edge0 + 0.38;      // red body -> gold rim
-          var edge3 = edge0 + 0.50;      // gold rim -> inner red
+          // (smaller v = further out; tips push the whole shape outward).
+          // The burst is a RING: past blackV everything is a near-black
+          // field — the product info sits inside that center.
+          var edge0 = 0.20 - jag * 1.2;    // silhouette edge — deep spikes
+          var edge1 = edge0 + 0.02;        // dark halo -> red body
+          var edge2 = edge0 + 0.075;       // red body -> gold rim
+          var edge3 = edge0 + 0.105;       // gold rim -> inner sliver
+          var blackV = edge0 + 0.115;      // black interior echoes the outline exactly
+          var black = [8, 2, 2];
+          var inBlack = v >= blackV;
           var base;
-          if (v < edge1) base = dark;
+          if (inBlack) base = black;
+          else if (v < edge1) base = dark;
           else if (v < edge2) base = red;
           else if (v < edge3) base = gold;
           else base = red;
-          // grain: flip pixels near layer edges, plus overall speckle
-          var edge = Math.min(Math.abs(v - edge1), Math.abs(v - edge2), Math.abs(v - edge3));
-          var n = Math.random();
-          if (n < 0.35 - edge * 2.2) {
-            base = (base === dark) ? red : (n < 0.08 ? gold : dark);
+          var shade;
+          if (inBlack) {
+            shade = 0.85 + 0.15 * Math.random(); // whisper of grain, keep it clean
+          } else {
+            // grain: flip pixels near layer edges, plus overall speckle
+            var edge = Math.min(Math.abs(v - edge1), Math.abs(v - edge2), Math.abs(v - edge3));
+            var n = Math.random();
+            if (n < 0.35 - edge * 2.2) {
+              base = (base === dark) ? red : (n < 0.08 ? gold : dark);
+            }
+            shade = 0.75 + 0.25 * Math.random();
           }
-          var shade = 0.75 + 0.25 * Math.random();
-          // alpha: sharp-ish dithered silhouette edge outside, fade to a
-          // center hole past the gold rim (glow core lives there)
-          var aOut = Math.max(0, Math.min(1, (v - edge0) / 0.035));
-          var aIn = Math.max(0, Math.min(1, (0.92 - v) / 0.14));
-          var a = aOut * aIn * aIn * (3 - 2 * aIn);
+          // alpha: dithered silhouette edge outside, fully opaque inward
+          // (the far end is sealed by the black cap plane)
+          var a = Math.max(0, Math.min(1, (v - edge0) / 0.02));
           var i = (y * TEX + x) * 4;
           img.data[i] = base[0] * shade;
           img.data[i + 1] = base[1] * shade;
@@ -220,37 +231,41 @@
     tunnel.position.z = 28;
     scene.add(tunnel);
 
-    // Core planes: gold glow at the vanishing point + a wider dim red
-    // halo a bit closer, counter-rotating for cheap depth.
-    function makeGlowTexture(rgb, inner) {
+    // Planes: a black cap seals the far end so the whole interior reads
+    // as one solid dark field (no glow in the middle — the center is
+    // supposed to frame the product info, not compete with it), plus a
+    // red RING glow hugging the burst bands for the pulse flash.
+    var cap = new THREE.Mesh(
+      new THREE.CircleGeometry(3.05, 48),
+      new THREE.MeshBasicMaterial({ color: 0x080202, side: THREE.DoubleSide })
+    );
+    cap.position.z = 47.9;
+    scene.add(cap);
+
+    function makeRingTexture(rgb) {
       var c = document.createElement('canvas');
-      c.width = c.height = 64;
+      c.width = c.height = 128;
       var ctx = c.getContext('2d');
-      var grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 32);
-      grad.addColorStop(0, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + inner + ')');
-      grad.addColorStop(1, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0)');
+      var grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0.55, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0)');
+      grad.addColorStop(0.75, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0.55)');
+      grad.addColorStop(0.95, 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0)');
       ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 64, 64);
+      ctx.fillRect(0, 0, 128, 128);
       return new THREE.CanvasTexture(c);
     }
 
-    function makeGlowPlane(rgb, inner, size, z) {
-      var mesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(size, size),
-        new THREE.MeshBasicMaterial({
-          map: makeGlowTexture(rgb, inner),
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        })
-      );
-      mesh.position.z = z;
-      scene.add(mesh);
-      return mesh;
-    }
-
-    var glowCore = makeGlowPlane(parseColor(GOLD), 0.95, 2.2, 44);
-    var glowHalo = makeGlowPlane(parseColor(RED), 0.5, 4.0, 24);
+    var glowRing = new THREE.Mesh(
+      new THREE.PlaneGeometry(7.5, 7.5),
+      new THREE.MeshBasicMaterial({
+        map: makeRingTexture(parseColor(RED)),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    glowRing.position.z = 10;
+    scene.add(glowRing);
 
     /* ---------- rim sparks: particles shed off the swirl's edge ---------- */
     var spark = (function () {
@@ -285,7 +300,7 @@
       dctx.fillRect(0, 0, 16, 16);
 
       var pts = new THREE.Points(geo, new THREE.PointsMaterial({
-        size: 0.28,
+        size: 1.1, // world units; the far camera shrinks attenuated points ~4x
         map: new THREE.CanvasTexture(dot),
         vertexColors: true,
         transparent: true,
@@ -345,7 +360,7 @@
       flickerT += dt;
       var flickFrame = Math.floor(flickerT / FLICKER) % 2;
       tunnel.material.map = flickFrame ? stripeTexB : stripeTexA;
-      glowHalo.rotation.z += dt * 0.4;
+      glowRing.rotation.z += dt * 0.4;
 
       // BANG pulse: periodic core flash, quantized to steps (CRT flash,
       // not a smooth ease), with a spark burst on the attack.
@@ -353,12 +368,10 @@
       var inBang = ph < BANG_LEN;
       if (inBang) {
         var f = Math.ceil((1 - ph / BANG_LEN) * 4) / 4;
-        glowCore.scale.setScalar(1 + f * 1.7);
-        glowHalo.scale.setScalar(1 + f * 0.8);
+        glowRing.scale.setScalar(1 + f * 0.45);
         if (!banging) spark.burst(10);
       } else {
-        glowCore.scale.setScalar(1);
-        glowHalo.scale.setScalar(1);
+        glowRing.scale.setScalar(1);
       }
       banging = inBang;
 
