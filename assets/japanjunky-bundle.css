@@ -45,7 +45,7 @@
                     oval swallowing the whole card and then some */
   max-width: none;
   z-index: -2;
-  opacity: 0.5;
+  opacity: 0.75;
   pointer-events: none;
   display: block;
   image-rendering: pixelated; /* low-res buffer upscaled = chunky CRT pixels */
