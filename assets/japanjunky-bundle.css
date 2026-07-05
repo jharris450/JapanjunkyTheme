@@ -38,11 +38,12 @@
    card's top-right corner. */
 #jj-swirl-canvas {
   position: absolute;
-  left: calc(50% - 620px);
-  top: calc(50% - 550px);
-  width: 1240px;
-  height: 1100px; /* square buffer stretched wide: horizontal-oval burst whose
-                     BLACK interior swallows the whole card and then some */
+  /* fallback size; japanjunky-info-swirl.js re-fits these to the live card
+     so the ring hugs it (black interior = card + margin) */
+  left: calc(50% - 450px);
+  top: calc(50% - 375px);
+  width: 900px;
+  height: 750px;
   max-width: none;
   z-index: -2;
   opacity: 0.75;

@@ -129,9 +129,33 @@
     // no room for a big interior. Pulled back, v maps almost linearly to
     // screen radius, so the burst ring can hug the edge and the whole
     // center stays a black field for the product info to sit in.
-    var camera = new THREE.PerspectiveCamera(12.5, 1, 0.1, 150);
+    var camera = new THREE.PerspectiveCamera(10.2, 1, 0.1, 150);
     camera.position.set(0, 0, -32);
     camera.lookAt(0, 0, 30);
+
+    // Fit the canvas to the real card so the ring hugs it instead of
+    // sprawling across the zone (fixed sizes guessed the card wrong).
+    // FIT_K: black-interior half-extent as fraction of canvas dimension
+    //   = valley black radius (0.76 of mouth) * mouth fraction of the
+    //     half-frame (0.85 at FOV 10.2) / 2.
+    // FIT_Q: card half-extent as fraction of the interior per axis —
+    //   0.68 keeps the card's diagonal corners inside the ellipse.
+    var FIT_K = 0.323, FIT_Q = 0.68;
+    function fitCanvas() {
+      var w = card.offsetWidth, h = card.offsetHeight;
+      if (!w || !h) return;
+      var W = Math.round((w / 2) / (FIT_K * FIT_Q));
+      var H = Math.round((h / 2) / (FIT_K * FIT_Q));
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      canvas.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
+      canvas.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
+    }
+    fitCanvas();
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(fitCanvas).observe(card); // also fires when the card first shows
+    }
+    window.addEventListener('resize', fitCanvas);
 
     // Bang texture: pop-burst SHAPE on the swirl's machinery. Not radial
     // rays (read too much like the rising-sun scene) — a jagged comic
