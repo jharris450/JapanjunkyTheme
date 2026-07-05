@@ -140,7 +140,8 @@
     //     half-frame (0.85 at FOV 10.2) / 2.
     // FIT_Q: card half-extent as fraction of the interior per axis —
     //   0.68 keeps the card's diagonal corners inside the ellipse.
-    var FIT_K = 0.323, FIT_Q = 0.68;
+    // valley black radius now 1/(1+0.43) = 0.699 of mouth (deeper spikes)
+    var FIT_K = 0.297, FIT_Q = 0.68;
     function fitCanvas() {
       var w = card.offsetWidth, h = card.offsetHeight;
       if (!w || !h) return;
@@ -188,17 +189,18 @@
           var st = (u + variant * 0.5 / SPIKES) * SPIKES;
           var spike = Math.floor(st) % SPIKES;
           var tri = 1 - Math.abs(2 * (st - Math.floor(st)) - 1); // 0 valley -> 1 tip
-          var amp = 0.5 + 0.5 * hash(spike, 1 + variant * 7);
+          // long/short alternation + per-spike jitter: comic bang, not a gear
+          var amp = (spike % 2 ? 0.45 : 1.0) * (0.6 + 0.4 * hash(spike, 1 + variant * 7));
           var jag = tri * amp * 0.16;
           // layer boundaries in v, all echoing the same jagged outline
           // (smaller v = further out; tips push the whole shape outward).
           // The burst is a RING: past blackV everything is a near-black
           // field — the product info sits inside that center.
-          var edge0 = 0.20 - jag * 1.2;    // silhouette edge — deep spikes
-          var edge1 = edge0 + 0.02;        // dark halo -> red body
-          var edge2 = edge0 + 0.075;       // red body -> gold rim
-          var edge3 = edge0 + 0.105;       // gold rim -> inner sliver
-          var blackV = edge0 + 0.115;      // black interior echoes the outline exactly
+          var edge0 = 0.28 - jag * 1.65;   // silhouette edge — DEEP spikes
+          var edge1 = edge0 + 0.035;       // ink halo -> red body
+          var edge2 = edge0 + 0.105;       // red body -> gold rim
+          var edge3 = edge0 + 0.14;        // gold rim -> inner sliver
+          var blackV = edge0 + 0.15;       // black interior echoes the outline exactly
           var black = [8, 2, 2];
           var inBlack = v >= blackV;
           var base;
