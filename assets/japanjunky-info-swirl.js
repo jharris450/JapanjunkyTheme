@@ -233,6 +233,13 @@
       }
       ctx.putImageData(img, 0, 0);
       var tex = new THREE.CanvasTexture(c);
+      // CanvasTexture defaults sabotage the painted v-axis mapping:
+      // flipY=true mirrors v (black interior lands on the OUTER rim = a
+      // giant dark disc), and a linear-space upload makes the renderer's
+      // sRGB output brighten the near-black texels to maroon while the
+      // cap plane's material color stays black (visible oval seam).
+      tex.flipY = false;
+      tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
