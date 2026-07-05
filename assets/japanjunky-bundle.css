@@ -38,11 +38,11 @@
    card's top-right corner. */
 #jj-swirl-canvas {
   position: absolute;
-  left: calc(50% - 440px);
-  top: calc(50% - 320px);
-  width: 880px;
-  height: 640px; /* square buffer stretched wide: burst becomes a horizontal
-                    oval behind the card */
+  left: calc(50% - 620px);
+  top: calc(50% - 450px);
+  width: 1240px;
+  height: 900px; /* square buffer stretched wide: burst becomes a horizontal
+                    oval swallowing the whole card and then some */
   max-width: none;
   z-index: -2;
   opacity: 0.5;
