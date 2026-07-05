@@ -15,12 +15,12 @@
 (function () {
   'use strict';
 
-  var BUFFER = 220;      // render buffer px; CSS upscales to 460 = chunky pixels
-  var TEX = 256;         // ray texture size
-  var STRIPE_SPIN = 0.09;  // texture u scroll = slow rotation of the burst
-  var PARTICLES = 42;      // sparks shed off the burst rim
-  var BANG_PERIOD = 3.4;   // seconds between flash pulses
-  var BANG_LEN = 0.45;     // pulse duration
+  var BUFFER = 220;      // render buffer px; CSS upscales to 640 = chunky pixels
+  var TEX = 256;         // burst texture size
+  var FLICKER = 0.18;    // seconds per frame of the two-pattern flicker
+  var PARTICLES = 42;    // sparks shed off the burst rim
+  var BANG_PERIOD = 3.4; // seconds between flash pulses
+  var BANG_LEN = 0.45;   // pulse duration
 
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -139,7 +139,9 @@
     // outer rim; v1 = far end = center). Layers outside-in:
     // transparent -> near-black halo -> red body -> gold rim -> center
     // hole where the gold glow core plane sits.
-    function makeStripeTexture() {
+    // `variant` reseeds the spike pattern (and rotates it half a tip) so
+    // two textures can flicker-alternate like the old pop burst did.
+    function makeStripeTexture(variant) {
       var c = document.createElement('canvas');
       c.width = c.height = TEX;
       var ctx = c.getContext('2d');
@@ -157,10 +159,10 @@
           var u = x / TEX, v = y / TEX;
           // jagged spike displacement: triangle wave per spike, tip
           // height varies spike to spike so the outline isn't uniform
-          var st = u * SPIKES;
-          var spike = Math.floor(st);
-          var tri = 1 - Math.abs(2 * (st - spike) - 1); // 0 valley -> 1 tip
-          var amp = 0.5 + 0.5 * hash(spike % SPIKES, 1);
+          var st = (u + variant * 0.5 / SPIKES) * SPIKES;
+          var spike = Math.floor(st) % SPIKES;
+          var tri = 1 - Math.abs(2 * (st - Math.floor(st)) - 1); // 0 valley -> 1 tip
+          var amp = 0.5 + 0.5 * hash(spike, 1 + variant * 7);
           var jag = tri * amp * 0.16;
           // layer boundaries in v, all echoing the same jagged outline
           // (smaller v = further out; tips push the whole shape outward)
@@ -200,14 +202,15 @@
       return tex;
     }
 
-    var stripeTex = makeStripeTexture();
+    var stripeTexA = makeStripeTexture(0);
+    var stripeTexB = makeStripeTexture(1);
 
     // The tunnel: cylinder axis along Z, mouth at z=8 so the whole thing
     // stays in front of the camera and shows as a receding disc.
     var tunnel = new THREE.Mesh(
       new THREE.CylinderGeometry(3, 3, 40, 24, 1, true),
       new THREE.MeshBasicMaterial({
-        map: stripeTex,
+        map: stripeTexA,
         side: THREE.BackSide,
         transparent: true,
         depthWrite: false
@@ -330,15 +333,18 @@
     var last = 0;
     var inView = true;
     var banging = false;
+    var flickerT = 0;
 
     function frame(now) {
       rafId = 0;
       if (!running) return;
       var dt = Math.min(0.1, (now - last) / 1000 || 0.016);
       last = now;
-      // u-scroll only: the v axis carries the baked rim fade, so scrolling
-      // it would make the dissolve edge crawl.
-      stripeTex.offset.x = (stripeTex.offset.x + STRIPE_SPIN * dt) % 1;
+      // No swirl anymore: the burst FLASHES by alternating two spike
+      // patterns on a steps cycle (same rhythm as the old pop flicker).
+      flickerT += dt;
+      var flickFrame = Math.floor(flickerT / FLICKER) % 2;
+      tunnel.material.map = flickFrame ? stripeTexB : stripeTexA;
       glowHalo.rotation.z += dt * 0.4;
 
       // BANG pulse: periodic core flash, quantized to steps (CRT flash,
