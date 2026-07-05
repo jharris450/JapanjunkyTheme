@@ -131,12 +131,14 @@
     camera.position.set(0, 0, 0);
     camera.lookAt(0, 0, 30);
 
-    // Bang texture: same grain-dithered stripe machinery as the swirl,
-    // but the stripes run straight along v (no slant) so wrapped on the
-    // cylinder they read as jagged radial RAYS — a comic starburst when
-    // viewed down the axis. Per-ray width/length jitter keeps it spiky.
-    // Alpha still ramps to 0 at BOTH v ends so the rim stays dissolved —
-    // no hard circle edge, the burst just floats.
+    // Bang texture: pop-burst SHAPE on the swirl's machinery. Not radial
+    // rays (read too much like the rising-sun scene) — a jagged comic
+    // explosion silhouette: a zigzag spike outline r(angle) with the
+    // color layers echoing it inward, like the old generated pop art.
+    // u = angle, v = radius (v0 end of the cylinder faces the camera =
+    // outer rim; v1 = far end = center). Layers outside-in:
+    // transparent -> near-black halo -> red body -> gold rim -> center
+    // hole where the gold glow core plane sits.
     function makeStripeTexture() {
       var c = document.createElement('canvas');
       c.width = c.height = TEX;
@@ -145,7 +147,7 @@
       var red = parseColor(RED);
       var gold = parseColor(GOLD);
       var dark = [10, 2, 2]; // near-black red, keeps the burst on the site's black
-      var BANDS = 9;   // ray pairs around the circumference
+      var SPIKES = 14; // zigzag tips around the outline
       function hash(k, salt) {
         var h = Math.sin(k * 127.1 + salt * 311.7) * 43758.5453;
         return h - Math.floor(h);
@@ -153,29 +155,36 @@
       for (var y = 0; y < TEX; y++) {
         for (var x = 0; x < TEX; x++) {
           var u = x / TEX, v = y / TEX;
-          var band = Math.floor(u * BANDS);
-          var t = (u * BANDS) % 1;
-          // per-ray jitter: gap/red/gold zone widths differ ray to ray
-          var edge1 = 0.3 + 0.25 * hash(band, 1);
-          var edge2 = edge1 + 0.28 + 0.16 * hash(band, 2);
+          // jagged spike displacement: triangle wave per spike, tip
+          // height varies spike to spike so the outline isn't uniform
+          var st = u * SPIKES;
+          var spike = Math.floor(st);
+          var tri = 1 - Math.abs(2 * (st - spike) - 1); // 0 valley -> 1 tip
+          var amp = 0.5 + 0.5 * hash(spike % SPIKES, 1);
+          var jag = tri * amp * 0.16;
+          // layer boundaries in v, all echoing the same jagged outline
+          // (smaller v = further out; tips push the whole shape outward)
+          var edge0 = 0.24 - jag * 1.3;  // silhouette edge
+          var edge1 = edge0 + 0.09;      // dark halo -> red body
+          var edge2 = edge0 + 0.38;      // red body -> gold rim
+          var edge3 = edge0 + 0.50;      // gold rim -> inner red
           var base;
-          if (t < edge1) base = dark;
-          else if (t < edge2) base = red;
-          else base = gold;
-          // grain: flip pixels near zone edges, plus overall speckle
-          var edge = Math.min(Math.abs(t - edge1), Math.abs(t - edge2), Math.min(t, 1 - t));
+          if (v < edge1) base = dark;
+          else if (v < edge2) base = red;
+          else if (v < edge3) base = gold;
+          else base = red;
+          // grain: flip pixels near layer edges, plus overall speckle
+          var edge = Math.min(Math.abs(v - edge1), Math.abs(v - edge2), Math.abs(v - edge3));
           var n = Math.random();
           if (n < 0.35 - edge * 2.2) {
             base = (base === dark) ? red : (n < 0.08 ? gold : dark);
           }
           var shade = 0.75 + 0.25 * Math.random();
-          // soft dissolve at both cylinder ends, cut shorter per ray so
-          // the burst edge is spiky instead of a clean ring
-          var s0 = 0.06 + 0.16 * hash(band, 3);
-          var s1 = 1 - (0.06 + 0.16 * hash(band, 4));
-          var fadeIn = Math.max(0, Math.min(1, (v - s0) / 0.22));
-          var fadeOut = Math.max(0, Math.min(1, (s1 - v) / 0.22));
-          var a = fadeIn * fadeIn * (3 - 2 * fadeIn) * fadeOut * fadeOut * (3 - 2 * fadeOut);
+          // alpha: sharp-ish dithered silhouette edge outside, fade to a
+          // center hole past the gold rim (glow core lives there)
+          var aOut = Math.max(0, Math.min(1, (v - edge0) / 0.035));
+          var aIn = Math.max(0, Math.min(1, (0.92 - v) / 0.14));
+          var a = aOut * aIn * aIn * (3 - 2 * aIn);
           var i = (y * TEX + x) * 4;
           img.data[i] = base[0] * shade;
           img.data[i + 1] = base[1] * shade;
