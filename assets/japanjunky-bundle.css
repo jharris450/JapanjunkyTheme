@@ -39,9 +39,10 @@
 #jj-swirl-canvas {
   position: absolute;
   left: calc(50% - 320px);
-  top: calc(50% - 320px);
+  top: calc(50% - 440px);
   width: 640px;
-  height: 640px;
+  height: 880px; /* square buffer stretched tall: burst becomes a vertical
+                    oval covering the card's full length */
   max-width: none;
   z-index: -2;
   opacity: 0.5;
@@ -49,6 +50,7 @@
   display: block;
   image-rendering: pixelated; /* low-res buffer upscaled = chunky CRT pixels */
   filter: saturate(1.15) contrast(1.1) brightness(0.95);
+  transform: rotate(-7deg);
 }
 
 /* perspective+rotateY turns the face toward the product info text at
