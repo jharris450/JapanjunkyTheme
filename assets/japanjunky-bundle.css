@@ -159,6 +159,8 @@
   height: 100%;
   max-width: none;
   display: block;
+  /* sprite is a 62px palette-dithered grid — upscale crisp, no smearing */
+  image-rendering: pixelated;
 }
 
 .jj-daruma__half--top .jj-daruma__img { clip-path: inset(0 0 44% 0); }
