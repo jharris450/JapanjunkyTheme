@@ -56,14 +56,12 @@
   transform: rotate(-7deg);
 }
 
-/* Clip frame: same rect as the swirl canvas (fallback here; info-swirl.js
-   re-fits both together), centered on the card like the canvas is. The
-   bang's black interior is JAGGED: the inner gold edge oscillates between
-   the spike valleys (0.297 of the canvas, FIT_K) and ~0.40 between spikes.
-   33% ≈ the average black extent — clipping at the worst-case valley cut
-   the head visibly early; at 33% the dim (0.4 opacity) head may kiss the
-   gold edge at the deepest valleys, which reads fine. Kyogen coordinates
-   are unchanged: the frame's center IS the card's center. */
+/* Clip frame: same rect as the swirl canvas. info-swirl.js re-fits both
+   together AND replaces this ellipse with the bang's exact jagged
+   black-interior polygon (rebuilt per flicker variant, swapped in the
+   frame loop) — the head fills right up to the animated gold edge. The
+   ellipse below is only the pre-JS fallback. Kyogen coordinates are
+   unchanged: the frame's center IS the card's center. */
 .jj-kyogen-clip {
   position: absolute;
   left: calc(50% - 450px);

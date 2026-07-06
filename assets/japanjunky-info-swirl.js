@@ -141,6 +141,47 @@
     //   0.68 keeps the card's diagonal corners inside the ellipse.
     // valley black radius now 1/(1+0.43) = 0.699 of mouth (deeper spikes)
     var FIT_K = 0.297, FIT_Q = 0.68;
+
+    /* Kyogen clip: instead of a static ellipse, clip the mask with the
+       bang's ACTUAL black-interior silhouette so the head fills right up
+       to the jagged gold edge and never crosses it. blackEdgeV mirrors the
+       texture painter's layer math exactly (keep the two in sync); the
+       screen mapping is radius = 0.85/(1+v) of the half-frame (long-lens
+       tunnel: 1/(1+v)), the cylinder's u wraps clockwise from screen
+       bottom (rotation.x = PI/2 + mirrored lookAt camera), and the CSS
+       rotate(-7deg) on the canvas is baked in as +7deg CCW in y-up math
+       coords. Two polygons — one per flicker variant — swap with the
+       texture in the frame loop. */
+    var SPIKES = 14;
+    function blackEdgeV(u, variant) {
+      var st = (u + variant * 0.5 / SPIKES) * SPIKES;
+      var spike = Math.floor(st) % SPIKES;
+      var tri = 1 - Math.abs(2 * (st - Math.floor(st)) - 1);
+      var h = Math.sin(spike * 127.1 + (1 + variant * 7) * 311.7) * 43758.5453;
+      var amp = (spike % 2 ? 0.45 : 1.0) * (0.6 + 0.4 * (h - Math.floor(h)));
+      return 0.43 - tri * amp * 0.16 * 1.65;
+    }
+
+    var clipFrame = document.getElementById('jj-kyogen-clip');
+    var clipPaths = ['', ''];
+
+    function buildClipPath(variant, W, H) {
+      var N = 168, pts = [];
+      var rot = 7 * Math.PI / 180;
+      for (var k = 0; k < N; k++) {
+        var u = k / N;
+        // 0.985: sit a hair inside the boundary, clear of the AA fringe
+        var f = 0.985 * 0.85 / (1 + blackEdgeV(u, variant));
+        var beta = -Math.PI / 2 - u * Math.PI * 2;
+        var px = f * Math.cos(beta) * W / 2;
+        var py = f * Math.sin(beta) * H / 2;
+        var rx = px * Math.cos(rot) - py * Math.sin(rot);
+        var ry = px * Math.sin(rot) + py * Math.cos(rot);
+        pts.push((50 + (rx / W) * 100).toFixed(2) + '% ' + (50 - (ry / H) * 100).toFixed(2) + '%');
+      }
+      return 'polygon(' + pts.join(',') + ')';
+    }
+
     function fitCanvas() {
       var w = card.offsetWidth, h = card.offsetHeight;
       if (!w || !h) return;
@@ -150,14 +191,16 @@
       canvas.style.height = H + 'px';
       canvas.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
       canvas.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
-      // kyogen clip frame rides the same rect so its interior ellipse
-      // (CSS clip-path, % of this box) stays glued to the bang's black core
-      var clipFrame = document.getElementById('jj-kyogen-clip');
+      // kyogen clip frame rides the same rect; its spike polygons are in %
+      // of this box but W/H-dependent through the -7deg rotation, so rebuild
       if (clipFrame) {
         clipFrame.style.width = W + 'px';
         clipFrame.style.height = H + 'px';
         clipFrame.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
         clipFrame.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
+        clipPaths[0] = buildClipPath(0, W, H);
+        clipPaths[1] = buildClipPath(1, W, H);
+        clipFrame.style.clipPath = clipPaths[0];
       }
     }
     fitCanvas();
@@ -325,6 +368,10 @@
       flickerT += dt;
       var flickFrame = Math.floor(flickerT / FLICKER) % 2;
       tunnel.material.map = flickFrame ? stripeTexB : stripeTexA;
+      // the kyogen clip silhouette flips with the spike pattern
+      if (clipFrame && clipPaths[flickFrame]) {
+        clipFrame.style.clipPath = clipPaths[flickFrame];
+      }
       glowRing.rotation.z += dt * 0.4;
 
       // BANG pulse: periodic core flash, quantized to steps (CRT flash,
