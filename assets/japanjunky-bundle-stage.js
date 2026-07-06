@@ -187,13 +187,17 @@
   // opening (walls facing away from it fall off naturally), and the point
   // light rides the mouth of the box (child of boxGroup, so drag-spinning
   // the box moves the shading with it — the "dynamic" part).
+  // Palette-fitted sources: cream (--jj-text) for the ambient/room pair —
+  // the site's "white" — and a faint desaturated gold (--jj-secondary
+  // family) for the mouth glow, echoing the daruma loot light. decay 1 +
+  // a farther offset spreads the gold as a wash instead of a hotspot.
   function buildLights() {
-    scene.add(new THREE.AmbientLight(0xffffff, 0.32));
-    var room = new THREE.DirectionalLight(0xfff4e2, 0.85);
+    scene.add(new THREE.AmbientLight(0xe8e0d0, 0.38));
+    var room = new THREE.DirectionalLight(0xe8e0d0, 0.85);
     room.position.set(0.9, 0.7, 2.2);
     scene.add(room);
-    var mouth = new THREE.PointLight(0xffe9c8, 0.9, 4, 2);
-    mouth.position.set(DIMS.w / 2 + 0.25, 0.25, 0.35);
+    var mouth = new THREE.PointLight(0xf0d98c, 0.5, 0, 1);
+    mouth.position.set(DIMS.w / 2 + 0.55, 0.3, 0.55);
     boxGroup.add(mouth);
   }
 
