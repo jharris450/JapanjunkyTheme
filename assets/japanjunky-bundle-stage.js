@@ -159,26 +159,14 @@
     });
   }
 
-  // Dimmed variant for surfaces inside the box (interior walls, the flaps'
-  // unprinted inner sides, the folded-in minor flaps): same PS1 pipeline,
-  // fragment multiplied down so the inside reads as shadowed cardboard.
-  var PS1_FRAG_DIM = [
-    'uniform sampler2D uTexture;',
-    'uniform float uDim;',
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vec4 texColor = texture2D(uTexture, vUv);',
-    '  gl_FragColor = vec4(texColor.rgb * uDim, texColor.a);',
-    '}'
-  ].join('\n');
-  function psMatDim(tex, dim, side) {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uResolution: { value: shaderRes },
-        uTexture: { value: tex || fallbackTex() },
-        uDim: { value: dim }
-      },
-      vertexShader: PS1.vert, fragmentShader: PS1_FRAG_DIM,
+  // Lit material for surfaces inside the box (interior walls, the flaps'
+  // unprinted inner sides, the folded-in minor flaps). The outer faces stay
+  // on the unlit PS1 shader at full texture brightness; the inside is shaded
+  // by real lights (below) so its darkness falls off naturally toward the
+  // opening instead of being one flat dim step.
+  function litMat(tex, side) {
+    return new THREE.MeshLambertMaterial({
+      map: tex || fallbackTex(),
       side: side === undefined ? THREE.FrontSide : side
     });
   }
@@ -191,14 +179,23 @@
   // (×0.7 → ×0.49 of the flagship recordbox) — vertical size unchanged.
   var BOX_DEPTH = DIMS.d * 0.49;
 
-  // Interior shading: the inside of a closed cardboard box is shadowed —
-  // walls darkest, folded-in minor flaps a touch lighter (nearer the
-  // opening), the main flaps' inner sides lightest (they catch light when
-  // the lid swings open).
-  var DIM_WALL = 0.45;
-  var DIM_MINOR = 0.6;
-  var DIM_FLAP_IN = 0.75;
   var MINOR_H = 0.4; // depth of the fold-in top/bottom minor flaps
+
+  // Interior lighting: only the Lambert (litMat) surfaces respond — the
+  // unlit outer faces keep full texture brightness. Ambient sets the shadow
+  // floor, the directional acts as room light spilling in through the
+  // opening (walls facing away from it fall off naturally), and the point
+  // light rides the mouth of the box (child of boxGroup, so drag-spinning
+  // the box moves the shading with it — the "dynamic" part).
+  function buildLights() {
+    scene.add(new THREE.AmbientLight(0xffffff, 0.32));
+    var room = new THREE.DirectionalLight(0xfff4e2, 0.85);
+    room.position.set(0.9, 0.7, 2.2);
+    scene.add(room);
+    var mouth = new THREE.PointLight(0xffe9c8, 0.9, 4, 2);
+    mouth.position.set(DIMS.w / 2 + 0.25, 0.25, 0.35);
+    boxGroup.add(mouth);
+  }
 
   function buildBox() {
     var w = DIMS.w, h = DIMS.h, d = BOX_DEPTH;
@@ -231,11 +228,11 @@
     var innerGeo = new THREE.BoxGeometry(w - 0.02, h - 0.02, d - 0.02);
     var innerMats = [
       invisible,
-      psMatDim(texSideLeft, DIM_WALL, THREE.BackSide),
-      psMatDim(texTop, DIM_WALL, THREE.BackSide),
-      psMatDim(texBottom, DIM_WALL, THREE.BackSide),
+      litMat(texSideLeft, THREE.BackSide),
+      litMat(texTop, THREE.BackSide),
+      litMat(texBottom, THREE.BackSide),
       invisible,
-      psMatDim(texBack, DIM_WALL, THREE.BackSide)
+      litMat(texBack, THREE.BackSide)
     ];
     boxGroup.add(new THREE.Mesh(innerGeo, innerMats));
 
@@ -247,10 +244,10 @@
     // main flaps close over them. Built already folded (they never
     // animate): plain cardboard bands just behind the front plane.
     var minorGeo = new THREE.PlaneGeometry(w * 0.98, MINOR_H);
-    var minorTop = new THREE.Mesh(minorGeo, psMatDim(loadBoxTex(TEX.top), DIM_MINOR));
+    var minorTop = new THREE.Mesh(minorGeo, litMat(loadBoxTex(TEX.top)));
     minorTop.position.set(0, h / 2 - MINOR_H / 2, d / 2 - 0.02);
     boxGroup.add(minorTop);
-    var minorBottom = new THREE.Mesh(minorGeo, psMatDim(loadBoxTex(TEX.bottom), DIM_MINOR));
+    var minorBottom = new THREE.Mesh(minorGeo, litMat(loadBoxTex(TEX.bottom)));
     minorBottom.position.set(0, -h / 2 + MINOR_H / 2, d / 2 - 0.02);
     boxGroup.add(minorBottom);
 
@@ -260,7 +257,7 @@
       var grp = new THREE.Object3D();
       var geo = new THREE.PlaneGeometry(width, height);
       grp.add(new THREE.Mesh(geo, psMat(outerTex, THREE.FrontSide)));
-      var inner = new THREE.Mesh(geo, psMatDim(loadBoxTex(innerTexUrl), DIM_FLAP_IN));
+      var inner = new THREE.Mesh(geo, litMat(loadBoxTex(innerTexUrl)));
       inner.rotation.y = Math.PI;
       inner.position.z = -0.002;
       grp.add(inner);
@@ -301,10 +298,12 @@
 
   // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
   // The attached flap+side end lid swings OUTWARD about its rear vertical
-  // hinge and stays outstretched. ~150°: any less and the outstretched
-  // flap ends up crossing the records' straight +x exit path (they'd
-  // visibly slide through the cardboard).
-  var OPEN_ANGLE = 2.6; // ~150deg
+  // hinge and stays outstretched. ~132°: at ~150° the side panel went
+  // nearly edge-on to the camera and read as a black seam — the flap looked
+  // detached from the box. (The old ~150° floor guarded the mesh slide-out
+  // exit path, which no longer exists — covers are DOM and fly above the
+  // canvas.)
+  var OPEN_ANGLE = 2.3; // ~132deg
   function setFlaps(t) {
     if (endLid) endLid.rotation.y = OPEN_ANGLE * t;
   }
@@ -592,11 +591,17 @@
 
   // ─── Init ────────────────────────────────────────────────────
   buildBox();
+  buildLights();
   setFlaps(0); // closed
   showBundleInfo(); // reveals the panel — the canvas gets layout here
   startLoop();
 
   canvas.addEventListener('click', function () {
+    // Splash owns first interaction (same guard as product-grid): the splash
+    // canvas is pointer-events:none, so clicks around/after the ENTER button
+    // (which floats right over this canvas) fall through and opened the box
+    // invisibly behind the fading splash.
+    if (window.JJ_SPLASH_ACTIVE) return;
     if (FSM.isLocked(state) || state !== 'closed' || aligning) return;
     // Wake Tsuno exactly like the scroll-to-grid does: dissolves the
     // greeting bubble AND engages his roaming personality (peek gesture).
