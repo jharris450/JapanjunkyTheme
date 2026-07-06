@@ -282,25 +282,24 @@
     leftFlap.add(lPair);
     boxGroup.add(leftFlap);
 
-    // End lid: front-right flap + right side panel as ONE attached L-piece,
-    // hinged on the box's FRONT-RIGHT vertical corner edge. The hinge line
-    // IS the box's visible right edge, so the open flap shares that edge at
-    // every viewing/spin angle — a background gap there is geometrically
-    // impossible. (The physical rear-edge hinge could never win: partial
-    // angles leave an open wedge the camera sees into, and a 180° back-fold
-    // parks the panel behind the box as a detached "ghost" fin.)
+    // End lid: front-right flap + right side panel as ONE attached L-piece
+    // (like a real record box end), hinged on the side panel's REAR
+    // vertical edge — swings open rightward/back as a unit. (The original
+    // design; a front-corner-hinge experiment put the lid on top of the
+    // box and was reverted.)
     endLid = new THREE.Object3D();
-    endLid.position.set(halfW, 0, d / 2);
+    endLid.position.set(halfW, 0, -d / 2);
 
-    // Right side panel: faces +X, spans front corner (hinge) → rear edge.
+    // Right side panel: faces +X, spans hinge (rear) → front edge.
     var sPair = flapPair(d, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
     sPair.rotation.y = Math.PI / 2; // face +X; width now runs along z
-    sPair.position.set(0.001, 0, -d / 2);
+    sPair.position.set(0.001, 0, d / 2);
     endLid.add(sPair);
 
-    // Front-right flap: faces +Z, spans hinge corner → box center.
+    // Front-right flap: faces +Z, attached at the panel's front corner,
+    // spans corner → box center.
     var rPair = flapPair(halfW, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight);
-    rPair.position.set(-halfW / 2, 0, 0.001);
+    rPair.position.set(-halfW / 2, 0, d + 0.001);
     endLid.add(rPair);
 
     boxGroup.add(endLid);
@@ -309,15 +308,21 @@
   }
 
   // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
-  // The L-piece swings about the front-right corner hinge, toward the
-  // viewer and around to a full 180° gatefold: the flap ends coplanar with
-  // the box front, extending right from the shared corner edge (attached
-  // from every angle), tape face turned away; the side panel folds out as
-  // a short return wall at the joint. Negative rotation = outward swing
-  // for this hinge.
-  var OPEN_ANGLE = Math.PI;
+  // The attached flap+side end lid swings OUTWARD about its rear vertical
+  // hinge and stays outstretched (~150°, the original look). While it
+  // swings, the whole lid also TUCKS slightly toward the box's back-left
+  // corner: with the hinge exactly on the corner, the open panel only
+  // touched the box along a zero-width edge and a hairline background
+  // slit showed at the joint — the tuck slides the panel into the box's
+  // silhouette so the two overlap. Closed pose (t=0) is untouched.
+  var OPEN_ANGLE = 2.6; // ~150deg
+  var TUCK_X = 0.07;    // open-lid slide toward the box (left)
+  var TUCK_Z = 0.04;    // ...and toward its back
   function setFlaps(t) {
-    if (endLid) endLid.rotation.y = -OPEN_ANGLE * t;
+    if (!endLid) return;
+    endLid.rotation.y = OPEN_ANGLE * t;
+    endLid.position.x = DIMS.w / 2 - TUCK_X * t;
+    endLid.position.z = -BOX_DEPTH / 2 - TUCK_Z * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
