@@ -27,7 +27,10 @@
   /* visible: covers fly the whole box→crescent path on deal/retract —
      hidden would make them vanish at the stage edge mid-flight */
   overflow: visible;
-  pointer-events: auto;
+  /* none: the stage box spans the whole right column at z 50 — with auto it
+     swallowed hover/click on anything beneath (the daruma). All handlers
+     delegate from the covers, which re-enable events themselves. */
+  pointer-events: none;
   position: relative;
 }
 
@@ -38,6 +41,7 @@
   height: 180px;
   transition: transform 0.4s ease-out, opacity 0.3s;
   cursor: default;
+  pointer-events: auto; /* stage is none — covers catch their own events */
   display: flex;
   flex-direction: column;
   align-items: center;
