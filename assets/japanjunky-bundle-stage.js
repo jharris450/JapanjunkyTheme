@@ -226,12 +226,17 @@
     var body = new THREE.Mesh(bodyGeo, bodyMats);
     boxGroup.add(body);
 
-    // Inner shell: same box shrunk a hair, BackSide + dimmed — this is what
-    // shows through the opening as the box's dark inside. The open right
-    // (+X) and front (+Z) stay invisible = the holes you look through.
+    // Inner shell: same box shrunk a hair, BackSide + lit — this is what
+    // shows through the opening as the box's dark inside. Only the front
+    // (+Z) stays invisible = the mouth you look through. The right (+X)
+    // gets a REAL interior wall even though the side door swings away
+    // there: with both faces open, a slightly spun box let sightlines
+    // pass in the mouth and out the side — a bright background slit
+    // (user's gap.png). The wall reads as dark cardboard, and the deal
+    // happens through the front mouth, so nothing contradicts it.
     var innerGeo = new THREE.BoxGeometry(w - 0.02, h - 0.02, d - 0.02);
     var innerMats = [
-      invisible,
+      litMat(loadBoxTex(TEX.sideRight), THREE.BackSide),
       litMat(texSideLeft, THREE.BackSide),
       litMat(texTop, THREE.BackSide),
       litMat(texBottom, THREE.BackSide),
@@ -302,12 +307,13 @@
 
   // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
   // The attached flap+side end lid swings OUTWARD about its rear vertical
-  // hinge and stays outstretched. ~132°: at ~150° the side panel went
-  // nearly edge-on to the camera and read as a black seam — the flap looked
-  // detached from the box. (The old ~150° floor guarded the mesh slide-out
-  // exit path, which no longer exists — covers are DOM and fly above the
-  // canvas.)
-  var OPEN_ANGLE = 2.3; // ~132deg
+  // hinge, a full 180°: the side panel folds flush along the box's side
+  // plane and the flap presents just behind the box's right edge. Any
+  // partial angle leaves an open wedge between panel and box that the
+  // perspective camera sees straight into (bright background slit, user
+  // flagged it twice at ~150° and ~132°); at 180° the wedge closes and the
+  // flap's screen-space edge overlaps the box side — nothing shows through.
+  var OPEN_ANGLE = Math.PI;
   function setFlaps(t) {
     if (endLid) endLid.rotation.y = OPEN_ANGLE * t;
   }
