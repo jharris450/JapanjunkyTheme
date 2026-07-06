@@ -49,7 +49,11 @@
   bar.appendChild(up);
   bar.appendChild(track);
   bar.appendChild(down);
-  document.body.appendChild(bar);
+  // Mount inside the barrel-filter wrapper so the bar warps with the rest
+  // of the CRT face (on <body> it stayed straight and sat visibly off the
+  // curved content edge). The wrapper is viewport-sized, so the bar's
+  // position:fixed coordinates are unchanged; it only gains the filter.
+  (document.getElementById('jj-crt-content') || document.body).appendChild(bar);
 
   // ─── Geometry ──────────────────────────────────────────────────
   function maxScroll() { return Math.max(0, el.scrollHeight - el.clientHeight); }
