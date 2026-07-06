@@ -151,10 +151,35 @@
     img.src = url;
     return tex;
   }
-  function psMat(tex) {
+  function psMat(tex, side) {
     return new THREE.ShaderMaterial({
       uniforms: { uResolution: { value: shaderRes }, uTexture: { value: tex || fallbackTex() } },
-      vertexShader: PS1.vert, fragmentShader: PS1.frag, side: THREE.DoubleSide
+      vertexShader: PS1.vert, fragmentShader: PS1.frag,
+      side: side === undefined ? THREE.DoubleSide : side
+    });
+  }
+
+  // Dimmed variant for surfaces inside the box (interior walls, the flaps'
+  // unprinted inner sides, the folded-in minor flaps): same PS1 pipeline,
+  // fragment multiplied down so the inside reads as shadowed cardboard.
+  var PS1_FRAG_DIM = [
+    'uniform sampler2D uTexture;',
+    'uniform float uDim;',
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vec4 texColor = texture2D(uTexture, vUv);',
+    '  gl_FragColor = vec4(texColor.rgb * uDim, texColor.a);',
+    '}'
+  ].join('\n');
+  function psMatDim(tex, dim, side) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uResolution: { value: shaderRes },
+        uTexture: { value: tex || fallbackTex() },
+        uDim: { value: dim }
+      },
+      vertexShader: PS1.vert, fragmentShader: PS1_FRAG_DIM,
+      side: side === undefined ? THREE.FrontSide : side
     });
   }
 
@@ -166,36 +191,89 @@
   // (×0.7 → ×0.49 of the flagship recordbox) — vertical size unchanged.
   var BOX_DEPTH = DIMS.d * 0.49;
 
+  // Interior shading: the inside of a closed cardboard box is shadowed —
+  // walls darkest, folded-in minor flaps a touch lighter (nearer the
+  // opening), the main flaps' inner sides lightest (they catch light when
+  // the lid swings open).
+  var DIM_WALL = 0.45;
+  var DIM_MINOR = 0.6;
+  var DIM_FLAP_IN = 0.75;
+  var MINOR_H = 0.4; // depth of the fold-in top/bottom minor flaps
+
   function buildBox() {
     var w = DIMS.w, h = DIMS.h, d = BOX_DEPTH;
 
     // Body: BoxGeometry with the front (+Z) and right (+X) faces transparent
     // — front is covered by the flaps, right by the hinged side door.
+    // FrontSide only: the interior is rendered by the darkened inner shell
+    // below, never by the back of these full-brightness outer faces.
     var bodyGeo = new THREE.BoxGeometry(w, h, d);
     var invisible = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+    var texSideLeft = loadBoxTex(TEX.sideLeft);
+    var texTop = loadBoxTex(TEX.top);
+    var texBottom = loadBoxTex(TEX.bottom);
+    var texBack = loadBoxTex(TEX.back);
     // BoxGeometry face order [+X,-X,+Y,-Y,+Z,-Z]:
     var bodyMats = [
-      invisible,                        // +X right (covered by side door)
-      psMat(loadBoxTex(TEX.sideLeft)),  // -X
-      psMat(loadBoxTex(TEX.top)),       // +Y
-      psMat(loadBoxTex(TEX.bottom)),    // -Y
-      invisible,                        // +Z front (covered by flaps)
-      psMat(loadBoxTex(TEX.back))       // -Z
+      invisible,                             // +X right (covered by side door)
+      psMat(texSideLeft, THREE.FrontSide),   // -X
+      psMat(texTop, THREE.FrontSide),        // +Y
+      psMat(texBottom, THREE.FrontSide),     // -Y
+      invisible,                             // +Z front (covered by flaps)
+      psMat(texBack, THREE.FrontSide)        // -Z
     ];
     var body = new THREE.Mesh(bodyGeo, bodyMats);
     boxGroup.add(body);
 
+    // Inner shell: same box shrunk a hair, BackSide + dimmed — this is what
+    // shows through the opening as the box's dark inside. The open right
+    // (+X) and front (+Z) stay invisible = the holes you look through.
+    var innerGeo = new THREE.BoxGeometry(w - 0.02, h - 0.02, d - 0.02);
+    var innerMats = [
+      invisible,
+      psMatDim(texSideLeft, DIM_WALL, THREE.BackSide),
+      psMatDim(texTop, DIM_WALL, THREE.BackSide),
+      psMatDim(texBottom, DIM_WALL, THREE.BackSide),
+      invisible,
+      psMatDim(texBack, DIM_WALL, THREE.BackSide)
+    ];
+    boxGroup.add(new THREE.Mesh(innerGeo, innerMats));
+
     var halfW = w / 2;
     var frontZ = d / 2 + 0.001;
+
+    // Minor flaps: like a real box, the front opening's top and bottom
+    // edges carry short flaps folded INTO the box first; the left/right
+    // main flaps close over them. Built already folded (they never
+    // animate): plain cardboard bands just behind the front plane.
+    var minorGeo = new THREE.PlaneGeometry(w * 0.98, MINOR_H);
+    var minorTop = new THREE.Mesh(minorGeo, psMatDim(loadBoxTex(TEX.top), DIM_MINOR));
+    minorTop.position.set(0, h / 2 - MINOR_H / 2, d / 2 - 0.02);
+    boxGroup.add(minorTop);
+    var minorBottom = new THREE.Mesh(minorGeo, psMatDim(loadBoxTex(TEX.bottom), DIM_MINOR));
+    minorBottom.position.set(0, -h / 2 + MINOR_H / 2, d / 2 - 0.02);
+    boxGroup.add(minorBottom);
+
+    // Each main flap is two planes back to back: printed/taped face out,
+    // plain shadowed cardboard face in — tape inside a box makes no sense.
+    function flapPair(width, height, outerTex, innerTexUrl) {
+      var grp = new THREE.Object3D();
+      var geo = new THREE.PlaneGeometry(width, height);
+      grp.add(new THREE.Mesh(geo, psMat(outerTex, THREE.FrontSide)));
+      var inner = new THREE.Mesh(geo, psMatDim(loadBoxTex(innerTexUrl), DIM_FLAP_IN));
+      inner.rotation.y = Math.PI;
+      inner.position.z = -0.002;
+      grp.add(inner);
+      return grp;
+    }
 
     // Left flap: half-width plane covering the front-left quadrant.
     // Stays CLOSED — the box opens on its right end only.
     leftFlap = new THREE.Object3D();
     leftFlap.position.set(-halfW, 0, frontZ);
-    var lGeo = new THREE.PlaneGeometry(halfW, h);
-    var lMesh = new THREE.Mesh(lGeo, psMat(loadBoxTex(TEX.frontLeft, 'right')));
-    lMesh.position.set(halfW / 2, 0, 0); // shift so inner edge meets center
-    leftFlap.add(lMesh);
+    var lPair = flapPair(halfW, h, loadBoxTex(TEX.frontLeft, 'right'), TEX.frontLeft);
+    lPair.position.set(halfW / 2, 0, 0); // shift so inner edge meets center
+    leftFlap.add(lPair);
     boxGroup.add(leftFlap);
 
     // End lid: front-right flap + right side panel as ONE attached L-piece
@@ -205,18 +283,16 @@
     endLid.position.set(halfW, 0, -d / 2);
 
     // Right side panel: faces +X, spans hinge (rear) → front edge.
-    var sGeo = new THREE.PlaneGeometry(d, h);
-    var sMesh = new THREE.Mesh(sGeo, psMat(loadBoxTex(TEX.sideRight)));
-    sMesh.rotation.y = Math.PI / 2; // face +X; width now runs along z
-    sMesh.position.set(0.001, 0, d / 2);
-    endLid.add(sMesh);
+    var sPair = flapPair(d, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
+    sPair.rotation.y = Math.PI / 2; // face +X; width now runs along z
+    sPair.position.set(0.001, 0, d / 2);
+    endLid.add(sPair);
 
     // Front-right flap: faces +Z, attached at the panel's front corner,
     // spans corner → box center.
-    var rGeo = new THREE.PlaneGeometry(halfW, h);
-    var rMesh = new THREE.Mesh(rGeo, psMat(loadBoxTex(TEX.frontRight, 'left')));
-    rMesh.position.set(-halfW / 2, 0, d + 0.001);
-    endLid.add(rMesh);
+    var rPair = flapPair(halfW, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight);
+    rPair.position.set(-halfW / 2, 0, d + 0.001);
+    endLid.add(rPair);
 
     boxGroup.add(endLid);
 
@@ -267,7 +343,7 @@
   // the same screen spot (ring's onLaunch callback) — one record, one
   // continuous motion. The stack is rebuilt only while the box is CLOSED.
   var stack = []; // meshes (children of boxGroup)
-  var STACK_SIZE = 1.5;
+  var STACK_SIZE = 1.9; // records nearly fill the 2.0 crate face, like real stock
 
   function clearStack() {
     for (var i = 0; i < stack.length; i++) {
@@ -290,15 +366,17 @@
       var geo = new THREE.PlaneGeometry(STACK_SIZE, STACK_SIZE);
       var mesh = new THREE.Mesh(geo, psMat(loadTex(pool[i].image)));
       // Stacked front-to-back, spread across whatever depth the crate has
-      // (small margin keeps the front plane behind the flap).
-      var zFront = BOX_DEPTH / 2 - 0.015;
+      // (front margin keeps the first record behind the folded-in minor
+      // flaps at d/2 - 0.02). Jitter is tight: at 1.9 in a 2.0 crate there
+      // is barely any slack before a corner pokes through a wall.
+      var zFront = BOX_DEPTH / 2 - 0.045;
       var zStep = pool.length > 1 ? (zFront * 2) / (pool.length - 1) : 0;
       mesh.position.set(
-        (Math.random() - 0.5) * 0.06,
-        (Math.random() - 0.5) * 0.06 - 0.1, // sit slightly low in the crate
+        (Math.random() - 0.5) * 0.04,
+        (Math.random() - 0.5) * 0.03,
         zFront - i * zStep
       );
-      mesh.rotation.z = (Math.random() - 0.5) * 0.08;
+      mesh.rotation.z = (Math.random() - 0.5) * 0.05;
       boxGroup.add(mesh);
       stack.push(mesh);
     }
@@ -433,6 +511,12 @@
     setState(FSM.next(state, 'reroll')); // → retracting
     canvas.style.cursor = 'pointer';
     var retractFn = ring ? ring.retract : function (cb) { cb(); };
+    // Mirror of dealOut's launch-hide: as each cover flies home and fades
+    // at the box mouth, its stack mesh pops back — the record visibly lands
+    // back in the crate, stacked exactly as it left.
+    var onArrive = function (idx) {
+      if (stack[idx]) stack[idx].visible = true;
+    };
     retractFn(function () {
       // Covers have flown back inside — shut the lid, THEN restock the
       // crate (new random 5) while it's closed, out of sight.
@@ -453,7 +537,7 @@
           });
         });
       });
-    });
+    }, onArrive);
   }
 
   // ─── Bundle product info (fixed top-left panel) ──────────────

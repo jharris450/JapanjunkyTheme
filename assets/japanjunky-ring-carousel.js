@@ -38,7 +38,8 @@
   var DEAL_STAGGER_MS = 140;  // per-cover delay — records leave/return one by one
   var SETTLE_MS = 500;        // > the 0.45s flight transition
   var END_RELEASE_MS = 600;   // wheel momentum settle before page scroll takes over
-  var SPAWN_SCALE = 0.65;     // ≈ the crate's record-stack size on screen
+  var SPAWN_SCALE = 0.82;     // ≈ the crate's record-stack size on screen
+                              // (0.65 × 1.9/1.5 — stack meshes grew to fill the box)
 
   // Flight transitions (inline overrides of the CSS default):
   // deal — cover pops in fast at the box and eases out to its slot;
@@ -302,7 +303,11 @@
     }, records.length * DEAL_STAGGER_MS + SETTLE_MS);
   }
 
-  function retract(done) {
+  // onArrive(idx) fires as cover idx reaches the box and starts its fade —
+  // the box stage re-shows its matching stack mesh there, so each record
+  // reads as ONE object landing back in the crate (mirror of deal's
+  // onLaunch swap).
+  function retract(done, onArrive) {
     hideCard();
     if (!records.length) { if (done) done(); return; }
     locked = true;
@@ -312,14 +317,20 @@
     var spawn = spawnTransform();
     var count = 0;
     for (var i = 0; i < records.length; i++) {
-      (function (el, idx) {
+      (function (el, idx, recIdx) {
         if (!el) return;
         setTimeout(function () {
           el.style.transition = FLY_IN_TRANSITION;
           el.style.transform = spawn;
           el.style.opacity = '0';
         }, idx * DEAL_STAGGER_MS);
-      })(coverEls[i], count++);
+        if (onArrive) {
+          // 400ms ≈ into the fade window (opacity runs 300–450ms of the
+          // flight) — the mesh appears while the cover is still dissolving
+          // at the same spot, no gap and no double-image pop.
+          setTimeout(function () { onArrive(recIdx); }, idx * DEAL_STAGGER_MS + 400);
+        }
+      })(coverEls[i], count++, i);
     }
     setTimeout(function () {
       clearCovers();
