@@ -331,14 +331,25 @@
   // touched the box along a zero-width edge and a hairline background
   // slit showed at the joint — the tuck slides the panel into the box's
   // silhouette so the two overlap. Closed pose (t=0) is untouched.
+  // Overlap sizing: the PS1 snap jitters any two abutting surfaces up to
+  // ±1 grid step (~3px each on the live zoomed canvas) RELATIVE to each
+  // other, so the joint needs >~6px of projected overlap from EVERY
+  // azimuth. The screen-projected tuck is its component perpendicular to
+  // the view direction — a single axis collapses to zero side-on, hence
+  // both x AND z at ~0.1 world (~11px). LID_GROW does the same for the
+  // top/bottom edges (snap notches showed at the flap's top edge).
   var OPEN_ANGLE = 2.6; // ~150deg
-  var TUCK_X = 0.07;    // open-lid slide toward the box (left)
-  var TUCK_Z = 0.04;    // ...and toward its back
+  var TUCK_X = 0.12;    // open-lid slide toward the box (left)
+  var TUCK_Z = 0.10;    // ...and toward its FRONT — into the box volume.
+                        // (Toward the back pops the hinge edge out past the
+                        // back corner = an open corridor seen side-on.)
+  var LID_GROW = 0.05;  // open-lid vertical overscan past the box edges
   function setFlaps(t) {
     if (!endLid) return;
     endLid.rotation.y = OPEN_ANGLE * t;
     endLid.position.x = DIMS.w / 2 - TUCK_X * t;
-    endLid.position.z = -BOX_DEPTH / 2 - TUCK_Z * t;
+    endLid.position.z = -BOX_DEPTH / 2 + TUCK_Z * t;
+    endLid.scale.y = 1 + LID_GROW * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
