@@ -18,7 +18,6 @@
   var BUFFER = 512;      // render buffer px; CSS upscale ~2.4x keeps pixels but kills grain-mush
   var TEX = 512;         // burst texture size
   var FLICKER = 0.18;    // seconds per frame of the two-pattern flicker
-  var PARTICLES = 42;    // sparks shed off the burst rim
   var BANG_PERIOD = 3.4; // seconds between flash pulses
   var BANG_LEN = 0.45;   // pulse duration
 
@@ -300,87 +299,11 @@
     glowRing.position.z = 10;
     scene.add(glowRing);
 
-    /* ---------- rim sparks: particles shed off the swirl's edge ---------- */
-    var spark = (function () {
-      var geo = new THREE.BufferGeometry();
-      var pos = new Float32Array(PARTICLES * 3);
-      var col = new Float32Array(PARTICLES * 3);
-      var p = [];
-      var redC = parseColor(RED), goldC = parseColor(GOLD);
-      function reset(i, scatterLife) {
-        var s = p[i] = p[i] || {};
-        s.theta = Math.random() * Math.PI * 2;
-        s.r = 2.9 + Math.random() * 0.3;          // spawn on the rim
-        s.z = 9 + Math.random() * 6;              // near the mouth
-        s.vr = 0.9 + Math.random() * 0.9;         // drift outward
-        s.omega = 0.5 + Math.random() * 0.5;      // keep swirling
-        s.life = s.maxLife = 1.4 + Math.random() * 1.2;
-        if (scatterLife) s.life *= Math.random(); // stagger initial batch
-        s.gold = Math.random() < 0.45;
-      }
-      for (var i = 0; i < PARTICLES; i++) reset(i, true);
-      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-
-      // tiny round sprite so points aren't squares
-      var dot = document.createElement('canvas');
-      dot.width = dot.height = 16;
-      var dctx = dot.getContext('2d');
-      var dg = dctx.createRadialGradient(8, 8, 0, 8, 8, 8);
-      dg.addColorStop(0, 'rgba(255,255,255,1)');
-      dg.addColorStop(1, 'rgba(255,255,255,0)');
-      dctx.fillStyle = dg;
-      dctx.fillRect(0, 0, 16, 16);
-
-      var pts = new THREE.Points(geo, new THREE.PointsMaterial({
-        size: 1.1, // world units; the far camera shrinks attenuated points ~4x
-        map: new THREE.CanvasTexture(dot),
-        vertexColors: true,
-        transparent: true,
-        blending: THREE.AdditiveBlending, // color fades to black = invisible
-        depthWrite: false
-      }));
-      scene.add(pts);
-
-      return {
-        // kick n sparks off the rim fast — fired at each bang pulse
-        burst: function (n) {
-          for (var k = 0, i = 0; i < PARTICLES && k < n; i++) {
-            if (p[i].life < p[i].maxLife * 0.4) {
-              reset(i, false);
-              p[i].vr = 2.6 + Math.random() * 1.6;
-              k++;
-            }
-          }
-        },
-        update: function (dt) {
-          for (var i = 0; i < PARTICLES; i++) {
-            var s = p[i];
-            s.life -= dt;
-            if (s.life <= 0) reset(i, false);
-            s.theta += s.omega * dt;
-            s.r += s.vr * dt;
-            var fade = Math.max(0, s.life / s.maxLife);
-            var c = s.gold ? goldC : redC;
-            pos[i * 3] = Math.cos(s.theta) * s.r;
-            pos[i * 3 + 1] = Math.sin(s.theta) * s.r;
-            pos[i * 3 + 2] = s.z;
-            col[i * 3] = (c[0] / 255) * fade;
-            col[i * 3 + 1] = (c[1] / 255) * fade;
-            col[i * 3 + 2] = (c[2] / 255) * fade;
-          }
-          geo.attributes.position.needsUpdate = true;
-          geo.attributes.color.needsUpdate = true;
-        }
-      };
-    })();
-
     /* ---------- loop, with visibility pausing ---------- */
     var running = false;
     var rafId = 0;
     var last = 0;
     var inView = true;
-    var banging = false;
     var flickerT = 0;
 
     function frame(now) {
@@ -396,19 +319,14 @@
       glowRing.rotation.z += dt * 0.4;
 
       // BANG pulse: periodic core flash, quantized to steps (CRT flash,
-      // not a smooth ease), with a spark burst on the attack.
+      // not a smooth ease).
       var ph = (now / 1000) % BANG_PERIOD;
-      var inBang = ph < BANG_LEN;
-      if (inBang) {
+      if (ph < BANG_LEN) {
         var f = Math.ceil((1 - ph / BANG_LEN) * 4) / 4;
         glowRing.scale.setScalar(1 + f * 0.45);
-        if (!banging) spark.burst(10);
       } else {
         glowRing.scale.setScalar(1);
       }
-      banging = inBang;
-
-      spark.update(dt);
       renderer.render(scene, camera);
       updatePupils();
       rafId = requestAnimationFrame(frame);

@@ -104,9 +104,28 @@
       g.arc(x, y, r, 0, 7);
       g.fill();
     });
+    // dissolve noise: 4px blocks get a random alpha threshold; ramping the
+    // material's alphaTest discards blocks in random order — the die
+    // disintegrates instead of fading uniformly. Needs mipmaps OFF or the
+    // averaged alpha turns the dissolve back into a uniform fade.
+    var id = g.getImageData(0, 0, 64, 64);
+    for (var by = 0; by < 64; by += 4) {
+      for (var bx = 0; bx < 64; bx += 4) {
+        var a = 25 + rnd() * 225 | 0;
+        for (var yy = 0; yy < 4; yy++) {
+          for (var xx = 0; xx < 4; xx++) {
+            id.data[((by + yy) * 64 + bx + xx) * 4 + 3] = a;
+          }
+        }
+      }
+    }
+    g.putImageData(id, 0, 0);
     var tex = new THREE.CanvasTexture(c);
     tex.flipY = false;
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.NearestFilter;
+    tex.magFilter = THREE.NearestFilter;
     return tex;
   }
 
@@ -198,7 +217,7 @@
     for (var d = 0; d < 2; d++) {
       var mats = faceOrder.map(function (n, fi) {
         var m2 = new THREE.MeshBasicMaterial({
-          map: dieFace(PIP_LAYOUTS[n], rnd), transparent: true, opacity: 1
+          map: dieFace(PIP_LAYOUTS[n], rnd), alphaTest: 0.02
         });
         m2.color.setScalar(shade[fi]);
         return m2;
@@ -306,8 +325,10 @@
         die.mesh.rotation.x += die.rx * 0.016;
         die.mesh.rotation.y += die.ry * 0.016;
         die.mesh.rotation.z += die.rz * 0.016;
-        var fade = dt < 1.1 ? 1 : 1 - (dt - 1.1) / 0.4;
-        die.mats.forEach(function (m) { m.opacity = fade; });
+        // disintegrate on the way down: alphaTest sweeps past the baked
+        // block thresholds and the die crumbles away chunk by chunk
+        var diss = dt < 0.9 ? 0.02 : Math.min(1, 0.02 + (dt - 0.9) / 0.5);
+        die.mats.forEach(function (m) { m.alphaTest = diss; });
       });
 
       // glow pool: quantized quarter-step bloom (CRT), then cut

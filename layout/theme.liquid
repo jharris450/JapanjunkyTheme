@@ -195,8 +195,8 @@
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
       {%- comment -%} Daruma reroll: floats between the box and the crescent.
-          Hover pops the bone pegs out of the face holes; click splits the doll
-          and two bone dice rise out of the light before the reroll fires.
+          Hover rattles the doll (dice inside); click splits it and two bone
+          dice rise out of the light before the reroll fires.
           Same #jj-bundle-reroll id the stage JS already toggles/binds. {%- endcomment -%}
       {%- comment -%} Daruma FX canvas: light-smoke + sparks + physics dice
           (japanjunky-daruma.js three.js scene). Sits over the doll. {%- endcomment -%}
@@ -207,9 +207,6 @@
         </span>
         <span class="jj-daruma__half jj-daruma__half--top" aria-hidden="true">
           <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
-          <img class="jj-daruma__peg jj-daruma__peg--l" src="{{ 'daruma-peg-l.png' | asset_url }}" alt="">
-          <img class="jj-daruma__peg jj-daruma__peg--r" src="{{ 'daruma-peg-r.png' | asset_url }}" alt="">
-          <img class="jj-daruma__peg jj-daruma__peg--m" src="{{ 'daruma-peg-m.png' | asset_url }}" alt="">
         </span>
       </button>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
