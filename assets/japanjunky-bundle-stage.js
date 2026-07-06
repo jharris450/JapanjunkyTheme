@@ -164,27 +164,11 @@
   // on the unlit PS1 shader at full texture brightness; the inside is shaded
   // by real lights (below) so its darkness falls off naturally toward the
   // opening instead of being one flat dim step.
-  //
-  // CRITICAL: these materials get the SAME PS1 vertex snap as psMat. The
-  // snap quantizes every vertex to a 240-step screen grid; a surface
-  // WITHOUT it lands up to a full step (~3px on the live zoomed canvas)
-  // away from its snapped neighbors — abutting lit/unlit surfaces opened
-  // hairline background slits at the lid joint and doubled into a "ghost"
-  // second image on the flap as the box turned.
   function litMat(tex, side) {
-    var m = new THREE.MeshLambertMaterial({
+    return new THREE.MeshLambertMaterial({
       map: tex || fallbackTex(),
       side: side === undefined ? THREE.FrontSide : side
     });
-    m.onBeforeCompile = function (shader) {
-      shader.uniforms.uSnapRes = { value: shaderRes };
-      shader.vertexShader = 'uniform float uSnapRes;\n' + shader.vertexShader.replace(
-        '#include <project_vertex>',
-        '#include <project_vertex>\n' +
-        'gl_Position.xy = floor(gl_Position.xy * uSnapRes / gl_Position.w) * gl_Position.w / uSnapRes;'
-      );
-    };
-    return m;
   }
 
   // ─── Box: body (4 faces) + fixed left flap + hinged end lid ──
@@ -242,17 +226,12 @@
     var body = new THREE.Mesh(bodyGeo, bodyMats);
     boxGroup.add(body);
 
-    // Inner shell: same box shrunk a hair, BackSide + lit — this is what
-    // shows through the opening as the box's dark inside. Only the front
-    // (+Z) stays invisible = the mouth you look through. The right (+X)
-    // gets a REAL interior wall even though the side door swings away
-    // there: with both faces open, a slightly spun box let sightlines
-    // pass in the mouth and out the side — a bright background slit
-    // (user's gap.png). The wall reads as dark cardboard, and the deal
-    // happens through the front mouth, so nothing contradicts it.
+    // Inner shell: same box shrunk a hair, BackSide + dimmed — this is what
+    // shows through the opening as the box's dark inside. The open right
+    // (+X) and front (+Z) stay invisible = the holes you look through.
     var innerGeo = new THREE.BoxGeometry(w - 0.02, h - 0.02, d - 0.02);
     var innerMats = [
-      litMat(loadBoxTex(TEX.sideRight), THREE.BackSide),
+      invisible,
       litMat(texSideLeft, THREE.BackSide),
       litMat(texTop, THREE.BackSide),
       litMat(texBottom, THREE.BackSide),
@@ -300,9 +279,7 @@
 
     // End lid: front-right flap + right side panel as ONE attached L-piece
     // (like a real record box end), hinged on the side panel's REAR
-    // vertical edge — swings open rightward/back as a unit. (The original
-    // design; a front-corner-hinge experiment put the lid on top of the
-    // box and was reverted.)
+    // vertical edge — swings open rightward/back as a unit.
     endLid = new THREE.Object3D();
     endLid.position.set(halfW, 0, -d / 2);
 
@@ -325,31 +302,14 @@
 
   // ─── Lid open/close (t: 0 closed → 1 open) ───────────────────
   // The attached flap+side end lid swings OUTWARD about its rear vertical
-  // hinge and stays outstretched (~150°, the original look). While it
-  // swings, the whole lid also TUCKS slightly toward the box's back-left
-  // corner: with the hinge exactly on the corner, the open panel only
-  // touched the box along a zero-width edge and a hairline background
-  // slit showed at the joint — the tuck slides the panel into the box's
-  // silhouette so the two overlap. Closed pose (t=0) is untouched.
-  // Overlap sizing: the PS1 snap jitters any two abutting surfaces up to
-  // ±1 grid step (~3px each on the live zoomed canvas) RELATIVE to each
-  // other, so the joint needs >~6px of projected overlap from EVERY
-  // azimuth. The screen-projected tuck is its component perpendicular to
-  // the view direction — a single axis collapses to zero side-on, hence
-  // both x AND z at ~0.1 world (~11px). LID_GROW does the same for the
-  // top/bottom edges (snap notches showed at the flap's top edge).
-  var OPEN_ANGLE = 2.6; // ~150deg
-  var TUCK_X = 0.12;    // open-lid slide toward the box (left)
-  var TUCK_Z = 0.10;    // ...and toward its FRONT — into the box volume.
-                        // (Toward the back pops the hinge edge out past the
-                        // back corner = an open corridor seen side-on.)
-  var LID_GROW = 0.05;  // open-lid vertical overscan past the box edges
+  // hinge and stays outstretched. ~132°: at ~150° the side panel went
+  // nearly edge-on to the camera and read as a black seam — the flap looked
+  // detached from the box. (The old ~150° floor guarded the mesh slide-out
+  // exit path, which no longer exists — covers are DOM and fly above the
+  // canvas.)
+  var OPEN_ANGLE = 2.3; // ~132deg
   function setFlaps(t) {
-    if (!endLid) return;
-    endLid.rotation.y = OPEN_ANGLE * t;
-    endLid.position.x = DIMS.w / 2 - TUCK_X * t;
-    endLid.position.z = -BOX_DEPTH / 2 + TUCK_Z * t;
-    endLid.scale.y = 1 + LID_GROW * t;
+    if (endLid) endLid.rotation.y = OPEN_ANGLE * t;
   }
 
   // Generic eased tween driver (0→1) used by open/close/slide.
