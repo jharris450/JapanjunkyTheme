@@ -164,11 +164,27 @@
   // on the unlit PS1 shader at full texture brightness; the inside is shaded
   // by real lights (below) so its darkness falls off naturally toward the
   // opening instead of being one flat dim step.
+  //
+  // CRITICAL: these materials get the SAME PS1 vertex snap as psMat. The
+  // snap quantizes every vertex to a 240-step screen grid; a surface
+  // WITHOUT it lands up to a full step (~3px on the live zoomed canvas)
+  // away from its snapped neighbors — abutting lit/unlit surfaces opened
+  // hairline background slits at the lid joint and doubled into a "ghost"
+  // second image on the flap as the box turned.
   function litMat(tex, side) {
-    return new THREE.MeshLambertMaterial({
+    var m = new THREE.MeshLambertMaterial({
       map: tex || fallbackTex(),
       side: side === undefined ? THREE.FrontSide : side
     });
+    m.onBeforeCompile = function (shader) {
+      shader.uniforms.uSnapRes = { value: shaderRes };
+      shader.vertexShader = 'uniform float uSnapRes;\n' + shader.vertexShader.replace(
+        '#include <project_vertex>',
+        '#include <project_vertex>\n' +
+        'gl_Position.xy = floor(gl_Position.xy * uSnapRes / gl_Position.w) * gl_Position.w / uSnapRes;'
+      );
+    };
+    return m;
   }
 
   // ─── Box: body (4 faces) + fixed left flap + hinged end lid ──
