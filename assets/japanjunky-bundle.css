@@ -195,129 +195,26 @@
   transform: translate(-50%, -6%) rotate(var(--peg-rot)) scale(0.15);
 }
 
-.jj-daruma__peg--l { left: 43.3%; top: 31.5%; width: 7%; --peg-rot: 14deg; }
-.jj-daruma__peg--r { left: 60.6%; top: 31.8%; width: 7%; --peg-rot: -14deg; }
-.jj-daruma__peg--m { left: 52.6%; top: 43.9%; width: 8.5%; --peg-rot: -4deg; }
+.jj-daruma__peg--l { left: 44.1%; top: 31.5%; width: 7%; --peg-rot: 14deg; }
+.jj-daruma__peg--r { left: 61.4%; top: 31.8%; width: 7%; --peg-rot: -14deg; }
+.jj-daruma__peg--m { left: 53.4%; top: 43.9%; width: 8.5%; --peg-rot: -4deg; }
 
-/* Loot light: a CRT phosphor cascade rising from the seam — vertical beam
-   columns (aperture-grille stripes) with horizontal scanline bands that
-   pour downward through the column, plus a radial glow pool. Everything
-   moves in QUANTIZED steps (site rule: CRT animation, no easing). Gold =
-   --jj-secondary phosphor. */
-.jj-daruma__beam {
+/* Loot light + dice: rendered on the #jj-daruma-fx three.js canvas
+   (japanjunky-daruma.js) — luminous gold smoke wisps + sparks that curl
+   around the doll's lifted top half, and two physics-tumbled 6-face bone
+   dice. Buffer is half-res, CSS-upscaled pixelated = chunky CRT particles.
+   z 3: light and loot paint over the doll. */
+#jj-daruma-fx {
   position: absolute;
-  left: 24%;
-  bottom: 45%;
-  width: 52%;
-  height: 140%;
-  /* layer 1: scanline bands that cascade downward (background-position
-     animates); layer 2: grille columns; layer 3: the gold body */
-  background:
-    repeating-linear-gradient(to bottom,
-      rgba(245, 215, 66, 0.35) 0 3px,
-      rgba(245, 215, 66, 0) 3px 12px),
-    repeating-linear-gradient(to right,
-      rgba(245, 215, 66, 0.5) 0 2px,
-      rgba(245, 215, 66, 0) 2px 4px,
-      rgba(245, 215, 66, 0.2) 4px 6px,
-      rgba(245, 215, 66, 0) 6px 8px),
-    linear-gradient(to top,
-      rgba(245, 215, 66, 0.7) 0%,
-      rgba(245, 215, 66, 0.2) 60%,
-      rgba(245, 215, 66, 0) 100%);
-  /* fade the whole column toward its top so the stripes don't end hard */
-  -webkit-mask-image: linear-gradient(to top, #000 25%, transparent 95%);
-  mask-image: linear-gradient(to top, #000 25%, transparent 95%);
-  opacity: 0;
-  transform: scaleY(0.25);
-  transform-origin: 50% 100%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.jj-daruma__glow {
-  position: absolute;
-  left: 50%;
-  bottom: 45%;
-  width: 160%;
-  height: 60%;
-  transform: translate(-50%, 50%);
-  background: radial-gradient(closest-side,
-    rgba(245, 215, 66, 0.9) 0%,
-    rgba(245, 215, 66, 0.25) 55%,
-    rgba(245, 215, 66, 0) 100%);
-  opacity: 0;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.jj-daruma.is-open .jj-daruma__beam {
-  animation: jj-daruma-beam 1s steps(1, end) forwards;
-}
-
-.jj-daruma.is-open .jj-daruma__glow {
-  animation: jj-daruma-glow 1s steps(1, end) forwards;
-}
-
-/* Beam rises in quarter-steps while the scanline layer's position pours
-   downward — a cascading waterfall of light, snapped to discrete frames. */
-@keyframes jj-daruma-beam {
-  0%   { opacity: 1; transform: scaleY(0.25); background-position: 0 0,    0 0, 0 0; }
-  12%  { opacity: 1; transform: scaleY(0.5);  background-position: 0 4px,  0 0, 0 0; }
-  24%  { opacity: 1; transform: scaleY(0.75); background-position: 0 8px,  0 0, 0 0; }
-  36%  { opacity: 1; transform: scaleY(1);    background-position: 0 12px, 0 0, 0 0; }
-  48%  { opacity: 1; transform: scaleY(1);    background-position: 0 16px, 0 0, 0 0; }
-  60%  { opacity: 1; transform: scaleY(1);    background-position: 0 20px, 0 0, 0 0; }
-  72%  { opacity: 1; transform: scaleY(1);    background-position: 0 24px, 0 0, 0 0; }
-  84%  { opacity: 0.5; transform: scaleY(1);  background-position: 0 28px, 0 0, 0 0; }
-  100% { opacity: 0; transform: scaleY(1);    background-position: 0 32px, 0 0, 0 0; }
-}
-
-/* Glow pool brightens in quarter-steps, then cuts out — brightness flash */
-@keyframes jj-daruma-glow {
-  0%   { opacity: 0.25; }
-  12%  { opacity: 0.5; }
-  24%  { opacity: 1; }
-  72%  { opacity: 1; }
-  84%  { opacity: 0.5; }
-  100% { opacity: 0; }
-}
-
-/* Bone dice: rise fast out of the seam like RPG chest loot — up, tumble,
-   drift apart, gone before the covers start flying back. */
-.jj-daruma__die {
-  position: absolute;
-  left: 50%;
-  bottom: 48%;
-  width: 30px;
-  height: auto;
+  left: calc(100% + 8px);
+  top: -270px;
+  width: 300px;
+  height: 360px;
   max-width: none;
-  opacity: 0;
+  z-index: 3;
   pointer-events: none;
-  z-index: 3; /* in front of the halves — loot floats up over the light */
-  filter: drop-shadow(0 0 6px rgba(245, 215, 66, 0.8));
-}
-
-.jj-daruma.is-open .jj-daruma__die--1 {
-  animation: jj-daruma-die-1 0.8s ease-out 0.1s forwards;
-}
-
-.jj-daruma.is-open .jj-daruma__die--2 {
-  animation: jj-daruma-die-2 0.8s ease-out 0.18s forwards;
-}
-
-@keyframes jj-daruma-die-1 {
-  0% { opacity: 0; transform: translate(-70%, 0) rotate(0deg) scale(0.5); }
-  15% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-160%, -150px) rotate(-200deg) scale(1); }
-}
-
-@keyframes jj-daruma-die-2 {
-  0% { opacity: 0; transform: translate(-30%, 0) rotate(0deg) scale(0.45); }
-  15% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(75%, -130px) rotate(160deg) scale(0.95); }
+  display: block;
+  image-rendering: pixelated;
 }
 
 /* After the doll snaps shut, it rattles — the dice being shaken for the
@@ -344,8 +241,5 @@
   .jj-daruma.is-shaking { animation: none; }
   .jj-daruma__half,
   .jj-daruma__peg { transition: none; }
-  .jj-daruma.is-open .jj-daruma__beam,
-  .jj-daruma.is-open .jj-daruma__glow,
-  .jj-daruma.is-open .jj-daruma__die--1,
-  .jj-daruma.is-open .jj-daruma__die--2 { animation: none; }
+  #jj-daruma-fx { display: none !important; }
 }

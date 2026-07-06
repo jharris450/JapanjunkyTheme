@@ -198,11 +198,10 @@
           Hover pops the bone pegs out of the face holes; click splits the doll
           and two bone dice rise out of the light before the reroll fires.
           Same #jj-bundle-reroll id the stage JS already toggles/binds. {%- endcomment -%}
+      {%- comment -%} Daruma FX canvas: light-smoke + sparks + physics dice
+          (japanjunky-daruma.js three.js scene). Sits over the doll. {%- endcomment -%}
+      <canvas id="jj-daruma-fx" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
       <button class="jj-daruma" id="jj-bundle-reroll" type="button" style="display:none;" aria-label="Reroll bundle">
-        <span class="jj-daruma__glow" aria-hidden="true"></span>
-        <span class="jj-daruma__beam" aria-hidden="true"></span>
-        <img class="jj-daruma__die jj-daruma__die--1" src="{{ 'daruma-die-1.png' | asset_url }}" alt="">
-        <img class="jj-daruma__die jj-daruma__die--2" src="{{ 'daruma-die-2.png' | asset_url }}" alt="">
         <span class="jj-daruma__half jj-daruma__half--bottom" aria-hidden="true">
           <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
         </span>
