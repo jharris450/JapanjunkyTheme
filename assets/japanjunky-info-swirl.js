@@ -150,6 +150,15 @@
       canvas.style.height = H + 'px';
       canvas.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
       canvas.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
+      // kyogen clip frame rides the same rect so its interior ellipse
+      // (CSS clip-path, % of this box) stays glued to the bang's black core
+      var clipFrame = document.getElementById('jj-kyogen-clip');
+      if (clipFrame) {
+        clipFrame.style.width = W + 'px';
+        clipFrame.style.height = H + 'px';
+        clipFrame.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
+        clipFrame.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
+      }
     }
     fitCanvas();
     if ('ResizeObserver' in window) {

@@ -187,10 +187,15 @@
           Swirl canvas sits underneath, mask above it; pupils are DOM dots driven by
           japanjunky-info-swirl.js so the eyes can track the cursor. {%- endcomment -%}
       <canvas id="jj-swirl-canvas" aria-hidden="true" tabindex="-1"></canvas>
-      <div class="jj-kyogen" id="jj-kyogen" aria-hidden="true">
-        <img class="jj-kyogen__img" id="jj-kyogen-img" src="{{ 'kyogen-head.png' | asset_url }}" alt="">
-        <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-l"></div>
-        <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-r"></div>
+      {%- comment -%} Clip frame: keeps the mask inside the bang's black
+          interior (ellipse matches the ring valley; JS re-fits it with the
+          canvas). The head's own transforms/float live on .jj-kyogen. {%- endcomment -%}
+      <div class="jj-kyogen-clip" id="jj-kyogen-clip" aria-hidden="true">
+        <div class="jj-kyogen" id="jj-kyogen">
+          <img class="jj-kyogen__img" id="jj-kyogen-img" src="{{ 'kyogen-head.png' | asset_url }}" alt="">
+          <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-l"></div>
+          <div class="jj-kyogen__pupil" id="jj-kyogen-pupil-r"></div>
+        </div>
       </div>
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>

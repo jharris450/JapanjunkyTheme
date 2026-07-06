@@ -56,6 +56,22 @@
   transform: rotate(-7deg);
 }
 
+/* Clip frame: same rect as the swirl canvas (fallback here; info-swirl.js
+   re-fits both together), centered on the card like the canvas is. The
+   ellipse = the bang's black interior (FIT_K 0.297 of each dimension,
+   shrunk ~5% so the head never kisses the red ring). Kyogen coordinates
+   are unchanged: the frame's center IS the card's center. */
+.jj-kyogen-clip {
+  position: absolute;
+  left: calc(50% - 450px);
+  top: calc(50% - 375px);
+  width: 900px;
+  height: 750px;
+  z-index: -1;
+  pointer-events: none;
+  clip-path: ellipse(28% 28% at 50% 50%);
+}
+
 /* perspective+rotateY turns the face toward the product info text at
    the card center-right (positive rotateY pushes the head's right side
    away from the viewer). Pupils inherit the same 3D transform. */
