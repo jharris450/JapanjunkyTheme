@@ -109,9 +109,10 @@
   height: 100%;
   max-width: none;
   display: block;
-  /* blue mask is off-palette: sepia collapse + small negative hue spin
-     lands the face in lacquer red-brown while the eyes/teeth stay gold */
-  filter: sepia(1) saturate(1.7) hue-rotate(-18deg) brightness(0.92) contrast(1.1);
+  /* sprite is a 120px palette-dithered grid — the old sepia/hue filter
+     (blue mask -> lacquer red-brown) is baked into the pixels along with
+     the Floyd-Steinberg pass, so no CSS filter here. Upscale crisp. */
+  image-rendering: pixelated;
 }
 
 /* Round pupil without border-radius (crt.css nukes it globally):
