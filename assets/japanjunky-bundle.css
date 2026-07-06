@@ -124,10 +124,10 @@
    doll centers just past it. */
 .jj-daruma {
   position: absolute;
-  left: calc(100% + 225px);
-  top: -66px;
-  width: 118px;
-  height: 151px; /* 178:228 source aspect */
+  left: calc(100% + 108px);
+  top: -64px;
+  width: 100px;
+  height: 128px; /* 178:228 source aspect */
   z-index: 2; /* above the box canvas (z 1) so the whole doll is clickable */
   background: none;
   border: none;

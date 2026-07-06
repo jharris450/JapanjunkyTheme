@@ -500,7 +500,8 @@
       if (atc) atc.style.display = 'none';
       if (view) view.style.display = 'none';
     }
-    if (rerollBtn) rerollBtn.style.display = '';
+    // Daruma reroll stays hidden until the box is first opened (see the
+    // canvas click handler) — no reroll before there's anything to reroll.
 
     infoPanel.style.display = '';
   }
@@ -524,6 +525,9 @@
       openFlaps(function () {
         canvas.style.cursor = 'grab';
         dealOut(pool);
+        // First open reveals the daruma — it floats over the outstretched flap.
+        var daruma = document.getElementById('jj-bundle-reroll');
+        if (daruma) daruma.style.display = '';
       });
     });
   });
