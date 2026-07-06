@@ -168,13 +168,16 @@
   transform: translate(-7px, -46px) rotate(-17deg);
 }
 
-/* Bone pegs: parked inside the face holes (scaled to nothing), pop out on
-   hover/focus. Origin at the peg top = it grows out of the hole. */
+/* Straw pegs: parked inside the face holes (scaled to nothing), pop out on
+   hover/focus. Origin at the straw top = it grows out of the hole; --peg-rot
+   tips each straw outward. Positions are the measured hole centroids of the
+   body sprite. */
 .jj-daruma__peg {
+  --peg-rot: 0deg;
   position: absolute;
   max-width: none;
   opacity: 0;
-  transform: translate(-50%, -6%) scale(0.15);
+  transform: translate(-50%, -6%) rotate(var(--peg-rot)) scale(0.15);
   transform-origin: 50% 6%;
   transition: transform 0.2s ease-out, opacity 0.1s ease-out;
   pointer-events: none;
@@ -183,33 +186,50 @@
 .jj-daruma:hover .jj-daruma__peg,
 .jj-daruma:focus-visible .jj-daruma__peg {
   opacity: 1;
-  transform: translate(-50%, -6%) scale(1);
+  transform: translate(-50%, -6%) rotate(var(--peg-rot)) scale(1);
 }
 
 /* pegs stay parked while the doll is split open */
 .jj-daruma.is-open .jj-daruma__peg {
   opacity: 0;
-  transform: translate(-50%, -6%) scale(0.15);
+  transform: translate(-50%, -6%) rotate(var(--peg-rot)) scale(0.15);
 }
 
-.jj-daruma__peg--l { left: 42%; top: 31%; width: 17%; }
-.jj-daruma__peg--r { left: 59.5%; top: 30.5%; width: 16%; }
-.jj-daruma__peg--m { left: 51%; top: 42%; width: 23%; }
+.jj-daruma__peg--l { left: 43.3%; top: 31.5%; width: 7%; --peg-rot: 14deg; }
+.jj-daruma__peg--r { left: 60.6%; top: 31.8%; width: 7%; --peg-rot: -14deg; }
+.jj-daruma__peg--m { left: 52.6%; top: 43.9%; width: 8.5%; --peg-rot: -4deg; }
 
-/* Loot light: a beam column rising from the seam + a radial glow bloom.
-   Hidden until .is-open. Gold = --jj-secondary phosphor. */
+/* Loot light: a CRT phosphor cascade rising from the seam — vertical beam
+   columns (aperture-grille stripes) with horizontal scanline bands that
+   pour downward through the column, plus a radial glow pool. Everything
+   moves in QUANTIZED steps (site rule: CRT animation, no easing). Gold =
+   --jj-secondary phosphor. */
 .jj-daruma__beam {
   position: absolute;
-  left: 27%;
+  left: 24%;
   bottom: 45%;
-  width: 46%;
-  height: 130%;
-  background: linear-gradient(to top,
-    rgba(245, 215, 66, 0.85) 0%,
-    rgba(245, 215, 66, 0.35) 45%,
-    rgba(245, 215, 66, 0) 100%);
+  width: 52%;
+  height: 140%;
+  /* layer 1: scanline bands that cascade downward (background-position
+     animates); layer 2: grille columns; layer 3: the gold body */
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(245, 215, 66, 0.35) 0 3px,
+      rgba(245, 215, 66, 0) 3px 12px),
+    repeating-linear-gradient(to right,
+      rgba(245, 215, 66, 0.5) 0 2px,
+      rgba(245, 215, 66, 0) 2px 4px,
+      rgba(245, 215, 66, 0.2) 4px 6px,
+      rgba(245, 215, 66, 0) 6px 8px),
+    linear-gradient(to top,
+      rgba(245, 215, 66, 0.7) 0%,
+      rgba(245, 215, 66, 0.2) 60%,
+      rgba(245, 215, 66, 0) 100%);
+  /* fade the whole column toward its top so the stripes don't end hard */
+  -webkit-mask-image: linear-gradient(to top, #000 25%, transparent 95%);
+  mask-image: linear-gradient(to top, #000 25%, transparent 95%);
   opacity: 0;
-  transform: scaleY(0.1);
+  transform: scaleY(0.25);
   transform-origin: 50% 100%;
   pointer-events: none;
   mix-blend-mode: screen;
@@ -221,7 +241,7 @@
   bottom: 45%;
   width: 160%;
   height: 60%;
-  transform: translate(-50%, 50%) scale(0.2);
+  transform: translate(-50%, 50%);
   background: radial-gradient(closest-side,
     rgba(245, 215, 66, 0.9) 0%,
     rgba(245, 215, 66, 0.25) 55%,
@@ -232,24 +252,35 @@
 }
 
 .jj-daruma.is-open .jj-daruma__beam {
-  animation: jj-daruma-beam 1s ease-out forwards;
+  animation: jj-daruma-beam 1s steps(1, end) forwards;
 }
 
 .jj-daruma.is-open .jj-daruma__glow {
-  animation: jj-daruma-glow 1s ease-out forwards;
+  animation: jj-daruma-glow 1s steps(1, end) forwards;
 }
 
+/* Beam rises in quarter-steps while the scanline layer's position pours
+   downward — a cascading waterfall of light, snapped to discrete frames. */
 @keyframes jj-daruma-beam {
-  0% { opacity: 0; transform: scaleY(0.1); }
-  20% { opacity: 1; transform: scaleY(1); }
-  75% { opacity: 0.8; }
-  100% { opacity: 0; transform: scaleY(1); }
+  0%   { opacity: 1; transform: scaleY(0.25); background-position: 0 0,    0 0, 0 0; }
+  12%  { opacity: 1; transform: scaleY(0.5);  background-position: 0 4px,  0 0, 0 0; }
+  24%  { opacity: 1; transform: scaleY(0.75); background-position: 0 8px,  0 0, 0 0; }
+  36%  { opacity: 1; transform: scaleY(1);    background-position: 0 12px, 0 0, 0 0; }
+  48%  { opacity: 1; transform: scaleY(1);    background-position: 0 16px, 0 0, 0 0; }
+  60%  { opacity: 1; transform: scaleY(1);    background-position: 0 20px, 0 0, 0 0; }
+  72%  { opacity: 1; transform: scaleY(1);    background-position: 0 24px, 0 0, 0 0; }
+  84%  { opacity: 0.5; transform: scaleY(1);  background-position: 0 28px, 0 0, 0 0; }
+  100% { opacity: 0; transform: scaleY(1);    background-position: 0 32px, 0 0, 0 0; }
 }
 
+/* Glow pool brightens in quarter-steps, then cuts out — brightness flash */
 @keyframes jj-daruma-glow {
-  0% { opacity: 0; transform: translate(-50%, 50%) scale(0.2); }
-  25% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, 50%) scale(1.15); }
+  0%   { opacity: 0.25; }
+  12%  { opacity: 0.5; }
+  24%  { opacity: 1; }
+  72%  { opacity: 1; }
+  84%  { opacity: 0.5; }
+  100% { opacity: 0; }
 }
 
 /* Bone dice: rise fast out of the seam like RPG chest loot — up, tumble,
@@ -289,8 +320,28 @@
   100% { opacity: 0; transform: translate(75%, -130px) rotate(160deg) scale(0.95); }
 }
 
+/* After the doll snaps shut, it rattles — the dice being shaken for the
+   next roll. steps(1) = held poses with hard jumps, no easing. Replaces
+   the idle float for its duration (float resumes when the class drops). */
+.jj-daruma.is-shaking {
+  animation: jj-daruma-shake 0.6s steps(1, end);
+}
+
+@keyframes jj-daruma-shake {
+  0%   { transform: translate(-2px, 0) rotate(-7deg); }
+  12%  { transform: translate(2px, -2px) rotate(7deg); }
+  24%  { transform: translate(-3px, 1px) rotate(-8deg); }
+  36%  { transform: translate(3px, -1px) rotate(8deg); }
+  48%  { transform: translate(-2px, -2px) rotate(-6deg); }
+  60%  { transform: translate(2px, 1px) rotate(6deg); }
+  72%  { transform: translate(-1px, -1px) rotate(-4deg); }
+  84%  { transform: translate(1px, 0) rotate(3deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .jj-daruma { animation: none; }
+  .jj-daruma,
+  .jj-daruma.is-shaking { animation: none; }
   .jj-daruma__half,
   .jj-daruma__peg { transition: none; }
   .jj-daruma.is-open .jj-daruma__beam,

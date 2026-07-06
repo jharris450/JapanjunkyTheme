@@ -16,7 +16,8 @@
     isBusy: function () { return busy; },
     /* Runs the open/dice sequence, invoking done() as the dice fade so the
        record retraction starts right behind them. The doll snaps shut a
-       beat later, ready for the next roll. */
+       beat later, then rattles — shaking the dice for the next roll while
+       the records shuffle. */
     play: function (done) {
       if (reduceMotion) { if (done) done(); return; }
       if (busy) return;
@@ -25,8 +26,12 @@
       setTimeout(function () { if (done) done(); }, 700);
       setTimeout(function () {
         btn.classList.remove('is-open');
-        busy = false;
+        btn.classList.add('is-shaking');
       }, 1100);
+      setTimeout(function () {
+        btn.classList.remove('is-shaking');
+        busy = false;
+      }, 1750);
     }
   };
 })();
