@@ -114,3 +114,187 @@
   left: 73.5%;
   top: 41.8%;
 }
+
+/* --- Daruma reroll ---
+   Replaces the [Reroll] action button. Floats in the gap between the box
+   canvas and the crescent (overlapping the outstretched right flap is fine
+   — the doll paints above the canvas). Anchored like the box canvas:
+   absolute inside #jj-product-info, so it rides the same layout. The box
+   center sits at (card-right, card-top); the canvas edge is +275px, the
+   doll centers just past it. */
+.jj-daruma {
+  position: absolute;
+  left: calc(100% + 225px);
+  top: -66px;
+  width: 118px;
+  height: 151px; /* 178:228 source aspect */
+  z-index: 2; /* above the box canvas (z 1) so the whole doll is clickable */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+  animation: jj-daruma-float 5.5s ease-in-out infinite;
+}
+
+@keyframes jj-daruma-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-8px) rotate(1.5deg); }
+}
+
+/* The doll is two full-size copies of the body sprite, each clipped to a
+   half — top/bottom overlap 1% so no hairline seam shows while closed.
+   Splitting the halves (not swapping images) lets the open read as one
+   continuous motion. */
+.jj-daruma__half {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transition: transform 0.3s ease-out;
+}
+
+.jj-daruma__img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+}
+
+.jj-daruma__half--top .jj-daruma__img { clip-path: inset(0 0 44% 0); }
+.jj-daruma__half--bottom .jj-daruma__img { clip-path: inset(55% 0 0 0); }
+
+.jj-daruma.is-open .jj-daruma__half--top {
+  transform: translate(-7px, -46px) rotate(-17deg);
+}
+
+/* Bone pegs: parked inside the face holes (scaled to nothing), pop out on
+   hover/focus. Origin at the peg top = it grows out of the hole. */
+.jj-daruma__peg {
+  position: absolute;
+  max-width: none;
+  opacity: 0;
+  transform: translate(-50%, -6%) scale(0.15);
+  transform-origin: 50% 6%;
+  transition: transform 0.2s ease-out, opacity 0.1s ease-out;
+  pointer-events: none;
+}
+
+.jj-daruma:hover .jj-daruma__peg,
+.jj-daruma:focus-visible .jj-daruma__peg {
+  opacity: 1;
+  transform: translate(-50%, -6%) scale(1);
+}
+
+/* pegs stay parked while the doll is split open */
+.jj-daruma.is-open .jj-daruma__peg {
+  opacity: 0;
+  transform: translate(-50%, -6%) scale(0.15);
+}
+
+.jj-daruma__peg--l { left: 42%; top: 31%; width: 17%; }
+.jj-daruma__peg--r { left: 59.5%; top: 30.5%; width: 16%; }
+.jj-daruma__peg--m { left: 51%; top: 42%; width: 23%; }
+
+/* Loot light: a beam column rising from the seam + a radial glow bloom.
+   Hidden until .is-open. Gold = --jj-secondary phosphor. */
+.jj-daruma__beam {
+  position: absolute;
+  left: 27%;
+  bottom: 45%;
+  width: 46%;
+  height: 130%;
+  background: linear-gradient(to top,
+    rgba(245, 215, 66, 0.85) 0%,
+    rgba(245, 215, 66, 0.35) 45%,
+    rgba(245, 215, 66, 0) 100%);
+  opacity: 0;
+  transform: scaleY(0.1);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.jj-daruma__glow {
+  position: absolute;
+  left: 50%;
+  bottom: 45%;
+  width: 160%;
+  height: 60%;
+  transform: translate(-50%, 50%) scale(0.2);
+  background: radial-gradient(closest-side,
+    rgba(245, 215, 66, 0.9) 0%,
+    rgba(245, 215, 66, 0.25) 55%,
+    rgba(245, 215, 66, 0) 100%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.jj-daruma.is-open .jj-daruma__beam {
+  animation: jj-daruma-beam 1s ease-out forwards;
+}
+
+.jj-daruma.is-open .jj-daruma__glow {
+  animation: jj-daruma-glow 1s ease-out forwards;
+}
+
+@keyframes jj-daruma-beam {
+  0% { opacity: 0; transform: scaleY(0.1); }
+  20% { opacity: 1; transform: scaleY(1); }
+  75% { opacity: 0.8; }
+  100% { opacity: 0; transform: scaleY(1); }
+}
+
+@keyframes jj-daruma-glow {
+  0% { opacity: 0; transform: translate(-50%, 50%) scale(0.2); }
+  25% { opacity: 1; transform: translate(-50%, 50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 50%) scale(1.15); }
+}
+
+/* Bone dice: rise fast out of the seam like RPG chest loot — up, tumble,
+   drift apart, gone before the covers start flying back. */
+.jj-daruma__die {
+  position: absolute;
+  left: 50%;
+  bottom: 48%;
+  width: 30px;
+  height: auto;
+  max-width: none;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3; /* in front of the halves — loot floats up over the light */
+  filter: drop-shadow(0 0 6px rgba(245, 215, 66, 0.8));
+}
+
+.jj-daruma.is-open .jj-daruma__die--1 {
+  animation: jj-daruma-die-1 0.8s ease-out 0.1s forwards;
+}
+
+.jj-daruma.is-open .jj-daruma__die--2 {
+  animation: jj-daruma-die-2 0.8s ease-out 0.18s forwards;
+}
+
+@keyframes jj-daruma-die-1 {
+  0% { opacity: 0; transform: translate(-70%, 0) rotate(0deg) scale(0.5); }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-160%, -150px) rotate(-200deg) scale(1); }
+}
+
+@keyframes jj-daruma-die-2 {
+  0% { opacity: 0; transform: translate(-30%, 0) rotate(0deg) scale(0.45); }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(75%, -130px) rotate(160deg) scale(0.95); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jj-daruma { animation: none; }
+  .jj-daruma__half,
+  .jj-daruma__peg { transition: none; }
+  .jj-daruma.is-open .jj-daruma__beam,
+  .jj-daruma.is-open .jj-daruma__glow,
+  .jj-daruma.is-open .jj-daruma__die--1,
+  .jj-daruma.is-open .jj-daruma__die--2 { animation: none; }
+}

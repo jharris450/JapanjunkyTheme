@@ -532,12 +532,25 @@
   if (rerollBtn) {
     rerollBtn.addEventListener('click', function () {
       if (FSM.isLocked(state)) return;
-      if (state === 'closed') {
-        // Reroll before first open = just open the box
-        canvas.dispatchEvent(new MouseEvent('click'));
-        return;
+      var ring = ringAPI();
+      if (ring && ring.isBusy()) return;
+      var proceed = function () {
+        if (state === 'closed') {
+          // Reroll before first open = just open the box
+          canvas.dispatchEvent(new MouseEvent('click'));
+          return;
+        }
+        reroll();
+      };
+      // The daruma doll IS the reroll button — let it open and spill its
+      // dice first, then kick the actual reroll as they fade.
+      var daruma = window.JJ_DARUMA;
+      if (daruma) {
+        if (daruma.isBusy()) return;
+        daruma.play(proceed);
+      } else {
+        proceed();
       }
-      reroll();
     });
   }
 

@@ -194,6 +194,25 @@
       </div>
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
+      {%- comment -%} Daruma reroll: floats between the box and the crescent.
+          Hover pops the bone pegs out of the face holes; click splits the doll
+          and two bone dice rise out of the light before the reroll fires.
+          Same #jj-bundle-reroll id the stage JS already toggles/binds. {%- endcomment -%}
+      <button class="jj-daruma" id="jj-bundle-reroll" type="button" style="display:none;" aria-label="Reroll bundle">
+        <span class="jj-daruma__glow" aria-hidden="true"></span>
+        <span class="jj-daruma__beam" aria-hidden="true"></span>
+        <img class="jj-daruma__die jj-daruma__die--1" src="{{ 'daruma-die-1.png' | asset_url }}" alt="">
+        <img class="jj-daruma__die jj-daruma__die--2" src="{{ 'daruma-die-2.png' | asset_url }}" alt="">
+        <span class="jj-daruma__half jj-daruma__half--bottom" aria-hidden="true">
+          <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
+        </span>
+        <span class="jj-daruma__half jj-daruma__half--top" aria-hidden="true">
+          <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
+          <img class="jj-daruma__peg jj-daruma__peg--l" src="{{ 'daruma-peg-l.png' | asset_url }}" alt="">
+          <img class="jj-daruma__peg jj-daruma__peg--r" src="{{ 'daruma-peg-r.png' | asset_url }}" alt="">
+          <img class="jj-daruma__peg jj-daruma__peg--m" src="{{ 'daruma-peg-m.png' | asset_url }}" alt="">
+        </span>
+      </button>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
       <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>
       <div class="jj-product-info__title" id="jj-pi-title"></div>
@@ -201,7 +220,6 @@
       <div class="jj-product-info__meta" id="jj-pi-meta"></div>
       <div class="jj-product-info__price" id="jj-pi-price"></div>
       <div class="jj-product-info__actions" id="jj-pi-actions">
-        <button class="jj-action-btn" id="jj-bundle-reroll" type="button" style="display:none;">[Reroll]</button>
         <button class="jj-action-btn" id="jj-pi-add-to-cart" disabled>[Add to Cart]</button>
         <a class="jj-action-btn" id="jj-pi-view" href="#" style="display:none;">[View]</a>
         <input type="hidden" id="jj-pi-variant-id" value="">
@@ -331,6 +349,7 @@
   <script src="{{ 'japanjunky-bundle-fsm.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-ring-carousel.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-bundle-stage.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-daruma.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-info-swirl.js' | asset_url }}" defer></script>
   {% endunless %}
   <script src="{{ 'japanjunky-product-viewer.js' | asset_url }}" defer></script>
