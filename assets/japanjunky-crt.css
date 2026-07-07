@@ -395,22 +395,7 @@
 }
 
 /* ===== REDUCED MOTION ===== */
-/* CRT overlay layers (aperture grille, scanlines, vignette, damper wires)
-   are static gradients — NOT animations — so they stay visible.
-   Only actual animations are disabled here. */
-@media (prefers-reduced-motion: reduce) {
-  .jj-crt-on,
-  .jj-crt-off,
-  .jj-glow-pulse,
-  .jj-loading::after {
-    animation: none;
-  }
-
-  .jj-phosphor-decay {
-    animation: none;
-  }
-  /* CSS cursor PNGs are inherently reduced-motion safe */
-}
+/* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
 /* ===== THREE.JS CRT SHADER ACTIVE ===== */
 /* When the WebGL shader overlay is running, disable CSS CRT layers

@@ -65,9 +65,7 @@
   50% { opacity: 0.3; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .jj-scroll__indicator { animation: none; }
-}
+/* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
 /* --- Hero UI fade when grid is in view --- */
 #jj-ring,

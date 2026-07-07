@@ -600,13 +600,7 @@
   transition-delay: 90ms;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .jj-toolbox__btn,
-  .jj-toolbox__tool {
-    transition-duration: 0ms;
-    transition-delay: 0ms;
-  }
-}
+/* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
 @keyframes jj-shutdown-dots {
   0% { clip-path: inset(0 100% 0 0); }
@@ -946,11 +940,7 @@
 @keyframes jj-vinyl-spin {
   to { transform: rotate(360deg); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .jj-media-token__disc { animation: none; }
-  .jj-media-token__float,
-  .jj-media-token__coin { animation: none; }
-}
+/* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
 /* Absorbed back into its product — quick CRT blink-out (no transform; physics
    owns the token's transform until it's removed). */

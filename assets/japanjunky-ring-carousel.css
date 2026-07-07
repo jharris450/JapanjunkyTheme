@@ -184,8 +184,8 @@
 }
 
 /* --- Reduced Motion --- */
-/* Carousel scroll transitions always play — they are essential to the UI,
-   not decorative. Other animations respect prefers-reduced-motion. */
+/* Global bypass: NOTHING respects prefers-reduced-motion (theme.liquid
+   shims the JS checks; CSS blocks were removed site-wide). */
 
 /* --- High Contrast --- */
 @media (prefers-contrast: more) {

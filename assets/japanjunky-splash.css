@@ -52,10 +52,8 @@
   outline-offset: 2px;
 }
 
-/* Reduced motion / high contrast: splash hidden entirely */
-@media (prefers-reduced-motion: reduce) {
-  .jj-splash-enter { display: none !important; }
-}
+/* High contrast: splash hidden entirely.
+   (reduced-motion skip removed - global bypass, see theme.liquid shim) */
 
 @media (prefers-contrast: more) {
   .jj-splash-enter { display: none !important; }

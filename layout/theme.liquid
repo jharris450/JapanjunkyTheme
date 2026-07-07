@@ -50,6 +50,37 @@
   {% endif %}
 
   <script>
+    /* Global reduced-motion bypass (user decision, 2026-07-06): the CRT
+       look IS motion — blink, float, spin, flash. OS animation toggles
+       (prefers-reduced-motion) must not strip the site's identity, so
+       every matchMedia check — in current AND future scripts — reads
+       "no reduction". Runs before any theme script (they're all defer).
+       CSS can't be shimmed: never write @media (prefers-reduced-motion)
+       blocks in theme stylesheets. */
+    (function () {
+      if (!window.matchMedia) return;
+      var orig = window.matchMedia.bind(window);
+      window.matchMedia = function (q) {
+        var m = orig(q);
+        var s = String(q);
+        if (s.indexOf('prefers-reduced-motion') !== -1) {
+          return {
+            media: m.media,
+            // report an OS with animations ON: reduce never matches,
+            // no-preference always does
+            matches: s.indexOf('no-preference') !== -1,
+            onchange: null,
+            addListener: function () {},
+            removeListener: function () {},
+            addEventListener: function () {},
+            removeEventListener: function () {},
+            dispatchEvent: function () { return false; }
+          };
+        }
+        return m;
+      };
+    })();
+
     window.JJ_CURSOR_SETS = {
       std: {
         arrow: [

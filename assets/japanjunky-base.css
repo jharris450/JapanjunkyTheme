@@ -193,7 +193,5 @@ h4 { font-size: 13px; }
 }
 
 /* --- Reduced Motion --- */
-@media (prefers-reduced-motion: reduce) {
-  .jj-blink { animation: none; }
-}
+/* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
