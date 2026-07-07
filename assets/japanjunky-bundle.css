@@ -100,9 +100,9 @@
   50% { transform: perspective(700px) rotateY(14deg) rotate(-2.6deg) translateY(-11px); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .jj-kyogen { animation: none; }
-}
+/* Reduced-motion bypass (user call): the kyogen float is a slow ambient
+   drift core to the CRT look, not a vestibular-risk movement — it keeps
+   running when the OS turns animation effects off. */
 
 .jj-kyogen__img {
   width: 100%;
@@ -245,10 +245,14 @@
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 
+/* Reduced-motion: the daruma's idle FLOAT is exempt (user call — slow
+   ambient drift, part of the look). The action animations (hover rattle,
+   post-shut shake, split transition, fx canvas) still switch off. */
 @media (prefers-reduced-motion: reduce) {
-  .jj-daruma,
-  .jj-daruma:hover,
-  .jj-daruma:focus-visible,
+  /* :not(.is-open) keeps parity with the normal-motion cascade, where
+     .is-open (later, equal specificity) beats the hover rule */
+  .jj-daruma:hover:not(.is-open),
+  .jj-daruma:focus-visible:not(.is-open) { animation: jj-daruma-float 5.5s ease-in-out infinite; }
   .jj-daruma.is-shaking { animation: none; }
   .jj-daruma__half { transition: none; }
   #jj-daruma-fx { display: none !important; }
