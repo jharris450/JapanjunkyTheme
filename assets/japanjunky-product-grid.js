@@ -95,7 +95,9 @@
   // canvas — per-card WebGL contexts would exhaust the browser limit.
   var spinEngine = (function () {
     if (typeof THREE === 'undefined') return null;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+    // No reduced-motion bail (user call): the spinning cover IS the card's
+    // product graphic — bailing here dropped the artwork treatment whenever
+    // the OS turned animation effects off.
 
     var SIZE = 180;
     var glCanvas = document.createElement('canvas');
