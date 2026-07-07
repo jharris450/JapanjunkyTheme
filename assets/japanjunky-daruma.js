@@ -13,8 +13,6 @@
   var btn = document.getElementById('jj-bundle-reroll');
   if (!btn || !btn.classList.contains('jj-daruma')) return;
 
-  var reduceMotion = window.matchMedia &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var busy = false;
 
   // ─── FX scene (lazy-built on first play) ─────────────────────
@@ -351,7 +349,9 @@
        the record retraction starts behind it. The doll snaps shut, then
        rattles — shaking the dice for the next roll while records shuffle. */
     play: function (done) {
-      if (reduceMotion) { if (done) done(); return; }
+      // No reduced-motion bail (user call): the split + dice loot sequence
+      // runs regardless of the OS animation-effects setting, like the
+      // other core-look animations.
       if (busy) return;
       busy = true;
       btn.classList.add('is-open');

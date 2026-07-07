@@ -245,15 +245,7 @@
   100% { transform: translate(0, 0) rotate(0deg); }
 }
 
-/* Reduced-motion: the daruma's idle FLOAT is exempt (user call — slow
-   ambient drift, part of the look). The action animations (hover rattle,
-   post-shut shake, split transition, fx canvas) still switch off. */
-@media (prefers-reduced-motion: reduce) {
-  /* :not(.is-open) keeps parity with the normal-motion cascade, where
-     .is-open (later, equal specificity) beats the hover rule */
-  .jj-daruma:hover:not(.is-open),
-  .jj-daruma:focus-visible:not(.is-open) { animation: jj-daruma-float 5.5s ease-in-out infinite; }
-  .jj-daruma.is-shaking { animation: none; }
-  .jj-daruma__half { transition: none; }
-  #jj-daruma-fx { display: none !important; }
-}
+/* Reduced-motion bypass (user call): the daruma is fully exempt — idle
+   float, hover rattle, split, dice/loot fx, post-shut shake all run
+   regardless of the OS animation-effects setting. (japanjunky-daruma.js
+   likewise no longer bails out of play().) */
