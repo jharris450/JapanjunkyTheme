@@ -257,10 +257,17 @@
 
     // Each main flap is two planes back to back: printed/taped face out,
     // plain shadowed cardboard face in — tape inside a box makes no sense.
-    function flapPair(width, height, outerTex, innerTexUrl) {
+    // The end-lid pair passes outerSide = DoubleSide: at the flap↔panel
+    // corner the inner planes leave a hairline notch, and rays through it
+    // hit the outer planes from BEHIND — FrontSide culling let them sail
+    // through to the background (dashed glowing slit along the joint).
+    // DoubleSide caps the notch with the outer's backface (plain
+    // cardboard); the interior look is untouched because the inner planes
+    // sit 0.002 nearer the inside camera and cover it everywhere else.
+    function flapPair(width, height, outerTex, innerTexUrl, outerSide) {
       var grp = new THREE.Object3D();
       var geo = new THREE.PlaneGeometry(width, height);
-      grp.add(new THREE.Mesh(geo, psMat(outerTex, THREE.FrontSide)));
+      grp.add(new THREE.Mesh(geo, psMat(outerTex, outerSide || THREE.FrontSide)));
       var inner = new THREE.Mesh(geo, litMat(loadBoxTex(innerTexUrl)));
       inner.rotation.y = Math.PI;
       inner.position.z = -0.002;
@@ -291,14 +298,16 @@
     // open slit along the joint. Identical vertices snap identically —
     // seam sealed at every angle. (The panel sits flush on the body's +X
     // plane; that face is the invisible material, so no z-fight.)
-    var sPair = flapPair(d + 0.001, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
+    var sPair = flapPair(d + 0.001, h, loadBoxTex(TEX.sideRight), TEX.sideRight,
+      THREE.DoubleSide);
     sPair.rotation.y = Math.PI / 2; // face +X; width now runs along z
     sPair.position.set(0, 0, (d + 0.001) / 2);
     endLid.add(sPair);
 
     // Front-right flap: faces +Z, attached at the panel's front corner,
     // spans corner → box center.
-    var rPair = flapPair(halfW, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight);
+    var rPair = flapPair(halfW, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight,
+      THREE.DoubleSide);
     rPair.position.set(-halfW / 2, 0, d + 0.001);
     endLid.add(rPair);
 
