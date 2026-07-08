@@ -283,10 +283,17 @@
     endLid = new THREE.Object3D();
     endLid.position.set(halfW, 0, -d / 2);
 
-    // Right side panel: faces +X, spans hinge (rear) → front edge.
-    var sPair = flapPair(d, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
+    // Right side panel: faces +X, spans hinge (rear) → front edge. Sized
+    // and placed so its front-edge vertices land EXACTLY on the flap's
+    // right-edge vertices below: the PS1 snap quantizes each vertex to a
+    // clip-space grid, so near-coincident corners (the old 0.001/0.001
+    // offsets) straddled grid cells at ~11% of viewing angles and tore an
+    // open slit along the joint. Identical vertices snap identically —
+    // seam sealed at every angle. (The panel sits flush on the body's +X
+    // plane; that face is the invisible material, so no z-fight.)
+    var sPair = flapPair(d + 0.001, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
     sPair.rotation.y = Math.PI / 2; // face +X; width now runs along z
-    sPair.position.set(0.001, 0, d / 2);
+    sPair.position.set(0, 0, (d + 0.001) / 2);
     endLid.add(sPair);
 
     // Front-right flap: faces +Z, attached at the panel's front corner,
