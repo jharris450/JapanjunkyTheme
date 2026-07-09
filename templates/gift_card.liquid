@@ -2,7 +2,7 @@
 {%- comment -%} Gift card display: balance, code, Shopify QR (#QrCode), actions. {%- endcomment -%}
 <div class="jj-gate">
   <div class="jj-gate__panel jj-giftcard{% if gift_card.expired or gift_card.enabled == false %} jj-giftcard--inactive{% endif %}">
-    <div class="jj-gate__prompt">C:\&gt; gift_card</div>
+    <div class="jj-gate__prompt"><span>Gift Card</span>{% render 'jj-winctl' %}</div>
     <h1 class="jj-gate__title">{{ shop.name }} GIFT CARD</h1>
 
     <div class="jj-giftcard__balance">{{ gift_card.balance | money }}</div>

@@ -13,7 +13,7 @@
   <header class="jj-search__header">
     <form action="{{ routes.search_url }}" method="get" role="search" class="jj-search__form">
       <input type="hidden" name="type" value="product">
-      <span class="jj-grid__search-prompt">&gt;</span>
+      <span class="jj-grid__search-prompt">Find:</span>
       <input class="jj-search__input" type="search" name="q" value="{{ search.terms | escape }}"
              placeholder="SEARCH..." autocomplete="off" aria-label="Search">
       <button class="jj-action-btn" type="submit">[SEARCH]</button>

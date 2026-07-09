@@ -6,8 +6,8 @@
 {%- endcomment -%}
 <div class="jj-page jj-content jj-faq">
   <header class="jj-content__header">
-    <span class="jj-content__prompt">C:\&gt;</span>
     <h1 class="jj-content__title">{{ page.title | default: 'FAQ' }}</h1>
+    {% render 'jj-winctl' %}
   </header>
 
   {%- if page.content != blank -%}

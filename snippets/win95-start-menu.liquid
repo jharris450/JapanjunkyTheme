@@ -1,13 +1,13 @@
 {%- comment -%}
-  Terminal-style command menu (Start menu).
+  Win98-style Start menu.
 {%- endcomment -%}
 
 <div class="jj-start-menu" id="jj-start-menu" role="menu" aria-label="Command menu">
-  <div class="jj-start-menu__sidebar">JAPANJUNKY</div>
+  <div class="jj-start-menu__sidebar">JAPANJUNKY 98</div>
 
   <div class="jj-start-menu__items">
     {%- comment -%} My Account {%- endcomment -%}
-    <div class="jj-start-menu__section-title">-- account --</div>
+    <div class="jj-start-menu__section-title">Account</div>
     {%- comment -%}
       New customer accounts: /account is the Shopify-hosted dashboard (profile +
       orders together). There is no separate /account/register (passwordless —
@@ -16,64 +16,64 @@
     {%- endcomment -%}
     {%- if customer -%}
       <a href="/account" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&gt;</span>
-        <span>profile</span>
+        <span class="jj-start-item-icon">&#9632;</span>
+        <span>Profile</span>
       </a>
       <a href="/account" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&gt;</span>
-        <span>orders</span>
+        <span class="jj-start-item-icon">&#9632;</span>
+        <span>Orders</span>
       </a>
     {%- else -%}
       <a href="/account/login" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&gt;</span>
-        <span>login</span>
+        <span class="jj-start-item-icon">&#9632;</span>
+        <span>Log In</span>
       </a>
     {%- endif -%}
     <a href="/pages/watchlist" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>watchlist</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>Watchlist</span>
     </a>
     <a href="/cart" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span><span class="jj-start-menu__cart-symbol" aria-hidden="true">¥</span>cart (<span id="jj-nav-cart-count">{{ cart.item_count }}</span>)</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span><span class="jj-start-menu__cart-symbol" aria-hidden="true">¥</span>Cart (<span id="jj-nav-cart-count">{{ cart.item_count }}</span>)</span>
     </a>
 
     <div class="jj-start-menu__divider"></div>
 
     {%- comment -%} Site Pages {%- endcomment -%}
-    <div class="jj-start-menu__section-title">-- navigate --</div>
+    <div class="jj-start-menu__section-title">Navigate</div>
     <a href="/" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>home</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>Home</span>
     </a>
     <a href="/collections/all?sort=newest" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>new arrivals</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>New Arrivals</span>
     </a>
     <a href="/pages/about" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>about</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>About</span>
     </a>
     <a href="/pages/faq" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>help</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>Help</span>
     </a>
     <a href="/pages/contact" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>contact</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>Contact</span>
     </a>
 
     <div class="jj-start-menu__divider"></div>
 
     {%- if customer -%}
       <a href="/account/logout" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&gt;</span>
-        <span>logout</span>
+        <span class="jj-start-item-icon">&#9632;</span>
+        <span>Log Out</span>
       </a>
     {%- endif -%}
     <button type="button" class="jj-start-menu__item" id="jj-shutdown-trigger" role="menuitem">
-      <span class="jj-start-item-icon">&gt;</span>
-      <span>shutdown</span>
+      <span class="jj-start-item-icon">&#9632;</span>
+      <span>Shut Down...</span>
     </button>
   </div>
 </div>

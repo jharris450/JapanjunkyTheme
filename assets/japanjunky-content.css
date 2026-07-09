@@ -10,20 +10,17 @@
   margin: 0 auto;
 }
 
+/* Faux Win98 titlebar: red fade + window-control glyphs (jj-winctl).
+   Typography untouched — chrome is the only Windows part. */
 .jj-content__header {
-  padding-top: 16px; /* .jj-page padding-top is 0 (for sticky grid bars) */
+  margin-top: 16px; /* .jj-page padding-top is 0 (for sticky grid bars) */
   margin-bottom: 16px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  border-bottom: 1px solid #222;
-  padding-bottom: 8px;
-}
-
-.jj-content__prompt {
-  color: var(--jj-accent, #33ff33);
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid #333;
+  background: linear-gradient(90deg, rgba(232, 49, 58, 0.30), rgba(232, 49, 58, 0.03));
 }
 
 .jj-content__title {

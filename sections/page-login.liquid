@@ -11,14 +11,15 @@
 
 <div class="jj-auth" id="jj-auth">
   <div class="jj-auth__title">
-    <span class="jj-auth__prompt">C:\&gt;</span> auth /login
+    <span>Log On to {{ shop.name | upcase }}</span>
+    {% render 'jj-winctl' %}
   </div>
   <div class="jj-auth__body">
-    <p class="jj-auth__message">access restricted.</p>
-    <p class="jj-auth__message">authenticate to continue.</p>
+    <p class="jj-auth__message">Access is restricted.</p>
+    <p class="jj-auth__message">Log on to continue.</p>
   </div>
   <div class="jj-auth__actions">
-    <a href="/account/login" class="jj-win95-btn-sm">[Authenticate]</a>
+    <a href="/account/login" class="jj-win95-btn-sm">[Log On]</a>
   </div>
 </div>
 

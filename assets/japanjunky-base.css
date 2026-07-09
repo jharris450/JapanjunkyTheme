@@ -195,3 +195,25 @@ h4 { font-size: 13px; }
 /* --- Reduced Motion --- */
 /* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
+
+/* --- Faux window controls (Win98 titlebar glyphs, decorative) --- */
+.jj-winctl {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.jj-winctl i {
+  font-style: normal;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  line-height: 1;
+  color: #888;
+  border: 1px solid #333;
+  background: #111;
+}

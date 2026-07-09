@@ -33,9 +33,16 @@ body.jj-gate-body {
   background: rgba(8, 5, 3, 0.85);
   padding: 20px 24px;
 }
+/* Faux Win98 titlebar (same Fixedsys type; chrome only) */
 .jj-gate__prompt {
-  color: var(--jj-accent, #33ff33);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--jj-text, #e0d5c0);
   font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #333;
+  background: linear-gradient(90deg, rgba(232, 49, 58, 0.30), rgba(232, 49, 58, 0.03));
   margin-bottom: 12px;
 }
 .jj-gate__title {

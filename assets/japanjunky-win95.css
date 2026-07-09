@@ -73,10 +73,20 @@
   transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
-.jj-start-btn__icon {
-  font-size: 12px;
-  line-height: 1;
+/* Faux Win98 flag: 2×2 phosphor blocks (magenta subs for Windows blue —
+   cyan is reserved for the CD format indicator) */
+.jj-start-btn__flag {
+  display: grid;
+  grid-template-columns: 5px 5px;
+  grid-template-rows: 5px 5px;
+  gap: 1px;
+  flex-shrink: 0;
 }
+.jj-start-btn__flag i { display: block; }
+.jj-start-btn__flag i:nth-child(1) { background: var(--jj-primary, #e8313a); }
+.jj-start-btn__flag i:nth-child(2) { background: var(--jj-green, #33ff33); }
+.jj-start-btn__flag i:nth-child(3) { background: var(--jj-magenta, #e040e0); }
+.jj-start-btn__flag i:nth-child(4) { background: var(--jj-secondary, #f5d742); }
 
 .jj-start-btn:hover {
   border-color: var(--jj-primary);
