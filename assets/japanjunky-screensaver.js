@@ -107,7 +107,8 @@
     uSunGlow: { value: 1.0 },             // music-reactive sun brightness (driven in animate)
     uHue: { value: 0.0 },                 // music-reactive hue rotation, radians (driven in animate)
     uRipple: { value: 0.054 },
-    uWaterDark: { value: 0.78 }
+    uWaterDark: { value: 0.78 },
+    uWaxOff: { value: 0.0 }
   };
   waxUniforms.uSunTex.value.needsUpdate = true; // DataTexture must be flagged before first use
   // Smoothed per-blob stretch (low-pass of the raw |vy|-driven target) so the
@@ -1383,7 +1384,13 @@
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
+    var prevAutoClearInv = renderer.autoClear;
+    renderer.autoClear = false;
+    waxUniforms.uWaxOff.value = 1.0;      // bg pass only: sun/portal/water, no wax field
+    renderer.render(waxScene, waxCamera);
+    waxUniforms.uWaxOff.value = 0.0;
     renderer.render(scene, camera);
+    renderer.autoClear = prevAutoClearInv;
     renderer.setRenderTarget(null);
     renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
     inverseImageData.data.set(pixelBuffer);

@@ -47,6 +47,7 @@
     'uniform float uHue;',               // music-reactive hue rotation, radians (0 = idle/original)
     'uniform float uRipple;',            // water ripple amplitude
     'uniform float uWaterDark;',         // water reflection darken factor
+    'uniform float uWaxOff;',            // 1 = kill the wax field (pool + blobs) — underscene inverse pass renders bg only
     'varying vec2 vUv;',
     '',
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
@@ -100,6 +101,7 @@
     '}',
     '',
     'float map(vec3 p) {',
+    '  if (uWaxOff > 0.5) return 1e5;',  // no wax anywhere — rays fall straight through to the bg
     '  float d = poolSD(p);',
     '  for (int i = 0; i < ' + N + '; i++) {',
     '    if (i >= uBlobCount) break;',
