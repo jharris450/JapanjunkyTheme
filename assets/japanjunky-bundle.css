@@ -1,5 +1,5 @@
 /* Mystery-box bundle hero.
-   Crescent styles live in japanjunky-ring-carousel.css (.jj-ring right 24vw);
+   Crescent styles live in japanjunky-ring-carousel.css (.jj-ring right 18vw);
    here: the box canvas, parked in the old product-graphic spot — absolutely
    positioned inside #jj-product-info exactly where positionCanvasOverBox()
    puts #jj-viewer-canvas by default (centered on the card's right edge,

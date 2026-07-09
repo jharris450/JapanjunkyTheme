@@ -298,7 +298,9 @@
       if (now - last < HOLD_MS) return;
       last = now;
       idx = (idx + 1) % PALETTE.length;
-      gridEl.style.setProperty('--jj-price-strobe', PALETTE[idx]);
+      // :root so the bundle info panel's price (outside the grid) rides
+      // the same strobe as the card prices.
+      document.documentElement.style.setProperty('--jj-price-strobe', PALETTE[idx]);
     }
     requestAnimationFrame(strobe);
   })();

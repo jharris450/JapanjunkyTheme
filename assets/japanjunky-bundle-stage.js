@@ -546,6 +546,86 @@
   // ─── Bundle product info (fixed top-left panel) ──────────────
   // The panel is no longer per-record (records get hover cards in the
   // crescent) — it holds the Five Random Records product itself.
+
+  // Typewriter (same feel as the per-record panel in product-viewer.js —
+  // that script loads after this one, so the engine lives here too).
+  var typeTimer = null;
+
+  function clearType() {
+    if (typeTimer) clearTimeout(typeTimer);
+    typeTimer = null;
+    var cursors = document.querySelectorAll('.jj-pi-cursor');
+    for (var i = 0; i < cursors.length; i++) cursors[i].remove();
+  }
+
+  function typeField(el, text, msPerChar, cb) {
+    if (!el) { if (cb) cb(); return; }
+    el.textContent = '';
+    var textNode = document.createTextNode('');
+    var cursor = document.createElement('span');
+    cursor.className = 'jj-pi-cursor';
+    el.appendChild(textNode);
+    el.appendChild(cursor);
+
+    var idx = 0;
+    function step() {
+      if (idx < text.length) {
+        idx++;
+        textNode.textContent = text.substring(0, idx);
+        // Jittered delay: ±40% of base speed for a human feel
+        var jitter = msPerChar * (0.6 + Math.random() * 0.8);
+        typeTimer = setTimeout(step, jitter);
+      } else {
+        cursor.remove();
+        if (cb) cb();
+      }
+    }
+    step();
+  }
+
+  function typeSequence(fields, done) {
+    clearType();
+    var i = 0;
+    function next() {
+      if (i >= fields.length) {
+        // Blinking caret parks at the end of the last typed field.
+        var lastEl = fields[fields.length - 1].el;
+        if (lastEl) {
+          var cursor = document.createElement('span');
+          cursor.className = 'jj-pi-cursor';
+          lastEl.appendChild(cursor);
+        }
+        if (done) done();
+        return;
+      }
+      var f = fields[i];
+      i++;
+      typeField(f.el, f.text, f.ms, function () {
+        typeTimer = setTimeout(next, 80);
+      });
+    }
+    next();
+  }
+
+  // Attention arrows flanking the typed title: gold glyphs marching
+  // inward (staggered steps() blink — illumination moves, glyphs don't).
+  function addTitleArrows(el) {
+    if (!el || el.querySelector('.jj-pi-arrows')) return;
+    function mk(dir) {
+      var s = document.createElement('span');
+      s.className = 'jj-pi-arrows jj-pi-arrows--' + dir;
+      s.setAttribute('aria-hidden', 'true');
+      for (var i = 0; i < 3; i++) {
+        var g = document.createElement('i');
+        g.textContent = dir === 'l' ? '>' : '<';
+        s.appendChild(g);
+      }
+      return s;
+    }
+    el.insertBefore(mk('l'), el.firstChild);
+    el.appendChild(mk('r'));
+  }
+
   function showBundleInfo() {
     var infoPanel = document.getElementById('jj-product-info');
     if (!infoPanel) return;
@@ -564,12 +644,17 @@
     var rerollBtn = document.getElementById('jj-bundle-reroll');
 
     if (BUNDLE) {
-      if (artist) artist.textContent = (BUNDLE.title || 'FIVE RANDOM RECORDS').toUpperCase();
+      // Title + price start blank and get typed in (below); the caret
+      // parks blinking after the price when the sequence ends.
+      if (artist) artist.textContent = '';
       if (meta) {
-        meta.innerHTML = '<div class="jj-meta-row"><span class="jj-meta-row__label">Contents: </span>' +
-          '<span class="jj-meta-row__value">5 random records</span></div>';
+        // Product description replaces the old hardcoded Contents row —
+        // the panel grows to fit however long the copy runs.
+        meta.innerHTML = BUNDLE.descriptionHtml ||
+          ('<div class="jj-meta-row"><span class="jj-meta-row__label">Contents: </span>' +
+           '<span class="jj-meta-row__value">5 random records</span></div>');
       }
-      if (price) price.textContent = BUNDLE.price || '';
+      if (price) price.textContent = '';
       if (variantInput) variantInput.value = String(BUNDLE.variantId || '');
       if (atc) {
         // product-viewer.js's existing click handler adds #jj-pi-variant-id
@@ -580,6 +665,28 @@
       if (view && BUNDLE.handle) {
         view.href = '/products/' + encodeURIComponent(BUNDLE.handle);
         view.style.display = '';
+      }
+
+      // Typewriter on load: title → price, then the marching arrows
+      // land on the title. Deferred while the splash owns the screen so
+      // the animation isn't burned off behind it.
+      var startTyping = function () {
+        typeSequence([
+          { el: artist, text: (BUNDLE.title || 'FIVE RANDOM RECORDS').toUpperCase(), ms: 25 },
+          { el: price, text: BUNDLE.price || '---', ms: 14 }
+        ], function () {
+          addTitleArrows(artist);
+        });
+      };
+      if (window.JJ_SPLASH_ACTIVE) {
+        var splashWatch = setInterval(function () {
+          if (!window.JJ_SPLASH_ACTIVE) {
+            clearInterval(splashWatch);
+            startTyping();
+          }
+        }, 200);
+      } else {
+        startTyping();
       }
     } else {
       if (artist) artist.textContent = 'FIVE RANDOM RECORDS';

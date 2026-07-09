@@ -9,7 +9,7 @@
   z-index: 3;
   background: rgba(0, 0, 0, 0.75);
   width: 100%;
-  max-width: 360px;
+  max-width: 400px; /* wider measure for the description copy */
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   pointer-events: auto;
   padding: 10px 16px 12px;
@@ -74,11 +74,66 @@
   display: none;
 }
 
-/* Meta — stacked rows */
+/* Attention arrows flanking the title — gold glyphs whose illumination
+   marches inward toward the text (staggered steps() blink, no movement:
+   CRT animation vocabulary only). Injected by japanjunky-bundle-stage.js
+   after the typewriter finishes the title. */
+.jj-pi-arrows {
+  display: inline-block;
+  color: var(--jj-secondary, #f5d742);
+  text-shadow: 0 0 6px rgba(245, 215, 66, 0.5);
+}
+
+.jj-pi-arrows--l { margin-right: 8px; }
+.jj-pi-arrows--r { margin-left: 8px; }
+
+.jj-pi-arrows i {
+  font-style: normal;
+  opacity: 0.25;
+  animation: jj-arrow-pulse 0.72s steps(1, end) infinite;
+}
+
+/* Left side (>>>): light runs left→right, into the title */
+.jj-pi-arrows--l i:nth-child(2) { animation-delay: 0.24s; }
+.jj-pi-arrows--l i:nth-child(3) { animation-delay: 0.48s; }
+
+/* Right side (<<<): reversed stagger — light runs right→left, into the title */
+.jj-pi-arrows--r i:nth-child(1) { animation-delay: 0.48s; }
+.jj-pi-arrows--r i:nth-child(2) { animation-delay: 0.24s; }
+
+@keyframes jj-arrow-pulse {
+  0% { opacity: 1; }
+  33% { opacity: 0.25; }
+  100% { opacity: 0.25; }
+}
+
+/* Meta — stacked rows / product description */
 .jj-product-info__meta {
   font-size: 11px;
   line-height: 1.4;
   margin-bottom: 8px;
+  /* The 3D box mesh hangs over the card's top-right corner (its canvas is
+     centered on the card's right edge) — keep the description column clear
+     of it so no copy renders under the crate. */
+  padding-right: 104px;
+}
+
+/* Description HTML (Shopify rich text) dropped into the meta slot —
+   the panel has no height cap, so the box stretches with the copy. */
+.jj-product-info__meta p {
+  margin: 0 0 6px;
+  color: var(--jj-text, #e0d5c0);
+}
+
+.jj-product-info__meta p:last-child {
+  margin-bottom: 0;
+}
+
+.jj-product-info__meta ul,
+.jj-product-info__meta ol {
+  margin: 0 0 6px;
+  padding-left: 16px;
+  color: var(--jj-text, #e0d5c0);
 }
 
 .jj-meta-row {
@@ -93,13 +148,16 @@
   color: var(--jj-text, #e0d5c0);
 }
 
-/* Price */
+/* Price — rides the same phosphor strobe as the catalog card prices
+   (--jj-price-strobe cycled on :root by japanjunky-product-grid.js;
+   static gold fallback when the grid JS isn't running). Glow follows
+   the strobed color via currentColor. */
 .jj-product-info__price {
   font-size: 14px;
-  color: var(--jj-secondary, #f5d742);
+  color: var(--jj-price-strobe, var(--jj-secondary, #f5d742));
   margin-bottom: 8px;
   min-height: 18px;
-  text-shadow: 0 0 6px rgba(245, 215, 66, 0.4);
+  text-shadow: 0 0 6px currentColor;
 }
 
 /* Actions — positioned above the canvas within the box's local stacking
@@ -144,6 +202,55 @@
   border-color: #222;
   box-shadow: var(--jj-tactile-disabled);
 }
+
+/* Add to Cart — same gold treatment + hover panic flash as the catalog
+   quick-add (.jj-grid__card-add in japanjunky-product-grid.css). */
+.jj-product-info__actions #jj-pi-add-to-cart:not(:disabled) {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+  background: rgba(245, 215, 66, 0.08);
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.4);
+  box-shadow: 0 0 6px rgba(245, 215, 66, 0.2);
+}
+
+.jj-product-info__actions #jj-pi-add-to-cart:hover:not(:disabled) {
+  background: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742); /* keep gold — the generic .jj-action-btn:hover reds it */
+  color: #000;
+  text-shadow: none;
+  animation: jj-pi-add-shake 0.16s steps(2) infinite,
+             jj-pi-add-flash 0.14s steps(1) infinite;
+}
+
+@keyframes jj-pi-add-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, 1px); }
+  20% { transform: translate(2px, -2px); }
+  30% { transform: translate(-2px, -1px); }
+  40% { transform: translate(2px, 2px); }
+  50% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -2px); }
+  90% { transform: translate(-1px, 2px); }
+}
+
+@keyframes jj-pi-add-flash {
+  0%, 100% {
+    background: var(--jj-secondary, #f5d742);
+    color: #000;
+    box-shadow: 0 0 14px rgba(245, 215, 66, 0.9);
+  }
+  50% {
+    background: var(--jj-primary, #e8313a);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(232, 49, 58, 0.95);
+  }
+}
+
+/* Reduced-motion bypass (user call): the ATC hover flash is the CRT
+   attract signal for the buy action — it keeps flashing when the OS
+   turns animation effects off. */
 
 /* Typing cursor for typewriter animation */
 .jj-pi-cursor {

@@ -8,7 +8,9 @@
   position: fixed;
   right: 0;
   top: 0;
-  width: 24vw;
+  /* 18vw (was 24) pulls the crescent's center toward the right edge —
+     the composition was weighted left, leaving a dead band on the right */
+  width: 18vw;
   height: calc(40vh - 12.8px); /* above taskbar (divided by 2.5 for zoom) */
   z-index: 50;
   display: flex;
@@ -172,7 +174,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding-left: 16px;
+  padding-left: 40px; /* was 16 — pushes the card off the hard left edge to balance the page */
   pointer-events: none;
   overflow: visible;
 }

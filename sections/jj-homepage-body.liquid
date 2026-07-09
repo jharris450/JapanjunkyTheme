@@ -19,7 +19,8 @@ window.JJ_BUNDLE = {
   "price": {{ bundle_variant.price | money | json }},
   "priceCents": {{ bundle_variant.price | json }},
   "available": {{ bundle_variant.available }},
-  "title": {{ bundle.title | json }}
+  "title": {{ bundle.title | json }},
+  "descriptionHtml": {{ bundle.description | json }}
 };
 {%- else -%}
 window.JJ_BUNDLE = null;
