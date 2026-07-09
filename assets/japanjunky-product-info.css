@@ -112,9 +112,10 @@
   font-size: 11px;
   line-height: 1.4;
   margin-bottom: 8px;
-  /* The 3D box mesh hangs over the card's top-right corner (its canvas is
-     centered on the card's right edge) — keep the description column clear
-     of it so no copy renders under the crate. */
+  /* The 3D box mesh hangs over the card's right side (its canvas is
+     centered on the card's right edge, box center pinned mid-screen) —
+     keep the description column clear of it. The card grows upward from
+     its taskbar-pinned bottom, so extra lines never push the ATC row off. */
   padding-right: 104px;
 }
 
