@@ -280,15 +280,23 @@
     // Printed/taped face out (+z, PS1), plain Lambert face in (-z), edge
     // faces plain Lambert. Local z=0 stays the OUTER surface, so callers
     // position slabs exactly like the old planes.
+    // Every slab face is DoubleSide: the snap only moves PS1 vertices, so
+    // hairlines can open between a slab's snapped print face and its
+    // unsnapped Lambert edges — with FrontSide faces a ray through such a
+    // hairline crosses the solid unhindered (interior sides culled) and
+    // exits to the background. Double-sided faces make the solid
+    // watertight under any snap: whatever slips in renders cardboard.
+    // The 316b7a2 depth-flip trap doesn't apply — these faces sit a full
+    // slab thickness apart, well beyond the snap's ~0.008 depth error.
     var SLAB_TH = 0.025;
     function lidSlab(width, height, outerTex, texUrl) {
       var geo = new THREE.BoxGeometry(width, height, SLAB_TH);
       geo.translate(0, 0, -SLAB_TH / 2);
-      var edge = litMat(loadBoxTex(texUrl));
+      var edge = litMat(loadBoxTex(texUrl), THREE.DoubleSide);
       return new THREE.Mesh(geo, [
-        edge, edge, edge, edge,                // ±x, ±y cardboard edges
-        psMat(outerTex, THREE.FrontSide),      // +z printed outer
-        litMat(loadBoxTex(texUrl))             // -z plain inner
+        edge, edge, edge, edge,                    // ±x, ±y cardboard edges
+        psMat(outerTex, THREE.DoubleSide),         // +z printed outer
+        litMat(loadBoxTex(texUrl), THREE.DoubleSide) // -z plain inner
       ]);
     }
 
