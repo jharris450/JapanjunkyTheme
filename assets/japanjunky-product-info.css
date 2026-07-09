@@ -209,7 +209,7 @@
 .jj-product-info__actions #jj-pi-add-to-cart:not(:disabled) {
   color: var(--jj-secondary, #f5d742);
   border-color: var(--jj-secondary, #f5d742);
-  background: rgba(245, 215, 66, 0.08);
+  background: rgba(245, 215, 66, 0.28);
   text-shadow: 0 0 4px rgba(245, 215, 66, 0.4);
   box-shadow: 0 0 6px rgba(245, 215, 66, 0.2);
 }
