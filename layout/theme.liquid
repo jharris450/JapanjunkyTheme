@@ -269,11 +269,14 @@
     <div class="jj-ring__stage" id="jj-ring-stage" role="listbox" aria-label="Bundle sample records"></div>
   </div>
 
-  {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = product grid {%- endcomment -%}
+  {%- comment -%} Scroll wrapper: screen 1 = scene/ring hero, screen 2 = underworld
+      (transparent — the parallaxed scene + #jj-underscene inverse show through),
+      screen 3 = product grid {%- endcomment -%}
   <div class="jj-scroll" id="jj-scroll">
     <div class="jj-scroll__screen jj-scroll__screen--hero">
       <button class="jj-scroll__indicator" id="jj-scroll-indicator" type="button" aria-label="Scroll to catalog">&#9660; CATALOG</button>
     </div>
+    <div class="jj-scroll__screen jj-scroll__screen--under" aria-hidden="true"></div>
     <div class="jj-scroll__screen jj-scroll__screen--grid">
       {% render 'jj-grid-bar' %}
     </div>

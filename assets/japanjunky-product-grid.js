@@ -51,7 +51,10 @@
   }
 
   function toGrid() {
-    scrollTarget = Math.min(scroll.clientHeight, maxScroll());
+    // Grid is screen 3 now (underworld spacer sits between) — aim at its
+    // actual offset, not one viewport.
+    var gridScreen = scroll.querySelector('.jj-scroll__screen--grid');
+    scrollTarget = Math.min(gridScreen ? gridScreen.offsetTop : scroll.clientHeight, maxScroll());
     startScrollAnim();
   }
 
