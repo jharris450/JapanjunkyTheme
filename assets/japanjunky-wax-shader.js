@@ -48,6 +48,7 @@
     'uniform float uRipple;',            // water ripple amplitude
     'uniform float uWaterDark;',         // water reflection darken factor
     'uniform float uWaxOff;',            // 1 = kill the wax field (pool + blobs) — underscene inverse pass renders bg only
+    'uniform float uVShift;',            // vertical view shift (-1 = the window one screen BELOW: the water reflection continued)
     'varying vec2 vUv;',
     '',
     // Lava-lamp shape constants (tune here, no rebuild of uniforms needed).
@@ -219,7 +220,8 @@
     '}',
     '',
     'void main() {',
-    '  vec3 ro = vec3((vUv.x - 0.5) * uAspect, vUv.y, -1.5);',
+    '  vec2 suv = vec2(vUv.x, vUv.y + uVShift);', // shifted view window (0 shift = normal frame)
+    '  vec3 ro = vec3((suv.x - 0.5) * uAspect, suv.y, -1.5);',
     '  vec3 rd = vec3(0.0, 0.0, 1.0);',
     '  float t = 0.0;',
     '  float hit = -1.0;',
@@ -231,7 +233,7 @@
     '    if (t > 2.5) break;',                    // wax sits within ~t=2.2; bail early
     '  }',
     '',
-    '  vec3 bg = jjSkyWater(vUv);',   // sky + reflective water behind the wax
+    '  vec3 bg = jjSkyWater(suv);',   // sky + reflective water behind the wax
     '  vec3 col = bg;',
     '  if (hit > 0.0) {',
     '    vec3 p = ro + rd * hit;',
@@ -244,7 +246,7 @@
     '    col = mix(bg, wax, waxAlpha);',
     '  }',
     '',
-    '  float glow = (1.0 - smoothstep(0.0, 0.35, vUv.y)) * uHeatGlow;',
+    '  float glow = (1.0 - smoothstep(0.0, 0.35, suv.y)) * uHeatGlow;',
     '  col += vec3(0.95, 0.5, 0.12) * glow * (hit > 0.0 ? 0.25 : 0.0);',
     '',
     '  if (uHue != 0.0) col = jjHueShift(col, uHue);',

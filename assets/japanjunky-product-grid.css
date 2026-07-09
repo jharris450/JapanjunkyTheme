@@ -74,19 +74,11 @@
 
 /* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
-/* --- Hero UI fade when grid is in view --- */
-#jj-ring,
-.jj-product-zone {
-  transition: opacity 0.25s steps(3, end), visibility 0s linear 0s;
-}
-
-.jj-grid-active #jj-ring,
-.jj-grid-active .jj-product-zone {
-  opacity: 0;
-  visibility: hidden;
-  /* delay visibility so the opacity steps actually show on the way out */
-  transition: opacity 0.25s steps(3, end), visibility 0s linear 0.25s;
-}
+/* --- Hero UI on scroll ---
+   No fade/vanish: the ring crescent + product zone ride the same scroll
+   parallax as the scene (japanjunky-underscene.js translates them), and
+   the catalog screen simply covers them. .jj-grid-active still gates
+   ring wheel/hover in ring-carousel.js. */
 
 /* --- Grid --- */
 .jj-grid {

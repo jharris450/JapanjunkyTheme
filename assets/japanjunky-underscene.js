@@ -1,14 +1,21 @@
 /**
  * Japanjunky - Underscene (below-the-fold underworld)
  *
- * Scroll parallax: the scene display canvas is pinned to the TOP OF THE
- * PAGE, not the viewport — scrolling toward the catalog slides it up at
- * PARALLAX_FACTOR of content speed. Directly beneath it, this module's
- * canvas shows the scene's INVERSE: a vertically mirrored, wax-less
- * sun/portal render (delivered by japanjunky-screensaver.js) that
- * deteriorates with depth — rows shear apart and pixels break off and
- * drift down as dust. Every so often the real wax dips ~10-15% below the
- * horizon into the underworld, then retreats to its native scene.
+ * Scroll parallax: the scene display canvas AND the hero furniture
+ * (#jj-ring crescent, .jj-product-zone box/panel) are pinned to the TOP
+ * OF THE PAGE — scrolling toward the catalog slides them up together at
+ * PARALLAX_FACTOR of content speed. Nothing vanishes; the catalog screen
+ * simply covers them.
+ *
+ * Beneath the scene, this module's canvas shows the DIRECT mirror: the
+ * wax shader's own water-reflection continued one screen down (uVShift
+ * pass rendered by japanjunky-screensaver.js, same dither pipeline as
+ * the main frame). The reflection dissolves smoothly into black with
+ * depth — soft gradient, a light pixel-crumble at the frontier, and
+ * swirling spark particles that fly off the decay edge and fade out
+ * (the info-swirl rim-spark feel). The wax pool always hangs a little
+ * below the horizon for a seamless blend, and every few seconds it dips
+ * further (~13%) before climbing back to its native scene.
  * Below all of it: black, reserved for a future scene.
  *
  * Consumes: window.JJ_Portal (displayCanvas/resW/resH), #jj-scroll
@@ -18,9 +25,10 @@
   'use strict';
 
   var PARALLAX_FACTOR = 0.55; // scene recedes at ~half content speed
-  var DUST_BLOCK = 2;         // px (buffer-res) — dust/dropout granularity
-  var BAND_H = 3;             // px — shear band height
-  var DIP_MAX = 0.13;         // wax dip depth, fraction of a screen
+  var FADE_START = 0.30;      // depth where the dissolve begins
+  var FADE_END = 0.92;        // fully black by here
+  var POOL_BASE = 0.06;       // wax pool always hangs this far below the horizon
+  var DIP_MAX = 0.13;         // extra dip depth, fraction of a screen
   var DIP_MS = 2800;          // one dip (down + back up)
   var DIP_GAP_MS = [6000, 11000]; // pause between dips
 
@@ -32,50 +40,79 @@
   var resW = 0, resH = 0;
   var scrollTop = 0;
 
-  // ─── Dust dropout masks ──────────────────────────────────────
-  // Pre-rendered noise tiles punched out via destination-out. Density
-  // ramps with depth; the pick + vertical offset drift over time so the
-  // decay edge crawls like shedding dust.
-  var CROP_FRAC = 0.29; // mirrored water rows skipped — boundary starts at the horizon
-  var drawH = 0;        // set in setup(): rows of mirrored sky actually drawn
+  // Pre-built overlays (made in setup once resW/resH known)
+  var fadeGrad = null;   // smooth destination-out ramp to black
+  var crumbles = [];     // sparse pixel-crumble tiles at the frontier
+  var poolStrip = null, poolCtx = null; // offscreen for the faded pool overhang
 
-  var masks = [];
-  function buildMasks() {
+  function buildOverlays() {
+    // Smooth dissolve: erase nothing above FADE_START, everything past FADE_END
+    fadeGrad = document.createElement('canvas');
+    fadeGrad.width = 1;
+    fadeGrad.height = resH;
+    var g = fadeGrad.getContext('2d');
+    var grad = g.createLinearGradient(0, 0, 0, resH);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(FADE_START, 'rgba(0,0,0,0)');
+    grad.addColorStop((FADE_START + FADE_END) / 2, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(FADE_END, 'rgba(0,0,0,1)');
+    grad.addColorStop(1, 'rgba(0,0,0,1)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 1, resH);
+
+    // Light crumble: sparse 2px dropout only through the fade zone — the
+    // gradient does the dissolve, this just breaks the edge into pixels.
     for (var m = 0; m < 3; m++) {
       var c = document.createElement('canvas');
       c.width = resW;
       c.height = resH;
       var x = c.getContext('2d');
       x.fillStyle = '#000';
-      for (var y = 0; y < resH; y += DUST_BLOCK) {
-        var d = Math.min(1, y / drawH); // ramp over the DRAWN range — fully dust by the crop edge
-        var density = d * d * 0.85 + d * 0.35;
-        for (var px = 0; px < resW; px += DUST_BLOCK) {
-          if (Math.random() < density) x.fillRect(px, y, DUST_BLOCK, DUST_BLOCK);
+      for (var y = 0; y < resH; y += 2) {
+        var d = y / resH;
+        var k = (d - FADE_START) / (FADE_END - FADE_START);
+        if (k <= 0 || k >= 1) continue;
+        var density = k * k * 0.45; // gentle — texture, not destruction
+        for (var px = 0; px < resW; px += 2) {
+          if (Math.random() < density) x.fillRect(px, y, 2, 2);
         }
       }
-      masks.push(c);
+      crumbles.push(c);
     }
+
+    poolStrip = document.createElement('canvas');
+    poolStrip.width = resW;
+    poolStrip.height = Math.ceil(resH * (POOL_BASE + DIP_MAX)) + 2;
+    poolCtx = poolStrip.getContext('2d');
   }
 
-  // ─── Falling dust motes ──────────────────────────────────────
-  var motes = [];
-  var MOTE_COLORS = ['#e8313a', '#f5d742', '#ffaa00', '#7a5a30', '#555555'];
-  function spawnMote() {
+  // ─── Swirl sparks — pixels flying off the decay edge ─────────
+  var sparks = [];
+  var SPARK_COUNT = 60;
+  function spawnSpark(sampleFrom) {
+    var x = Math.random() * resW;
+    var y = resH * (FADE_START + Math.random() * (FADE_END - FADE_START));
+    var color = '#f5d742';
+    if (sampleFrom) {
+      try {
+        var p = sampleFrom.getContext('2d').getImageData(x | 0, Math.max(0, (y | 0) - 4), 1, 1).data;
+        if (p[0] + p[1] + p[2] > 40) color = 'rgb(' + p[0] + ',' + p[1] + ',' + p[2] + ')';
+      } catch (e) { /* sampling is garnish */ }
+    }
     return {
-      x: Math.random() * resW,
-      y: resH * (0.25 + Math.random() * 0.5),
-      vy: 4 + Math.random() * 14,
-      vx: (Math.random() - 0.5) * 4,
-      life: 1,
-      color: MOTE_COLORS[Math.floor(Math.random() * MOTE_COLORS.length)]
+      x: x, y: y,
+      vy: 6 + Math.random() * 16,
+      swayAmp: 3 + Math.random() * 9,   // swirl: sinusoidal sideways drift
+      swayFreq: 1.5 + Math.random() * 3,
+      phase: Math.random() * 6.283,
+      life: 0.7 + Math.random() * 0.6,
+      color: color
     };
   }
 
   // ─── Wax dip state ───────────────────────────────────────────
   var dipStart = 0;
   var nextDipAt = 0;
-
   var lastFrameTime = 0;
 
   function setup() {
@@ -108,18 +145,20 @@
     uctx = underCanvas.getContext('2d');
     portal.displayCanvas.parentNode.insertBefore(underCanvas, portal.displayCanvas.nextSibling);
 
-    drawH = Math.round(resH * (1 - CROP_FRAC));
-    buildMasks();
-    for (var i = 0; i < 36; i++) motes.push(spawnMote());
+    buildOverlays();
+    for (var i = 0; i < SPARK_COUNT; i++) sparks.push(spawnSpark(null));
     nextDipAt = performance.now() + 4000;
 
-    // ─── Scroll parallax ────────────────────────────────────────
+    // ─── Scroll parallax — scene + hero furniture ride together ──
+    var ring = document.getElementById('jj-ring');
+    var zone = document.getElementById('jj-product-zone');
     function onScroll() {
       scrollTop = scroll.scrollTop;
-      var ty = -scrollTop * PARALLAX_FACTOR;
-      var t = 'translateY(' + ty.toFixed(2) + 'px)';
+      var t = 'translateY(' + (-scrollTop * PARALLAX_FACTOR).toFixed(2) + 'px)';
       portal.displayCanvas.style.transform = t;
       underCanvas.style.transform = t;
+      if (ring) ring.style.transform = t;
+      if (zone) zone.style.transform = t;
     }
     scroll.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -130,74 +169,70 @@
       return !!uctx && scrollTop > 2 && !window.JJ_SPLASH_ACTIVE;
     },
 
-    // Called by the screensaver's render loop with the mirrored wax-less
-    // frame + the live main frame (for the wax-dip strip).
+    // Called by the screensaver's render loop with the continued-reflection
+    // frame (dithered like the main frame) + the live main frame.
     receiveFrame: function (inverse, mainFrame) {
       var now = performance.now();
       var dt = Math.min((now - lastFrameTime) / 1000, 0.1);
       lastFrameTime = now;
-
-      uctx.clearRect(0, 0, resW, resH);
-
-      // 1. Mirrored scene in shear bands — horizontal tearing grows with depth.
-      // Crop the mirrored water rows (bottom ~27% of the scene = top of the
-      // unflipped readback) so the boundary starts right at the horizon: the
-      // inverse sun/rays hang directly under the world and decay downward.
-      var crop = Math.round(resH * CROP_FRAC);
       var tSlow = now * 0.001;
-      for (var y = 0; y < resH; y += BAND_H) {
-        var srcY = y + crop;
-        if (srcY >= resH) break; // past the mirrored sky — black below
-        var d = Math.min(1, y / drawH); // depth over the drawn range
-        // per-band deterministic wobble; deeper bands tear further
-        var seed = Math.sin(y * 12.9898 + Math.floor(tSlow * 2) * 78.233) * 43758.5453;
-        var jitter = (seed - Math.floor(seed) - 0.5) * 2 * (d * d * 16);
-        uctx.globalAlpha = Math.max(0, 1 - d * 0.9);
-        uctx.drawImage(inverse, 0, srcY, resW, BAND_H, jitter, y, resW, BAND_H);
-      }
-      uctx.globalAlpha = 1;
 
-      // 2. Dust dropout — noise holes, heavier with depth. No vertical drift:
-      // the masks' density ramp must stay aligned with the depth ramp (a
-      // drifting mask lands heavy rows in the intact zone). The mask swap
-      // itself makes the decay edge crawl.
-      var mask = masks[Math.floor(tSlow * 3) % masks.length];
+      // 1. The continued reflection — direct mirror from the shader
+      uctx.clearRect(0, 0, resW, resH);
+      uctx.drawImage(inverse, 0, 0);
+
+      // 2. Smooth dissolve to black + a light pixel-crumble at the frontier
       uctx.globalCompositeOperation = 'destination-out';
-      uctx.drawImage(mask, 0, 0);
+      uctx.drawImage(fadeGrad, 0, 0, 1, resH, 0, 0, resW, resH);
+      uctx.drawImage(crumbles[Math.floor(tSlow * 2.5) % crumbles.length], 0, 0);
       uctx.globalCompositeOperation = 'source-over';
 
-      // 3. Dust motes shedding off the wreck, drifting down into the black
-      for (var i = 0; i < motes.length; i++) {
-        var mo = motes[i];
-        mo.y += mo.vy * dt;
-        mo.x += mo.vx * dt;
-        mo.life -= dt * 0.5;
-        if (mo.life <= 0 || mo.y > resH) motes[i] = spawnMote();
-        uctx.globalAlpha = Math.max(0, Math.min(0.8, mo.life));
-        uctx.fillStyle = mo.color;
-        uctx.fillRect(mo.x | 0, mo.y | 0, DUST_BLOCK, DUST_BLOCK);
+      // 3. Swirl sparks — pixels shear off the decay edge, swirl, fade
+      uctx.globalCompositeOperation = 'lighter';
+      for (var i = 0; i < sparks.length; i++) {
+        var s = sparks[i];
+        s.y += s.vy * dt;
+        s.x += Math.sin(tSlow * s.swayFreq + s.phase) * s.swayAmp * dt;
+        s.life -= dt * 0.45;
+        if (s.life <= 0 || s.y > resH) { sparks[i] = spawnSpark(inverse); continue; }
+        uctx.globalAlpha = Math.max(0, Math.min(0.85, s.life));
+        uctx.fillStyle = s.color;
+        uctx.fillRect(s.x | 0, s.y | 0, 2, 2);
       }
       uctx.globalAlpha = 1;
+      uctx.globalCompositeOperation = 'source-over';
 
-      // 4. Wax dip — the real wax briefly hangs 10-15% below the horizon,
-      // then climbs back to its native scene. Mirrored strip of the main
-      // frame's bottom (the pool) so the surface continues seamlessly.
+      // 4. Wax pool overhang: always hangs POOL_BASE below the horizon
+      // (kills the hard cutoff), and every few seconds dips further before
+      // climbing back. Mirrored strip of the live pool, alpha-faded to 0
+      // at its lower lip so it melts into the reflection.
       if (!dipStart && now >= nextDipAt) dipStart = now;
+      var depth = POOL_BASE;
       if (dipStart) {
         var p = (now - dipStart) / DIP_MS;
         if (p >= 1) {
           dipStart = 0;
           nextDipAt = now + DIP_GAP_MS[0] + Math.random() * (DIP_GAP_MS[1] - DIP_GAP_MS[0]);
         } else {
-          var depth = Math.sin(p * Math.PI) * DIP_MAX; // down then back up
-          var h = Math.max(1, Math.round(depth * resH));
-          uctx.save();
-          uctx.translate(0, h);
-          uctx.scale(1, -1);
-          uctx.drawImage(mainFrame, 0, resH - h, resW, h, 0, 0, resW, h);
-          uctx.restore();
+          depth += Math.sin(p * Math.PI) * DIP_MAX;
         }
       }
+      var h = Math.max(2, Math.round(depth * resH));
+      poolCtx.clearRect(0, 0, resW, poolStrip.height);
+      poolCtx.save();
+      poolCtx.translate(0, h);
+      poolCtx.scale(1, -1);
+      poolCtx.drawImage(mainFrame, 0, resH - h, resW, h, 0, 0, resW, h);
+      poolCtx.restore();
+      var pg = poolCtx.createLinearGradient(0, 0, 0, h);
+      pg.addColorStop(0, 'rgba(0,0,0,0)');
+      pg.addColorStop(0.55, 'rgba(0,0,0,0.25)');
+      pg.addColorStop(1, 'rgba(0,0,0,1)');
+      poolCtx.globalCompositeOperation = 'destination-out';
+      poolCtx.fillStyle = pg;
+      poolCtx.fillRect(0, 0, resW, h);
+      poolCtx.globalCompositeOperation = 'source-over';
+      uctx.drawImage(poolStrip, 0, 0);
     }
   };
 

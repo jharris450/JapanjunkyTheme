@@ -108,7 +108,8 @@
     uHue: { value: 0.0 },                 // music-reactive hue rotation, radians (driven in animate)
     uRipple: { value: 0.054 },
     uWaterDark: { value: 0.78 },
-    uWaxOff: { value: 0.0 }
+    uWaxOff: { value: 0.0 },
+    uVShift: { value: 0.0 }
   };
   waxUniforms.uSunTex.value.needsUpdate = true; // DataTexture must be flagged before first use
   // Smoothed per-blob stretch (low-pass of the raw |vy|-driven target) so the
@@ -1361,10 +1362,12 @@
   }
 
   // ─── Underscene inverse pass ──────────────────────────────────
-  // Same camera, same sky/sun/portal/water — but NO waxScene and no
-  // characters (Tsuno/guy/bubble). GL readback is bottom-up and the main
-  // path flips rows to correct it; skipping the flip here is a free
-  // vertical mirror, which is exactly what the underworld wants.
+  // The window ONE SCREEN BELOW the frame (uVShift -1): jjSkyWater's own
+  // mirrored, rippled, darkened reflection continued downward — a direct
+  // mirror by the same math as the visible water, not a pasted copy.
+  // uWaxOff kills the wax field so only the reflection world renders.
+  // Same row flip + same JJ_ScreensaverPost dither as the main frame so
+  // the stylization carries over.
   var inverseFrameFlip = false;
   var inverseCanvas = null, inverseCtx = null, inverseImageData = null;
   function renderInverseFrame() {
@@ -1375,27 +1378,30 @@
       inverseCtx = inverseCanvas.getContext('2d');
       inverseImageData = inverseCtx.createImageData(resW, resH);
     }
-    var hidden = [];
-    var chars = [tsunoMesh, guyMesh, bubbleMesh, textMesh];
-    for (var ci = 0; ci < chars.length; ci++) {
-      if (chars[ci] && chars[ci].visible) { chars[ci].visible = false; hidden.push(chars[ci]); }
-    }
-    camera.layers.set(0);
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
-    var prevAutoClearInv = renderer.autoClear;
-    renderer.autoClear = false;
-    waxUniforms.uWaxOff.value = 1.0;      // bg pass only: sun/portal/water, no wax field
+    waxUniforms.uWaxOff.value = 1.0;
+    waxUniforms.uVShift.value = -1.0;
     renderer.render(waxScene, waxCamera);
     waxUniforms.uWaxOff.value = 0.0;
-    renderer.render(scene, camera);
-    renderer.autoClear = prevAutoClearInv;
+    waxUniforms.uVShift.value = 0.0;
     renderer.setRenderTarget(null);
     renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
-    inverseImageData.data.set(pixelBuffer);
+
+    var src = pixelBuffer;
+    var dst = inverseImageData.data;
+    for (var row = 0; row < resH; row++) {
+      var srcRow = (resH - 1 - row) * resW * 4;
+      var dstRow = row * resW * 4;
+      for (var col = 0; col < resW * 4; col++) {
+        dst[dstRow + col] = src[srcRow + col];
+      }
+    }
+    if (window.JJ_ScreensaverPost) {
+      JJ_ScreensaverPost.dither(inverseImageData);
+    }
     inverseCtx.putImageData(inverseImageData, 0, 0);
-    for (var hi = 0; hi < hidden.length; hi++) hidden[hi].visible = true;
     return inverseCanvas;
   }
 
