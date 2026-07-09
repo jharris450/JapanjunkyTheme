@@ -992,20 +992,12 @@ button.jj-start-menu__item {
 
 /* ── Taskbar volume control ─────────────────────────────────── */
 .jj-vol-tray { position: relative; display: flex; align-items: center; }
+/* Flat tray icon (Win98: systray icons carry no button chrome) */
 .jj-vol-btn {
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 20px; margin: 0 2px; padding: 0;
-  background: var(--jj-bg-elevated, #111); color: var(--jj-amber, #ffaa00);
+  background: transparent; color: var(--jj-amber, #ffaa00);
   border: 0; cursor: pointer;
-  box-shadow:
-    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.85);
-}
-.jj-vol-btn:active,
-.jj-vol-tray--open .jj-vol-btn {
-  box-shadow:
-    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
-    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
 }
 .jj-vol-btn__icon { position: relative; display: flex; line-height: 0; }
 .jj-vol-btn__x {
