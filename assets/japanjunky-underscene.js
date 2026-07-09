@@ -36,6 +36,9 @@
   // Pre-rendered noise tiles punched out via destination-out. Density
   // ramps with depth; the pick + vertical offset drift over time so the
   // decay edge crawls like shedding dust.
+  var CROP_FRAC = 0.29; // mirrored water rows skipped — boundary starts at the horizon
+  var drawH = 0;        // set in setup(): rows of mirrored sky actually drawn
+
   var masks = [];
   function buildMasks() {
     for (var m = 0; m < 3; m++) {
@@ -45,8 +48,8 @@
       var x = c.getContext('2d');
       x.fillStyle = '#000';
       for (var y = 0; y < resH; y += DUST_BLOCK) {
-        var d = y / resH; // 0 top .. 1 bottom
-        var density = d * d * 0.9 + d * 0.25; // sparse up top, heavy below
+        var d = Math.min(1, y / drawH); // ramp over the DRAWN range — fully dust by the crop edge
+        var density = d * d * 0.85 + d * 0.35;
         for (var px = 0; px < resW; px += DUST_BLOCK) {
           if (Math.random() < density) x.fillRect(px, y, DUST_BLOCK, DUST_BLOCK);
         }
@@ -105,6 +108,7 @@
     uctx = underCanvas.getContext('2d');
     portal.displayCanvas.parentNode.insertBefore(underCanvas, portal.displayCanvas.nextSibling);
 
+    drawH = Math.round(resH * (1 - CROP_FRAC));
     buildMasks();
     for (var i = 0; i < 36; i++) motes.push(spawnMote());
     nextDipAt = performance.now() + 4000;
@@ -135,24 +139,31 @@
 
       uctx.clearRect(0, 0, resW, resH);
 
-      // 1. Mirrored scene in shear bands — horizontal tearing grows with depth
+      // 1. Mirrored scene in shear bands — horizontal tearing grows with depth.
+      // Crop the mirrored water rows (bottom ~27% of the scene = top of the
+      // unflipped readback) so the boundary starts right at the horizon: the
+      // inverse sun/rays hang directly under the world and decay downward.
+      var crop = Math.round(resH * CROP_FRAC);
       var tSlow = now * 0.001;
       for (var y = 0; y < resH; y += BAND_H) {
-        var d = y / resH;
+        var srcY = y + crop;
+        if (srcY >= resH) break; // past the mirrored sky — black below
+        var d = Math.min(1, y / drawH); // depth over the drawn range
         // per-band deterministic wobble; deeper bands tear further
         var seed = Math.sin(y * 12.9898 + Math.floor(tSlow * 2) * 78.233) * 43758.5453;
         var jitter = (seed - Math.floor(seed) - 0.5) * 2 * (d * d * 16);
-        uctx.globalAlpha = Math.max(0, 1 - d * 0.75);
-        uctx.drawImage(inverse, 0, y, resW, BAND_H, jitter, y, resW, BAND_H);
+        uctx.globalAlpha = Math.max(0, 1 - d * 0.9);
+        uctx.drawImage(inverse, 0, srcY, resW, BAND_H, jitter, y, resW, BAND_H);
       }
       uctx.globalAlpha = 1;
 
-      // 2. Dust dropout — punch drifting noise holes, heavier with depth
+      // 2. Dust dropout — noise holes, heavier with depth. No vertical drift:
+      // the masks' density ramp must stay aligned with the depth ramp (a
+      // drifting mask lands heavy rows in the intact zone). The mask swap
+      // itself makes the decay edge crawl.
       var mask = masks[Math.floor(tSlow * 3) % masks.length];
-      var drift = Math.floor((tSlow * 6) % resH / DUST_BLOCK) * DUST_BLOCK;
       uctx.globalCompositeOperation = 'destination-out';
-      uctx.drawImage(mask, 0, drift - resH);
-      uctx.drawImage(mask, 0, drift);
+      uctx.drawImage(mask, 0, 0);
       uctx.globalCompositeOperation = 'source-over';
 
       // 3. Dust motes shedding off the wreck, drifting down into the black
