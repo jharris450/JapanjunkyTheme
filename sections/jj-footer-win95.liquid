@@ -17,8 +17,12 @@
 
   <div class="jj-taskbar__tabs" id="jj-taskbar-tabs"></div>
 
-  {% render 'win95-volume' %}
-  {% render 'win95-clock' %}
+  {%- comment -%} System tray: one Win98 well holding speaker + clock {%- endcomment -%}
+  <div class="jj-tray">
+    <div class="jj-tray__divider" aria-hidden="true"></div>
+    {% render 'win95-volume' %}
+    {% render 'win95-clock' %}
+  </div>
 </footer>
 
 {% schema %}

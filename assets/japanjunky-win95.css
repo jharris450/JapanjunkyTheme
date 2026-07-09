@@ -213,20 +213,35 @@
   text-shadow: 0 0 4px rgba(212, 201, 168, 0.4), 0 0 8px rgba(212, 201, 168, 0.15);
 }
 
-/* --- Clock Tray --- */
+/* --- System Tray (speaker + clock in one outlined well, Win98-style) --- */
+.jj-tray {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  height: 24px;
+  padding: 2px 6px 2px 4px;
+  border: 1px solid #222;
+}
+
+/* subtle vertical divider ahead of the speaker: dark line + light edge */
+.jj-tray__divider {
+  width: 1px;
+  height: 14px;
+  background: #333;
+  box-shadow: 1px 0 0 rgba(224, 213, 192, 0.12);
+  flex-shrink: 0;
+}
+
+/* --- Clock (inside the tray; the well border lives on .jj-tray) --- */
 .jj-clock-tray {
   position: relative;
   cursor: default;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 11px;
   color: #666;
-  background: transparent;
-  border: 1px solid #222;
-  padding: 2px 6px;
-  margin-left: auto;
   display: flex;
   align-items: center;
-  height: 24px;
   white-space: nowrap;
 }
 
@@ -305,6 +320,15 @@
   cursor: default;
   position: relative;
 }
+/* shutdown is a <button> among <a> items — buttons shrink-wrap, so the
+   hover highlight stopped at the text; stretch it across like the rest */
+button.jj-start-menu__item {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+
 .jj-start-menu__item:hover {
   background: var(--jj-primary);
   color: #000;

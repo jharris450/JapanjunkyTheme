@@ -186,7 +186,7 @@
           minute: '2-digit',
           hour12: false
         });
-        clockEl.textContent = jstString + ' \u6771\u4EAC';
+        clockEl.textContent = jstString;
       } catch (e) {
         // Fallback if Intl not supported
         var now = new Date();
@@ -194,7 +194,7 @@
         var jst = new Date(utc + 9 * 3600000);
         var h = jst.getHours().toString().padStart(2, '0');
         var m = jst.getMinutes().toString().padStart(2, '0');
-        clockEl.textContent = h + ':' + m + ' \u6771\u4EAC';
+        clockEl.textContent = h + ':' + m;
       }
     }
 
