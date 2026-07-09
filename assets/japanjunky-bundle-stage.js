@@ -268,38 +268,6 @@
       return grp;
     }
 
-    // The END LID pieces are SOLID cardboard slabs, not plane pairs. The
-    // pair construction can't survive the PS1 snap at this joint: the snap
-    // shifts a plane's screen position while keeping vertex depths, so on a
-    // tilted plane it perturbs depth by up to ~0.008 world — more than the
-    // pair's 0.002 spacing — letting outer/inner faces randomly swap in the
-    // depth test; and any hairline the snap opens between two planes shows
-    // straight through to the background. A closed solid is immune to both:
-    // its faces are a real thickness apart, and every hairline a seam can
-    // open is backed by the slab's own cardboard edge, never the void.
-    // Printed/taped face out (+z, PS1), plain Lambert face in (-z), edge
-    // faces plain Lambert. Local z=0 stays the OUTER surface, so callers
-    // position slabs exactly like the old planes.
-    // Every slab face is DoubleSide: the snap only moves PS1 vertices, so
-    // hairlines can open between a slab's snapped print face and its
-    // unsnapped Lambert edges — with FrontSide faces a ray through such a
-    // hairline crosses the solid unhindered (interior sides culled) and
-    // exits to the background. Double-sided faces make the solid
-    // watertight under any snap: whatever slips in renders cardboard.
-    // The 316b7a2 depth-flip trap doesn't apply — these faces sit a full
-    // slab thickness apart, well beyond the snap's ~0.008 depth error.
-    var SLAB_TH = 0.025;
-    function lidSlab(width, height, outerTex, texUrl) {
-      var geo = new THREE.BoxGeometry(width, height, SLAB_TH);
-      geo.translate(0, 0, -SLAB_TH / 2);
-      var edge = litMat(loadBoxTex(texUrl), THREE.DoubleSide);
-      return new THREE.Mesh(geo, [
-        edge, edge, edge, edge,                    // ±x, ±y cardboard edges
-        psMat(outerTex, THREE.DoubleSide),         // +z printed outer
-        litMat(loadBoxTex(texUrl), THREE.DoubleSide) // -z plain inner
-      ]);
-    }
-
     // Left flap: half-width plane covering the front-left quadrant.
     // Stays CLOSED — the box opens on its right end only.
     leftFlap = new THREE.Object3D();
@@ -315,30 +283,17 @@
     endLid = new THREE.Object3D();
     endLid.position.set(halfW, 0, -d / 2);
 
-    // Right side panel: faces +X, spans hinge (rear) → front edge. Sized
-    // and placed so its front-edge vertices land EXACTLY on the flap's
-    // right-edge vertices below: the PS1 snap quantizes each vertex to a
-    // clip-space grid, so near-coincident corners (the old 0.001/0.001
-    // offsets) straddled grid cells at ~11% of viewing angles and tore an
-    // open slit along the joint. Identical vertices snap identically —
-    // seam sealed at every angle. (The panel sits flush on the body's +X
-    // plane; that face is the invisible material, so no z-fight.)
-    // Panel slab is 0.004 shorter so its top/bottom faces are never
-    // coplanar with the flap slab's inside the overlap column (z-fight);
-    // the 0.7px reveal at the box silhouette is sub-pixel. The flap slab
-    // stops 0.0005 shy of the panel's outer plane for the same reason —
-    // the corner sliver is backed by the panel slab, so nothing shows.
-    var sSlab = lidSlab(d + 0.001, h - 0.004, loadBoxTex(TEX.sideRight), TEX.sideRight);
-    sSlab.rotation.y = Math.PI / 2; // outer face +X; width runs along z, thickness into the box
-    sSlab.position.set(0, 0, (d + 0.001) / 2);
-    endLid.add(sSlab);
+    // Right side panel: faces +X, spans hinge (rear) → front edge.
+    var sPair = flapPair(d, h, loadBoxTex(TEX.sideRight), TEX.sideRight);
+    sPair.rotation.y = Math.PI / 2; // face +X; width now runs along z
+    sPair.position.set(0.001, 0, d / 2);
+    endLid.add(sPair);
 
     // Front-right flap: faces +Z, attached at the panel's front corner,
-    // spans box center → corner; its solid overlaps the panel's solid in a
-    // 0.025² corner column, so the joint is sealed from every azimuth.
-    var rSlab = lidSlab(halfW - 0.0005, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight);
-    rSlab.position.set(-(halfW + 0.0005) / 2, 0, d + 0.001);
-    endLid.add(rSlab);
+    // spans corner → box center.
+    var rPair = flapPair(halfW, h, loadBoxTex(TEX.frontRight, 'left'), TEX.frontRight);
+    rPair.position.set(-halfW / 2, 0, d + 0.001);
+    endLid.add(rPair);
 
     boxGroup.add(endLid);
 
