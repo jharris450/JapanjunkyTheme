@@ -85,31 +85,27 @@
   }
 
   function runGlitch() {
-    var labelEl = document.getElementById('jj-cal-year-text');
-    if (!labelEl || !isOpen) return;
-
-    // Start-menu sidebar © year shows the same corrupted clock — it rides
-    // every glitch frame in tandem (no-op when the menu isn't in the DOM).
+    // The glitch chain runs for the LIFE OF THE PAGE, not just while the
+    // calendar is open — the start-menu sidebar © year shows the same
+    // corrupted clock and the two can never be open at once. Each cycle
+    // corrupts whichever year labels currently exist.
+    var labelEl = document.getElementById('jj-cal-year-text'); // null while calendar closed
     var sideEl = document.getElementById('jj-sidebar-year');
+    if (!labelEl && !sideEl) { scheduleGlitch(); return; } // nothing to corrupt yet
+
     function setYearLabels(text) {
-      labelEl.textContent = text;
+      if (labelEl) labelEl.textContent = text;
       if (sideEl) sideEl.textContent = text;
     }
 
-    var realYear = String(viewYear);
+    // Reveal flashes the viewed year when the calendar is open, else real JST year
+    var realYear = String(isOpen && viewYear ? viewYear : getJSTNow().year);
     var retroYearStr = String(getRetroYear());
     var frame = 0;
     var totalFrames = 8; // ~400ms at 50ms/frame for scramble
     var phase = 'scramble1'; // scramble1 -> reveal -> scramble2 -> settle
 
     glitchFrameInterval = setInterval(function () {
-      if (!labelEl || !isOpen) {
-        clearInterval(glitchFrameInterval);
-        glitchFrameInterval = null;
-        if (sideEl) sideEl.textContent = retroYearStr; // never strand a scramble frame
-        return;
-      }
-
       if (phase === 'scramble1') {
         // Random glyph scramble
         var glitched = '';
@@ -410,7 +406,10 @@
     calPopover.innerHTML = '';
     isOpen = false;
     if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
+    // Cut any mid-flight glitch (its calendar label just left the DOM) but
+    // keep the chain alive — the sidebar © year still needs its corruption.
     stopGlitch();
+    scheduleGlitch();
   }
 
   // Close on outside click
@@ -429,6 +428,10 @@
   document.addEventListener('jj-panel-open', function (e) {
     if (e.detail && e.detail.id !== 'calendar' && isOpen) close();
   });
+
+  // Kick off the page-life glitch chain (sidebar © year corrupts even when
+  // the calendar has never been opened).
+  scheduleGlitch();
 
   // Hover popover show/hide (the popover was reparented to <body>, so the old
   // CSS descendant `:hover` rule no longer reaches it). Suppressed while the
