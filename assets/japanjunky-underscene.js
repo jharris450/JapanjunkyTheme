@@ -27,7 +27,7 @@
   var PARALLAX_FACTOR = 0.55; // scene recedes at ~half content speed
   var FADE_START = 0.30;      // depth where the dissolve begins
   var FADE_END = 0.92;        // fully black by here
-  var POOL_BASE = 0.06;       // wax pool always hangs this far below the horizon
+  var POOL_BASE = 0.12;       // wax pool always hangs this far below the horizon
   var DIP_MAX = 0.13;         // extra dip depth, fraction of a screen
   var DIP_MS = 2800;          // one dip (down + back up)
   var DIP_GAP_MS = [6000, 11000]; // pause between dips
