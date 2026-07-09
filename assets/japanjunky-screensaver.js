@@ -1350,6 +1350,46 @@
       JJ_ScreensaverPost.dither(displayImageData);
     }
     displayCtx.putImageData(displayImageData, 0, 0);
+
+    // Underscene: hand the below-the-fold module its mirrored, wax-less
+    // frame (japanjunky-underscene.js). Every other frame — the underworld
+    // is decayed anyway, and it halves the extra readback cost.
+    if (window.JJ_UnderScene && JJ_UnderScene.wantsFrame() && (inverseFrameFlip = !inverseFrameFlip)) {
+      JJ_UnderScene.receiveFrame(renderInverseFrame(), displayCanvas);
+    }
+  }
+
+  // ─── Underscene inverse pass ──────────────────────────────────
+  // Same camera, same sky/sun/portal/water — but NO waxScene and no
+  // characters (Tsuno/guy/bubble). GL readback is bottom-up and the main
+  // path flips rows to correct it; skipping the flip here is a free
+  // vertical mirror, which is exactly what the underworld wants.
+  var inverseFrameFlip = false;
+  var inverseCanvas = null, inverseCtx = null, inverseImageData = null;
+  function renderInverseFrame() {
+    if (!inverseCanvas) {
+      inverseCanvas = document.createElement('canvas');
+      inverseCanvas.width = resW;
+      inverseCanvas.height = resH;
+      inverseCtx = inverseCanvas.getContext('2d');
+      inverseImageData = inverseCtx.createImageData(resW, resH);
+    }
+    var hidden = [];
+    var chars = [tsunoMesh, guyMesh, bubbleMesh, textMesh];
+    for (var ci = 0; ci < chars.length; ci++) {
+      if (chars[ci] && chars[ci].visible) { chars[ci].visible = false; hidden.push(chars[ci]); }
+    }
+    camera.layers.set(0);
+    renderer.setClearColor(mainClearColor, 1);
+    renderer.setRenderTarget(renderTarget);
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
+    inverseImageData.data.set(pixelBuffer);
+    inverseCtx.putImageData(inverseImageData, 0, 0);
+    for (var hi = 0; hi < hidden.length; hi++) hidden[hi].visible = true;
+    return inverseCanvas;
   }
 
   // ─── Mouse Parallax ──────────────────────────────────────────
