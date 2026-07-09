@@ -88,6 +88,14 @@
     var labelEl = document.getElementById('jj-cal-year-text');
     if (!labelEl || !isOpen) return;
 
+    // Start-menu sidebar © year shows the same corrupted clock — it rides
+    // every glitch frame in tandem (no-op when the menu isn't in the DOM).
+    var sideEl = document.getElementById('jj-sidebar-year');
+    function setYearLabels(text) {
+      labelEl.textContent = text;
+      if (sideEl) sideEl.textContent = text;
+    }
+
     var realYear = String(viewYear);
     var retroYearStr = String(getRetroYear());
     var frame = 0;
@@ -98,6 +106,7 @@
       if (!labelEl || !isOpen) {
         clearInterval(glitchFrameInterval);
         glitchFrameInterval = null;
+        if (sideEl) sideEl.textContent = retroYearStr; // never strand a scramble frame
         return;
       }
 
@@ -107,12 +116,12 @@
         for (var i = 0; i < 4; i++) {
           glitched += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
         }
-        labelEl.textContent = glitched;
+        setYearLabels(glitched);
         frame++;
         if (frame >= totalFrames) { phase = 'reveal'; frame = 0; }
       } else if (phase === 'reveal') {
         // Flash real year
-        labelEl.textContent = realYear;
+        setYearLabels(realYear);
         frame++;
         if (frame >= 4) { phase = 'scramble2'; frame = 0; } // ~200ms
       } else if (phase === 'scramble2') {
@@ -120,12 +129,12 @@
         for (var j = 0; j < 4; j++) {
           glitched2 += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
         }
-        labelEl.textContent = glitched2;
+        setYearLabels(glitched2);
         frame++;
         if (frame >= 6) { phase = 'settle'; } // ~300ms
       } else {
         // Settle back to retro year
-        labelEl.textContent = retroYearStr;
+        setYearLabels(retroYearStr);
         clearInterval(glitchFrameInterval);
         glitchFrameInterval = null;
         scheduleGlitch();
@@ -136,6 +145,9 @@
   function stopGlitch() {
     if (glitchTimeout) { clearTimeout(glitchTimeout); glitchTimeout = null; }
     if (glitchFrameInterval) { clearInterval(glitchFrameInterval); glitchFrameInterval = null; }
+    // Sidebar © year must never be left on a mid-glitch scramble frame
+    var sideEl = document.getElementById('jj-sidebar-year');
+    if (sideEl) sideEl.textContent = String(getRetroYear());
   }
 
   // ─── Render Calendar Grid ─────────────────────────────────

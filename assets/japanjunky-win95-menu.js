@@ -176,6 +176,10 @@
   var retroYear = 1970 + Math.floor(Math.random() * (new Date().getFullYear() - 1970 + 1));
   window.JJ_RetroYear = retroYear;
 
+  // Start-menu sidebar © year rides the same corrupted clock
+  var sidebarYear = document.getElementById('jj-sidebar-year');
+  if (sidebarYear) sidebarYear.textContent = String(retroYear);
+
   if (clockEl) {
     function updateClock() {
       try {

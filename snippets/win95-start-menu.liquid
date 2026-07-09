@@ -3,7 +3,10 @@
 {%- endcomment -%}
 
 <div class="jj-start-menu" id="jj-start-menu" role="menu" aria-label="Command menu">
-  <div class="jj-start-menu__sidebar">JAPANJUNKY 98</div>
+  {%- comment -%} Year rides the calendar's corrupted system clock: JS swaps in
+      JJ_RetroYear and mirrors the calendar's year-glitch (japanjunky-calendar.js).
+      Liquid real year = no-JS fallback. {%- endcomment -%}
+  <div class="jj-start-menu__sidebar">JAPANJUNKY &copy; <span id="jj-sidebar-year">{{ 'now' | date: '%Y' }}</span></div>
 
   <div class="jj-start-menu__items">
     {%- comment -%} My Account {%- endcomment -%}
