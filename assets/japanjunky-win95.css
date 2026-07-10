@@ -77,7 +77,7 @@
    button's overflow:hidden would clip the horns); this slot just reserves
    its footprint in the button's flex row. */
 .jj-start-btn__tsuno-slot {
-  width: 20px;
+  width: 17px;
   flex-shrink: 0;
 }
 
@@ -90,25 +90,38 @@
    parallax/CRT-canvas gap regression. */
 .jj-start-btn__tsuno {
   position: absolute;
-  left: 0;
+  left: 2px;
   bottom: 3px;
-  width: 40px;
-  height: 44px;
+  width: 34px;
+  height: 37px;
   background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
   -webkit-mask-image: var(--jj-tsuno-logo);
   mask-image: var(--jj-tsuno-logo);
   /* Fixed px size (not contain) so shrinking the box height CROPS the
-     sprite from the top instead of rescaling it. */
-  -webkit-mask-size: 40px 44px;
-  mask-size: 40px 44px;
+     sprite from the top instead of rescaling it. The PNG is authored at
+     this exact 34x37 with Bayer-dithered alpha + 55% scanline raster
+     baked in — keep mask-size 1:1 or the dither smears. */
+  -webkit-mask-size: 34px 37px;
+  mask-size: 34px 37px;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: bottom center;
   mask-position: bottom center;
   transform: rotate(-6deg);
   transform-origin: 50% 75%;
+  /* Phosphor glow in the mood color. drop-shadow paints a few px of soft
+     light outside the box — if the CRT edge-gap regression ever returns,
+     remove this filter first. */
+  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)));
+  transition: filter 60ms steps(1);
   pointer-events: none;
   z-index: 2;
+}
+
+/* CRT brightness flash on button hover */
+.jj-start-btn:hover + .jj-start-btn__tsuno {
+  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)))
+          brightness(1.35);
 }
 
 /* While the start menu is open: the taskbar (z 10010) paints above the
