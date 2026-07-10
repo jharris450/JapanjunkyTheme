@@ -8,6 +8,21 @@
 (function () {
   'use strict';
 
+  // ─── Tsuno mood tint → start-button logo ───────────────────
+  // Day-of-week mood colors, mirroring TSUNO_MOODS.tint in
+  // japanjunky-screensaver.js (Sun shy … Sat dreamy) — keep in sync.
+  var TSUNO_MOOD_HEX = [
+    '#ff4d2e', // Sun shy         — soft warm red
+    '#ff8029', // Mon curious     — amber-orange
+    '#f26b2e', // Tue lazy        — low-energy ember
+    '#ff479e', // Wed mischievous — warm magenta
+    '#73ff6b', // Thu watchful    — green phosphor
+    '#ffcc33', // Fri energetic   — bright gold
+    '#b866f2'  // Sat dreamy      — dusk violet
+  ];
+  document.documentElement.style.setProperty(
+    '--jj-tsuno-mood', TSUNO_MOOD_HEX[new Date().getDay()]);
+
   // ─── Start Menu Toggle ─────────────────────────────────────
   var startBtn = document.getElementById('jj-start-btn');
   var startMenu = document.getElementById('jj-start-menu');

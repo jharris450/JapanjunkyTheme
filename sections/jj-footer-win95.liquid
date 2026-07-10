@@ -8,9 +8,12 @@
         <span class="jj-start-btn__cart-pop"></span>
         <span class="jj-start-btn__cart-icon">¥</span>
       </span>
-      <span class="jj-start-btn__flag" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="jj-start-btn__tsuno-slot" aria-hidden="true"></span>
       <span>START</span>
     </button>
+    {%- comment -%} Tsuno head logo: sibling of the button (its overflow:hidden
+        would clip the horns), mood-tinted via mask + --jj-tsuno-mood. {%- endcomment -%}
+    <span class="jj-start-btn__tsuno" aria-hidden="true" style="--jj-tsuno-logo: url('{{ 'tsuno-start-logo.png' | asset_url }}')"></span>
   </div>
 
   <div class="jj-taskbar__divider"></div>
