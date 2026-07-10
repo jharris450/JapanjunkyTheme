@@ -294,6 +294,7 @@
     'uniform vec3 uTint;',
     'uniform float uAlpha;',
     'uniform float uHue;',                            // music-reactive hue rotation (0 = idle)
+    'uniform float uSinkClip;',                       // waterline in RT px (0 = off): fragments below sink into the pool
     'varying vec2 vUv;',
     '',
     'vec3 jjHueShift(vec3 c, float a) {',
@@ -305,6 +306,15 @@
     'void main() {',
     '  vec2 uv = vUv;',
     '  uv.x += sin(uv.y * 4.0 + uTime * 1.5) * 0.06;',
+    '  if (uSinkClip > 0.5) {',
+    // Sinking through the pool: everything below the waterline is inside
+    // the wax — gone. Just above it, refraction-style wobble (rides the
+    // water's ripple frequency) so his silhouette warps as he enters.
+    '    if (gl_FragCoord.y < uSinkClip) discard;',
+    '    float dy = gl_FragCoord.y - uSinkClip;',
+    '    float wob = exp(-dy * dy / 700.0);',
+    '    uv.x += sin(gl_FragCoord.y * 0.45 + uTime * 5.0) * 0.055 * wob;',
+    '  }',
     '  vec4 texColor = texture2D(uTexture, uv);',
     '  float lum = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));',
     '  float mask = 1.0 - lum;',                       // black ink -> 1
@@ -865,7 +875,8 @@
           uTime: { value: 0.0 },
           uTint: { value: new THREE.Vector3(1.0, 0.2, 0.08) },
           uAlpha: { value: 0.8 },
-          uHue: { value: 0.0 }
+          uHue: { value: 0.0 },
+          uSinkClip: { value: 0.0 }
         },
         vertexShader: GLOW_VERT,
         fragmentShader: GHOST_FRAG,
@@ -1338,6 +1349,13 @@
     var prevAutoClear = renderer.autoClear;
     renderer.autoClear = false;
     renderer.render(waxScene, waxCamera); // wax fills the frame first
+    // While the page is scrolling, Tsuno SINKS at the waterline instead of
+    // pasting over the pool — fragments below the water surface discard
+    // (he travels through the pool hidden, emerging in the underworld).
+    if (tsunoMesh) {
+      tsunoMesh.material.uniforms.uSinkClip.value =
+        (window.JJ_ScrollFollow || 0) > 0.02 ? waxUniforms.uHorizon.value * resH : 0.0;
+    }
     renderer.render(scene, camera);       // bubbles + Tsuno on top
     renderer.autoClear = prevAutoClear;
     renderer.setRenderTarget(null);
@@ -1412,6 +1430,9 @@
       camera.setViewOffset(resW, resH * 3, 0, resH * 2, resW, resH);
       camera.updateProjectionMatrix();
       camera.layers.set(0);
+      // No waterline in the underworld — he has passed through the pool
+      // (the overhang strip in underscene.js covers his re-entry point).
+      tsunoMesh.material.uniforms.uSinkClip.value = 0.0;
       renderer.render(scene, camera);
       camera.clearViewOffset();
       camera.fov = fov0;
