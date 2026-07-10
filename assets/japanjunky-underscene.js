@@ -154,6 +154,9 @@
     var zone = document.getElementById('jj-product-zone');
     function onScroll() {
       scrollTop = scroll.scrollTop;
+      // Screens of parallax shift — Tsuno's scroll-follow rig reads this
+      // (japanjunky-screensaver.js) to descend after the viewer.
+      window.JJ_ScrollFollow = scrollTop * PARALLAX_FACTOR / canvasH;
       var t = 'translateY(' + (-scrollTop * PARALLAX_FACTOR).toFixed(2) + 'px)';
       portal.displayCanvas.style.transform = t;
       underCanvas.style.transform = t;

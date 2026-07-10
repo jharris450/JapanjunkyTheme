@@ -158,7 +158,8 @@
     var prox = (TSUNO_BACK_Z - tsunoMesh.position.z) / (TSUNO_BACK_Z - TSUNO_FRONT_Z);
     if (prox > 1) prox = 1;
     if (prox <= 0) { lastTsunoUv = null; return { active: false }; }
-    var ndc = tsunoMesh.position.clone().project(camera);
+    // World position — the scroll-follow rig offsets him below his local pos
+    var ndc = tsunoMesh.getWorldPosition(new THREE.Vector3()).project(camera);
     var uv = { x: ndc.x * 0.5 + 0.5, y: ndc.y * 0.5 + 0.5 };
     var vx = 0, vy = 0;
     if (lastTsunoUv) { vx = (uv.x - lastTsunoUv.x) / dt; vy = (uv.y - lastTsunoUv.y) / dt; }
@@ -321,6 +322,11 @@
 
   // ─── Tsuno Daishi — Shopkeeper ──────────────────────────────
   var tsunoMesh = null;
+  // Scroll-follow rig: Tsuno's behaviors drive his LOCAL position; the rig
+  // carries him down the page after the viewer (japanjunky-underscene.js
+  // feeds JJ_ScrollFollow). Parenting keeps every behavior untouched.
+  var tsunoRig = new THREE.Group();
+  scene.add(tsunoRig);
   var tsunoState = 'idle'; // idle | transitioning-out | orbiting | returning
   var tsunoActivated = false; // true after first product selection — personality system engages
   var tsunoTransition = { progress: 0, startPos: null, endPos: null };
@@ -879,7 +885,7 @@
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
       var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
-      scene.add(tsunoMesh);
+      tsunoRig.add(tsunoMesh);
 
       // Update the pre-created tsuno API with real references
       if (window.JJ_Portal && window.JJ_Portal.tsuno) {
@@ -1381,11 +1387,40 @@
     renderer.setClearColor(mainClearColor, 1);
     renderer.setRenderTarget(renderTarget);
     renderer.clear();
+    var prevAutoClearInv = renderer.autoClear;
+    renderer.autoClear = false;
     waxUniforms.uWaxOff.value = 1.0;
     waxUniforms.uVShift.value = -1.0;
     renderer.render(waxScene, waxCamera);
     waxUniforms.uWaxOff.value = 0.0;
     waxUniforms.uVShift.value = 0.0;
+
+    // Tsuno follows the viewer into the underworld: render the character
+    // pass through the camera window directly BELOW the main frame (3×
+    // frustum, bottom-third crop = exact principal-point shift, same
+    // pixel scale — he crosses the canvas seam continuously). Everyone
+    // but Tsuno is hidden.
+    if (tsunoMesh && tsunoMesh.visible) {
+      var hiddenInv = [];
+      var othersInv = [guyMesh, bubbleMesh, textMesh];
+      for (var oi = 0; oi < othersInv.length; oi++) {
+        if (othersInv[oi] && othersInv[oi].visible) { othersInv[oi].visible = false; hiddenInv.push(othersInv[oi]); }
+      }
+      var fov0 = camera.fov, aspect0 = camera.aspect;
+      camera.fov = (2 * Math.atan(3 * Math.tan(fov0 * Math.PI / 360))) * 180 / Math.PI;
+      camera.aspect = aspect0 / 3;
+      camera.setViewOffset(resW, resH * 3, 0, resH * 2, resW, resH);
+      camera.updateProjectionMatrix();
+      camera.layers.set(0);
+      renderer.render(scene, camera);
+      camera.clearViewOffset();
+      camera.fov = fov0;
+      camera.aspect = aspect0;
+      camera.updateProjectionMatrix();
+      for (var ri = 0; ri < hiddenInv.length; ri++) hiddenInv[ri].visible = true;
+    }
+
+    renderer.autoClear = prevAutoClearInv;
     renderer.setRenderTarget(null);
     renderer.readRenderTargetPixels(renderTarget, 0, 0, resW, resH, pixelBuffer);
 
@@ -1551,6 +1586,17 @@
       guyMesh.position.set(guyX, guyY, 10);
       guyMesh.lookAt(camera.position);
       guyMesh.material.uniforms.uHue.value = hue;
+    }
+
+    // Scroll-follow: Tsuno drifts down the page after the viewer. The rig
+    // eases toward viewer-lock (one screen of parallax = one screen-height
+    // of world at his depth) so he lags behind the scroll organically.
+    if (tsunoMesh) {
+      var followFrac = window.JJ_ScrollFollow || 0;
+      var followDist = Math.abs(tsunoMesh.position.z - camera.position.z);
+      var screenWorld = 2 * Math.tan(camera.fov * Math.PI / 360) * followDist;
+      var rigTarget = -followFrac * screenWorld;
+      tsunoRig.position.y += (rigTarget - tsunoRig.position.y) * Math.min(1, dtSun * 2.2);
     }
 
     // Update parallax
