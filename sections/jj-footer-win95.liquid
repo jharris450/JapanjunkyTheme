@@ -4,17 +4,18 @@
 <footer class="jj-taskbar" role="contentinfo">
   <div class="jj-start-menu-wrapper">
     <button class="jj-start-btn{% if cart.item_count > 0 %} jj-start-btn--has-cart{% endif %}" id="jj-start-btn" aria-expanded="false" aria-controls="jj-start-menu">
-      <span class="jj-start-btn__cart-badge" id="jj-start-btn-cart-badge" aria-hidden="true">
-        <span class="jj-start-btn__cart-pop"></span>
-        {%- comment -%} __cart-svg class = color-strobe target in japanjunky-cart.js {%- endcomment -%}
-        <span class="jj-start-btn__cart-icon">{% render 'win95-start-icon', icon: 'cart', class: 'jj-start-btn__cart-svg' %}</span>
-      </span>
-      <span class="jj-start-btn__tsuno-slot" aria-hidden="true"></span>
       <span>START</span>
     </button>
-    {%- comment -%} Tsuno head logo: sibling of the button (its overflow:hidden
-        would clip the horns), mood-tinted via mask + --jj-tsuno-mood. {%- endcomment -%}
+    {%- comment -%} Tsuno head + cart badge are SIBLINGS of the button (its
+        overflow:hidden would clip them): the border box hugs the START text
+        and both sprites deliberately run off it. Keep the tsuno span
+        immediately after the button — the hover/crop CSS uses `+`. {%- endcomment -%}
     <span class="jj-start-btn__tsuno" aria-hidden="true" style="--jj-tsuno-logo: url('{{ 'tsuno-start-logo.png' | asset_url }}')"></span>
+    <span class="jj-start-btn__cart-badge" id="jj-start-btn-cart-badge" aria-hidden="true">
+      <span class="jj-start-btn__cart-pop"></span>
+      {%- comment -%} __cart-svg class = color-strobe target in japanjunky-cart.js {%- endcomment -%}
+      <span class="jj-start-btn__cart-icon">{% render 'win95-start-icon', icon: 'cart', class: 'jj-start-btn__cart-svg' %}</span>
+    </span>
   </div>
 
   <div class="jj-taskbar__divider"></div>

@@ -42,6 +42,9 @@
 /* --- Start Button Wrapper --- */
 .jj-start-menu-wrapper {
   position: relative;
+  /* Clears room on the left for the overhanging Tsuno head (the sprite
+     hangs at left:-24px; taskbar padding 8 + this 18 keep it on-screen). */
+  margin-left: 18px;
 }
 
 /* --- Barrel hit-slop -------------------------------------------------
@@ -102,10 +105,11 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   letter-spacing: 0;
   white-space: nowrap;
   height: 26px;
-  /* Clip badge + neon pop to button bounds so nothing paints above the
-     taskbar (any leak retriggers the parallax/CRT-canvas gap regression).
-     overflow:hidden also clips the tactile drop shadow, so the raised bevel
-     here is inset-only — no 2px drop. */
+  /* The border box hugs the START text: the Tsuno head and cart badge are
+     SIBLINGS that deliberately overhang this button. overflow:hidden stays
+     as a leak guard for anything rendered inside (any paint above the
+     taskbar risks the parallax/CRT-canvas gap regression); it also clips
+     drop shadows, so the raised bevel here is inset-only — no 2px drop. */
   overflow: hidden;
   box-shadow:
     inset 1px 1px 0 rgba(224, 213, 192, 0.22),
@@ -113,25 +117,19 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   transition: transform 60ms steps(1), box-shadow 60ms steps(1);
 }
 
-/* Tsuno head logo. The visible sprite is a sibling of the button (the
-   button's overflow:hidden would clip the horns); this slot just reserves
-   its footprint in the button's flex row. */
-.jj-start-btn__tsuno-slot {
-  width: 17px;
-  flex-shrink: 0;
-}
-
 /* Ink-alpha mask (tsuno-start-logo.png, set as --jj-tsuno-logo inline from
    Liquid) tinted by the day's mood color — --jj-tsuno-mood is set by
-   japanjunky-win95-menu.js from the TSUNO_MOODS tint table. Horns
-   deliberately run off the top of the button/taskbar; the sprite is an
-   opaque masked block (no shadows/filters), so its paint stays inside its
-   own box — this does NOT reintroduce the glow-leak that caused the
-   parallax/CRT-canvas gap regression. */
+   japanjunky-win95-menu.js from the TSUNO_MOODS tint table. The head hangs
+   off the button's LEFT edge (negative left; the taskbar's 8px padding
+   keeps it on-screen) and the horns run off the top — the button border
+   hugs the START text and never grows to fit the sprite. */
 .jj-start-btn__tsuno {
   position: absolute;
-  left: 2px;
-  bottom: 3px;
+  /* Straddles the button's top-left corner: face right edge stops at the
+     text's left padding (x10) so START stays readable; raised so the chin
+     dips over the border while the horns run above the taskbar. */
+  left: -24px;
+  bottom: 8px;
   width: 34px;
   height: 37px;
   background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
@@ -174,9 +172,11 @@ html.jj-crt-shader-active .jj-clock-tray::before {
 
 /* While the start menu is open: the taskbar (z 10010) paints above the
    menu (z 2000), so the horns would lie over the menu's bottom-left
-   corner. Crop the sprite at the taskbar top edge until it closes. */
+   corner. Crop the sprite at the taskbar top edge until it closes.
+   (sprite bottom sits ~11px above the taskbar bottom: 3px button inset
+   + the 8px bottom offset → 32 - 11 = 21px of visible height.) */
 .jj-start-btn--active + .jj-start-btn__tsuno {
-  height: 26px;
+  height: 21px;
 }
 
 .jj-start-btn:hover {
@@ -191,22 +191,26 @@ html.jj-crt-shader-active .jj-clock-tray::before {
     inset -1px -1px 0 rgba(224, 213, 192, 0.22);
 }
 
-/* --- Cart notification badge (top-right corner of CMD button —
-       top-left is occupied by the Tsuno head logo) --- */
+/* --- Cart notification badge: a wrapper SIBLING of the button (like the
+       Tsuno head), overhanging the button's top-right corner — the border
+       box never grows to fit it. overflow:hidden clips the neon pop burst
+       to the badge (the button's clip no longer covers it; unclipped it
+       would paint above the taskbar → CRT gap regression). --- */
 .jj-start-btn__cart-badge {
   position: absolute;
-  top: 1px;
-  right: 1px;
+  top: -3px;
+  right: -8px;
   width: 12px;
   height: 12px;
   display: none;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  overflow: hidden;
   z-index: 2;
 }
 
-.jj-start-btn--has-cart .jj-start-btn__cart-badge {
+.jj-start-btn--has-cart ~ .jj-start-btn__cart-badge {
   display: flex;
 }
 
@@ -244,11 +248,11 @@ html.jj-crt-shader-active .jj-clock-tray::before {
 
 /* Flash burst on add-to-cart. Only animates the badge contents — no
    box-shadow / text-shadow / border that could extend past the button. */
-.jj-start-btn--cart-flash .jj-start-btn__cart-badge {
+.jj-start-btn--cart-flash ~ .jj-start-btn__cart-badge {
   animation: jj-cart-badge-flash 1600ms steps(8, end) 1;
 }
 
-.jj-start-btn--cart-flash .jj-start-btn__cart-pop {
+.jj-start-btn--cart-flash ~ .jj-start-btn__cart-badge .jj-start-btn__cart-pop {
   animation: jj-cart-pop-burst 1600ms ease-out 1;
 }
 
