@@ -18,12 +18,16 @@
 
   // Both popovers ship inside the taskbar markup, but the taskbar is its own
   // stacking context (z-index 10010) which traps them below the toolbox (10011).
-  // Reparent to <body> so their own z-index can sit above the toolbox. (All
-  // logic references them by id, so the move is transparent.) The hover popover
-  // loses its CSS descendant `:hover` trigger by moving, so it's driven by the
-  // mouseenter/mouseleave handlers below instead.
-  if (calPopover.parentNode !== document.body) document.body.appendChild(calPopover);
-  if (datePopover && datePopover.parentNode !== document.body) document.body.appendChild(datePopover);
+  // Reparent to #jj-crt-content (NOT <body>): as direct wrapper children their
+  // z-index beats the toolbox, while staying under the global CRT shader
+  // canvas (z 20000) so scanlines/dither cover them — body-level siblings
+  // would paint above the canvas because the barrel filter makes the wrapper
+  // a stacking context. (All logic references them by id, so the move is
+  // transparent.) The hover popover loses its CSS descendant `:hover` trigger
+  // by moving, so it's driven by the mouseenter/mouseleave handlers below.
+  var popoverHost = document.getElementById('jj-crt-content') || document.body;
+  if (calPopover.parentNode !== popoverHost) popoverHost.appendChild(calPopover);
+  if (datePopover && datePopover.parentNode !== popoverHost) popoverHost.appendChild(datePopover);
 
   // ─── Load Upcoming Releases ───────────────────────────────
   var releases = [];

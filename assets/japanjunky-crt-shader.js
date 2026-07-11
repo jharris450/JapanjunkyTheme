@@ -36,7 +36,8 @@
     flickerIntensity: 0.025,
     warmth: 0.02,
     damperWireOpacity: 0.14,
-    fogIntensity: 0.7
+    fogIntensity: 0.7,
+    ditherIntensity: 0.06   // checkerboard phosphor grain over the whole tube
   };
 
   // ─── Config Merge ────────────────────────────────────────────
@@ -221,6 +222,7 @@
     'uniform float uWarmth;',
     'uniform float uDamperWireOpacity;',
     'uniform float uFogIntensity;',
+    'uniform float uDitherIntensity;',
     '',
     '/* Barrel distortion for overlay UVs */',
     'vec2 barrelUV(vec2 uv, float k) {',
@@ -301,6 +303,10 @@
     '  /* ── Screen Flicker ───────────────────────────────────── */',
     '  float flicker = 1.0 - uFlickerIntensity * sin(uTime * 188.5);',
     '',
+    '  /* ── Checker Dither (global phosphor grain, 2px cells) ── */',
+    '  float checker = mod(floor(bPx.x * 0.5) + floor(bPx.y * 0.5), 2.0);',
+    '  float ditherAlpha = uDitherIntensity * checker;',
+    '',
     '  /* ── D65 Warm Tint ────────────────────────────────────── */',
     '  vec3 warmTint = vec3(1.0 + uWarmth, 1.0 + uWarmth * 0.6, 1.0 - uWarmth * 0.4);',
     '',
@@ -329,7 +335,7 @@
     '',
     '  float vignetteAlpha = (1.0 - vignette);',
     '',
-    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * (1.0 - fogDensity);',
+    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * (1.0 - fogDensity) * (1.0 - ditherAlpha);',
     '  totalDarken *= damperWires;',
     '  totalDarken *= beamBrightness;',
     '  totalDarken *= flicker;',
@@ -391,7 +397,8 @@
       uFlickerIntensity:    { value: reducedMotion ? 0.0 : cfg.flickerIntensity },
       uWarmth:              { value: cfg.warmth },
       uDamperWireOpacity:   { value: cfg.damperWireOpacity },
-      uFogIntensity:        { value: cfg.fogIntensity }
+      uFogIntensity:        { value: cfg.fogIntensity },
+      uDitherIntensity:     { value: cfg.ditherIntensity }
     };
 
     var material = new THREE.ShaderMaterial({

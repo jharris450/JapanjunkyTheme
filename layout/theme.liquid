@@ -435,10 +435,17 @@
   {% if settings.splash_enabled %}
   <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
   {% endif %}
-{%- comment -%} CRT Shader: Three.js overlay canvas {%- endcomment -%}
+{%- comment -%} CRT Shader: Three.js overlay canvas. z 20000 = the GLOBAL
+    effect layer: it rides above ALL chrome inside #jj-crt-content (taskbar
+    10010, toolbox 10011, popups 10015, shutdown 10020) so scanlines/grille/
+    dither cover the whole tube — individual elements must NOT add their own
+    raster overlays. Only the splash (100000, deliberate) escapes it.
+    Anything needing the effects must live INSIDE #jj-crt-content — the
+    wrapper's barrel filter makes it a stacking context, so body-level
+    siblings always paint above this canvas regardless of z. {%- endcomment -%}
 <canvas id="jj-crt-shader-canvas" aria-hidden="true" role="presentation" style="
   position:fixed;inset:0;width:100%;height:100%;
-  z-index:10002;pointer-events:none;
+  z-index:20000;pointer-events:none;
 "></canvas>
 </div><!-- /#jj-crt-content -->
 </body>

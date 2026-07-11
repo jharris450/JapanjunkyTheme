@@ -17,11 +17,14 @@
   }
   V.subscribe(function () { syncUI(); }); // also fires once immediately
 
-  // Reparent the popup to <body> (like the clock popover) so it escapes the
-  // taskbar's z-index:10010 stacking context and paints over the toolbox
-  // button (10011). CSS positions it fixed; left is anchored to the speaker
-  // button here at open time.
-  document.body.appendChild(popup);
+  // Reparent the popup OUT of the taskbar (whose z:10010 stacking context
+  // trapped it below the toolbox, 10011) but INTO #jj-crt-content: as a
+  // direct wrapper child its z-index beats the toolbox, while staying under
+  // the global CRT shader canvas (z 20000) so scanlines/dither cover it.
+  // (On <body> it would paint above the canvas — the barrel filter makes
+  // the wrapper a stacking context.) CSS positions it fixed; left is
+  // anchored to the speaker button at open time.
+  (document.getElementById('jj-crt-content') || document.body).appendChild(popup);
 
   function open() {
     // Only one taskbar panel up at a time — close start menu / calendar / toolbox.

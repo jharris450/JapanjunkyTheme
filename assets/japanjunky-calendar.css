@@ -6,9 +6,10 @@
 /* --- Popover Container --- */
 .jj-calendar-popover {
   display: none;
-  /* Fixed to the viewport (reparented to <body> in JS) so it can paint above
-     the toolbox (10011). Anchored to the bottom-right just above the 32px
-     taskbar, matching its old anchor to the right-edge clock tray. */
+  /* Fixed to the viewport (reparented to #jj-crt-content in JS) so it paints
+     above the toolbox (10011) but under the global CRT shader canvas (20000).
+     Anchored to the bottom-right just above the 32px taskbar, matching its
+     old anchor to the right-edge clock tray. */
   position: fixed;
   bottom: 36px; /* 32px taskbar + 4px gap */
   right: 8px;   /* matches the taskbar's 8px right padding */

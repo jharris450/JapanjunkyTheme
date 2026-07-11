@@ -17,8 +17,9 @@
   padding: 2px 8px;
   gap: 4px;
   flex-shrink: 0;
-  /* Must sit above #jj-crt-shader-canvas (z-index 10002) so the
-     Three.js scene never paints over the taskbar area. */
+  /* Above the page content/scene; deliberately BELOW the global CRT
+     shader canvas (z 20000) so scanlines/grille/dither cover the taskbar
+     like everything else on the tube. */
   z-index: 10010;
   font-size: 12px;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
@@ -526,9 +527,10 @@ svg.jj-start-item-icon {
 /* --- Clock Date Popover --- */
 .jj-clock-popover {
   display: none;
-  /* Fixed to the viewport (reparented to <body> in JS) so it can paint above
-     the toolbox (10011). Anchored just above the 32px taskbar at the right edge,
-     matching its old anchor to the clock tray. Show/hide is JS-driven now. */
+  /* Fixed to the viewport (reparented to #jj-crt-content in JS) so it paints
+     above the toolbox (10011) but under the global CRT shader canvas (20000).
+     Anchored just above the 32px taskbar at the right edge, matching its old
+     anchor to the clock tray. Show/hide is JS-driven now. */
   position: fixed;
   bottom: 36px; /* 32px taskbar + 4px gap */
   right: 8px;   /* matches the taskbar's 8px right padding */
@@ -1142,11 +1144,12 @@ svg.jj-start-item-icon {
 .jj-vol-btn--muted .jj-vol-btn__x { display: flex; }
 
 .jj-vol-popup {
-  /* Fixed to the viewport (reparented to <body> in japanjunky-win95-volume.js,
-     same trick as .jj-clock-popover) so it can paint OVER the toolbox button
-     (z 10011) — as a taskbar child it was capped at the taskbar's 10010
-     context and the toolbox covered it. left is set from the speaker
-     button's rect at open time. */
+  /* Fixed to the viewport (reparented to #jj-crt-content in
+     japanjunky-win95-volume.js, same trick as .jj-clock-popover) so it can
+     paint OVER the toolbox button (z 10011) — as a taskbar child it was
+     capped at the taskbar's 10010 context and the toolbox covered it —
+     while staying UNDER the global CRT shader canvas (z 20000). left is
+     set from the speaker button's rect at open time. */
   position: fixed; bottom: 36px; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 7px;
   padding: 8px 12px 10px; z-index: 10015;
@@ -1159,42 +1162,17 @@ svg.jj-start-item-icon {
 }
 .jj-vol-popup[hidden] { display: none; }
 
-/* --- Popup CRT dress (volume popup + calendar popover) -----------------
-   The site-wide effect language applied to the taskbar popups: CRT
-   power-on flash when they open (display toggle restarts the animation),
-   a faint 2px checkerboard dither baked over the panel, and translucent
-   scanlines riding on top. Both overlays are pointer-events:none so the
-   calendar days / slider stay clickable. */
+/* --- Popup open flash + title glow (volume popup + calendar popover) ---
+   Scanlines/dither/vignette come from the GLOBAL CRT shader canvas
+   (z 20000, japanjunky-crt-shader.js) — do NOT add per-element raster
+   overlays here. Only per-element behaviors live in CSS: the CRT power-on
+   flash when a popup opens (display toggle restarts the animation) and
+   the phosphor glow on titles, matching the taskbar tab treatment. */
 .jj-vol-popup,
 .jj-calendar-popover--open {
   animation: jj-crt-on 0.3s ease-out;
 }
 
-.jj-vol-popup::before,
-.jj-calendar-popover::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  pointer-events: none;
-  /* Bayer-flavored phosphor grain: 1px cream checker at whisper alpha */
-  background: repeating-conic-gradient(
-    rgba(224, 213, 192, 0.045) 0% 25%, transparent 0% 50%) 0 0 / 2px 2px;
-}
-
-.jj-vol-popup::after,
-.jj-calendar-popover::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  /* CRT raster: dark line every other px, same cadence as the speaker mask */
-  background: repeating-linear-gradient(
-    to bottom, transparent 0, transparent 1px,
-    rgba(0, 0, 0, 0.22) 1px, rgba(0, 0, 0, 0.22) 2px);
-}
-
-/* Phosphor glow on the popup titles, matching the taskbar tab treatment */
 .jj-vol-popup__title,
 .jj-cal-nav__label {
   text-shadow: 0 0 4px rgba(212, 201, 168, 0.4), 0 0 8px rgba(212, 201, 168, 0.15);
