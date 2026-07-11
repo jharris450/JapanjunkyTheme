@@ -12,8 +12,17 @@
       <span class="jj-vol-btn__x" aria-hidden="true">×</span>
     </span>
   </button>
+  {%- comment -%} Win98 mixer layout (sound.png ref): Volume title, loudness
+      wedge beside the slider, dotted keyboard-focus box around the slider
+      column, Mute checkbox with its access-key underline. {%- endcomment -%}
   <div class="jj-vol-popup" id="jj-vol-popup" role="dialog" aria-label="Volume" hidden>
-    <input type="range" class="jj-vol-slider" id="jj-vol-slider" min="0" max="100" value="80" step="1" aria-label="Volume level">
-    <label class="jj-vol-mute"><input type="checkbox" id="jj-vol-mute-cb"> Mute</label>
+    <div class="jj-vol-popup__title" aria-hidden="true">Volume</div>
+    <div class="jj-vol-popup__body">
+      <div class="jj-vol-wedge" aria-hidden="true"><div class="jj-vol-wedge__fill"></div></div>
+      <div class="jj-vol-well">
+        <input type="range" class="jj-vol-slider" id="jj-vol-slider" min="0" max="100" value="80" step="1" aria-label="Volume level">
+      </div>
+    </div>
+    <label class="jj-vol-mute"><input type="checkbox" id="jj-vol-mute-cb"> <span><u>M</u>ute</span></label>
   </div>
 </div>

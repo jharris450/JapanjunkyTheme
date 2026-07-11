@@ -42,9 +42,9 @@
 /* --- Start Button Wrapper --- */
 .jj-start-menu-wrapper {
   position: relative;
-  /* Clears room on the left for the overhanging Tsuno head (the sprite
-     hangs at left:-24px; taskbar padding 8 + this 18 keep it on-screen). */
-  margin-left: 18px;
+  /* Pulls the button into the taskbar's corner, Win98-style (start.png
+     ref): taskbar pads 8px, so -6 leaves a 2px screen-edge inset. */
+  margin-left: -6px;
 }
 
 /* --- Barrel hit-slop -------------------------------------------------
@@ -96,7 +96,9 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   color: var(--jj-primary);
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid #444;
-  padding: 2px 10px;
+  /* Win98 proportions (start.png): near-full taskbar height, logo slot
+     on the left before the text (the Tsuno head overlays that band). */
+  padding: 2px 12px 2px 38px;
   cursor: default;
   display: flex;
   align-items: center;
@@ -104,7 +106,7 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   text-transform: none;
   letter-spacing: 0;
   white-space: nowrap;
-  height: 26px;
+  height: 28px;
   /* The border box hugs the START text: the Tsuno head and cart badge are
      SIBLINGS that deliberately overhang this button. overflow:hidden stays
      as a leak guard for anything rendered inside (any paint above the
@@ -125,11 +127,10 @@ html.jj-crt-shader-active .jj-clock-tray::before {
    hugs the START text and never grows to fit the sprite. */
 .jj-start-btn__tsuno {
   position: absolute;
-  /* Straddles the button's top-left corner: face right edge stops at the
-     text's left padding (x10) so START stays readable; raised so the chin
-     dips over the border while the horns run above the taskbar. */
-  left: -24px;
-  bottom: 8px;
+  /* Sits in the button's logo band (the 38px left padding), like the Win98
+     flag in start.png; horns still run off the top of the taskbar. */
+  left: 1px;
+  bottom: 3px;
   width: 34px;
   height: 37px;
   background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
@@ -173,10 +174,10 @@ html.jj-crt-shader-active .jj-clock-tray::before {
 /* While the start menu is open: the taskbar (z 10010) paints above the
    menu (z 2000), so the horns would lie over the menu's bottom-left
    corner. Crop the sprite at the taskbar top edge until it closes.
-   (sprite bottom sits ~11px above the taskbar bottom: 3px button inset
-   + the 8px bottom offset → 32 - 11 = 21px of visible height.) */
+   (sprite bottom sits ~5px above the taskbar bottom: 2px button inset
+   + the 3px bottom offset → 32 - 5 = 27px of visible height.) */
 .jj-start-btn--active + .jj-start-btn__tsuno {
-  height: 21px;
+  height: 27px;
 }
 
 .jj-start-btn:hover {
@@ -198,7 +199,8 @@ html.jj-crt-shader-active .jj-clock-tray::before {
        would paint above the taskbar → CRT gap regression). --- */
 .jj-start-btn__cart-badge {
   position: absolute;
-  top: -3px;
+  /* -2 = exactly the taskbar's top edge (28px button sits 2px in) */
+  top: -2px;
   right: -8px;
   width: 12px;
   height: 12px;
@@ -269,10 +271,10 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   100% { opacity: 0;   transform: scale(2.0); }
 }
 
-/* --- Taskbar Divider --- */
+/* --- Taskbar Divider (chunky Win98 grip bar, start.png ref) --- */
 .jj-taskbar__divider {
-  width: 1px;
-  height: 20px;
+  width: 3px;
+  height: 22px;
   background: #333;
   margin: 0 4px;
 }
@@ -1143,8 +1145,8 @@ svg.jj-start-item-icon {
      context and the toolbox covered it. left is set from the speaker
      button's rect at open time. */
   position: fixed; bottom: 36px; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 8px 6px; z-index: 10015;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 8px 12px 10px; z-index: 10015;
   background: var(--jj-bg-panel, #0a0a0a); color: var(--jj-white, #e0e0e0);
   font: 11px/1.4 monospace;
   box-shadow:
@@ -1153,16 +1155,43 @@ svg.jj-start-item-icon {
     0 2px 6px rgba(0, 0, 0, 0.6);
 }
 .jj-vol-popup[hidden] { display: none; }
-/* Win95 trackbar: sunken channel + chunky raised beveled slug (no native chrome,
-   no rounded corners). Bevel matches .jj-vol-btn for a cohesive taskbar look. */
+
+/* Win98 mixer anatomy (sound.png ref) — title, loudness wedge + slider row */
+.jj-vol-popup__title { font-size: 12px; }
+.jj-vol-popup__body { display: flex; align-items: center; gap: 9px; }
+
+/* Loudness wedge: tall triangle, wide at the top, vertical edge facing the
+   slider. Outline built from two stacked clip-paths (outer = bevel
+   highlight tint, inner = panel bg), since borders can't follow the slant. */
+.jj-vol-wedge {
+  position: relative;
+  width: 15px; height: 92px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  background: rgba(224, 213, 192, 0.5);
+}
+.jj-vol-wedge__fill {
+  position: absolute;
+  inset: 1px 1px 3px 4px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+  background: var(--jj-bg-panel, #0a0a0a);
+}
+
+/* Dotted keyboard-focus rectangle around the slider column */
+.jj-vol-well {
+  border: 1px dotted #444;
+  padding: 5px 7px;
+}
+
+/* Win98 trackbar: THIN sunken channel + chunky raised slug (no native
+   chrome, no rounded corners). Bevel matches .jj-vol-btn. */
 .jj-vol-slider {
   -webkit-appearance: none; appearance: none;
   writing-mode: vertical-lr; direction: rtl;
-  width: 16px; height: 90px; margin: 2px 0; padding: 0;
+  width: 18px; height: 90px; margin: 0; padding: 0;
   background: transparent; cursor: pointer;
 }
 .jj-vol-slider::-webkit-slider-runnable-track {
-  width: 6px; height: 100%;
+  width: 4px; height: 100%;
   background: var(--jj-black, #000);
   box-shadow:
     inset 1px 1px 0 rgba(0, 0, 0, 0.85),
@@ -1170,24 +1199,24 @@ svg.jj-start-item-icon {
 }
 .jj-vol-slider::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 16px; height: 11px; margin-left: -5px;
+  width: 18px; height: 10px; margin-left: -7px;
   background: var(--jj-bg-elevated, #111); border: 1px solid var(--jj-black, #000);
   box-shadow:
     inset 1px 1px 0 rgba(224, 213, 192, 0.5),
     inset -1px -1px 0 rgba(0, 0, 0, 0.85);
 }
 .jj-vol-slider::-moz-range-track {
-  width: 6px; height: 100%;
+  width: 4px; height: 100%;
   background: var(--jj-black, #000);
   box-shadow:
     inset 1px 1px 0 rgba(0, 0, 0, 0.85),
     inset -1px -1px 0 rgba(224, 213, 192, 0.22);
 }
 .jj-vol-slider::-moz-range-thumb {
-  width: 16px; height: 11px; border-radius: 0;
+  width: 18px; height: 10px; border-radius: 0;
   background: var(--jj-bg-elevated, #111); border: 1px solid var(--jj-black, #000);
   box-shadow:
     inset 1px 1px 0 rgba(224, 213, 192, 0.5),
     inset -1px -1px 0 rgba(0, 0, 0, 0.85);
 }
-.jj-vol-mute { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.jj-vol-mute { display: flex; align-items: center; gap: 4px; white-space: nowrap; align-self: flex-start; }
