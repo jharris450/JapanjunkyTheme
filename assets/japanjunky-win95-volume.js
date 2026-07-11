@@ -27,7 +27,11 @@
     // Only one taskbar panel up at a time — close start menu / calendar / toolbox.
     document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'volume' } }));
     var r = btn.getBoundingClientRect();
-    popup.style.left = (r.left + r.width / 2) + 'px';
+    // html{zoom:2.5} (japanjunky-base.css) scales rect coords to VISUAL px,
+    // but style.left on the popup is CSS px that the zoom multiplies again
+    // at paint — divide it back out (same handling as japanjunky-guy.js).
+    var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    popup.style.left = ((r.left + r.width / 2) / zoom) + 'px';
     popup.hidden = false; tray.classList.add('jj-vol-tray--open'); btn.setAttribute('aria-expanded', 'true');
   }
   function close() { popup.hidden = true; tray.classList.remove('jj-vol-tray--open'); btn.setAttribute('aria-expanded', 'false'); }
