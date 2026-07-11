@@ -37,8 +37,9 @@
       <span>Watchlist</span>
     </a>
     <a href="/cart" class="jj-start-menu__item" role="menuitem">
-      {% render 'win95-start-icon', icon: 'cart' %}
-      <span><span class="jj-start-menu__cart-symbol" aria-hidden="true">¥</span>Cart (<span id="jj-nav-cart-count">{{ cart.item_count }}</span>)</span>
+      {%- comment -%} __cart-icon class = color-strobe target in japanjunky-cart.js {%- endcomment -%}
+      {% render 'win95-start-icon', icon: 'cart', class: 'jj-start-menu__cart-icon' %}
+      <span>Cart (<span id="jj-nav-cart-count">{{ cart.item_count }}</span>)</span>
     </a>
 
     <div class="jj-start-menu__divider"></div>
@@ -46,7 +47,7 @@
     {%- comment -%} Site Pages {%- endcomment -%}
     <div class="jj-start-menu__section-title">Navigate</div>
     <a href="/" class="jj-start-menu__item" role="menuitem">
-      {% render 'win95-start-icon', icon: 'torii' %}
+      {% render 'win95-start-icon', icon: 'hokora' %}
       <span>Home</span>
     </a>
     <a href="/collections/all?sort=newest" class="jj-start-menu__item" role="menuitem">

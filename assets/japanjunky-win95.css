@@ -213,11 +213,16 @@ html.jj-crt-shader-active .jj-clock-tray::before {
 .jj-start-btn__cart-icon {
   position: relative;
   z-index: 2;
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1;
+  display: flex;
   color: #f5d742;
+}
+
+/* Pixel cart svg in the badge: inherit the gold (and the JS strobe color
+   set inline on the svg itself) instead of the menu icons' #555, and drop
+   the menu-slot centering margin — the badge box is exactly 12px. */
+.jj-start-btn__cart-icon .jj-start-item-icon {
+  color: inherit;
+  margin: 0;
 }
 
 /* 80s pop: radial neon burst behind the cart icon. Sized so even the
@@ -258,13 +263,6 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   20%  { opacity: 1;   transform: scale(1.4); }
   55%  { opacity: 0.6; transform: scale(1.8); }
   100% { opacity: 0;   transform: scale(2.0); }
-}
-
-/* --- Start menu cart row symbol --- */
-.jj-start-menu__cart-symbol {
-  color: #f5d742;
-  font-weight: 700;
-  margin-right: 2px;
 }
 
 /* --- Taskbar Divider --- */

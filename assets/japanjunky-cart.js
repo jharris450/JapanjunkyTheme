@@ -11,25 +11,24 @@
   'use strict';
 
   // ─── Badge Strobe ─────────────────────────────────────────────
-  // Rotates currency glyphs + cycles the phosphor palette, same
-  // wall-clock-hold approach as the grid price strobe (frame-count or
-  // CSS keyframes alias on high-refresh / loaded displays). Colors snap
-  // every HOLD_MS; the glyph swaps slower so it stays readable.
-  var GLYPHS = ['¥', '$', '€', '£', '₩']; // ¥ $ € £ ₩
+  // Cycles the phosphor palette over the pixel cart icons (fill:
+  // currentColor, so an inline style.color snap recolors the sprite),
+  // same wall-clock-hold approach as the grid price strobe. The old
+  // rotating currency glyphs (¥ $ € £ ₩) are gone — the icon stays a
+  // cart, only the color flashes.
   var COLORS = ['#e8313a', '#00e5e5', '#f5d742', '#e040e0', '#33ff33', '#ffaa00'];
   var HOLD_MS = 55;
-  var TICKS_PER_GLYPH = 3; // ~165ms per glyph
   var strobeRaf = null;
   var reducedMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Taskbar badge icon + the ¥ on the start menu's cart row strobe in sync
+  // Taskbar badge cart + the start menu cart row's icon strobe in sync
   function strobeTargets() {
     var els = [];
-    var badge = document.querySelector('#jj-start-btn-cart-badge .jj-start-btn__cart-icon');
-    var menuSym = document.querySelector('.jj-start-menu__cart-symbol');
+    var badge = document.querySelector('#jj-start-btn-cart-badge .jj-start-btn__cart-svg');
+    var menuIcon = document.querySelector('.jj-start-menu__cart-icon');
     if (badge) els.push(badge);
-    if (menuSym) els.push(menuSym);
+    if (menuIcon) els.push(menuIcon);
     return els;
   }
 
@@ -42,8 +41,7 @@
         strobeRaf = null;
       }
       for (var i = 0; i < els.length; i++) {
-        els[i].textContent = '¥';
-        els[i].style.color = '';
+        els[i].style.color = ''; // back to CSS colors (badge gold / menu grey)
       }
       return;
     }
@@ -57,12 +55,8 @@
       last = now;
       idx++;
       var color = COLORS[idx % COLORS.length];
-      var glyph = idx % TICKS_PER_GLYPH === 0
-        ? GLYPHS[(idx / TICKS_PER_GLYPH) % GLYPHS.length]
-        : null;
       for (var i = 0; i < els.length; i++) {
         els[i].style.color = color;
-        if (glyph) els[i].textContent = glyph;
       }
     }
     strobeRaf = requestAnimationFrame(tick);

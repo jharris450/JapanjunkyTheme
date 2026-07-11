@@ -7,10 +7,13 @@
   &#9632; glyphs these replace.
 
   Icons: person (profile), box (orders), key (log in), eye (watchlist),
-  cart, torii (home), parachute (new arrivals), doc (about),
+  cart, hokora (home), parachute (new arrivals), doc (about),
   question (help), mail (contact), door (log out), power (shut down).
+
+  Optional `class` param appends extra classes (e.g. the strobe hooks the
+  cart JS targets on the taskbar badge / menu cart row).
 {%- endcomment -%}
-<svg class="jj-start-item-icon" viewBox="0 0 12 12" width="12" height="12" shape-rendering="crispEdges" aria-hidden="true">
+<svg class="jj-start-item-icon{% if class %} {{ class }}{% endif %}" viewBox="0 0 12 12" width="12" height="12" shape-rendering="crispEdges" aria-hidden="true">
   {%- case icon -%}
     {%- comment -%} shadow person: head + shoulders silhouette {%- endcomment -%}
     {%- when 'person' -%}
@@ -27,9 +30,10 @@
     {%- comment -%} shopping cart: handle, basket, two wheels {%- endcomment -%}
     {%- when 'cart' -%}
       <path fill="currentColor" d="M0 2h2v1h-2z M2 3h1v1h-1z M3 3h8v1h-8z M3 4h1v3h-1z M10 4h1v3h-1z M4 7h6v1h-6z M4 9h2v1h-2z M8 9h2v1h-2z"/>
-    {%- comment -%} torii gate: upturned lintel, tie beam, posts {%- endcomment -%}
-    {%- when 'torii' -%}
-      <path fill="currentColor" d="M0 1h1v1h-1z M11 1h1v1h-1z M0 2h12v1h-12z M1 4h10v1h-10z M2 3h1v8h-1z M9 3h1v8h-1z M5 3h2v1h-2z"/>
+    {%- comment -%} hokora shrine box (ref: user's shrinebox.jpg): winged
+        overhanging roof, boxy body with door, stepped stone base {%- endcomment -%}
+    {%- when 'hokora' -%}
+      <path fill="currentColor" d="M5 0h2v1h-2z M3 1h6v1h-6z M0 2h12v1h-12z M0 1h1v1h-1z M11 1h1v1h-1z M3 4h6v1h-6z M3 5h1v4h-1z M8 5h1v4h-1z M5 6h2v2h-2z M3 9h6v1h-6z M2 10h8v1h-8z M1 11h10v1h-10z"/>
     {%- comment -%} supply drop: parachute canopy, lines, crate {%- endcomment -%}
     {%- when 'parachute' -%}
       <path fill="currentColor" d="M3 0h6v1h-6z M2 1h8v1h-8z M1 2h10v1h-10z M2 3h1v1h-1z M3 4h1v2h-1z M9 3h1v1h-1z M8 4h1v2h-1z M4 6h4v4h-4z"/>
