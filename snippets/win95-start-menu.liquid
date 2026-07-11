@@ -19,25 +19,25 @@
     {%- endcomment -%}
     {%- if customer -%}
       <a href="/account" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9632;</span>
+        {% render 'win95-start-icon', icon: 'person' %}
         <span>Profile</span>
       </a>
       <a href="/account" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9632;</span>
+        {% render 'win95-start-icon', icon: 'box' %}
         <span>Orders</span>
       </a>
     {%- else -%}
       <a href="/account/login" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9632;</span>
+        {% render 'win95-start-icon', icon: 'key' %}
         <span>Log In</span>
       </a>
     {%- endif -%}
     <a href="/pages/watchlist" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'eye' %}
       <span>Watchlist</span>
     </a>
     <a href="/cart" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'cart' %}
       <span><span class="jj-start-menu__cart-symbol" aria-hidden="true">¥</span>Cart (<span id="jj-nav-cart-count">{{ cart.item_count }}</span>)</span>
     </a>
 
@@ -46,23 +46,23 @@
     {%- comment -%} Site Pages {%- endcomment -%}
     <div class="jj-start-menu__section-title">Navigate</div>
     <a href="/" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'torii' %}
       <span>Home</span>
     </a>
     <a href="/collections/all?sort=newest" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'parachute' %}
       <span>New Arrivals</span>
     </a>
     <a href="/pages/about" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'doc' %}
       <span>About</span>
     </a>
     <a href="/pages/faq" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'question' %}
       <span>Help</span>
     </a>
     <a href="/pages/contact" class="jj-start-menu__item" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'mail' %}
       <span>Contact</span>
     </a>
 
@@ -70,12 +70,12 @@
 
     {%- if customer -%}
       <a href="/account/logout" class="jj-start-menu__item" role="menuitem">
-        <span class="jj-start-item-icon">&#9632;</span>
+        {% render 'win95-start-icon', icon: 'door' %}
         <span>Log Out</span>
       </a>
     {%- endif -%}
     <button type="button" class="jj-start-menu__item" id="jj-shutdown-trigger" role="menuitem">
-      <span class="jj-start-item-icon">&#9632;</span>
+      {% render 'win95-start-icon', icon: 'power' %}
       <span>Shut Down...</span>
     </button>
   </div>

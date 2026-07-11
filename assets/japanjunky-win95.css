@@ -44,6 +44,46 @@
   position: relative;
 }
 
+/* --- Barrel hit-slop -------------------------------------------------
+   The SVG barrel filter (#jj-crt-barrel on #jj-crt-content) DRAWS the
+   taskbar corners up to ~9px up + inward of their layout boxes, but
+   hit-testing still uses layout positions — clicks aimed at the visible
+   start / speaker / clock buttons land high (or inward) and miss.
+   Invisible ::before extenders stretch each hit area toward where the
+   button is actually painted. Only while the barrel is active.
+   (jj-start-btn has overflow:hidden, so its extender lives on the wrapper;
+   japanjunky-win95-menu.js forwards wrapper-targeted clicks to the button.) */
+html.jj-crt-shader-active .jj-start-menu-wrapper::before {
+  content: '';
+  position: absolute;
+  /* bottom-LEFT corner: visual shifts up + right */
+  top: -12px;
+  bottom: 0;
+  left: 0;
+  right: -10px;
+}
+
+html.jj-crt-shader-active .jj-vol-btn::before {
+  content: '';
+  position: absolute;
+  /* bottom-RIGHT corner: visual shifts up + left */
+  top: -12px;
+  bottom: 0;
+  left: -9px;
+  right: 0;
+}
+
+html.jj-crt-shader-active .jj-clock-tray::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  bottom: 0;
+  /* only -6 left: don't cover the speaker button's layout box next door */
+  left: -6px;
+  /* reach the screen edge (taskbar's 8px right padding) */
+  right: -9px;
+}
+
 /* --- Start Button --- */
 .jj-start-btn {
   position: relative;
@@ -118,10 +158,18 @@
   z-index: 2;
 }
 
-/* CRT brightness flash on button hover */
+/* CRT brightness flash + swivel on button hover. Stepped keyframes (no
+   easing curves — CRT rule) rock the head back and forth around its resting
+   -6deg tilt; transform-origin 50% 75% pivots at the chin, not the horns. */
 .jj-start-btn:hover + .jj-start-btn__tsuno {
   filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)))
           brightness(1.35);
+  animation: jj-tsuno-swivel 0.9s steps(4, jump-none) infinite;
+}
+
+@keyframes jj-tsuno-swivel {
+  0%, 100% { transform: rotate(-14deg); }
+  50%      { transform: rotate(2deg); }
 }
 
 /* While the start menu is open: the taskbar (z 10010) paints above the
@@ -441,13 +489,20 @@ button.jj-start-menu__item {
   box-shadow: 0 0 8px rgba(232, 49, 58, 0.3);
 }
 
-/* --- Start menu icon --- */
+/* --- Start menu icon (pixel-art SVGs from win95-start-icon.liquid;
+       fill=currentColor rides these same color rules) --- */
 .jj-start-item-icon {
   font-size: 10px;
   color: #555;
   width: 14px;
   text-align: center;
   flex-shrink: 0;
+}
+svg.jj-start-item-icon {
+  width: 12px;
+  height: 12px;
+  margin: 0 1px; /* centers the 12px sprite in the old 14px glyph slot */
+  display: block;
 }
 .jj-start-menu__item:hover .jj-start-item-icon {
   color: #000;
@@ -1052,8 +1107,26 @@ button.jj-start-menu__item {
   width: 22px; height: 20px; margin: 0 2px; padding: 0;
   background: transparent; color: var(--jj-amber, #ffaa00);
   border: 0; cursor: pointer;
+  position: relative; /* anchors the barrel hit-slop ::before */
 }
-.jj-vol-btn__icon { position: relative; display: flex; line-height: 0; }
+/* Phosphor glow in amber, matching the Tsuno start-logo treatment. */
+.jj-vol-btn__icon {
+  position: relative; display: flex; line-height: 0;
+  filter: drop-shadow(0 0 3px currentColor);
+  transition: filter 60ms steps(1);
+}
+/* 55% scanline raster over the pixel speaker only (the mute × stays clean) —
+   same baked-in dither language as the Tsuno start-logo PNG. */
+.jj-vol-btn__icon svg {
+  -webkit-mask-image: repeating-linear-gradient(
+    to bottom, #000 0, #000 1px, rgba(0, 0, 0, 0.55) 1px, rgba(0, 0, 0, 0.55) 2px);
+  mask-image: repeating-linear-gradient(
+    to bottom, #000 0, #000 1px, rgba(0, 0, 0, 0.55) 1px, rgba(0, 0, 0, 0.55) 2px);
+}
+/* CRT brightness flash on hover, same as the start-button logo. */
+.jj-vol-btn:hover .jj-vol-btn__icon {
+  filter: drop-shadow(0 0 3px currentColor) brightness(1.35);
+}
 .jj-vol-btn__x {
   display: none; position: absolute; inset: 0; align-items: center; justify-content: center;
   font: 12px/1 monospace; color: var(--jj-primary, #e8313a);
@@ -1062,9 +1135,14 @@ button.jj-start-menu__item {
 .jj-vol-btn--muted .jj-vol-btn__x { display: flex; }
 
 .jj-vol-popup {
-  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  /* Fixed to the viewport (reparented to <body> in japanjunky-win95-volume.js,
+     same trick as .jj-clock-popover) so it can paint OVER the toolbox button
+     (z 10011) — as a taskbar child it was capped at the taskbar's 10010
+     context and the toolbox covered it. left is set from the speaker
+     button's rect at open time. */
+  position: fixed; bottom: 36px; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 8px 6px; z-index: 10001;
+  padding: 8px 6px; z-index: 10015;
   background: var(--jj-bg-panel, #0a0a0a); color: var(--jj-white, #e0e0e0);
   font: 11px/1.4 monospace;
   box-shadow:

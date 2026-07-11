@@ -1,10 +1,13 @@
 {%- comment -%} snippets/win95-volume.liquid — Win98 volume control for the taskbar tray. {%- endcomment -%}
 <div class="jj-vol-tray" id="jj-vol-tray">
   <button type="button" class="jj-vol-btn" id="jj-vol-btn" aria-label="Volume" aria-expanded="false" aria-controls="jj-vol-popup">
+    {%- comment -%} Pixel-art speaker (13px grid, crispEdges) — driver box,
+        stepped cone, two pixel wave arcs. Scanline dither + phosphor glow
+        live in CSS (.jj-vol-btn__icon / svg). {%- endcomment -%}
     <span class="jj-vol-btn__icon" aria-hidden="true">
-      <svg viewBox="0 0 16 16" width="13" height="13">
-        <path fill="currentColor" d="M1 6 h3 l4 -3 v10 l-4 -3 H1 z"></path>
-        <path class="jj-vol-wave" fill="none" stroke="currentColor" stroke-width="1.3" d="M10 5 a4 4 0 0 1 0 6"></path>
+      <svg viewBox="0 0 13 13" width="13" height="13" shape-rendering="crispEdges">
+        <path fill="currentColor" d="M1 4h2v5h-2z M3 3h1v7h-1z M4 2h1v9h-1z"></path>
+        <path class="jj-vol-wave" fill="currentColor" d="M6 4h1v1h-1z M7 5h1v3h-1z M6 8h1v1h-1z M8 2h1v1h-1z M9 3h1v1h-1z M10 4h1v5h-1z M9 9h1v1h-1z M8 10h1v1h-1z"></path>
       </svg>
       <span class="jj-vol-btn__x" aria-hidden="true">×</span>
     </span>

@@ -212,9 +212,12 @@
   background: rgba(245, 215, 66, 0.28);
   text-shadow: 0 0 4px rgba(245, 215, 66, 0.4);
   box-shadow: 0 0 6px rgba(245, 215, 66, 0.2);
+  /* dimmed at rest (user call) — full brightness returns on hover */
+  opacity: 0.7;
 }
 
 .jj-product-info__actions #jj-pi-add-to-cart:hover:not(:disabled) {
+  opacity: 1;
   background: var(--jj-secondary, #f5d742);
   border-color: var(--jj-secondary, #f5d742); /* keep gold — the generic .jj-action-btn:hover reds it */
   color: #000;

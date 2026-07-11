@@ -17,9 +17,17 @@
   }
   V.subscribe(function () { syncUI(); }); // also fires once immediately
 
+  // Reparent the popup to <body> (like the clock popover) so it escapes the
+  // taskbar's z-index:10010 stacking context and paints over the toolbox
+  // button (10011). CSS positions it fixed; left is anchored to the speaker
+  // button here at open time.
+  document.body.appendChild(popup);
+
   function open() {
     // Only one taskbar panel up at a time — close start menu / calendar / toolbox.
     document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'volume' } }));
+    var r = btn.getBoundingClientRect();
+    popup.style.left = (r.left + r.width / 2) + 'px';
     popup.hidden = false; tray.classList.add('jj-vol-tray--open'); btn.setAttribute('aria-expanded', 'true');
   }
   function close() { popup.hidden = true; tray.classList.remove('jj-vol-tray--open'); btn.setAttribute('aria-expanded', 'false'); }

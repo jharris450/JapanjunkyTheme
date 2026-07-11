@@ -37,6 +37,22 @@
       if (isOpen) document.dispatchEvent(new CustomEvent('jj-panel-open', { detail: { id: 'start' } }));
     });
 
+    // Barrel hit-slop: while the CRT shader is on, the wrapper carries an
+    // extended invisible hit area (::before, japanjunky-win95.css) covering
+    // where the barrel filter actually DRAWS the button. Those clicks target
+    // the wrapper (the button's overflow:hidden would clip its own pseudo) —
+    // forward them to the button. stopPropagation keeps the original event
+    // from reaching the document-level outside-click closer below.
+    var startWrap = startBtn.closest('.jj-start-menu-wrapper');
+    if (startWrap) {
+      startWrap.addEventListener('click', function (e) {
+        if (e.target === startWrap) {
+          e.stopPropagation();
+          startBtn.click();
+        }
+      });
+    }
+
     // Another taskbar panel opened — yield to it.
     document.addEventListener('jj-panel-open', function (e) {
       if (e.detail && e.detail.id !== 'start' && startMenu.classList.contains('jj-start-menu--open')) {

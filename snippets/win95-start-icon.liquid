@@ -1,0 +1,55 @@
+{%- comment -%}
+  snippets/win95-start-icon.liquid — pixel-art start-menu icons.
+  Usage: {% render 'win95-start-icon', icon: 'person' %}
+  12x12 grid, single fill=currentColor path of unioned pixel rects
+  (crispEdges keeps them razor-sharp at 1:1). Color/hover comes from the
+  .jj-start-item-icon rules in japanjunky-win95.css, same as the old
+  &#9632; glyphs these replace.
+
+  Icons: person (profile), box (orders), key (log in), eye (watchlist),
+  cart, torii (home), parachute (new arrivals), doc (about),
+  question (help), mail (contact), door (log out), power (shut down).
+{%- endcomment -%}
+<svg class="jj-start-item-icon" viewBox="0 0 12 12" width="12" height="12" shape-rendering="crispEdges" aria-hidden="true">
+  {%- case icon -%}
+    {%- comment -%} shadow person: head + shoulders silhouette {%- endcomment -%}
+    {%- when 'person' -%}
+      <path fill="currentColor" d="M4 1h4v4h-4z M5 5h2v1h-2z M3 6h6v1h-6z M2 7h8v4h-8z"/>
+    {%- comment -%} shipping box: overhanging lid + tape stub over the seam {%- endcomment -%}
+    {%- when 'box' -%}
+      <path fill="currentColor" d="M0 2h12v2h-12z M1 5h10v1h-10z M1 10h10v1h-10z M1 6h1v4h-1z M10 6h1v4h-1z M5 5h2v3h-2z"/>
+    {%- comment -%} key: hollow bow, shaft, two teeth {%- endcomment -%}
+    {%- when 'key' -%}
+      <path fill="currentColor" d="M1 4h4v1h-4z M1 7h4v1h-4z M1 5h1v2h-1z M4 5h1v2h-1z M5 5h6v1h-6z M8 6h1v2h-1z M10 6h1v2h-1z"/>
+    {%- comment -%} all-seeing eye: radiant ticks + almond eye + pupil {%- endcomment -%}
+    {%- when 'eye' -%}
+      <path fill="currentColor" d="M5 0h2v2h-2z M1 1h2v1h-2z M9 1h2v1h-2z M3 4h6v1h-6z M2 5h1v1h-1z M9 5h1v1h-1z M1 6h1v2h-1z M10 6h1v2h-1z M5 6h2v2h-2z M2 8h1v1h-1z M9 8h1v1h-1z M3 9h6v1h-6z"/>
+    {%- comment -%} shopping cart: handle, basket, two wheels {%- endcomment -%}
+    {%- when 'cart' -%}
+      <path fill="currentColor" d="M0 2h2v1h-2z M2 3h1v1h-1z M3 3h8v1h-8z M3 4h1v3h-1z M10 4h1v3h-1z M4 7h6v1h-6z M4 9h2v1h-2z M8 9h2v1h-2z"/>
+    {%- comment -%} torii gate: upturned lintel, tie beam, posts {%- endcomment -%}
+    {%- when 'torii' -%}
+      <path fill="currentColor" d="M0 1h1v1h-1z M11 1h1v1h-1z M0 2h12v1h-12z M1 4h10v1h-10z M2 3h1v8h-1z M9 3h1v8h-1z M5 3h2v1h-2z"/>
+    {%- comment -%} supply drop: parachute canopy, lines, crate {%- endcomment -%}
+    {%- when 'parachute' -%}
+      <path fill="currentColor" d="M3 0h6v1h-6z M2 1h8v1h-8z M1 2h10v1h-10z M2 3h1v1h-1z M3 4h1v2h-1z M9 3h1v1h-1z M8 4h1v2h-1z M4 6h4v4h-4z"/>
+    {%- comment -%} document page with text lines {%- endcomment -%}
+    {%- when 'doc' -%}
+      <path fill="currentColor" d="M2 1h8v1h-8z M2 10h8v1h-8z M2 2h1v8h-1z M9 2h1v8h-1z M4 3h4v1h-4z M4 5h4v1h-4z M4 7h2v1h-2z"/>
+    {%- comment -%} question mark {%- endcomment -%}
+    {%- when 'question' -%}
+      <path fill="currentColor" d="M3 1h6v1h-6z M2 2h2v2h-2z M8 2h2v2h-2z M7 4h2v1h-2z M5 5h2v2h-2z M5 9h2v2h-2z"/>
+    {%- comment -%} envelope with flap V {%- endcomment -%}
+    {%- when 'mail' -%}
+      <path fill="currentColor" d="M1 2h10v1h-10z M1 9h10v1h-10z M1 3h1v6h-1z M10 3h1v6h-1z M2 3h1v1h-1z M3 4h1v1h-1z M4 5h1v1h-1z M5 6h2v1h-2z M7 5h1v1h-1z M8 4h1v1h-1z M9 3h1v1h-1z"/>
+    {%- comment -%} doorway + exit arrow {%- endcomment -%}
+    {%- when 'door' -%}
+      <path fill="currentColor" d="M1 1h6v1h-6z M1 10h6v1h-6z M1 2h1v8h-1z M6 2h1v8h-1z M5 5h1v2h-1z M7 5h3v1h-3z M9 4h1v1h-1z M10 5h1v1h-1z M9 6h1v1h-1z"/>
+    {%- comment -%} power symbol: bar through broken ring {%- endcomment -%}
+    {%- when 'power' -%}
+      <path fill="currentColor" d="M5 1h2v5h-2z M3 4h1v1h-1z M8 4h1v1h-1z M2 5h1v1h-1z M9 5h1v1h-1z M1 6h1v3h-1z M10 6h1v3h-1z M2 9h1v1h-1z M9 9h1v1h-1z M3 10h1v1h-1z M8 10h1v1h-1z M4 11h4v1h-4z"/>
+    {%- comment -%} fallback: the old filled square {%- endcomment -%}
+    {%- else -%}
+      <path fill="currentColor" d="M2 2h8v8h-8z"/>
+  {%- endcase -%}
+</svg>
