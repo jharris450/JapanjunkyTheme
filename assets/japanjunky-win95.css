@@ -199,11 +199,12 @@ html.jj-crt-shader-active .jj-clock-tray::before {
        would paint above the taskbar → CRT gap regression). --- */
 .jj-start-btn__cart-badge {
   position: absolute;
-  /* -2 = exactly the taskbar's top edge (28px button sits 2px in) */
-  top: -2px;
+  /* Centered ON the button's top-right corner vertex (16px badge → half
+     hangs above/right of the border, like a notification badge). */
+  top: -8px;
   right: -8px;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   display: none;
   align-items: center;
   justify-content: center;
@@ -224,11 +225,13 @@ html.jj-crt-shader-active .jj-clock-tray::before {
 }
 
 /* Pixel cart svg in the badge: inherit the gold (and the JS strobe color
-   set inline on the svg itself) instead of the menu icons' #555, and drop
-   the menu-slot centering margin — the badge box is exactly 12px. */
+   set inline on the svg itself) instead of the menu icons' #555, drop the
+   menu-slot centering margin, and upscale to fill the 16px badge box. */
 .jj-start-btn__cart-icon .jj-start-item-icon {
   color: inherit;
   margin: 0;
+  width: 16px;
+  height: 16px;
 }
 
 /* 80s pop: radial neon burst behind the cart icon. Sized so even the
@@ -1155,6 +1158,47 @@ svg.jj-start-item-icon {
     0 2px 6px rgba(0, 0, 0, 0.6);
 }
 .jj-vol-popup[hidden] { display: none; }
+
+/* --- Popup CRT dress (volume popup + calendar popover) -----------------
+   The site-wide effect language applied to the taskbar popups: CRT
+   power-on flash when they open (display toggle restarts the animation),
+   a faint 2px checkerboard dither baked over the panel, and translucent
+   scanlines riding on top. Both overlays are pointer-events:none so the
+   calendar days / slider stay clickable. */
+.jj-vol-popup,
+.jj-calendar-popover--open {
+  animation: jj-crt-on 0.3s ease-out;
+}
+
+.jj-vol-popup::before,
+.jj-calendar-popover::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  /* Bayer-flavored phosphor grain: 1px cream checker at whisper alpha */
+  background: repeating-conic-gradient(
+    rgba(224, 213, 192, 0.045) 0% 25%, transparent 0% 50%) 0 0 / 2px 2px;
+}
+
+.jj-vol-popup::after,
+.jj-calendar-popover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  /* CRT raster: dark line every other px, same cadence as the speaker mask */
+  background: repeating-linear-gradient(
+    to bottom, transparent 0, transparent 1px,
+    rgba(0, 0, 0, 0.22) 1px, rgba(0, 0, 0, 0.22) 2px);
+}
+
+/* Phosphor glow on the popup titles, matching the taskbar tab treatment */
+.jj-vol-popup__title,
+.jj-cal-nav__label {
+  text-shadow: 0 0 4px rgba(212, 201, 168, 0.4), 0 0 8px rgba(212, 201, 168, 0.15);
+}
 
 /* Win98 mixer anatomy (sound.png ref) — title, loudness wedge + slider row */
 .jj-vol-popup__title { font-size: 12px; }
