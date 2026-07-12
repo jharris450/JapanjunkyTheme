@@ -237,6 +237,10 @@
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   font-size: 12px;
   line-height: 1;
+  /* flex-center the glyph — Fixedsys baseline pushes □/× to the top */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 20px;
   height: 18px;
   color: var(--jj-text, #e0d5c0);
@@ -246,6 +250,11 @@
   padding: 0;
   box-shadow: var(--jj-tactile);
   transition: transform 60ms steps(1), box-shadow 60ms steps(1);
+}
+/* minimize keeps its bar at the bottom, Win98-style */
+.jj-explorer__ctl--min {
+  align-items: flex-end;
+  padding-bottom: 4px;
 }
 .jj-explorer__ctl:hover {
   color: var(--jj-secondary, #f5d742);
@@ -260,38 +269,31 @@
   box-shadow: var(--jj-tactile-pressed);
 }
 
-/* --- Menu/tool bars + throbber row --- */
-/* Left column stacks the menubar over the toolbar; the throbber box spans
-   both rows on the right, like the Windows-flag block in filebrowser.png. */
-.jj-explorer__bars {
-  display: flex;
-  align-items: stretch;
-  border-bottom: 1px solid #222;
-}
-.jj-explorer__bars-left {
-  flex: 1;
-  min-width: 0;
-}
-
-/* IE-throbber slot, rebuilt with the Tsuno start-logo ink mask in the
+/* IE-throbber slot at the menubar's right end (the Windows-flag box in
+   filebrowser.png), rebuilt with the Tsuno start-logo ink mask in the
    day's mood tint (--jj-tsuno-mood from win95-menu.js). The PNG is
-   authored at 34x37 with the dither baked in — mask-size stays 1:1;
-   the box crops, never rescales. */
+   authored at 34x37 with the dither baked in — mask-size stays 1:1; the
+   short menubar row CROPS the horns from the top (start-button trick),
+   it never overflows into the toolbar. Negative vertical margins bleed
+   the box to the row's edges past the menubar padding. */
 .jj-explorer__throbber {
-  width: 42px;
+  width: 38px;
+  align-self: stretch;
+  margin: -2px 0 -2px auto;
   flex-shrink: 0;
-  position: relative;
+  position: relative; /* sprite is absolute so its 37px can't grow the row */
   overflow: hidden;
   background: var(--jj-black, #000);
   border-left: 1px solid #222;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   box-shadow:
     inset 1px 1px 0 rgba(0, 0, 0, 0.85),
     inset -1px -1px 0 rgba(224, 213, 192, 0.12);
 }
 .jj-explorer__throbber-tsuno {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  margin-left: -17px;
   width: 34px;
   height: 37px;
   background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
@@ -328,7 +330,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 6px; /* bottom border lives on .jj-explorer__bars */
+  padding: 3px 6px;
+  border-bottom: 1px solid #222;
 }
 .jj-explorer__tool {
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
@@ -572,9 +575,8 @@
 .jj-explorer__status-cell--computer {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 5px;
-  text-align: left;
   color: var(--jj-text, #e0d5c0);
 }
 .jj-explorer__status-cell--computer .jj-start-item-icon {

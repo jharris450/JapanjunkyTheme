@@ -47,7 +47,14 @@
       // card canvas + text divs) — the bare "*" arrow rule won on them
       'a, a *, button, button *, [role="button"], label, summary, select, .jj-start-btn, .jj-taskbar-tab, .jj-start-menu__item, .jj-start-submenu__item { cursor: ' + cursorVal('hand', v) + ' !important; }',
       'input, textarea, [contenteditable="true"] { cursor: ' + cursorVal('text', v) + ' !important; }',
-      '.jj-loading, [aria-busy="true"] { cursor: ' + cursorVal('wait', v) + ' !important; }'
+      '.jj-loading, [aria-busy="true"] { cursor: ' + cursorVal('wait', v) + ' !important; }',
+      // window resize handles (explorer window): native Win-style resize
+      // arrows, like the OS swapping the pointer at a window edge — the
+      // bare "*" arrow rule would otherwise swallow them
+      '[data-rs="n"], [data-rs="s"] { cursor: ns-resize !important; }',
+      '[data-rs="e"], [data-rs="w"] { cursor: ew-resize !important; }',
+      '[data-rs="ne"], [data-rs="sw"] { cursor: nesw-resize !important; }',
+      '[data-rs="nw"], [data-rs="se"] { cursor: nwse-resize !important; }'
     ].join('\n');
   }
 

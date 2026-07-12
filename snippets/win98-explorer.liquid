@@ -24,37 +24,35 @@
     <span class="jj-explorer__titleicon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
     <h1 class="jj-explorer__title">{{ title }}</h1>
     <span class="jj-explorer__ctls">
-      <button type="button" class="jj-explorer__ctl" id="jj-explorer-min" aria-label="Minimize">_</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--min" id="jj-explorer-min" aria-label="Minimize">_</button>
       <button type="button" class="jj-explorer__ctl" id="jj-explorer-max" aria-label="Maximize">&#9633;</button>
       <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="jj-explorer-close" aria-label="Close">&times;</button>
     </span>
   </header>
 
-  <div class="jj-explorer__bars">
-    <div class="jj-explorer__bars-left">
-      <nav class="jj-explorer__menubar" aria-hidden="true">
-        <span class="jj-explorer__menu">File</span>
-        <span class="jj-explorer__menu">Edit</span>
-        <span class="jj-explorer__menu">View</span>
-        <span class="jj-explorer__menu">Favorites</span>
-        <span class="jj-explorer__menu">Tools</span>
-        <span class="jj-explorer__menu">Help</span>
-      </nav>
-
-      <div class="jj-explorer__toolbar">
-        <button type="button" class="jj-explorer__tool" id="jj-explorer-back">&larr; Back</button>
-        <button type="button" class="jj-explorer__tool" id="jj-explorer-fwd">&rarr;</button>
-        <span class="jj-explorer__toolsep" aria-hidden="true"></span>
-        <a class="jj-explorer__tool" href="/search">&#8981; Search</a>
-        <button type="button" class="jj-explorer__tool" id="jj-explorer-folders">&#9638; Folders</button>
-        <a class="jj-explorer__tool" href="/collections/all">&#9639; Catalog</a>
-      </div>
-    </div>
+  <nav class="jj-explorer__menubar" aria-hidden="true">
+    <span class="jj-explorer__menu">File</span>
+    <span class="jj-explorer__menu">Edit</span>
+    <span class="jj-explorer__menu">View</span>
+    <span class="jj-explorer__menu">Favorites</span>
+    <span class="jj-explorer__menu">Tools</span>
+    <span class="jj-explorer__menu">Help</span>
     {%- comment -%} IE-throbber slot from filebrowser.png (the Windows-flag
-        box), rebuilt with the Tsuno start-logo mask in the day's mood tint. {%- endcomment -%}
+        box at the menubar's right end), rebuilt with the Tsuno start-logo
+        mask in the day's mood tint. Stays inside this row: the box crops
+        the sprite from the top, same trick as the start button. {%- endcomment -%}
     <span class="jj-explorer__throbber" aria-hidden="true" style="--jj-tsuno-logo: url('{{ 'tsuno-start-logo.png' | asset_url }}')">
       <span class="jj-explorer__throbber-tsuno"></span>
     </span>
+  </nav>
+
+  <div class="jj-explorer__toolbar">
+    <button type="button" class="jj-explorer__tool" id="jj-explorer-back">&larr; Back</button>
+    <button type="button" class="jj-explorer__tool" id="jj-explorer-fwd">&rarr;</button>
+    <span class="jj-explorer__toolsep" aria-hidden="true"></span>
+    <a class="jj-explorer__tool" href="/search">&#8981; Search</a>
+    <button type="button" class="jj-explorer__tool" id="jj-explorer-folders">&#9638; Folders</button>
+    <a class="jj-explorer__tool" href="/collections/all">&#9639; Catalog</a>
   </div>
 
   <div class="jj-explorer__address">
