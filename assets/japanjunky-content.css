@@ -149,9 +149,13 @@
 .jj-explorer {
   display: flex;
   flex-direction: column;
-  width: min(860px, calc(100vw - 32px));
-  height: calc(100vh - 110px);
-  margin: 20px auto 0;
+  /* Percentages against the fixed .jj-page layer, NOT vw/vh: viewport
+     units ignore html{zoom:2.5} and would size the window 2.5x past the
+     screen (controls/status bar off-screen). */
+  width: 100%;
+  max-width: 860px;
+  height: calc(100% - 20px);
+  margin: 16px auto 0;
   background: var(--jj-bg-panel, #0a0a0a);
   border: 1px solid #444;
   box-shadow:
@@ -386,10 +390,9 @@
 }
 .jj-explorer__status-cell--wide { flex: 1; text-align: right; }
 
-/* Narrow screens: drop the web panel, window sits closer to the edges */
+/* Narrow screens: drop the web panel */
 @media (max-width: 680px) {
   .jj-explorer__panel { display: none; }
-  .jj-explorer { width: calc(100vw - 16px); }
 }
 
 /* --- FAQ accordion --- */
