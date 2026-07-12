@@ -1,17 +1,19 @@
 {%- comment -%}
-  Generic content page: terminal header + rich-text body.
-  Assigned by templates/page.json — the default for /pages/* (about,
-  shipping info, etc.). Rides the .jj-page scroll-layer; prose via
-  japanjunky-content.css.
+  Generic content page: Win98 explorer window (win98-explorer snippet) with
+  the rich-text body in the main pane. Assigned by templates/page.json —
+  the default for /pages/* (about, shipping info, etc.). Rides the .jj-page
+  scroll-layer; prose via japanjunky-content.css.
 {%- endcomment -%}
-<div class="jj-page jj-content">
-  <header class="jj-content__header">
-    <h1 class="jj-content__title">{{ page.title }}</h1>
-    {% render 'jj-winctl' %}
-  </header>
+{%- capture win_body -%}
   {%- if page.content != blank -%}
     <div class="jj-prose">{{ page.content }}</div>
   {%- endif -%}
+{%- endcapture -%}
+{%- assign win_desc = page.content | strip_html | truncatewords: 18 -%}
+{%- assign win_path = page.handle | upcase | prepend: 'PAGES\' -%}
+
+<div class="jj-page">
+  {% render 'win98-explorer', title: page.title, body: win_body, desc: win_desc, path: win_path, icon: 'doc' %}
 </div>
 
 {% schema %}

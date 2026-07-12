@@ -141,6 +141,257 @@
 /* Our .jj-content__header already shows the title — hide Shopify's duplicate. */
 .jj-content .shopify-policy__title { display: none; }
 
+/* ============================================
+   WIN98 EXPLORER WINDOW (content pages)
+   Chrome per user's filebrowser.png, CRT palette.
+   Behavior: japanjunky-explorer.js
+   ============================================ */
+.jj-explorer {
+  display: flex;
+  flex-direction: column;
+  width: min(860px, calc(100vw - 32px));
+  height: calc(100vh - 110px);
+  margin: 20px auto 0;
+  background: var(--jj-bg-panel, #0a0a0a);
+  border: 1px solid #444;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    0 4px 14px rgba(0, 0, 0, 0.7);
+  animation: jj-crt-on 0.4s ease-out;
+  will-change: transform; /* JS drag owns transform */
+}
+.jj-explorer--on  { animation: jj-crt-on 0.4s ease-out; }
+.jj-explorer--off { animation: jj-crt-off 0.3s ease-in forwards; }
+
+/* Maximize: fill the screen above the taskbar */
+.jj-explorer--max {
+  position: fixed;
+  inset: 8px 8px 40px;
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+/* --- Titlebar (drag handle) --- */
+.jj-explorer__titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 8px;
+  border-bottom: 1px solid #333;
+  background: linear-gradient(90deg, rgba(232, 49, 58, 0.30), rgba(232, 49, 58, 0.03));
+  cursor: default;
+  user-select: none;
+  touch-action: none; /* pointer drag */
+}
+.jj-explorer__titleicon { display: flex; color: var(--jj-secondary, #f5d742); }
+/* beat the menu icons' #555 default (svg carries .jj-start-item-icon) */
+.jj-explorer__titleicon .jj-start-item-icon {
+  color: inherit;
+  margin: 0;
+}
+.jj-explorer__title {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  color: var(--jj-text, #e0d5c0);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jj-explorer__ctls { display: flex; gap: 2px; }
+.jj-explorer__ctl {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  line-height: 1;
+  width: 20px;
+  height: 18px;
+  color: var(--jj-text, #e0d5c0);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #333;
+  cursor: default;
+  padding: 0;
+  box-shadow: var(--jj-tactile);
+  transition: transform 60ms steps(1), box-shadow 60ms steps(1);
+}
+.jj-explorer__ctl:hover {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+}
+.jj-explorer__ctl--close:hover {
+  color: var(--jj-primary, #e8313a);
+  border-color: var(--jj-primary, #e8313a);
+}
+.jj-explorer__ctl:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--jj-tactile-pressed);
+}
+
+/* --- Menu bar (decorative) --- */
+.jj-explorer__menubar {
+  display: flex;
+  gap: 2px;
+  padding: 2px 6px;
+  border-bottom: 1px solid #222;
+  font-size: 12px;
+  color: #888;
+  user-select: none;
+}
+.jj-explorer__menu { padding: 1px 7px; }
+.jj-explorer__menu:hover { background: var(--jj-primary, #e8313a); color: #000; }
+
+/* --- Toolbar --- */
+.jj-explorer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-bottom: 1px solid #222;
+}
+.jj-explorer__tool {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: var(--jj-text, #e0d5c0);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  cursor: default;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.jj-explorer__tool:hover {
+  border-color: #444;
+  box-shadow: var(--jj-tactile);
+  text-decoration: none;
+  color: var(--jj-secondary, #f5d742);
+}
+.jj-explorer__tool:active {
+  box-shadow: var(--jj-tactile-pressed);
+}
+.jj-explorer__toolsep {
+  width: 1px;
+  height: 16px;
+  background: #333;
+  box-shadow: 1px 0 0 rgba(224, 213, 192, 0.12);
+  margin: 0 4px;
+}
+
+/* --- Address bar --- */
+.jj-explorer__address {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-bottom: 1px solid #333;
+  font-size: 12px;
+}
+.jj-explorer__address-label { color: #888; }
+.jj-explorer__address-field {
+  flex: 1;
+  padding: 2px 6px;
+  color: var(--jj-accent, #33ff33);
+  background: var(--jj-black, #000);
+  border: 1px solid #333;
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.22);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Body: web-panel sidebar + main pane --- */
+.jj-explorer__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.jj-explorer__panel {
+  width: 190px;
+  flex-shrink: 0;
+  padding: 16px 12px;
+  border-right: 1px solid #222;
+  overflow-y: auto;
+}
+.jj-explorer__panel-icon { display: block; color: var(--jj-secondary, #f5d742); }
+.jj-explorer__panel-icon .jj-start-item-icon {
+  width: 48px;
+  height: 48px;
+  color: inherit;
+  margin: 0;
+}
+.jj-explorer__panel-title {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--jj-text, #e0d5c0);
+}
+.jj-explorer__panel-rule {
+  height: 2px;
+  margin: 8px 0 12px;
+  background: linear-gradient(90deg, var(--jj-primary, #e8313a), rgba(232, 49, 58, 0));
+}
+.jj-explorer__panel-desc {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--jj-text, #e0d5c0);
+  border: 1px solid #333;
+  background: rgba(245, 215, 66, 0.07);
+  padding: 6px 8px;
+  margin-bottom: 14px;
+}
+.jj-explorer__panel-also { font-size: 11px; }
+.jj-explorer__panel-also-label {
+  display: block;
+  color: #888;
+  margin-bottom: 6px;
+}
+.jj-explorer__panel-also a {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--jj-primary, #e8313a);
+  text-decoration: underline;
+}
+.jj-explorer__panel-also a:hover {
+  color: var(--jj-secondary, #f5d742);
+  text-shadow: 0 0 4px rgba(245, 215, 66, 0.3);
+}
+.jj-explorer__main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* --- Status bar --- */
+.jj-explorer__status {
+  display: flex;
+  gap: 3px;
+  padding: 3px 4px;
+  border-top: 1px solid #333;
+  font-size: 11px;
+  color: #888;
+  user-select: none;
+}
+.jj-explorer__status-cell {
+  padding: 1px 8px;
+  border: 1px solid #222;
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.12);
+  white-space: nowrap;
+}
+.jj-explorer__status-cell--wide { flex: 1; text-align: right; }
+
+/* Narrow screens: drop the web panel, window sits closer to the edges */
+@media (max-width: 680px) {
+  .jj-explorer__panel { display: none; }
+  .jj-explorer { width: calc(100vw - 16px); }
+}
+
 /* --- FAQ accordion --- */
 .jj-faq__intro { margin-bottom: 16px; }
 .jj-faq__list {

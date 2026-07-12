@@ -4,12 +4,7 @@
   <details>/<summary> — works without JS. Assigned by
   templates/page.faq.json.
 {%- endcomment -%}
-<div class="jj-page jj-content jj-faq">
-  <header class="jj-content__header">
-    <h1 class="jj-content__title">{{ page.title | default: 'FAQ' }}</h1>
-    {% render 'jj-winctl' %}
-  </header>
-
+{%- capture win_body -%}
   {%- if page.content != blank -%}
     <div class="jj-prose jj-faq__intro">{{ page.content }}</div>
   {%- endif -%}
@@ -26,6 +21,14 @@
   {%- else -%}
     <p class="jj-faq__empty">&gt; no entries.</p>
   {%- endif -%}
+{%- endcapture -%}
+
+{%- assign win_title = page.title | default: 'FAQ' -%}
+{%- assign win_desc = 'Answers to common questions about orders, shipping, grading and formats.' -%}
+{%- assign win_objects = section.blocks.size | at_least: 1 -%}
+
+<div class="jj-page jj-faq">
+  {% render 'win98-explorer', title: win_title, body: win_body, desc: win_desc, path: 'PAGES\FAQ', icon: 'question', objects: win_objects %}
 </div>
 
 {% schema %}

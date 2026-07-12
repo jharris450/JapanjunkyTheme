@@ -1,0 +1,79 @@
+{%- comment -%}
+  Win98 explorer-style window chrome for content pages (user's
+  filebrowser.png reference, adapted to the CRT palette — chrome is Win98,
+  content stays terminal).
+
+  Params:
+    title   — window/page title (required)
+    body    — pre-captured HTML for the main pane (required)
+    desc    — short sidebar description (optional; derived text)
+    path    — address-bar segment after C:\JAPANJUNKY\ (e.g. 'PAGES\ABOUT')
+    icon    — win95-start-icon name for titlebar + sidebar (default 'doc')
+    objects — status-bar object count (default 1)
+
+  Behavior (drag / minimize to taskbar tab / maximize / close) lives in
+  assets/japanjunky-explorer.js. Styles: japanjunky-content.css.
+{%- endcomment -%}
+
+{%- assign win_icon = icon | default: 'doc' -%}
+{%- assign win_objects = objects | default: 1 -%}
+
+<div class="jj-explorer" id="jj-explorer" data-title="{{ title | escape }}">
+  <header class="jj-explorer__titlebar" id="jj-explorer-titlebar">
+    <span class="jj-explorer__titleicon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
+    <h1 class="jj-explorer__title">{{ title }}</h1>
+    <span class="jj-explorer__ctls">
+      <button type="button" class="jj-explorer__ctl" id="jj-explorer-min" aria-label="Minimize">_</button>
+      <button type="button" class="jj-explorer__ctl" id="jj-explorer-max" aria-label="Maximize">&#9633;</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="jj-explorer-close" aria-label="Close">&times;</button>
+    </span>
+  </header>
+
+  <nav class="jj-explorer__menubar" aria-hidden="true">
+    <span class="jj-explorer__menu">File</span>
+    <span class="jj-explorer__menu">Edit</span>
+    <span class="jj-explorer__menu">View</span>
+    <span class="jj-explorer__menu">Favorites</span>
+    <span class="jj-explorer__menu">Tools</span>
+    <span class="jj-explorer__menu">Help</span>
+  </nav>
+
+  <div class="jj-explorer__toolbar">
+    <button type="button" class="jj-explorer__tool" id="jj-explorer-back">&larr; Back</button>
+    <button type="button" class="jj-explorer__tool" id="jj-explorer-fwd">&rarr;</button>
+    <span class="jj-explorer__toolsep" aria-hidden="true"></span>
+    <a class="jj-explorer__tool" href="/search">&#8981; Search</a>
+    <a class="jj-explorer__tool" href="/collections/all">&#9638; Catalog</a>
+  </div>
+
+  <div class="jj-explorer__address">
+    <span class="jj-explorer__address-label">Address</span>
+    <span class="jj-explorer__address-field">C:\JAPANJUNKY{% if path %}\{{ path }}{% endif %}</span>
+    <button type="button" class="jj-explorer__tool jj-explorer__go" id="jj-explorer-go">&#10140; Go</button>
+  </div>
+
+  <div class="jj-explorer__body">
+    <aside class="jj-explorer__panel">
+      <span class="jj-explorer__panel-icon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
+      <div class="jj-explorer__panel-title">{{ title }}</div>
+      <div class="jj-explorer__panel-rule" aria-hidden="true"></div>
+      {%- if desc != blank -%}
+        <div class="jj-explorer__panel-desc">{{ desc }}</div>
+      {%- endif -%}
+      <div class="jj-explorer__panel-also">
+        <span class="jj-explorer__panel-also-label">See also:</span>
+        <a href="/">Home</a>
+        <a href="/collections/all">Catalog</a>
+        <a href="/pages/contact">Contact</a>
+        <a href="/pages/faq">Help</a>
+      </div>
+    </aside>
+    <div class="jj-explorer__main">{{ body }}</div>
+  </div>
+
+  <footer class="jj-explorer__status" aria-hidden="true">
+    <span class="jj-explorer__status-cell">{{ win_objects }} object(s)</span>
+    <span class="jj-explorer__status-cell">{{ body | size | divided_by: 1024 | at_least: 1 }} KB</span>
+    <span class="jj-explorer__status-cell jj-explorer__status-cell--wide">JAPANJUNKY_98</span>
+  </footer>
+</div>

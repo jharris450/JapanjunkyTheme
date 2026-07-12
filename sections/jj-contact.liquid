@@ -4,12 +4,7 @@
   Native POST (works without JS); emails the store. Assigned by
   templates/page.contact.json.
 {%- endcomment -%}
-<div class="jj-page jj-content jj-contact">
-  <header class="jj-content__header">
-    <h1 class="jj-content__title">{{ page.title | default: 'Contact' }}</h1>
-    {% render 'jj-winctl' %}
-  </header>
-
+{%- capture win_body -%}
   {%- if page.content != blank -%}
     <div class="jj-prose jj-contact__intro">{{ page.content }}</div>
   {%- endif -%}
@@ -56,6 +51,13 @@
       <button class="jj-action-btn jj-contact__send" type="submit">[ SEND ]</button>
     {%- endif -%}
   {%- endform -%}
+{%- endcapture -%}
+
+{%- assign win_title = page.title | default: 'Contact' -%}
+{%- assign win_desc = 'Transmits a message to the JAPANJUNKY operators. Include an order number for faster service.' -%}
+
+<div class="jj-page jj-contact">
+  {% render 'win98-explorer', title: win_title, body: win_body, desc: win_desc, path: 'PAGES\CONTACT', icon: 'mail' %}
 </div>
 
 {% schema %}
