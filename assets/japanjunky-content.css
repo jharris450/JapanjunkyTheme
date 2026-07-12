@@ -147,6 +147,7 @@
    Behavior: japanjunky-explorer.js
    ============================================ */
 .jj-explorer {
+  position: relative; /* resize handles + error box anchor here */
   display: flex;
   flex-direction: column;
   /* Percentages against the fixed .jj-page layer, NOT vw/vh: viewport
@@ -168,14 +169,39 @@
 .jj-explorer--on  { animation: jj-crt-on 0.4s ease-out; }
 .jj-explorer--off { animation: jj-crt-off 0.3s ease-in forwards; }
 
-/* Maximize: fill the screen above the taskbar */
+/* Maximize: edge-to-edge, flush against the 32px taskbar */
 .jj-explorer--max {
   position: fixed;
-  inset: 8px 8px 40px;
+  inset: 0 0 32px;
   width: auto;
+  max-width: none;
   height: auto;
   margin: 0;
 }
+.jj-explorer--max .jj-explorer__rs { display: none; }
+
+/* --- Resize handles (edges + corners) --- */
+.jj-explorer__rs {
+  position: absolute;
+  z-index: 6;
+  touch-action: none;
+}
+.jj-explorer__rs--n,
+.jj-explorer__rs--s { left: 8px; right: 8px; height: 5px; cursor: ns-resize; }
+.jj-explorer__rs--n { top: -2px; }
+.jj-explorer__rs--s { bottom: -2px; }
+.jj-explorer__rs--e,
+.jj-explorer__rs--w { top: 8px; bottom: 8px; width: 5px; cursor: ew-resize; }
+.jj-explorer__rs--e { right: -2px; }
+.jj-explorer__rs--w { left: -2px; }
+.jj-explorer__rs--ne,
+.jj-explorer__rs--nw,
+.jj-explorer__rs--se,
+.jj-explorer__rs--sw { width: 10px; height: 10px; }
+.jj-explorer__rs--ne { top: -2px; right: -2px; cursor: nesw-resize; }
+.jj-explorer__rs--sw { bottom: -2px; left: -2px; cursor: nesw-resize; }
+.jj-explorer__rs--nw { top: -2px; left: -2px; cursor: nwse-resize; }
+.jj-explorer__rs--se { bottom: -2px; right: -2px; cursor: nwse-resize; }
 
 /* --- Titlebar (drag handle) --- */
 .jj-explorer__titlebar {
@@ -234,6 +260,56 @@
   box-shadow: var(--jj-tactile-pressed);
 }
 
+/* --- Menu/tool bars + throbber row --- */
+/* Left column stacks the menubar over the toolbar; the throbber box spans
+   both rows on the right, like the Windows-flag block in filebrowser.png. */
+.jj-explorer__bars {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #222;
+}
+.jj-explorer__bars-left {
+  flex: 1;
+  min-width: 0;
+}
+
+/* IE-throbber slot, rebuilt with the Tsuno start-logo ink mask in the
+   day's mood tint (--jj-tsuno-mood from win95-menu.js). The PNG is
+   authored at 34x37 with the dither baked in — mask-size stays 1:1;
+   the box crops, never rescales. */
+.jj-explorer__throbber {
+  width: 42px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background: var(--jj-black, #000);
+  border-left: 1px solid #222;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow:
+    inset 1px 1px 0 rgba(0, 0, 0, 0.85),
+    inset -1px -1px 0 rgba(224, 213, 192, 0.12);
+}
+.jj-explorer__throbber-tsuno {
+  width: 34px;
+  height: 37px;
+  background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
+  -webkit-mask-image: var(--jj-tsuno-logo);
+  mask-image: var(--jj-tsuno-logo);
+  -webkit-mask-size: 34px 37px;
+  mask-size: 34px 37px;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: bottom center;
+  mask-position: bottom center;
+  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)));
+}
+.jj-explorer__throbber:hover .jj-explorer__throbber-tsuno {
+  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)))
+          brightness(1.35);
+}
+
 /* --- Menu bar (decorative) --- */
 .jj-explorer__menubar {
   display: flex;
@@ -252,8 +328,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 6px;
-  border-bottom: 1px solid #222;
+  padding: 3px 6px; /* bottom border lives on .jj-explorer__bars */
 }
 .jj-explorer__tool {
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
@@ -295,7 +370,10 @@
 .jj-explorer__address-label { color: #888; }
 .jj-explorer__address-field {
   flex: 1;
+  min-width: 0;
   padding: 2px 6px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
   color: var(--jj-accent, #33ff33);
   background: var(--jj-black, #000);
   border: 1px solid #333;
@@ -305,6 +383,15 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  outline: none;
+  caret-color: var(--jj-accent, #33ff33);
+}
+.jj-explorer__address-field:focus {
+  border-color: var(--jj-accent, #33ff33);
+}
+.jj-explorer__address-field::selection {
+  background: var(--jj-accent, #33ff33);
+  color: #000;
 }
 
 /* --- Body: web-panel sidebar + main pane --- */
@@ -370,6 +457,99 @@
   padding: 16px;
 }
 
+/* --- Panel: folder-view hint + selection stats (Win2000 web view) --- */
+.jj-explorer__panel-hint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #888;
+  margin-bottom: 14px;
+}
+.jj-explorer__panel-hint[hidden],
+.jj-explorer__panel-sel[hidden],
+.jj-explorer__panel-desc[hidden] { display: none; }
+.jj-explorer__panel-sel { margin-bottom: 14px; }
+.jj-explorer__panel-sel-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--jj-secondary, #f5d742);
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+.jj-explorer__panel-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 6px;
+  margin: 0 0 10px;
+  font-size: 11px;
+}
+.jj-explorer__panel-stats dt { color: #888; }
+.jj-explorer__panel-stats dd {
+  margin: 0;
+  color: var(--jj-text, #e0d5c0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Folder view: C:\JAPANJUNKY icon grid --- */
+.jj-explorer__files {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 78px);
+  align-content: flex-start;
+  justify-content: flex-start;
+  gap: 16px 10px;
+}
+.jj-explorer__files[hidden] { display: none; }
+.jj-explorer--files .jj-explorer__main { display: none; }
+.jj-explorer__file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 78px;
+  padding: 4px 2px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 11px;
+  color: var(--jj-text, #e0d5c0);
+  background: transparent;
+  border: 1px dotted transparent;
+  cursor: default;
+  user-select: none;
+}
+.jj-explorer__file-icon { display: flex; color: var(--jj-secondary, #f5d742); }
+.jj-explorer__file-icon .jj-start-item-icon {
+  width: 32px;
+  height: 32px;
+  color: inherit;
+  margin: 0;
+}
+.jj-explorer__file-label {
+  max-width: 100%;
+  padding: 0 3px;
+  text-align: center;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.jj-explorer__file:hover .jj-explorer__file-label {
+  color: var(--jj-secondary, #f5d742);
+}
+.jj-explorer__file--sel { border-color: #555; }
+.jj-explorer__file--sel .jj-explorer__file-label {
+  background: var(--jj-primary, #e8313a);
+  color: #000;
+}
+.jj-explorer__file--sel .jj-explorer__file-icon {
+  color: var(--jj-primary, #e8313a);
+  filter: drop-shadow(0 0 3px rgba(232, 49, 58, 0.5));
+}
+
 /* --- Status bar --- */
 .jj-explorer__status {
   display: flex;
@@ -389,6 +569,110 @@
   white-space: nowrap;
 }
 .jj-explorer__status-cell--wide { flex: 1; text-align: right; }
+.jj-explorer__status-cell--computer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  text-align: left;
+  color: var(--jj-text, #e0d5c0);
+}
+.jj-explorer__status-cell--computer .jj-start-item-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--jj-secondary, #f5d742);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* --- Win98 "path not found" message box --- */
+.jj-explorer-err {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+}
+.jj-explorer-err[hidden] { display: none; }
+.jj-explorer-err__box {
+  width: 320px;
+  max-width: calc(100% - 24px);
+  background: var(--jj-bg-panel, #0a0a0a);
+  border: 1px solid #444;
+  box-shadow:
+    inset 1px 1px 0 rgba(224, 213, 192, 0.22),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.85),
+    0 4px 14px rgba(0, 0, 0, 0.7);
+  animation: jj-crt-on 0.25s ease-out;
+}
+.jj-explorer-err__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 4px 3px 8px;
+  border-bottom: 1px solid #333;
+  background: linear-gradient(90deg, rgba(232, 49, 58, 0.30), rgba(232, 49, 58, 0.03));
+  font-size: 12px;
+  color: var(--jj-text, #e0d5c0);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  user-select: none;
+}
+.jj-explorer-err__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 14px 12px;
+}
+.jj-explorer-err__icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  color: #000;
+  background: var(--jj-primary, #e8313a);
+  box-shadow: 0 0 6px rgba(232, 49, 58, 0.5);
+  user-select: none;
+}
+.jj-explorer-err__msg {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--jj-text, #e0d5c0);
+  word-break: break-word;
+}
+.jj-explorer-err__ok {
+  display: block;
+  margin: 0 auto 14px;
+  padding: 3px 28px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  font-size: 12px;
+  color: var(--jj-text, #e0d5c0);
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #444;
+  cursor: default;
+  box-shadow: var(--jj-tactile);
+}
+.jj-explorer-err__ok:focus {
+  outline: none;
+  border-color: var(--jj-secondary, #f5d742);
+  color: var(--jj-secondary, #f5d742);
+}
+.jj-explorer-err__ok:hover {
+  color: var(--jj-secondary, #f5d742);
+  border-color: var(--jj-secondary, #f5d742);
+}
+.jj-explorer-err__ok:active {
+  transform: translate(1px, 1px);
+  box-shadow: var(--jj-tactile-pressed);
+}
 
 /* Narrow screens: drop the web panel */
 @media (max-width: 680px) {

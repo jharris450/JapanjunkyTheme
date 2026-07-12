@@ -11,8 +11,9 @@
     icon    — win95-start-icon name for titlebar + sidebar (default 'doc')
     objects — status-bar object count (default 1)
 
-  Behavior (drag / minimize to taskbar tab / maximize / close) lives in
-  assets/japanjunky-explorer.js. Styles: japanjunky-content.css.
+  Behavior (drag / resize / minimize / maximize / close / address routing /
+  folder view) lives in assets/japanjunky-explorer.js. Styles:
+  japanjunky-content.css.
 {%- endcomment -%}
 
 {%- assign win_icon = icon | default: 'doc' -%}
@@ -29,36 +30,59 @@
     </span>
   </header>
 
-  <nav class="jj-explorer__menubar" aria-hidden="true">
-    <span class="jj-explorer__menu">File</span>
-    <span class="jj-explorer__menu">Edit</span>
-    <span class="jj-explorer__menu">View</span>
-    <span class="jj-explorer__menu">Favorites</span>
-    <span class="jj-explorer__menu">Tools</span>
-    <span class="jj-explorer__menu">Help</span>
-  </nav>
+  <div class="jj-explorer__bars">
+    <div class="jj-explorer__bars-left">
+      <nav class="jj-explorer__menubar" aria-hidden="true">
+        <span class="jj-explorer__menu">File</span>
+        <span class="jj-explorer__menu">Edit</span>
+        <span class="jj-explorer__menu">View</span>
+        <span class="jj-explorer__menu">Favorites</span>
+        <span class="jj-explorer__menu">Tools</span>
+        <span class="jj-explorer__menu">Help</span>
+      </nav>
 
-  <div class="jj-explorer__toolbar">
-    <button type="button" class="jj-explorer__tool" id="jj-explorer-back">&larr; Back</button>
-    <button type="button" class="jj-explorer__tool" id="jj-explorer-fwd">&rarr;</button>
-    <span class="jj-explorer__toolsep" aria-hidden="true"></span>
-    <a class="jj-explorer__tool" href="/search">&#8981; Search</a>
-    <a class="jj-explorer__tool" href="/collections/all">&#9638; Catalog</a>
+      <div class="jj-explorer__toolbar">
+        <button type="button" class="jj-explorer__tool" id="jj-explorer-back">&larr; Back</button>
+        <button type="button" class="jj-explorer__tool" id="jj-explorer-fwd">&rarr;</button>
+        <span class="jj-explorer__toolsep" aria-hidden="true"></span>
+        <a class="jj-explorer__tool" href="/search">&#8981; Search</a>
+        <button type="button" class="jj-explorer__tool" id="jj-explorer-folders">&#9638; Folders</button>
+        <a class="jj-explorer__tool" href="/collections/all">&#9639; Catalog</a>
+      </div>
+    </div>
+    {%- comment -%} IE-throbber slot from filebrowser.png (the Windows-flag
+        box), rebuilt with the Tsuno start-logo mask in the day's mood tint. {%- endcomment -%}
+    <span class="jj-explorer__throbber" aria-hidden="true" style="--jj-tsuno-logo: url('{{ 'tsuno-start-logo.png' | asset_url }}')">
+      <span class="jj-explorer__throbber-tsuno"></span>
+    </span>
   </div>
 
   <div class="jj-explorer__address">
     <span class="jj-explorer__address-label">Address</span>
-    <span class="jj-explorer__address-field">C:\JAPANJUNKY{% if path %}\{{ path }}{% endif %}</span>
+    <input class="jj-explorer__address-field" id="jj-explorer-address" type="text"
+           value="C:\JAPANJUNKY{% if path %}\{{ path }}{% endif %}"
+           spellcheck="false" autocomplete="off" autocapitalize="off"
+           aria-label="Address">
     <button type="button" class="jj-explorer__tool jj-explorer__go" id="jj-explorer-go">&#10140; Go</button>
   </div>
 
   <div class="jj-explorer__body">
     <aside class="jj-explorer__panel">
-      <span class="jj-explorer__panel-icon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
-      <div class="jj-explorer__panel-title">{{ title }}</div>
+      <span class="jj-explorer__panel-icon" id="jj-explorer-panel-icon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
+      <div class="jj-explorer__panel-title" id="jj-explorer-panel-title">{{ title }}</div>
       <div class="jj-explorer__panel-rule" aria-hidden="true"></div>
+      <div class="jj-explorer__panel-hint" id="jj-explorer-panel-hint" hidden>Select an item to view its description.</div>
+      <div class="jj-explorer__panel-sel" id="jj-explorer-panel-sel" hidden>
+        <div class="jj-explorer__panel-sel-name" id="jj-explorer-sel-name"></div>
+        <dl class="jj-explorer__panel-stats">
+          <dt>Type:</dt><dd id="jj-explorer-sel-type"></dd>
+          <dt>Size:</dt><dd id="jj-explorer-sel-size"></dd>
+          <dt>Modified:</dt><dd id="jj-explorer-sel-mod"></dd>
+        </dl>
+        <div class="jj-explorer__panel-desc" id="jj-explorer-sel-desc"></div>
+      </div>
       {%- if desc != blank -%}
-        <div class="jj-explorer__panel-desc">{{ desc }}</div>
+        <div class="jj-explorer__panel-desc" id="jj-explorer-panel-desc">{{ desc }}</div>
       {%- endif -%}
       <div class="jj-explorer__panel-also">
         <span class="jj-explorer__panel-also-label">See also:</span>
@@ -68,12 +92,97 @@
         <a href="/pages/faq">Help</a>
       </div>
     </aside>
-    <div class="jj-explorer__main">{{ body }}</div>
+    <div class="jj-explorer__main" id="jj-explorer-main">{{ body }}</div>
+
+    {%- comment -%} Folder view: C:\JAPANJUNKY as if browsing the site's
+        backend. Single click selects (panel shows Windows-style stats),
+        double click opens. Toggled by the Folders tool / address bar. {%- endcomment -%}
+    <div class="jj-explorer__files" id="jj-explorer-files" hidden>
+      <button type="button" class="jj-explorer__file" data-dos="HOME" data-href="/"
+              data-type="System Folder" data-size="&mdash;" data-mod="&mdash;"
+              data-desc="The desktop. Rising sun, lava wax, the whole ceremony.">
+        <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: 'hokora' %}</span>
+        <span class="jj-explorer__file-label">Home</span>
+      </button>
+      <button type="button" class="jj-explorer__file" data-dos="CATALOG" data-href="/collections/all"
+              data-type="System Folder" data-size="&mdash;" data-mod="&mdash;"
+              data-desc="{{ collections.all.all_products_count | default: 'All' }} records, tapes and discs in stock.">
+        <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: 'box' %}</span>
+        <span class="jj-explorer__file-label">Catalog</span>
+      </button>
+      <button type="button" class="jj-explorer__file" data-dos="CART" data-href="/cart"
+              data-type="System Folder" data-size="&mdash;" data-mod="&mdash;"
+              data-desc="Items staged for checkout.">
+        <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: 'cart' %}</span>
+        <span class="jj-explorer__file-label">Cart</span>
+      </button>
+      {%- assign jj_page_handles = 'about,contact,faq,shipping,returns,login,watchlist' | split: ',' -%}
+      {%- for jj_h in jj_page_handles -%}
+        {%- assign jj_p = pages[jj_h] -%}
+        {%- if jj_p.title != blank -%}
+          {%- case jj_h -%}
+            {%- when 'contact' -%}{%- assign jj_p_icon = 'mail' -%}
+            {%- when 'faq' -%}{%- assign jj_p_icon = 'question' -%}
+            {%- when 'shipping' -%}{%- assign jj_p_icon = 'parachute' -%}
+            {%- when 'login' -%}{%- assign jj_p_icon = 'key' -%}
+            {%- when 'watchlist' -%}{%- assign jj_p_icon = 'eye' -%}
+            {%- else -%}{%- assign jj_p_icon = 'doc' -%}
+          {%- endcase -%}
+          <button type="button" class="jj-explorer__file"
+                  data-dos="PAGES\{{ jj_h | upcase }}" data-href="{{ jj_p.url }}"
+                  data-type="HTML Document"
+                  data-size="{{ jj_p.content | size | divided_by: 1024 | at_least: 1 }} KB"
+                  data-mod="{{ jj_p.published_at | date: '%m/%d/%Y' }}"
+                  data-desc="{{ jj_p.content | strip_html | truncatewords: 14 | escape }}">
+            <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: jj_p_icon %}</span>
+            <span class="jj-explorer__file-label">{{ jj_p.title }}</span>
+          </button>
+        {%- endif -%}
+      {%- endfor -%}
+      {%- for jj_pol in shop.policies -%}
+        {%- if jj_pol.body != blank -%}
+          <button type="button" class="jj-explorer__file"
+                  data-dos="PAGES\{{ jj_pol.url | split: '/' | last | upcase }}" data-href="{{ jj_pol.url }}"
+                  data-type="Legal Document"
+                  data-size="{{ jj_pol.body | size | divided_by: 1024 | at_least: 1 }} KB"
+                  data-mod="&mdash;"
+                  data-desc="{{ jj_pol.body | strip_html | truncatewords: 14 | escape }}">
+            <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: 'doc' %}</span>
+            <span class="jj-explorer__file-label">{{ jj_pol.title }}</span>
+          </button>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
   </div>
 
   <footer class="jj-explorer__status" aria-hidden="true">
-    <span class="jj-explorer__status-cell">{{ win_objects }} object(s)</span>
+    <span class="jj-explorer__status-cell" id="jj-explorer-status-objects">{{ win_objects }} object(s)</span>
     <span class="jj-explorer__status-cell">{{ body | size | divided_by: 1024 | at_least: 1 }} KB</span>
-    <span class="jj-explorer__status-cell jj-explorer__status-cell--wide">JAPANJUNKY_98</span>
+    <span class="jj-explorer__status-cell jj-explorer__status-cell--wide jj-explorer__status-cell--computer">{% render 'win95-start-icon', icon: 'computer' %} The Computer</span>
   </footer>
+
+  {%- comment -%} Resize handles (edges + corners); hidden while maximized. {%- endcomment -%}
+  <span class="jj-explorer__rs jj-explorer__rs--n"  data-rs="n"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--s"  data-rs="s"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--e"  data-rs="e"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--w"  data-rs="w"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--ne" data-rs="ne" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--nw" data-rs="nw" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--se" data-rs="se" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--sw" data-rs="sw" aria-hidden="true"></span>
+
+  {%- comment -%} Win98 "path not found" message box (address bar misses). {%- endcomment -%}
+  <div class="jj-explorer-err" id="jj-explorer-err" hidden>
+    <div class="jj-explorer-err__box" role="alertdialog" aria-labelledby="jj-explorer-err-title" aria-describedby="jj-explorer-err-msg">
+      <header class="jj-explorer-err__titlebar">
+        <span id="jj-explorer-err-title">The Computer</span>
+        <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="jj-explorer-err-x" aria-label="Close">&times;</button>
+      </header>
+      <div class="jj-explorer-err__body">
+        <span class="jj-explorer-err__icon" aria-hidden="true">&times;</span>
+        <p class="jj-explorer-err__msg" id="jj-explorer-err-msg"></p>
+      </div>
+      <button type="button" class="jj-explorer-err__ok" id="jj-explorer-err-ok">OK</button>
+    </div>
+  </div>
 </div>

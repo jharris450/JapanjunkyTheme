@@ -8,7 +8,8 @@
 
   Icons: person (profile), box (orders), key (log in), eye (watchlist),
   cart, hokora (home), parachute (new arrivals), doc (about),
-  question (help), mail (contact), door (log out), power (shut down).
+  question (help), mail (contact), door (log out), power (shut down),
+  computer (explorer status bar "The Computer").
 
   Optional `class` param appends extra classes (e.g. the strobe hooks the
   cart JS targets on the taskbar badge / menu cart row).
@@ -49,6 +50,9 @@
     {%- comment -%} doorway + exit arrow {%- endcomment -%}
     {%- when 'door' -%}
       <path fill="currentColor" d="M1 1h6v1h-6z M1 10h6v1h-6z M1 2h1v8h-1z M6 2h1v8h-1z M5 5h1v2h-1z M7 5h3v1h-3z M9 4h1v1h-1z M10 5h1v1h-1z M9 6h1v1h-1z"/>
+    {%- comment -%} desktop computer: monitor frame, stand, stepped base {%- endcomment -%}
+    {%- when 'computer' -%}
+      <path fill="currentColor" d="M1 1h10v1h-10z M1 7h10v1h-10z M1 2h1v5h-1z M10 2h1v5h-1z M3 4h4v1h-4z M3 6h2v1h-2z M5 8h2v1h-2z M3 9h6v1h-6z M2 10h8v1h-8z"/>
     {%- comment -%} power symbol: bar through broken ring {%- endcomment -%}
     {%- when 'power' -%}
       <path fill="currentColor" d="M5 1h2v5h-2z M3 4h1v1h-1z M8 4h1v1h-1z M2 5h1v1h-1z M9 5h1v1h-1z M1 6h1v3h-1z M10 6h1v3h-1z M2 9h1v1h-1z M9 9h1v1h-1z M3 10h1v1h-1z M8 10h1v1h-1z M4 11h4v1h-4z"/>
