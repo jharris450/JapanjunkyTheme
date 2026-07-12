@@ -463,7 +463,21 @@
 
     var cfg = mergeConfig();
 
-    initBarrelDistortion(cfg);
+    // Firefox: Gecko executes CSS-referenced SVG filters (feDisplacementMap)
+    // on the CPU and re-filters the whole viewport whenever anything inside
+    // animates — measured 3-4 fps on the live homepage vs 30+ with the
+    // barrel off, while Chromium runs it on the GPU at ~60 either way.
+    // Skip the barrel there; the WebGL overlay (scanlines/grille/vignette)
+    // is cheap everywhere and stays. jj-crt-no-barrel also turns off the
+    // barrel hit-slop compensators in win95.css/crt.css.
+    var isGecko = typeof CSS !== 'undefined' && CSS.supports
+      && CSS.supports('-moz-appearance', 'none');
+
+    if (isGecko) {
+      document.documentElement.classList.add('jj-crt-no-barrel');
+    } else {
+      initBarrelDistortion(cfg);
+    }
 
     // Add class to <html> (not body) so the SVG filter on the root element
     // doesn't break position:fixed descendants (root element is exempt from

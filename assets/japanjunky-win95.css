@@ -88,6 +88,16 @@ html.jj-crt-shader-active .jj-clock-tray::before {
   right: -9px;
 }
 
+/* No barrel (Firefox, jj-crt-no-barrel): the taskbar paints exactly at its
+   layout box, so the skirt and the hit-slop extenders would just leak hit
+   area / paint past the screen edge — drop them. */
+html.jj-crt-no-barrel .jj-taskbar::after,
+html.jj-crt-no-barrel .jj-start-menu-wrapper::before,
+html.jj-crt-no-barrel .jj-vol-btn::before,
+html.jj-crt-no-barrel .jj-clock-tray::before {
+  content: none;
+}
+
 /* --- Start Button --- */
 .jj-start-btn {
   position: relative;
