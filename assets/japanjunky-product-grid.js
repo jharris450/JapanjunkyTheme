@@ -70,7 +70,10 @@
       if (e.target.closest('.jj-taskbar') || e.target.closest('.jj-start-menu')) return;
       e.preventDefault(); // we drive the wrapper ourselves — no native double-scroll
       var delta = e.deltaY;
-      if (e.deltaMode === 1) delta *= 16;        // line mode (Firefox)
+      // Line mode (Firefox wheel): ~3 lines per notch. 16px/line gave
+      // ~48px/notch vs Chrome's ~100px pixel-mode notch — half-speed,
+      // steppy scroll. 33px/line ≈ 99px/notch matches the Chrome feel.
+      if (e.deltaMode === 1) delta *= 33;
       else if (e.deltaMode === 2) delta *= scroll.clientHeight; // page mode
       if (!scrollAnimating) scrollTarget = scroll.scrollTop; // resync after native moves
       scrollTarget = Math.max(0, Math.min(maxScroll(), scrollTarget + delta));

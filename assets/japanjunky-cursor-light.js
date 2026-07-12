@@ -20,6 +20,13 @@
   //   >= 1600px → zoom 1.15 → use "hi" (1.5x cursors)
   //   else      → zoom 1.0  → use "std" (1x cursors)
   function pickSet() {
+    // Gecko scales cursor:url() images by the CSS zoom itself (Chrome
+    // doesn't — that's why the pre-scaled hi/hh sets exist). Handing
+    // Firefox a pre-scaled set double-scales it into a giant cursor;
+    // the 1x std set lands at the intended visual size under zoom 2.5.
+    var isGecko = typeof CSS !== 'undefined' && CSS.supports
+      && CSS.supports('-moz-appearance', 'none');
+    if (isGecko) return sets.std;
     var w = screen.width;
     if (w >= 3200 && sets.hh) return sets.hh;
     if (w >= 1600 && sets.hi) return sets.hi;
