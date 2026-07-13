@@ -423,6 +423,9 @@
   background-repeat: no-repeat;
   background-position: right bottom;
   background-size: contain;
+  /* Assets are kyogen-treatment coarse-grid dithers (100/130px wide) —
+     upscale the chunky pixels crisply, don't smooth them away. */
+  image-rendering: pixelated;
   opacity: 0.5;
   pointer-events: none;
 }
