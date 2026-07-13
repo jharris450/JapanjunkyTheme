@@ -533,6 +533,25 @@
 
     if (p.id != null) card.appendChild(createWatchStar(p));
 
+    // Staff pick (custom.recommended boolean metafield): HEAT flame badge
+    // pinned to the card's upper-left (watch star owns the upper-right)
+    // + a red pop glow on the card frame via the modifier class.
+    if (p.recommended) {
+      card.className += ' jj-grid__card--heat';
+      var heat = document.createElement('span');
+      heat.className = 'jj-grid__card-heat';
+      heat.title = 'Staff pick';
+      var flame = document.createElement('span');
+      flame.className = 'jj-grid__card-heat-flame';
+      flame.setAttribute('aria-hidden', 'true');
+      heat.appendChild(flame);
+      var heatLbl = document.createElement('span');
+      heatLbl.className = 'jj-grid__card-heat-label';
+      heatLbl.textContent = 'HEAT';
+      heat.appendChild(heatLbl);
+      card.appendChild(heat);
+    }
+
     return card;
   }
 

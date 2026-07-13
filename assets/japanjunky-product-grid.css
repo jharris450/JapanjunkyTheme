@@ -318,6 +318,102 @@
   box-shadow: none;
 }
 
+/* --- HEAT (staff pick, custom.recommended metafield) --- */
+/* Red pop glow on the frame so picks read at grid distance; the
+   format-specific :hover rules still win on interaction. */
+.jj-grid__card--heat {
+  border-color: rgba(232, 49, 58, 0.6);
+  box-shadow: 0 0 10px rgba(232, 49, 58, 0.25);
+}
+
+/* Badge chip: pixel flame over the word HEAT, upper-left (watch star owns
+   the upper-right). Decorative — clicks fall through to the card link. */
+.jj-grid__card-heat {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 2px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--jj-primary, #e8313a);
+  pointer-events: none;
+}
+
+.jj-grid__card-heat-label {
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--jj-primary, #e8313a);
+  text-shadow: 0 0 4px rgba(232, 49, 58, 0.7);
+}
+
+/* Pixel-art flame: one 2x2 "pixel" emitter, the bitmap is the box-shadow
+   list (8x10 pixels @ 2px). Two frames swapped with steps(1) — a raster
+   flicker, not a tween, per the CRT animation rules. */
+.jj-grid__card-heat-flame {
+  position: relative;
+  width: 16px;
+  height: 20px;
+  filter: drop-shadow(0 0 3px rgba(232, 49, 58, 0.8));
+}
+.jj-grid__card-heat-flame::before {
+  --hr: var(--jj-primary, #e8313a);
+  --ha: var(--jj-amber, #ffaa00);
+  --hg: var(--jj-secondary, #f5d742);
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow: /* frame A (matches the 0% keyframe — static fallback) */
+    8px 0 var(--hr),
+    6px 2px var(--hr), 8px 2px var(--hr),
+    6px 4px var(--hr), 8px 4px var(--ha), 14px 4px var(--hr),
+    4px 6px var(--hr), 6px 6px var(--ha), 8px 6px var(--ha), 10px 6px var(--hr), 14px 6px var(--hr),
+    2px 8px var(--hr), 4px 8px var(--ha), 6px 8px var(--ha), 8px 8px var(--ha), 10px 8px var(--hr), 12px 8px var(--hr), 14px 8px var(--hr),
+    2px 10px var(--hr), 4px 10px var(--ha), 6px 10px var(--hg), 8px 10px var(--hg), 10px 10px var(--ha), 12px 10px var(--hr),
+    0 12px var(--hr), 2px 12px var(--ha), 4px 12px var(--hg), 6px 12px var(--hg), 8px 12px var(--hg), 10px 12px var(--ha), 12px 12px var(--hr),
+    0 14px var(--hr), 2px 14px var(--ha), 4px 14px var(--hg), 6px 14px var(--hg), 8px 14px var(--hg), 10px 14px var(--hg), 12px 14px var(--ha), 14px 14px var(--hr),
+    2px 16px var(--hr), 4px 16px var(--ha), 6px 16px var(--hg), 8px 16px var(--hg), 10px 16px var(--ha), 12px 16px var(--hr),
+    4px 18px var(--hr), 6px 18px var(--ha), 8px 18px var(--ha), 10px 18px var(--hr);
+  animation: jj-heat-flicker 0.46s steps(1) infinite;
+}
+
+@keyframes jj-heat-flicker {
+  0%, 100% {
+    box-shadow:
+      8px 0 var(--hr),
+      6px 2px var(--hr), 8px 2px var(--hr),
+      6px 4px var(--hr), 8px 4px var(--ha), 14px 4px var(--hr),
+      4px 6px var(--hr), 6px 6px var(--ha), 8px 6px var(--ha), 10px 6px var(--hr), 14px 6px var(--hr),
+      2px 8px var(--hr), 4px 8px var(--ha), 6px 8px var(--ha), 8px 8px var(--ha), 10px 8px var(--hr), 12px 8px var(--hr), 14px 8px var(--hr),
+      2px 10px var(--hr), 4px 10px var(--ha), 6px 10px var(--hg), 8px 10px var(--hg), 10px 10px var(--ha), 12px 10px var(--hr),
+      0 12px var(--hr), 2px 12px var(--ha), 4px 12px var(--hg), 6px 12px var(--hg), 8px 12px var(--hg), 10px 12px var(--ha), 12px 12px var(--hr),
+      0 14px var(--hr), 2px 14px var(--ha), 4px 14px var(--hg), 6px 14px var(--hg), 8px 14px var(--hg), 10px 14px var(--hg), 12px 14px var(--ha), 14px 14px var(--hr),
+      2px 16px var(--hr), 4px 16px var(--ha), 6px 16px var(--hg), 8px 16px var(--hg), 10px 16px var(--ha), 12px 16px var(--hr),
+      4px 18px var(--hr), 6px 18px var(--ha), 8px 18px var(--ha), 10px 18px var(--hr);
+  }
+  50% { /* frame B: tip bends left, right lick drops lower */
+    box-shadow:
+      6px 0 var(--hr),
+      8px 2px var(--hr),
+      6px 4px var(--hr), 8px 4px var(--hr),
+      6px 6px var(--ha), 8px 6px var(--ha), 12px 6px var(--hr),
+      4px 8px var(--hr), 6px 8px var(--ha), 8px 8px var(--ha), 10px 8px var(--hr), 12px 8px var(--hr),
+      2px 10px var(--hr), 4px 10px var(--ha), 6px 10px var(--hg), 8px 10px var(--hg), 10px 10px var(--ha), 12px 10px var(--hr), 14px 10px var(--hr),
+      0 12px var(--hr), 2px 12px var(--ha), 4px 12px var(--hg), 6px 12px var(--hg), 8px 12px var(--hg), 10px 12px var(--ha), 12px 12px var(--hr),
+      0 14px var(--hr), 2px 14px var(--ha), 4px 14px var(--hg), 6px 14px var(--hg), 8px 14px var(--hg), 10px 14px var(--hg), 12px 14px var(--ha), 14px 14px var(--hr),
+      2px 16px var(--hr), 4px 16px var(--ha), 6px 16px var(--hg), 8px 16px var(--hg), 10px 16px var(--ha), 12px 16px var(--hr),
+      4px 18px var(--hr), 6px 18px var(--ha), 8px 18px var(--ha), 10px 18px var(--hr);
+  }
+}
+
 /* --- Sold Out --- */
 .jj-grid__card--soldout .jj-grid__card-img-wrap {
   opacity: 0.45;

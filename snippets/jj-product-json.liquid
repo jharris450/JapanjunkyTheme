@@ -20,6 +20,8 @@
       {%- comment -%} .value is required for URL-type metafields to serialize through | json {%- endcomment -%}
       {%- assign m_audio = product.metafields.custom.audio_url.value | default: '' -%}
       {%- assign m_youtube = product.metafields.custom.youtube_url.value | default: '' -%}
+      {%- comment -%} Staff pick (boolean metafield) → HEAT flame on the grid card {%- endcomment -%}
+      {%- assign m_recommended = product.metafields.custom.recommended.value | default: false -%}
 
       {%- comment -%} Normalize format {%- endcomment -%}
       {%- assign p_format_lower = m_format | downcase -%}
@@ -85,6 +87,7 @@
         "addedAt": {{ product.created_at | date: '%s' | json }},
         "audioUrl": {{ m_audio | json }},
         "youtubeUrl": {{ m_youtube | json }},
+        "recommended": {{ m_recommended | json }},
         "bpm": {{ product.metafields.custom.bpm | default: 0 | json }}
       }
     {%- endif -%}
