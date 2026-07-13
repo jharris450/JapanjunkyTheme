@@ -572,11 +572,13 @@
   white-space: nowrap;
 }
 .jj-explorer__status-cell--wide { flex: 1; text-align: right; }
+/* Own compact box at the far right (Win2000 "My Computer" cell): the
+   empty --wide cell before it is the stretchy filler. */
 .jj-explorer__status-cell--computer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 5px;
+  flex-shrink: 0;
   color: var(--jj-text, #e0d5c0);
 }
 .jj-explorer__status-cell--computer .jj-start-item-icon {

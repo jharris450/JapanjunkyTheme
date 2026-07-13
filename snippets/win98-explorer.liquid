@@ -18,6 +18,10 @@
 
 {%- assign win_icon = icon | default: 'doc' -%}
 {%- assign win_objects = objects | default: 1 -%}
+{%- comment -%} Simulated file size — pages are tiny/empty so real byte
+    counts all read "1 KB". Deterministic from the title so the folder
+    view's entry for a page matches that page's own status bar. {%- endcomment -%}
+{%- assign win_kb = title | size | times: 53 | modulo: 340 | plus: 24 -%}
 
 <div class="jj-explorer" id="jj-explorer" data-title="{{ title | escape }}">
   <header class="jj-explorer__titlebar" id="jj-explorer-titlebar">
@@ -129,7 +133,7 @@
           <button type="button" class="jj-explorer__file"
                   data-dos="PAGES\{{ jj_h | upcase }}" data-href="{{ jj_p.url }}"
                   data-type="HTML Document"
-                  data-size="{{ jj_p.content | size | divided_by: 1024 | at_least: 1 }} KB"
+                  data-size="{{ jj_p.title | size | times: 53 | modulo: 340 | plus: 24 }} KB"
                   data-mod="{{ jj_p.published_at | date: '%m/%d/%Y' }}"
                   data-desc="{{ jj_p.content | strip_html | truncatewords: 14 | escape }}">
             <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: jj_p_icon %}</span>
@@ -142,7 +146,7 @@
           <button type="button" class="jj-explorer__file"
                   data-dos="PAGES\{{ jj_pol.url | split: '/' | last | upcase }}" data-href="{{ jj_pol.url }}"
                   data-type="Legal Document"
-                  data-size="{{ jj_pol.body | size | divided_by: 1024 | at_least: 1 }} KB"
+                  data-size="{{ jj_pol.title | size | times: 53 | modulo: 340 | plus: 24 }} KB"
                   data-mod="&mdash;"
                   data-desc="{{ jj_pol.body | strip_html | truncatewords: 14 | escape }}">
             <span class="jj-explorer__file-icon">{% render 'win95-start-icon', icon: 'doc' %}</span>
@@ -155,8 +159,9 @@
 
   <footer class="jj-explorer__status" aria-hidden="true">
     <span class="jj-explorer__status-cell" id="jj-explorer-status-objects">{{ win_objects }} object(s)</span>
-    <span class="jj-explorer__status-cell">{{ body | size | divided_by: 1024 | at_least: 1 }} KB</span>
-    <span class="jj-explorer__status-cell jj-explorer__status-cell--wide jj-explorer__status-cell--computer">{% render 'win95-start-icon', icon: 'computer' %} The Computer</span>
+    <span class="jj-explorer__status-cell">{{ win_kb }} KB</span>
+    <span class="jj-explorer__status-cell jj-explorer__status-cell--wide"></span>
+    <span class="jj-explorer__status-cell jj-explorer__status-cell--computer">{% render 'win95-start-icon', icon: 'computer' %} The Computer</span>
   </footer>
 
   {%- comment -%} Resize handles (edges + corners); hidden while maximized. {%- endcomment -%}
