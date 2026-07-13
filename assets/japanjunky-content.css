@@ -274,12 +274,13 @@
    day's mood tint (--jj-tsuno-mood from win95-menu.js). The PNG is
    authored at 34x37 with the dither baked in — mask-size stays 1:1; the
    short menubar row CROPS the horns from the top (start-button trick),
-   it never overflows into the toolbar. Negative vertical margins bleed
-   the box to the row's edges past the menubar padding. */
+   it never overflows into the toolbar. Negative top/bottom/right margins
+   bleed the box to the row's edges past the menubar's 2px/6px padding
+   (right included — without -6px the padding shows as a gap there). */
 .jj-explorer__throbber {
   width: 38px;
   align-self: stretch;
-  margin: -2px 0 -2px auto;
+  margin: -2px -6px -2px auto;
   flex-shrink: 0;
   position: relative; /* sprite is absolute so its 37px can't grow the row */
   overflow: hidden;
