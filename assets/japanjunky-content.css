@@ -407,10 +407,11 @@
 }
 
 /* Kyosai bone art watermark: lower-right of the pane area, behind the
-   content (panes stack above via z-index below). One of the two extracted
-   pieces (skulls / dueling skeletons) is chosen per load by explorer.js —
-   it sets the background-image. Doesn't scroll with __main, exactly like
-   the IE folder-view watermark. */
+   content (panes stack above via z-index below). explorer.js adds a
+   --skulls or --skele modifier per load; asset URLs arrive as inline CSS
+   vars from the snippet. Doesn't scroll with __main, exactly like the IE
+   folder-view watermark. Assets are kyogen-treatment coarse-grid dithers
+   — image-rendering keeps the chunky pixels crisp on upscale. */
 .jj-explorer__bones {
   position: absolute;
   right: 10px;
@@ -420,14 +421,63 @@
   height: 260px;
   max-width: 55%;
   max-height: 70%;
-  background-repeat: no-repeat;
-  background-position: right bottom;
-  background-size: contain;
-  /* Assets are kyogen-treatment coarse-grid dithers (100/130px wide) —
-     upscale the chunky pixels crisply, don't smooth them away. */
   image-rendering: pixelated;
   opacity: 0.5;
   pointer-events: none;
+}
+.jj-explorer__bones--skulls {
+  background-image: var(--jj-bones-skulls-img);
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  background-size: contain;
+}
+
+/* Skeletons variant: two ALIGNED vertical sprite strips (built on the
+   same 160x183 frame) as pseudo-element layers. Flame cycles 3 frames,
+   the skeletons hold one dithered body while their flame-facing edge
+   pixels swap between ember and flare rim light — the fire is the light
+   source, the rim is its bounce. Hard frame holds only (paired keyframe
+   percentages), per the CRT animation rules; the flickering drop-shadow
+   is the flame's halo. */
+.jj-explorer__bones--skele {
+  height: auto;
+  aspect-ratio: 160 / 183;
+}
+.jj-explorer__bones--skele::before,
+.jj-explorer__bones--skele::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+.jj-explorer__bones--skele::after { /* skeletons: 2-frame rim light */
+  background-image: var(--jj-bones-skel-img);
+  background-size: 100% 200%;
+  animation: jj-bones-rim 0.48s infinite;
+  animation-delay: -0.24s; /* flare drifts against the flame frames */
+}
+.jj-explorer__bones--skele::before { /* flame: 3 frames + halo flicker */
+  background-image: var(--jj-bones-flame-img);
+  background-size: 100% 300%;
+  animation: jj-bones-flame 0.48s infinite;
+}
+@keyframes jj-bones-rim {
+  0%, 49.9% { background-position: 0 0; }
+  50%, 100% { background-position: 0 100%; }
+}
+@keyframes jj-bones-flame {
+  0%, 33.2% {
+    background-position: 0 0;
+    filter: drop-shadow(0 0 4px rgba(255, 170, 0, 0.55));
+  }
+  33.3%, 66.5% {
+    background-position: 0 50%;
+    filter: drop-shadow(0 0 7px rgba(255, 170, 0, 0.85));
+  }
+  66.6%, 100% {
+    background-position: 0 100%;
+    filter: drop-shadow(0 0 3px rgba(232, 49, 58, 0.5));
+  }
 }
 .jj-explorer__panel,
 .jj-explorer__main,

@@ -389,14 +389,14 @@
   if (fwdBtn) fwdBtn.addEventListener('click', function () { window.history.forward(); });
 
   // ── Bone-art watermark (lower-right, behind content) ──────────
-  // Two extracted Kyosai pieces ship as space-separated URLs on the
-  // element; each page load draws one at random.
+  // Each page load draws one of the two Kyosai pieces at random; the
+  // modifier class picks which asset vars (set inline by the snippet)
+  // the CSS uses. Skeletons variant runs the flame + rim-light sprite
+  // animation from japanjunky-content.css.
   var bones = document.getElementById('jj-explorer-bones');
   if (bones) {
-    var boneUrls = (bones.getAttribute('data-imgs') || '').split(/\s+/).filter(Boolean);
-    if (boneUrls.length) {
-      var pick = boneUrls[Math.floor(Math.random() * boneUrls.length)];
-      bones.style.backgroundImage = 'url("' + pick + '")';
-    }
+    bones.classList.add(Math.random() < 0.5
+      ? 'jj-explorer__bones--skulls'
+      : 'jj-explorer__bones--skele');
   }
 })();
