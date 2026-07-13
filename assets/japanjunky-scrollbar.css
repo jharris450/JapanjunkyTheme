@@ -15,9 +15,42 @@
   background: #0a0a0a;
   border-left: 1px solid #333;
   pointer-events: auto;
+  /* Drags that start (or stray) here must never begin a text selection of
+     the page content behind the bar. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* --- Barrel hit-slop ---------------------------------------------------
+   The SVG barrel filter (#jj-crt-barrel on #jj-crt-content) DRAWS the bar
+   inward of its right-edge layout box (same warp that misplaces the
+   taskbar corners, see japanjunky-win95.css), but hit-testing still uses
+   layout positions — clicks aimed at the visible thumb land on the page
+   content to its left and start a selection instead of a drag. Invisible
+   ::before extenders stretch each control's hit area toward where it is
+   actually painted. Pseudo-element hits resolve to their owner element,
+   so the JS pointerdown targets (thumb / track / buttons) are unchanged. */
+html.jj-crt-shader-active .jj-scrollbar__thumb::before,
+html.jj-crt-shader-active .jj-scrollbar__track::before,
+html.jj-crt-shader-active .jj-scrollbar__btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -8px;
+  right: 0;
+}
+
+/* No barrel (Firefox, jj-crt-no-barrel): the bar paints exactly at its
+   layout box — the extenders would just steal clicks from content. */
+html.jj-crt-no-barrel .jj-scrollbar__thumb::before,
+html.jj-crt-no-barrel .jj-scrollbar__track::before,
+html.jj-crt-no-barrel .jj-scrollbar__btn::before {
+  content: none;
 }
 
 .jj-scrollbar__btn {
+  position: relative; /* anchors the barrel hit-slop ::before */
   flex: 0 0 12px;
   height: 12px;
   padding: 0;

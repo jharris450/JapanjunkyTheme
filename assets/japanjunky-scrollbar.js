@@ -100,9 +100,16 @@
   bindHold(up, -1);
   bindHold(down, 1);
 
+  // Canceling pointerdown does NOT stop text selection in Gecko (it only
+  // suppresses the compatibility mouse events in Blink) — kill it at the
+  // mousedown level so drags on any part of the bar never start a
+  // selection sweep across the page content behind it.
+  bar.addEventListener('mousedown', function (e) { e.preventDefault(); });
+
   // ─── Track click (page jump toward the click) ──────────────────
   track.addEventListener('pointerdown', function (e) {
     if (e.target === thumb) return; // thumb drag handles itself
+    e.preventDefault();
     var page = el.clientHeight * 0.9;
     var thumbTop = thumb.getBoundingClientRect().top;
     setTop(el.scrollTop + (e.clientY < thumbTop ? -page : page));
