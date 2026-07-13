@@ -413,7 +413,12 @@
     e.stopPropagation();
     if (wheelCooldown) return;
     wheelCooldown = true;
-    setTimeout(function () { wheelCooldown = false; }, 150);
+    // 260ms (was 150): Firefox fires a wheel event PER NOTCH while Chrome
+    // coalesces fast spins into fewer big-delta events, so FF retargeted
+    // the 0.4s ease-out every 150ms — covers never finished a hop and
+    // clumped mid-arc until the wheel stopped. At 260ms each hop is ~80%
+    // eased before the next starts and the crescent stays readable.
+    setTimeout(function () { wheelCooldown = false; }, 260);
 
     lastRotateAt = performance.now();
     if (delta > 0) {

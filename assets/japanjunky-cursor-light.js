@@ -19,21 +19,74 @@
   //   >= 3200px → zoom 2.0 → use "hh" (2.5x cursors)
   //   >= 1600px → zoom 1.15 → use "hi" (1.5x cursors)
   //   else      → zoom 1.0  → use "std" (1x cursors)
-  function pickSet() {
-    // Gecko scales cursor:url() images by the CSS zoom itself (Chrome
-    // doesn't — that's why the pre-scaled hi/hh sets exist). Handing
-    // Firefox a pre-scaled set double-scales it into a giant cursor;
-    // the 1x std set lands at the intended visual size under zoom 2.5.
-    var isGecko = typeof CSS !== 'undefined' && CSS.supports
-      && CSS.supports('-moz-appearance', 'none');
-    if (isGecko) return sets.std;
+  var isGecko = typeof CSS !== 'undefined' && CSS.supports
+    && CSS.supports('-moz-appearance', 'none');
+
+  // Chromium tier scale by screen width (matches the zoom breakpoints).
+  function tierScale() {
     var w = screen.width;
-    if (w >= 3200 && sets.hh) return sets.hh;
-    if (w >= 1600 && sets.hi) return sets.hi;
+    if (w >= 3200 && sets.hh) return 2.5;
+    if (w >= 1600 && sets.hi) return 1.5;
+    return 1;
+  }
+
+  function pickSet() {
+    // Gecko scales cursor:url() images by the CSS zoom itself (Chromium
+    // doesn't — that's why the pre-scaled hi/hh sets exist). Handing
+    // Firefox a pre-scaled set double-scales it into a giant cursor.
+    // Start Gecko on the 1x std set; buildGeckoSet() swaps in exact-size
+    // copies asynchronously.
+    if (isGecko) return sets.std;
+    var t = tierScale();
+    if (t === 2.5) return sets.hh;
+    if (t === 1.5) return sets.hi;
     return sets.std;
   }
 
   var active = pickSet();
+
+  // Gecko parity: downscale the std art by tierScale/zoom (nearest) so
+  // that after Gecko multiplies by the CSS zoom, the on-screen cursor is
+  // pixel-identical in size to what Chromium shows on the same screen.
+  function buildGeckoSet(done) {
+    var zoom = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+    var f = tierScale() / zoom;
+    if (Math.abs(f - 1) < 0.01) return; // std already exact
+    var out = { hotspots: {} };
+    var types = ['arrow', 'hand', 'text', 'wait'];
+    var pending = 0;
+    var failed = false;
+    types.forEach(function (type) {
+      out[type] = [];
+      out.hotspots[type] = [
+        Math.round(sets.std.hotspots[type][0] * f),
+        Math.round(sets.std.hotspots[type][1] * f)
+      ];
+      sets.std[type].forEach(function (url, i) {
+        pending++;
+        var img = new Image();
+        img.crossOrigin = 'anonymous'; // Shopify CDN sends ACAO:* — keeps the canvas readable
+        img.onload = function () {
+          if (failed) return;
+          var c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * f));
+          c.height = Math.max(1, Math.round(img.height * f));
+          var ctx = c.getContext('2d');
+          ctx.imageSmoothingEnabled = false; // nearest — keeps the phosphor arrow crisp
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          try {
+            out[type][i] = c.toDataURL('image/png');
+          } catch (e) {
+            failed = true; // tainted canvas — stay on std
+            return;
+          }
+          if (--pending === 0) done(out);
+        };
+        img.onerror = function () { failed = true; };
+        img.src = url;
+      });
+    });
+  }
 
   function cursorVal(type, variant) {
     var url = active[type][variant % 4];
@@ -68,6 +121,13 @@
   var currentVariant = 0;
   style.textContent = buildCSS(0);
   document.head.appendChild(style);
+
+  if (isGecko) {
+    buildGeckoSet(function (set) {
+      active = set;
+      style.textContent = buildCSS(currentVariant);
+    });
+  }
 
   // Swap variants on mousemove (every 8th move)
   var moveCount = 0;
