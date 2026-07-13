@@ -69,6 +69,11 @@
   </div>
 
   <div class="jj-explorer__body">
+    {%- comment -%} Kyosai bone art watermark, pinned to the main pane's
+        lower-right behind the content (IE folder-watermark treatment).
+        japanjunky-explorer.js picks one of the two per page load. {%- endcomment -%}
+    <span class="jj-explorer__bones" id="jj-explorer-bones" aria-hidden="true"
+          data-imgs="{{ 'jj-bones-skulls.png' | asset_url }} {{ 'jj-bones-skeletons.png' | asset_url }}"></span>
     <aside class="jj-explorer__panel">
       <span class="jj-explorer__panel-icon" id="jj-explorer-panel-icon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
       <div class="jj-explorer__panel-title" id="jj-explorer-panel-title">{{ title }}</div>

@@ -403,6 +403,34 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative; /* anchors the bone-art watermark */
+}
+
+/* Kyosai bone art watermark: lower-right of the pane area, behind the
+   content (panes stack above via z-index below). One of the two extracted
+   pieces (skulls / dueling skeletons) is chosen per load by explorer.js —
+   it sets the background-image. Doesn't scroll with __main, exactly like
+   the IE folder-view watermark. */
+.jj-explorer__bones {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 0;
+  width: 260px;
+  height: 260px;
+  max-width: 55%;
+  max-height: 70%;
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  background-size: contain;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.jj-explorer__panel,
+.jj-explorer__main,
+.jj-explorer__files {
+  position: relative;
+  z-index: 1; /* content reads above the bone watermark */
 }
 .jj-explorer__panel {
   width: 190px;

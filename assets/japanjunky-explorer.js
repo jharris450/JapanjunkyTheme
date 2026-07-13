@@ -387,4 +387,16 @@
     });
   }
   if (fwdBtn) fwdBtn.addEventListener('click', function () { window.history.forward(); });
+
+  // ── Bone-art watermark (lower-right, behind content) ──────────
+  // Two extracted Kyosai pieces ship as space-separated URLs on the
+  // element; each page load draws one at random.
+  var bones = document.getElementById('jj-explorer-bones');
+  if (bones) {
+    var boneUrls = (bones.getAttribute('data-imgs') || '').split(/\s+/).filter(Boolean);
+    if (boneUrls.length) {
+      var pick = boneUrls[Math.floor(Math.random() * boneUrls.length)];
+      bones.style.backgroundImage = 'url("' + pick + '")';
+    }
+  }
 })();
