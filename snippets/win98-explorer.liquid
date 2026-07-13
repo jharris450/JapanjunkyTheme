@@ -158,9 +158,10 @@
   </div>
 
   <footer class="jj-explorer__status" aria-hidden="true">
+    {%- comment -%} filebrowser.png order: objects | filler | size | My Computer {%- endcomment -%}
     <span class="jj-explorer__status-cell" id="jj-explorer-status-objects">{{ win_objects }} object(s)</span>
-    <span class="jj-explorer__status-cell">{{ win_kb }} KB</span>
     <span class="jj-explorer__status-cell jj-explorer__status-cell--wide"></span>
+    <span class="jj-explorer__status-cell">{{ win_kb }} KB</span>
     <span class="jj-explorer__status-cell jj-explorer__status-cell--computer">{% render 'win95-start-icon', icon: 'computer' %} The Computer</span>
   </footer>
 
