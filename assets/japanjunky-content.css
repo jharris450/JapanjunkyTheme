@@ -442,6 +442,35 @@
 .jj-explorer__bones--skele {
   height: auto;
   aspect-ratio: 160 / 183;
+  /* Bloom: firelight on the element's own background so it paints BEHIND
+     both sprite pseudo-layers. Two lobes — a hot amber core on the flame
+     (at ~29% 36% of the frame) and a wider red wash reaching down-right
+     into the gap toward the skeletons. Both fade out before the element
+     edges (no hard clip). Flickers in hard holds synced to the flame
+     frames; alphas track the baked brightness swing. */
+  animation: jj-bones-bloom 0.64s infinite;
+}
+@keyframes jj-bones-bloom {
+  0%, 24.9% { /* base */
+    background:
+      radial-gradient(ellipse 26% 28% at 29% 36%, rgba(255, 170, 0, 0.30), rgba(232, 49, 58, 0.16) 55%, transparent 100%),
+      radial-gradient(ellipse 40% 42% at 42% 52%, rgba(232, 49, 58, 0.13), transparent 100%);
+  }
+  25%, 49.9% { /* flare */
+    background:
+      radial-gradient(ellipse 30% 33% at 29% 36%, rgba(255, 170, 0, 0.44), rgba(232, 49, 58, 0.24) 55%, transparent 100%),
+      radial-gradient(ellipse 46% 47% at 43% 53%, rgba(232, 49, 58, 0.20), transparent 100%);
+  }
+  50%, 74.9% { /* dim */
+    background:
+      radial-gradient(ellipse 24% 26% at 29% 36%, rgba(255, 170, 0, 0.22), rgba(232, 49, 58, 0.12) 55%, transparent 100%),
+      radial-gradient(ellipse 37% 39% at 42% 52%, rgba(232, 49, 58, 0.09), transparent 100%);
+  }
+  75%, 100% { /* mid */
+    background:
+      radial-gradient(ellipse 28% 30% at 29% 36%, rgba(255, 170, 0, 0.36), rgba(232, 49, 58, 0.19) 55%, transparent 100%),
+      radial-gradient(ellipse 43% 44% at 42% 52%, rgba(232, 49, 58, 0.16), transparent 100%);
+  }
 }
 .jj-explorer__bones--skele::before,
 .jj-explorer__bones--skele::after {
