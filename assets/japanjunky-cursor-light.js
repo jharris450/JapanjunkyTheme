@@ -53,7 +53,7 @@
     var f = tierScale() / zoom;
     if (Math.abs(f - 1) < 0.01) return; // std already exact
     var out = { hotspots: {} };
-    var types = ['arrow', 'hand', 'text', 'wait'];
+    var types = ['arrow', 'hand', 'text', 'wait', 'rsns', 'rsew', 'rsnesw', 'rsnwse'];
     var pending = 0;
     var failed = false;
     types.forEach(function (type) {
@@ -88,11 +88,15 @@
     });
   }
 
+  var FALLBACKS = {
+    arrow: 'auto', hand: 'pointer', text: 'text', wait: 'wait',
+    rsns: 'ns-resize', rsew: 'ew-resize', rsnesw: 'nesw-resize', rsnwse: 'nwse-resize'
+  };
+
   function cursorVal(type, variant) {
     var url = active[type][variant % 4];
     var hs = active.hotspots[type];
-    var fallback = type === 'hand' ? 'pointer' : type === 'text' ? 'text' : type === 'wait' ? 'wait' : 'auto';
-    return 'url("' + url + '") ' + hs[0] + ' ' + hs[1] + ', ' + fallback;
+    return 'url("' + url + '") ' + hs[0] + ' ' + hs[1] + ', ' + (FALLBACKS[type] || 'auto');
   }
 
   // Inject a <style> element for cursor rules
@@ -108,13 +112,14 @@
       'a, a *, button, button *, [role="button"], label, summary, select, .jj-start-btn, .jj-taskbar-tab, .jj-start-menu__item, .jj-start-submenu__item { cursor: ' + cursorVal('hand', v) + ' !important; }',
       'input, textarea, [contenteditable="true"] { cursor: ' + cursorVal('text', v) + ' !important; }',
       '.jj-loading, [aria-busy="true"] { cursor: ' + cursorVal('wait', v) + ' !important; }',
-      // window resize handles (explorer window): native Win-style resize
-      // arrows, like the OS swapping the pointer at a window edge — the
-      // bare "*" arrow rule would otherwise swallow them
-      '[data-rs="n"], [data-rs="s"] { cursor: ns-resize !important; }',
-      '[data-rs="e"], [data-rs="w"] { cursor: ew-resize !important; }',
-      '[data-rs="ne"], [data-rs="sw"] { cursor: nesw-resize !important; }',
-      '[data-rs="nw"], [data-rs="se"] { cursor: nwse-resize !important; }'
+      // window resize handles (explorer window): phosphor Win95 double
+      // arrows from the same cursor set, like the OS swapping the pointer
+      // at a window edge — the bare "*" arrow rule would otherwise
+      // swallow them
+      '[data-rs="n"], [data-rs="s"] { cursor: ' + cursorVal('rsns', v) + ' !important; }',
+      '[data-rs="e"], [data-rs="w"] { cursor: ' + cursorVal('rsew', v) + ' !important; }',
+      '[data-rs="ne"], [data-rs="sw"] { cursor: ' + cursorVal('rsnesw', v) + ' !important; }',
+      '[data-rs="nw"], [data-rs="se"] { cursor: ' + cursorVal('rsnwse', v) + ' !important; }'
     ].join('\n');
   }
 
