@@ -1,8 +1,16 @@
-/* ─── Cart page ─────────────────────────────────────────────── */
-/* padding-bottom clears the fixed 32px taskbar (overrides .jj-page, which
-   loads earlier — same element, both classes). */
-.jj-cart { padding: 16px 16px 40px; max-width: 900px; margin: 0 auto; }
-.jj-cart__title { margin: 0 0 16px; }
+/* ─── Cart page (inside the Win98 explorer window) ───────────────
+   .jj-cart is the outer .jj-page wrapper around the explorer chrome —
+   never size/pad it, the window handles its own geometry. Line items
+   live in the explorer main pane (terminal content per the layer rule). */
+.jj-cart__form { max-width: 720px; }
+.jj-cart__empty {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  color: var(--jj-text, #e0d5c0);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+.jj-cart__empty a { color: var(--jj-amber, #ffaa00); }
 .jj-cart__items { list-style: none; margin: 0; padding: 0; }
 .jj-cart__item {
   display: grid;

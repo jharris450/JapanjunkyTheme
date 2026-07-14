@@ -66,6 +66,9 @@
         }
         var sub = document.getElementById('jj-cart-subtotal');
         if (sub) sub.textContent = money(cart.total_price);
+        // explorer window status bar tracks the live line count
+        var objects = document.getElementById('jj-explorer-status-objects');
+        if (objects) objects.textContent = cart.item_count + ' object(s)';
         if (window.jjRefreshCart) window.jjRefreshCart();
         if (cart.item_count === 0) window.location.reload();
       })

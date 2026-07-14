@@ -1,16 +1,14 @@
 {%- comment -%}
-  Cart page. Works without JS as a standard /cart form POST; progressively
-  enhanced by japanjunky-cart-page.js (AJAX qty/remove + start-menu sync).
+  Cart page — standard /cart form POST rendered inside the Win98 explorer
+  window (chrome = Win98, line items = terminal, per the layer rule).
+  Progressively enhanced by japanjunky-cart-page.js (AJAX qty/remove +
+  start-menu sync); without JS the form submits normally.
 {%- endcomment -%}
 <script>window.JJ_MONEY_FORMAT = {{ shop.money_format | json }};</script>
-<div class="jj-page jj-cart">
-  <header class="jj-cart__header"><h1 class="jj-cart__title">CART</h1></header>
 
+{%- capture win_body -%}
   {%- if cart.item_count == 0 -%}
-    <div class="jj-empty">
-      <pre class="jj-empty__art" aria-hidden="true">  [ cart empty ]  </pre>
-      <p class="jj-empty__msg"><a href="/collections/all">Browse the catalog</a>.</p>
-    </div>
+    <p class="jj-cart__empty">&gt; cart empty. Browse the <a href="/collections/all">catalog</a>.</p>
   {%- else -%}
     <form action="{{ routes.cart_url }}" method="post" id="jj-cart-form" class="jj-cart__form">
       <ul class="jj-cart__items">
@@ -49,6 +47,12 @@
       </div>
     </form>
   {%- endif -%}
+{%- endcapture -%}
+
+{%- assign win_desc = 'Items staged for checkout. Quantities update in place; totals settle at checkout.' -%}
+
+<div class="jj-page jj-cart">
+  {% render 'win98-explorer', title: 'Cart', body: win_body, desc: win_desc, path: 'CART', icon: 'cart', objects: cart.item_count %}
 </div>
 
 {% schema %}
