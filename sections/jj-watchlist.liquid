@@ -1,12 +1,11 @@
 {%- comment -%}
-  Watchlist page — renders the logged-in customer's custom.watchlist metafield
-  (list.product_reference). Remove buttons reuse the shared watch toggle; the
-  row is removed by japanjunky-watchlist.js once the proxy confirms the unwatch.
+  Watchlist page — the logged-in customer's custom.watchlist metafield
+  (list.product_reference) rendered inside the Win98 explorer window
+  (chrome = Win98, list = terminal, per the layer rule). Remove buttons
+  reuse the shared watch toggle; japanjunky-watchlist.js drops the row
+  once the proxy confirms the unwatch.
 {%- endcomment -%}
-<div class="jj-page">
-  <div class="jj-watchlist">
-  <h1 class="jj-watchlist__title">// WATCHLIST</h1>
-
+{%- capture win_body -%}
   {%- if customer -%}
     {%- assign items = customer.metafields.custom.watchlist.value -%}
     {%- if items != blank and items.size > 0 -%}
@@ -39,12 +38,22 @@
         {%- endfor -%}
       </ul>
     {%- else -%}
-      <p class="jj-watchlist__empty">Your watchlist is empty. Browse the <a href="/collections/all">catalog</a> and hit [&#9734; Watch] on anything you want to track.</p>
+      <p class="jj-watchlist__empty">&gt; watchlist empty. Browse the <a href="/collections/all">catalog</a> and hit [&#9734; Watch] on anything you want to track.</p>
     {%- endif -%}
   {%- else -%}
-    <p class="jj-watchlist__empty">Please <a href="/account/login">log in</a> to view your watchlist.</p>
+    <p class="jj-watchlist__empty">&gt; access denied. <a href="/account/login">Log in</a> to view your watchlist.</p>
   {%- endif -%}
-  </div>
+{%- endcapture -%}
+
+{%- assign win_title = page.title | default: 'Watchlist' -%}
+{%- assign win_desc = 'Records you are tracking. Star anything in the catalog to pin it here.' -%}
+{%- assign win_objects = 0 -%}
+{%- if customer -%}
+  {%- assign win_objects = customer.metafields.custom.watchlist.value | size -%}
+{%- endif -%}
+
+<div class="jj-page jj-watchlist">
+  {% render 'win98-explorer', title: win_title, body: win_body, desc: win_desc, path: 'PAGES\WATCHLIST', icon: 'eye', objects: win_objects %}
 </div>
 
 {% schema %}

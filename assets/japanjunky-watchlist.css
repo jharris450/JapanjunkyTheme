@@ -64,28 +64,28 @@
 .jj-grid__card { position: relative; }
 .jj-pdp-info { position: relative; }
 
-/* --- Watchlist page --- */
-.jj-watchlist {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
-  color: var(--jj-text, #e0d5c0);
-}
-.jj-watchlist__title {
-  font-size: 20px;
-  color: var(--jj-secondary, #f5d742);
-  text-transform: uppercase;
-  margin: 0 0 16px;
-}
+/* --- Watchlist page (inside the Win98 explorer window) ---
+   .jj-watchlist is the outer .jj-page wrapper around the explorer
+   chrome — never size/pad it, the window handles its own geometry.
+   The list lives in the explorer main pane (terminal content per the
+   layer rule); rows get the IE listview hover treatment. */
 .jj-watchlist__empty {
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
   color: var(--jj-text, #e0d5c0);
   font-size: 13px;
   line-height: 1.6;
+  margin: 0;
 }
 .jj-watchlist__empty a { color: var(--jj-amber, #ffaa00); }
 
-.jj-watchlist__list { list-style: none; margin: 0; padding: 0; }
+.jj-watchlist__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 640px;
+  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+  color: var(--jj-text, #e0d5c0);
+}
 .jj-watchlist__item {
   display: flex;
   align-items: center;
@@ -95,6 +95,12 @@
   border-bottom: 0;
 }
 .jj-watchlist__item:last-child { border-bottom: 1px solid var(--jj-border, #333); }
+/* file-select hover, like an explorer listview row */
+.jj-watchlist__item:hover {
+  background: rgba(245, 215, 66, 0.05);
+  border-color: var(--jj-secondary, #f5d742);
+}
+.jj-watchlist__item:hover + .jj-watchlist__item { border-top-color: var(--jj-secondary, #f5d742); }
 .jj-watchlist__item--removing { opacity: 0; transition: opacity 0.2s steps(2); }
 
 .jj-watchlist__link {
