@@ -25,7 +25,7 @@
     var t = e.target;
     // Native scroll handles descendants of the wrapper; chrome bars and
     // menus manage their own gestures.
-    if (t.closest && t.closest('#jj-scroll, .jj-taskbar, .jj-cmdbar, .jj-start-menu, .jj-vol-popup')) return;
+    if (t.closest && t.closest('#jj-scroll, .jj-taskbar, .jj-start-menu, .jj-vol-popup, .jj-calendar-popover')) return;
     startY = e.touches[0].clientY;
     startTop = sc.scrollTop;
   }, { passive: true });

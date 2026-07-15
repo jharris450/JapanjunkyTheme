@@ -22,6 +22,19 @@
 
   <div class="jj-taskbar__tabs" id="jj-taskbar-tabs"></div>
 
+  {%- comment -%} Handheld account tabs — occupy the window-tab slot (window
+      tabs are hidden on mobile). Desktop hides this strip (base CSS).
+      HARD CAP: 3 tabs. {%- endcomment -%}
+  <nav class="jj-taskbar__mtabs" id="jj-taskbar-mtabs" aria-label="Account">
+    {%- if customer -%}
+      <a class="jj-taskbar__mtab" href="/account">ACCOUNT</a>
+    {%- else -%}
+      <a class="jj-taskbar__mtab" href="/account/login">LOG IN</a>
+    {%- endif -%}
+    <a class="jj-taskbar__mtab" href="{{ routes.cart_url }}">CART&nbsp;<span class="jj-taskbar__mtab-count" id="jj-mtab-cart-count">{%- if cart.item_count > 0 -%}{{ cart.item_count }}{%- endif -%}</span></a>
+    <a class="jj-taskbar__mtab" href="/pages/watchlist">WATCH</a>
+  </nav>
+
   {%- comment -%} System tray: one Win98 well holding speaker + clock {%- endcomment -%}
   <div class="jj-tray">
     <div class="jj-tray__divider" aria-hidden="true"></div>
@@ -29,8 +42,6 @@
     {% render 'win95-clock' %}
   </div>
 </footer>
-
-{% render 'jj-mobile-commandbar' %}
 
 {% schema %}
 {

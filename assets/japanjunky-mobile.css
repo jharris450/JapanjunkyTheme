@@ -25,21 +25,16 @@ html.jj-mobile .jj-explorer__ctl {
   min-width: 40px;
 }
 
-/* --- Handheld chrome: WinCE top taskbar --- */
-/* Windows CE puts the taskbar at the TOP (Start left, tray right) and
-   runs every app fullscreen — period-correct AND touch-correct. Same
-   taskbar DOM as desktop; only geometry moves. */
+/* --- Handheld chrome: bottom Win98 taskbar --- */
+/* One bar: Start | 3 account tabs | tray (muted speaker + clock). The
+   taskbar keeps its desktop bottom anchor; only height + tab strip are
+   mobile. Window tabs stay hidden (apps are fullscreen). */
 html.jj-mobile {
-  --jj-mobile-topbar-h: 40px;
-  --jj-mobile-cmdbar-h: 48px;
+  --jj-mobile-taskbar-h: 44px;
 }
 
 html.jj-mobile .jj-taskbar {
-  top: 0;
-  bottom: auto;
-  height: var(--jj-mobile-topbar-h);
-  border-top: none;
-  border-bottom: 1px solid #333;
+  height: var(--jj-mobile-taskbar-h);
 }
 
 /* Fullscreen apps make window tabs meaningless on the handheld. */
@@ -52,75 +47,59 @@ html.jj-mobile .jj-taskbar::after {
   display: none;
 }
 
-/* The 40px top bar fits the whole 34x37 Tsuno sprite (desktop's 32px bar
-   crops the horns upward on purpose). Undo the menu-open crop — the menu
-   drops DOWN here, so the horns never overlap it. */
-html.jj-mobile .jj-start-btn--active + .jj-start-btn__tsuno {
-  height: 37px;
-}
-
-/* Start menu drops DOWN from the top bar, full width (WinCE). */
-html.jj-mobile .jj-start-menu {
-  top: var(--jj-mobile-topbar-h);
-  bottom: auto;
-  left: 0;
-  right: 0;
-  width: auto;
-  max-height: calc(100vh - var(--jj-mobile-topbar-h) - var(--jj-mobile-cmdbar-h) - 8px);
-  overflow-y: auto;
-  margin-bottom: 0;
-  margin-top: 2px;
-}
-
-/* Tray popups anchor under the top bar instead of above the bottom one. */
-html.jj-mobile .jj-vol-popup,
-html.jj-mobile .jj-clock-popover {
-  top: calc(var(--jj-mobile-topbar-h) + 4px);
-  bottom: auto;
-}
-
-/* --- Handheld chrome: bottom command bar --- */
-/* Hidden by default (desktop); only the handheld class reveals it.
-   Same chrome layer scheme as the taskbar (z 10010, under the global
-   CRT shader canvas at 20000). */
-.jj-cmdbar {
+/* Account tabs: hidden on desktop (base), revealed on the handheld. */
+.jj-taskbar__mtabs {
   display: none;
 }
 
-html.jj-mobile .jj-cmdbar {
+html.jj-mobile .jj-taskbar__mtabs {
   display: flex;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--jj-mobile-cmdbar-h);
-  background: #0a0a0a;
-  border-top: 1px solid #333;
-  z-index: 10010;
-  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  margin: 0 6px;
+  align-self: center;
 }
 
-html.jj-mobile .jj-cmdbar__btn {
+html.jj-mobile .jj-taskbar__mtab {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin: 4px;
+  min-height: 34px;
+  font-size: 14px;
   color: var(--jj-text);
   text-decoration: none;
   background: #111;
   border: 1px solid #333;
   box-shadow: var(--jj-tactile);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-html.jj-mobile .jj-cmdbar__btn:active {
+html.jj-mobile .jj-taskbar__mtab:active {
   box-shadow: var(--jj-tactile-pressed);
-  transform: translate(2px, 2px);
+  transform: translate(1px, 1px);
 }
 
-html.jj-mobile .jj-cmdbar__count {
+html.jj-mobile .jj-taskbar__mtab-count {
   color: var(--jj-secondary);
+}
+
+/* Start menu: desktop-default bottom anchor, stretched full width. */
+html.jj-mobile .jj-start-menu {
+  left: 0;
+  right: 0;
+  width: auto;
+  bottom: var(--jj-mobile-taskbar-h);
+  max-height: calc(100vh - var(--jj-mobile-taskbar-h) - 8px);
+  overflow-y: auto;
+}
+
+/* Tray popups clear the taller bar. */
+html.jj-mobile .jj-vol-popup,
+html.jj-mobile .jj-clock-popover {
+  bottom: calc(var(--jj-mobile-taskbar-h) + 4px);
 }
 
 /* Toolbox button: its fan-menu JS is gated off on the handheld, so the
@@ -137,12 +116,12 @@ html.jj-mobile .jj-vol-btn {
 }
 
 /* --- Fullscreen explorer --- */
-/* WinCE apps are always maximized: the window fills the strip between
-   the top taskbar and the command bar (mirrors .jj-explorer--max, which
-   proves fixed positioning works from inside the .jj-page layer). */
+/* Handheld apps are always maximized: the window fills the viewport above
+   the bottom taskbar (mirrors .jj-explorer--max, which proves fixed
+   positioning works from inside the .jj-page layer). */
 html.jj-mobile .jj-explorer {
   position: fixed;
-  inset: var(--jj-mobile-topbar-h) 0 var(--jj-mobile-cmdbar-h);
+  inset: 0 0 var(--jj-mobile-taskbar-h);
   width: auto;
   max-width: none;
   height: auto;
@@ -173,8 +152,8 @@ html.jj-mobile .jj-explorer__panel {
    the handheld's bars are top + bottom, so inset the layer between them
    (the explorer inside content pages is viewport-fixed and unaffected). */
 html.jj-mobile .jj-page {
-  top: var(--jj-mobile-topbar-h);
-  bottom: var(--jj-mobile-cmdbar-h);
+  top: 0;
+  bottom: var(--jj-mobile-taskbar-h);
   padding-bottom: 16px;
 }
 
@@ -183,8 +162,8 @@ html.jj-mobile .jj-page {
    top, info panel scrolling underneath on a near-opaque backing so text
    never fights the art. */
 html.jj-mobile .jj-pdp {
-  top: var(--jj-mobile-topbar-h);
-  bottom: var(--jj-mobile-cmdbar-h);
+  top: 0;
+  bottom: var(--jj-mobile-taskbar-h);
   flex-direction: column;
 }
 
@@ -234,9 +213,9 @@ html.jj-mobile .jj-product-zone .jj-product-info {
   border: 1px solid #444;
 }
 
-/* Scroll indicator sits above the command bar, not the old taskbar. */
+/* Scroll indicator sits above the bottom taskbar. */
 html.jj-mobile .jj-scroll__indicator {
-  bottom: calc(var(--jj-mobile-cmdbar-h) + 8px);
+  bottom: calc(var(--jj-mobile-taskbar-h) + 8px);
 }
 
 /* The scroll wrapper must pan by touch (wheel drove it on desktop). */
