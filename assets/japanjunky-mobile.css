@@ -194,3 +194,45 @@ html.jj-mobile .jj-pdp-info {
   background: rgba(8, 5, 3, 0.92);
   touch-action: pan-y;
 }
+
+/* --- Homepage hero (Phase 4) --- */
+/* The desktop bundle stage (3D box + hover ring + daruma + kyogen) is
+   JS-positioned around a 24vw left zone — none of it survives 390px.
+   The handheld hero is panel-only: the wax/sun scene stays as the big
+   visual, the bundle card floats centered over it (typewriter + ATC via
+   bundle-stage.js's JJ_MOBILE branch), the ring/box/FX never build. */
+html.jj-mobile .jj-ring,
+html.jj-mobile #jj-bundle-canvas,
+html.jj-mobile #jj-viewer-canvas,
+html.jj-mobile #jj-swirl-canvas,
+html.jj-mobile .jj-kyogen-clip,
+html.jj-mobile .jj-daruma,
+html.jj-mobile #jj-daruma-fx {
+  display: none !important;
+}
+
+html.jj-mobile .jj-product-zone {
+  width: 100%;
+  top: var(--jj-mobile-topbar-h);
+  height: auto;
+  bottom: calc(var(--jj-mobile-cmdbar-h) + 56px); /* clear the CATALOG indicator */
+  align-items: center;
+  padding-left: 0;
+}
+
+html.jj-mobile .jj-product-zone .jj-product-info {
+  margin: auto 16px 0; /* hang low over the scene, clear of the sun */
+  width: calc(100% - 32px); /* the desktop width:100% ignores the side margins */
+  max-width: 420px;
+  border: 1px solid #444;
+}
+
+/* Scroll indicator sits above the command bar, not the old taskbar. */
+html.jj-mobile .jj-scroll__indicator {
+  bottom: calc(var(--jj-mobile-cmdbar-h) + 8px);
+}
+
+/* The scroll wrapper must pan by touch (wheel drove it on desktop). */
+html.jj-mobile .jj-scroll {
+  touch-action: pan-y;
+}

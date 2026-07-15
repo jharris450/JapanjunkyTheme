@@ -10,6 +10,10 @@
    doll center x 75, doll top y 103, seam (flap line, 55% down) y 138. */
 (function () {
   'use strict';
+
+  // Handheld mode: daruma rides the desktop bundle stage (hidden there).
+  if (window.JJ_MOBILE) return;
+
   var btn = document.getElementById('jj-bundle-reroll');
   if (!btn || !btn.classList.contains('jj-daruma')) return;
 

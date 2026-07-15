@@ -14,6 +14,10 @@
 (function () {
   'use strict';
 
+  // Handheld mode: the hover/wheel ring is a desktop showpiece — the
+  // mobile bundle hero is panel-only until its touch design (Phase 4+).
+  if (window.JJ_MOBILE) return;
+
   // ─── DOM ───────────────────────────────────────────────────────
   var ring = document.getElementById('jj-ring');
   var stage = document.getElementById('jj-ring-stage');

@@ -15,6 +15,9 @@
 (function () {
   'use strict';
 
+  // Handheld mode: kyogen mask + swirl belong to the desktop bundle stage.
+  if (window.JJ_MOBILE) return;
+
   var BUFFER = 512;      // render buffer px; CSS upscale ~2.4x keeps pixels but kills grain-mush
   var TEX = 512;         // burst texture size
   var FLICKER = 0.18;    // seconds per frame of the two-pattern flicker

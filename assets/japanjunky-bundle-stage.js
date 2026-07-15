@@ -701,6 +701,13 @@
   }
 
   // ─── Init ────────────────────────────────────────────────────
+  // Handheld: panel-only hero — bundle title/price/ATC still type in, but
+  // the 3D box, ring, daruma and kyogen stay desktop showpieces until the
+  // touch bundle stage gets its own design (mobile spec, Phase 4).
+  if (window.JJ_MOBILE) {
+    showBundleInfo();
+    return;
+  }
   buildBox();
   buildLights();
   setFlaps(0); // closed
