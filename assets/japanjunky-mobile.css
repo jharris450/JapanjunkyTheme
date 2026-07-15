@@ -355,3 +355,14 @@ html.jj-mobile .jj-explorer__file { font-size: 13px; }
    not chrome */
 html.jj-mobile .jj-explorer-err__msg { font-size: 13px; }
 html.jj-mobile .jj-explorer-err__ok { font-size: 14px; }
+
+/* Explorer folder-view side panel (desc / also-see links / hint / selection
+   name + stats). NOT dead on mobile: the jj-mobile gate keys on screen
+   min-dimension (orientation-stable), so a landscape phone runs 667-915px
+   wide — past content.css's @media (max-width:680px) panel hide — and the
+   fullscreen explorer renders these at 11-12px. Real content, floor it. */
+html.jj-mobile .jj-explorer__panel-desc,
+html.jj-mobile .jj-explorer__panel-also,
+html.jj-mobile .jj-explorer__panel-hint,
+html.jj-mobile .jj-explorer__panel-stats { font-size: 13px; }
+html.jj-mobile .jj-explorer__panel-sel-name { font-size: 14px; }
