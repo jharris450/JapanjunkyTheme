@@ -997,4 +997,8 @@
   renderGrid();
   updateCount();
 
+  // Handheld records list (japanjunky-mobile.js) reuses the exact grid card
+  // (cover spin, condition chips, quick-ATC, watch star all ride along).
+  window.JJ_GridCard = { createCard: createCard };
+
 })();

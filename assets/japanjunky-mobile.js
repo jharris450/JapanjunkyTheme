@@ -38,4 +38,26 @@
   document.addEventListener('touchend', function () {
     startY = null;
   }, { passive: true });
+
+  // ─── Records list: the mobile stand-in for the ring crescent ──
+  // bundle-stage.js's mobile path calls populate() when the box opens and
+  // clear() when a reroll shuts it. Cards are real grid cards (JJ_GridCard
+  // is exported by japanjunky-product-grid.js, which loads before the
+  // bundle stage ever deals).
+  var recordsEl = document.getElementById('jj-mrecords');
+  window.JJ_MobileRecords = {
+    populate: function (pool) {
+      if (!recordsEl || !window.JJ_GridCard) return;
+      recordsEl.innerHTML = '';
+      for (var i = 0; i < pool.length; i++) {
+        var card = window.JJ_GridCard.createCard(pool[i]);
+        card.classList.add('jj-mrecords__card');
+        card.style.animationDelay = (i * 120) + 'ms';
+        recordsEl.appendChild(card);
+      }
+    },
+    clear: function () {
+      if (recordsEl) recordsEl.innerHTML = '';
+    }
+  };
 })();

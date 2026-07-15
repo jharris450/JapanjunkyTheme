@@ -366,3 +366,29 @@ html.jj-mobile .jj-explorer__panel-also,
 html.jj-mobile .jj-explorer__panel-hint,
 html.jj-mobile .jj-explorer__panel-stats { font-size: 13px; }
 html.jj-mobile .jj-explorer__panel-sel-name { font-size: 14px; }
+
+/* --- Mobile landing screen (homepage hero flow) --- */
+/* Base: desktop never renders this screen. */
+.jj-scroll__screen--mhero {
+  display: none;
+}
+
+html.jj-mobile .jj-scroll__screen--mhero {
+  display: block;
+  pointer-events: auto;
+  padding: 24px 12px 40px;
+}
+
+html.jj-mobile .jj-mhero__daruma-slot {
+  position: relative;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Records deal in with the CRT power-on flash, staggered per card
+   (animation-delay set inline by JJ_MobileRecords.populate). */
+html.jj-mobile .jj-mrecords__card {
+  animation: jj-crt-on 0.3s ease-out backwards;
+}
