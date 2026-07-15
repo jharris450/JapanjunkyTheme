@@ -473,7 +473,9 @@
     var isGecko = typeof CSS !== 'undefined' && CSS.supports
       && CSS.supports('-moz-appearance', 'none');
 
-    if (isGecko) {
+    // Handheld mode also skips the barrel (mobile GPUs + the whole-viewport
+    // SVG filter are a bad mix; the gate script pre-adds jj-crt-no-barrel).
+    if (isGecko || window.JJ_MOBILE) {
       document.documentElement.classList.add('jj-crt-no-barrel');
     } else {
       initBarrelDistortion(cfg);

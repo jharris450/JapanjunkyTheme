@@ -81,6 +81,19 @@
       };
     })();
 
+    /* Mobile handheld mode (spec: docs/superpowers/specs/2026-07-14-mobile-
+       handheld-design.md). One load-time decision — no live switching. A
+       coarse pointer + narrow viewport = handheld device; CSS keys off the
+       html class so desktop and mobile can never half-blend. The barrel
+       filter is skipped on handhelds (same jj-crt-no-barrel path Firefox
+       uses) — crt-shader.js checks JJ_MOBILE before initBarrelDistortion. */
+    window.JJ_MOBILE = !!(window.matchMedia
+      && window.matchMedia('(pointer: coarse) and (max-width: 820px)').matches);
+    if (window.JJ_MOBILE) {
+      document.documentElement.classList.add('jj-mobile');
+      document.documentElement.classList.add('jj-crt-no-barrel');
+    }
+
     window.JJ_CURSOR_SETS = {
       std: {
         arrow: [
