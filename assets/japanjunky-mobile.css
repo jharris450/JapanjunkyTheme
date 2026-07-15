@@ -269,3 +269,89 @@ html.jj-mobile .jj-scroll__indicator {
 html.jj-mobile .jj-scroll {
   touch-action: pan-y;
 }
+
+/* --- Catalog: one product per row --- */
+/* .jj-grid is repeat(4,1fr) with a 600px media query to 2 cols
+   (japanjunky-product-grid.css:84-95); this outweighs both. */
+html.jj-mobile .jj-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 16px 12px;
+}
+
+/* Full-width card covers would tower — cap and center them. */
+html.jj-mobile .jj-grid__card-img-wrap {
+  max-width: 70vw;
+  margin: 0 auto;
+}
+
+/* --- Text-size floor (user: mobile text too small) --- */
+/* Selectors verified against japanjunky-product-grid.css / -product-info.css /
+   -win95.css / -content.css — all names below match the live source. */
+html.jj-mobile .jj-grid__card-title { font-size: 16px; }
+html.jj-mobile .jj-grid__card-artist { font-size: 14px; }
+html.jj-mobile .jj-grid__card-price,
+html.jj-mobile .jj-grid__card-format,
+html.jj-mobile .jj-grid__card-cond-chip { font-size: 14px; }
+
+html.jj-mobile .jj-product-info__artist { font-size: 18px; }
+html.jj-mobile .jj-product-info__title { font-size: 16px; }
+html.jj-mobile .jj-product-info__meta { font-size: 14px; }
+html.jj-mobile .jj-product-info__price { font-size: 18px; }
+html.jj-mobile .jj-action-btn { font-size: 15px; }
+
+html.jj-mobile .jj-start-menu__item { font-size: 15px; min-height: 40px; }
+html.jj-mobile .jj-start-menu__section-title { font-size: 13px; }
+
+html.jj-mobile .jj-explorer__status { font-size: 13px; }
+html.jj-mobile .jj-prose { font-size: 15px; }
+
+/* --- Text-size floor: static sweep additions ---
+   Emulated-page sweep (brief Step 2) can't run here (no local preview
+   auth) — deferred to Task 10. Substitute: statically scanned every
+   font-size < 13px in japanjunky-product-grid.css, -content.css,
+   -win95.css, -base.css and floored the user-facing ones that actually
+   render on a mobile viewport. Skipped: decorative glyphs/badges
+   (heat-label, filter-badge, .jj-winctl, explorer menubar — explicitly
+   commented "decorative" in source), Win98 system chrome proper
+   (titlebar/menubar/toolbar/address bar/ctl buttons/throbber — the
+   project's hybrid rule keeps chrome authentically Win98-scaled),
+   taskbar/start-btn/clock-tray/vol-popup/shutdown screen (system tray
+   chrome, several already unreachable on mobile — taskbar tabs display:none,
+   volume button pointer-events:none), .jj-explorer__panel contents
+   (panel-desc/also/hint/sel-name/stats — already display:none below
+   680px via the existing @media in japanjunky-content.css, so never
+   render on a phone viewport), and toolbox/media-token/cursor pieces
+   (desktop-only, per brief). */
+
+/* Catalog: quick-add, sold-out flag, empty state */
+html.jj-mobile .jj-grid__card-add { font-size: 14px; }
+html.jj-mobile .jj-grid__card-soldout { font-size: 13px; }
+html.jj-mobile .jj-grid__empty { font-size: 14px; }
+
+/* Catalog scroll indicator ("keep scrolling" prompt) */
+html.jj-mobile .jj-scroll__indicator { font-size: 13px; }
+
+/* Catalog search/filter bar — real controls used to find products */
+html.jj-mobile .jj-grid__search-prompt,
+html.jj-mobile .jj-grid__filter-btn,
+html.jj-mobile .jj-grid__clear-btn,
+html.jj-mobile .jj-grid__count,
+html.jj-mobile .jj-grid__dropdown-item { font-size: 13px; }
+
+/* Typed inputs floored at 16px — anything smaller triggers iOS Safari's
+   auto-zoom-on-focus, which is its own mobile usability bug. */
+html.jj-mobile .jj-grid__search,
+html.jj-mobile .jj-search__input { font-size: 16px; }
+
+/* Contact form label */
+html.jj-mobile .jj-field__label { font-size: 13px; }
+
+/* Explorer folder-view file tiles (e.g. CART / WATCHLIST) — main pane,
+   not the sidebar panel, so it does render on mobile. */
+html.jj-mobile .jj-explorer__file { font-size: 13px; }
+
+/* Win98 "path not found" modal — message + OK button are real content,
+   not chrome */
+html.jj-mobile .jj-explorer-err__msg { font-size: 13px; }
+html.jj-mobile .jj-explorer-err__ok { font-size: 14px; }
