@@ -129,6 +129,13 @@ html.jj-mobile #jj-toolbox {
   display: none;
 }
 
+/* Sound is perma-muted on the handheld (players are desktop-only): the
+   tray speaker is a status glyph, not a control. win95-volume.js still
+   syncs the × mute glyph from JJ_Volume state on load. */
+html.jj-mobile .jj-vol-btn {
+  pointer-events: none;
+}
+
 /* --- Fullscreen explorer --- */
 /* WinCE apps are always maximized: the window fills the strip between
    the top taskbar and the command bar (mirrors .jj-explorer--max, which
