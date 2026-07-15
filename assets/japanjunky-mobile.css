@@ -24,3 +24,57 @@ html.jj-mobile .jj-explorer__ctl {
   min-height: 40px;
   min-width: 40px;
 }
+
+/* --- Handheld chrome: WinCE top taskbar --- */
+/* Windows CE puts the taskbar at the TOP (Start left, tray right) and
+   runs every app fullscreen — period-correct AND touch-correct. Same
+   taskbar DOM as desktop; only geometry moves. */
+html.jj-mobile {
+  --jj-mobile-topbar-h: 40px;
+  --jj-mobile-cmdbar-h: 48px;
+}
+
+html.jj-mobile .jj-taskbar {
+  top: 0;
+  bottom: auto;
+  height: var(--jj-mobile-topbar-h);
+  border-top: none;
+  border-bottom: 1px solid #333;
+}
+
+/* Fullscreen apps make window tabs meaningless on the handheld. */
+html.jj-mobile #jj-taskbar-tabs {
+  display: none;
+}
+
+/* Barrel skirt patches a barrel-only artifact; no barrel on handheld. */
+html.jj-mobile .jj-taskbar::after {
+  display: none;
+}
+
+/* The 40px top bar fits the whole 34x37 Tsuno sprite (desktop's 32px bar
+   crops the horns upward on purpose). Undo the menu-open crop — the menu
+   drops DOWN here, so the horns never overlap it. */
+html.jj-mobile .jj-start-btn--active + .jj-start-btn__tsuno {
+  height: 37px;
+}
+
+/* Start menu drops DOWN from the top bar, full width (WinCE). */
+html.jj-mobile .jj-start-menu {
+  top: var(--jj-mobile-topbar-h);
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: auto;
+  max-height: calc(100vh - var(--jj-mobile-topbar-h) - var(--jj-mobile-cmdbar-h) - 8px);
+  overflow-y: auto;
+  margin-bottom: 0;
+  margin-top: 2px;
+}
+
+/* Tray popups anchor under the top bar instead of above the bottom one. */
+html.jj-mobile .jj-vol-popup,
+html.jj-mobile .jj-clock-popover {
+  top: calc(var(--jj-mobile-topbar-h) + 4px);
+  bottom: auto;
+}
