@@ -346,6 +346,8 @@
   // Idle on the screen-RIGHT side (world +x = screen left with the default
   // camera): the pop burst behind the product card covers the old left spot.
   var TSUNO_IDLE_POS = { x: -4.0, y: 0.0, z: 6 };
+  // Handheld: portrait FOV crops x=-4 off-screen — greet from upper-center.
+  var TSUNO_MOBILE_IDLE_POS = { x: 0, y: 1.1, z: 6 };
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
   var tsunoLoginPageMode = config.cameraPreset === 'login';
@@ -894,7 +896,9 @@
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
-      var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
+      var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS
+        : (tsunoProductPageMode ? TSUNO_PRODUCT_POS
+        : (window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS));
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       tsunoRig.add(tsunoMesh);
 
@@ -915,7 +919,8 @@
       }
 
       // Place Tsuno at idle position — personality system activates on first product selection
-      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+      var idlePos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
+      tsunoMesh.position.set(idlePos.x, idlePos.y, idlePos.z);
 
       // On the product page there is no "first product selection" to activate
       // the personality system, so bootstrap the floating idle immediately.
@@ -1232,6 +1237,9 @@
   // the personality system with a deliberate "peek" wake gesture. No-op if
   // Tsuno is already activated, not idle, or on the product/login pages.
   document.addEventListener('jj:tsuno-wake', function () {
+    // Handheld: Tsuno stays in his greeting float and tracks the scroll
+    // (JJ_ScrollFollow rig); roaming would carry him off the portrait FOV.
+    if (window.JJ_MOBILE) return;
     if (!tsunoMesh || tsunoState !== 'idle') return;
     if (tsunoProductPageMode || tsunoLoginPageMode) return;
     if (tsunoActivated) return;
