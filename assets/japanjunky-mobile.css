@@ -159,3 +159,38 @@ html.jj-mobile .jj-explorer__files,
 html.jj-mobile .jj-explorer__panel {
   touch-action: pan-y;
 }
+
+/* --- Commerce pages (Phase 3) --- */
+/* .jj-page is the fixed full-viewport scroll layer behind catalog /
+   search / collection lists. Desktop pads 40px for the bottom taskbar;
+   the handheld's bars are top + bottom, so inset the layer between them
+   (the explorer inside content pages is viewport-fixed and unaffected). */
+html.jj-mobile .jj-page {
+  top: var(--jj-mobile-topbar-h);
+  bottom: var(--jj-mobile-cmdbar-h);
+  padding-bottom: 16px;
+}
+
+/* Product page: desktop is a fixed side-by-side split (360px info panel
+   + 3D viewer). The handheld stacks them — record viewer as the hero on
+   top, info panel scrolling underneath on a near-opaque backing so text
+   never fights the art. */
+html.jj-mobile .jj-pdp {
+  top: var(--jj-mobile-topbar-h);
+  bottom: var(--jj-mobile-cmdbar-h);
+  flex-direction: column;
+}
+
+html.jj-mobile .jj-pdp-viewer {
+  order: -1; /* DOM has info first; art leads on the handheld */
+  flex: 0 0 42%;
+}
+
+html.jj-mobile .jj-pdp-info {
+  width: auto;
+  max-width: none;
+  flex: 1 1 auto;
+  min-height: 0; /* let the flex item shrink so overflow-y can scroll */
+  background: rgba(8, 5, 3, 0.92);
+  touch-action: pan-y;
+}
