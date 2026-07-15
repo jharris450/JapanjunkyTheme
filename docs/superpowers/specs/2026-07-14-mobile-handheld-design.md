@@ -91,6 +91,41 @@ retained.
 Guy character, toolbox media players, music-reactive extras — each returns
 with an explicit touch interaction design or stays desktop-only by decision.
 
+## Addendum (2026-07-14, after Phase 3–5 build)
+
+**Phase 3 shipped as specced.** The old `max-width: 600px` media queries in
+product-grid.css turned out to fire naturally at zoom 1, giving the 2-column
+card grid for free; the new work was insetting the `.jj-page` scroll layer
+between the chrome bars and stacking the product page (viewer hero on top,
+info scrolling below on an opaque backing).
+
+**Phase 4 shipped smaller than specced — panel-only hero, v1.** The spec
+sketched "box canvas + swipeable record strip." Building that means real JS
+branches through bundle-stage.js and ring-carousel.js (both position
+everything around a 24vw desktop zone), and that hero carries 20+ commits of
+desktop tuning — an auto-reflow would degrade it. v1 instead: the wax/sun
+scene is the visual, the bundle panel floats centered over it (typewriter,
+price caret, ATC, [VIEW] to the bundle product page), and the box / ring /
+daruma / kyogen never build on mobile (`JJ_MOBILE` early returns). The
+swipeable box-and-strip hero remains open as its own future project.
+Homepage touch scrolling is driven by japanjunky-mobile.js (the desktop
+scroll wrapper is `pointer-events: none` and wheel-driven; touch pans that
+start on fixed layers outside it move `#jj-scroll.scrollTop` manually).
+
+**Phase 5 decisions** (per-FX, revisit on request):
+
+| System | Mobile call |
+|---|---|
+| Guy character | Desktop-only (mouse drag/throw physics) |
+| Toolbox media players | Desktop-only (hover fan + drag-to-spawn); button hidden |
+| Custom cursors | N/A on touch — skipped |
+| Bundle 3D stage | Desktop-only for now (see Phase 4 addendum) |
+| Volume control | KEPT — tap works; popup re-anchored under top bar |
+| Screensaver / splash / wax scene | KEPT — no pointer dependency |
+| Tsuno greeting bubble | KEPT — display-only |
+| Music-reactive scene | Moot until a mobile player exists (players are desktop-only) |
+| Explorer address bar / error box / folder view | KEPT — native touch + keyboard |
+
 ## Performance budget (mobile)
 
 - No SVG barrel filter (biggest CPU/GPU saving; known 3fps hazard in Gecko).
