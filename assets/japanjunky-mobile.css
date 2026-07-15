@@ -1,0 +1,26 @@
+/* ============================================
+   JAPANJUNKY MOBILE (handheld mode)
+   Pocket PC / Windows CE translation of the Win98 CRT desktop.
+   EVERY rule here is keyed on html.jj-mobile (set by the load-time
+   gate in theme.liquid) — with the class absent this file is inert,
+   so desktop rendering is untouched by construction.
+   Spec: docs/superpowers/specs/2026-07-14-mobile-handheld-design.md
+   ============================================ */
+
+/* --- Foundation --- */
+/* Desktop chunky-pixel look comes from html{zoom:2.5}; a phone viewport
+   (~390 CSS px) divided by 2.5 leaves ~156px of layout — unusable. The
+   handheld runs at zoom 1 and native font sizes. */
+html.jj-mobile {
+  zoom: 1;
+}
+
+/* Comfortable thumb targets: WinCE-era chrome was stylus-sized; ours
+   must be finger-sized. Applies to system chrome buttons only — content
+   layout tasks size their own. */
+html.jj-mobile .jj-start-btn,
+html.jj-mobile .jj-action-btn,
+html.jj-mobile .jj-explorer__ctl {
+  min-height: 40px;
+  min-width: 40px;
+}
