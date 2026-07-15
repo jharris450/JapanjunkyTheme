@@ -122,3 +122,34 @@ html.jj-mobile .jj-cmdbar__btn:active {
 html.jj-mobile .jj-cmdbar__count {
   color: var(--jj-secondary);
 }
+
+/* --- Fullscreen explorer --- */
+/* WinCE apps are always maximized: the window fills the strip between
+   the top taskbar and the command bar (mirrors .jj-explorer--max, which
+   proves fixed positioning works from inside the .jj-page layer). */
+html.jj-mobile .jj-explorer {
+  position: fixed;
+  inset: var(--jj-mobile-topbar-h) 0 var(--jj-mobile-cmdbar-h);
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  transform: none !important; /* neutralize any stale drag translate */
+}
+
+/* No resize on a fullscreen window; minimize would strand the page
+   (taskbar tabs are hidden on the handheld) and maximize is a no-op. */
+html.jj-mobile .jj-explorer__rs,
+html.jj-mobile #jj-explorer-min,
+html.jj-mobile #jj-explorer-max {
+  display: none;
+}
+
+/* Main pane already scrolls (overflow-y auto); make touch panning
+   explicit so nothing upstream (titlebar touch-action:none etc.)
+   swallows the gesture. */
+html.jj-mobile .jj-explorer__main,
+html.jj-mobile .jj-explorer__files,
+html.jj-mobile .jj-explorer__panel {
+  touch-action: pan-y;
+}
