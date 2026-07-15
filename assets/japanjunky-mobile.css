@@ -123,6 +123,12 @@ html.jj-mobile .jj-cmdbar__count {
   color: var(--jj-secondary);
 }
 
+/* Toolbox button: its fan-menu JS is gated off on the handheld, so the
+   floating button would be a dead control over the status bar. */
+html.jj-mobile #jj-toolbox {
+  display: none;
+}
+
 /* --- Fullscreen explorer --- */
 /* WinCE apps are always maximized: the window fills the strip between
    the top taskbar and the command bar (mirrors .jj-explorer--max, which

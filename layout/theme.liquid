@@ -88,8 +88,13 @@
        html class so desktop and mobile can never half-blend. The barrel
        filter is skipped on handhelds (same jj-crt-no-barrel path Firefox
        uses) — crt-shader.js checks JJ_MOBILE before initBarrelDistortion. */
+    /* screen min-dimension, not a width media query: the layout viewport
+       can still be the 980px legacy default when this runs, and a width
+       check would also flip the mode on landscape rotation. screen.* is
+       orientation-stable device geometry. */
     window.JJ_MOBILE = !!(window.matchMedia
-      && window.matchMedia('(pointer: coarse) and (max-width: 820px)').matches);
+      && window.matchMedia('(pointer: coarse)').matches
+      && Math.min(screen.width, screen.height) <= 820);
     if (window.JJ_MOBILE) {
       document.documentElement.classList.add('jj-mobile');
       document.documentElement.classList.add('jj-crt-no-barrel');
