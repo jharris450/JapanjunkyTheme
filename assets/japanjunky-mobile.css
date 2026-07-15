@@ -102,6 +102,53 @@ html.jj-mobile .jj-clock-popover {
   bottom: calc(var(--jj-mobile-taskbar-h) + 4px);
 }
 
+/* --- Calendar popover --- */
+/* Desktop caps it at 40vw (fine beside a wide taskbar); on a phone that
+   is ~156px — crushed. Full width, columns stacked, finger-sized days. */
+html.jj-mobile .jj-calendar-popover {
+  left: 8px;
+  right: 8px;
+  width: auto;
+  max-width: none;
+  bottom: calc(var(--jj-mobile-taskbar-h) + 4px);
+}
+
+html.jj-mobile .jj-calendar-popover--open {
+  flex-direction: column;
+}
+
+html.jj-mobile .jj-cal-right {
+  width: auto;
+  align-self: center;
+}
+
+html.jj-mobile .jj-cal-grid {
+  font-size: 14px;
+}
+
+html.jj-mobile .jj-cal-grid__day {
+  padding: 8px 0;
+}
+
+html.jj-mobile .jj-cal-grid__header {
+  font-size: 12px;
+}
+
+html.jj-mobile .jj-cal-nav__btn {
+  width: 36px;
+  height: 32px;
+  font-size: 14px;
+}
+
+html.jj-mobile .jj-cal-nav__label {
+  font-size: 16px;
+}
+
+html.jj-mobile .jj-cal-today-btn {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
 /* Toolbox button: its fan-menu JS is gated off on the handheld, so the
    floating button would be a dead control over the status bar. */
 html.jj-mobile #jj-toolbox {
