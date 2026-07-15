@@ -700,12 +700,116 @@
     infoPanel.style.display = '';
   }
 
-  // ─── Init ────────────────────────────────────────────────────
-  // Handheld: panel-only hero — bundle title/price/ATC still type in, but
-  // the 3D box, ring, daruma and kyogen stay desktop showpieces until the
-  // touch bundle stage gets its own design (mobile spec, Phase 4).
-  if (window.JJ_MOBILE) {
+  // ─── Handheld landing (mobile spec 2026-07-15) ────────────────
+  // The desktop fixed-zone cluster (#jj-product-info holds kyogen + box
+  // canvas + panel text; the daruma floats beside it) is reparented into
+  // the in-flow mobile hero screen. Same box engine; the DOM records list
+  // (JJ_MobileRecords) stands in for the ring crescent.
+  function initMobile() {
+    var mount = document.getElementById('jj-mhero-card-mount');
+    var darumaSlot = document.getElementById('jj-mhero-daruma-slot');
+    var infoPanel = document.getElementById('jj-product-info');
+    var records = document.getElementById('jj-mrecords');
+    if (!mount || !infoPanel) { showBundleInfo(); return; } // non-home fallback
+
+    mount.appendChild(infoPanel);
+    var darumaBtn = document.getElementById('jj-bundle-reroll');
+    var darumaFx = document.getElementById('jj-daruma-fx');
+    if (darumaSlot && darumaBtn) {
+      darumaSlot.appendChild(darumaBtn);
+      if (darumaFx) darumaSlot.appendChild(darumaFx);
+    }
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    buildBox();
+    buildLights();
+    setFlaps(0);
     showBundleInfo();
+    startLoop();
+
+    var opened = false;
+    function openAndDeal() {
+      if (opened || FSM.isLocked(state) || state !== 'closed' || aligning) return;
+      opened = true;
+      var pool = pickPool();
+      buildStack(pool);
+      alignFront(500, function () {
+        openFlaps(function () {          // openFlaps owns closed→opening→open
+          canvas.style.cursor = 'grab';
+          if (window.JJ_MobileRecords) window.JJ_MobileRecords.populate(pool);
+          if (darumaBtn) darumaBtn.style.display = '';
+        });
+      });
+    }
+
+    canvas.addEventListener('click', function () {
+      if (window.JJ_SPLASH_ACTIVE) return;
+      openAndDeal();
+    });
+
+    // Not tapped? Scrolling to the records area auto-opens (once).
+    if (records && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting && !window.JJ_SPLASH_ACTIVE) {
+            openAndDeal();
+            io.disconnect();
+            return;
+          }
+        }
+      }, { root: document.getElementById('jj-scroll'), rootMargin: '0px 0px -20% 0px' });
+      io.observe(records);
+    }
+
+    // Reroll: list clears → lid shuts → shake → reopen → new 5. The FSM
+    // transitions are copied 1:1 from the desktop reroll() (lines 510-543):
+    // closeFlaps carries NO setState of its own, and the final open uses a
+    // raw tween (NOT openFlaps) so we never double-transition opening→open.
+    function mobileReroll() {
+      if (state !== 'open') return;
+      setState(FSM.next(state, 'reroll'));        // open → retracting
+      if (window.JJ_MobileRecords) window.JJ_MobileRecords.clear();
+      setState(FSM.next(state, 'retracted'));     // retracting → closing
+      closeFlaps(function () {
+        setState(FSM.next(state, 'closed'));      // closing → shaking
+        var pool = pickPool();
+        buildStack(pool);
+        alignFront(350, function () {
+          shakeBox(function () {
+            setState(FSM.next(state, 'shaken'));  // shaking → opening
+            tween(600, function (e) { setFlaps(e); }, function () {
+              setState(FSM.next(state, 'opened')); // opening → open
+              if (window.JJ_MobileRecords) window.JJ_MobileRecords.populate(pool);
+            });
+          });
+        });
+      });
+    }
+
+    if (darumaBtn) {
+      darumaBtn.addEventListener('click', function () {
+        if (FSM.isLocked(state)) return;
+        var proceed = function () {
+          if (state === 'closed') { openAndDeal(); return; }
+          mobileReroll();
+        };
+        var daruma = window.JJ_DARUMA;
+        if (daruma) {
+          if (daruma.isBusy()) return;
+          daruma.play(proceed);
+        } else {
+          proceed();
+        }
+      });
+    }
+  }
+
+  // ─── Init ────────────────────────────────────────────────────
+  // Handheld: the desktop hero cluster is reparented into the in-flow mobile
+  // hero screen and driven by initMobile() (tap/scroll deal + daruma reroll);
+  // the desktop fixed-zone path below is skipped entirely on mobile.
+  if (window.JJ_MOBILE) {
+    initMobile();
     return;
   }
   buildBox();
