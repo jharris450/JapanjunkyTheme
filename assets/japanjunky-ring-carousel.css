@@ -41,7 +41,10 @@
   position: absolute;
   width: 180px;
   height: 180px;
-  transition: transform 0.4s ease-out, opacity 0.3s;
+  /* rotation hop MUST finish inside the wheel cooldown (ring-carousel.js,
+     280ms) — if the ease outlives the cooldown, per-notch wheel engines
+     (Firefox) retarget mid-flight forever and the covers clump mid-arc. */
+  transition: transform 0.24s ease-out, opacity 0.3s;
   cursor: default;
   pointer-events: auto; /* stage is none — covers catch their own events */
   display: flex;

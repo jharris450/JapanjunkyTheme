@@ -413,12 +413,14 @@
     e.stopPropagation();
     if (wheelCooldown) return;
     wheelCooldown = true;
-    // 260ms (was 150): Firefox fires a wheel event PER NOTCH while Chrome
-    // coalesces fast spins into fewer big-delta events, so FF retargeted
-    // the 0.4s ease-out every 150ms — covers never finished a hop and
-    // clumped mid-arc until the wheel stopped. At 260ms each hop is ~80%
-    // eased before the next starts and the crescent stays readable.
-    setTimeout(function () { wheelCooldown = false; }, 260);
+    // Firefox fires a wheel event PER NOTCH while Chrome coalesces fast
+    // spins into fewer big-delta events. The old 260ms cooldown still sat
+    // INSIDE the 0.4s ease, so FF retargeted every hop mid-flight and the
+    // covers clumped mid-arc through a whole spin. Invariant now: the hop
+    // transition (0.24s in ring-carousel.css) must fully land before the
+    // cooldown reopens — every hop completes, no mid-arc accumulation at
+    // any notch cadence.
+    setTimeout(function () { wheelCooldown = false; }, 280);
 
     lastRotateAt = performance.now();
     if (delta > 0) {

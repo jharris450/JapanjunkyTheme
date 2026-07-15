@@ -357,6 +357,7 @@
     var last = 0;
     var inView = true;
     var flickerT = 0;
+    var lastSceneKey = '';
 
     function frame(now) {
       rafId = 0;
@@ -367,23 +368,32 @@
       // patterns on a steps cycle (same rhythm as the old pop flicker).
       flickerT += dt;
       var flickFrame = Math.floor(flickerT / FLICKER) % 2;
-      tunnel.material.map = flickFrame ? stripeTexB : stripeTexA;
-      // the kyogen clip silhouette flips with the spike pattern
-      if (clipFrame && clipPaths[flickFrame]) {
-        clipFrame.style.clipPath = clipPaths[flickFrame];
-      }
-      glowRing.rotation.z += dt * 0.4;
 
       // BANG pulse: periodic core flash, quantized to steps (CRT flash,
       // not a smooth ease).
       var ph = (now / 1000) % BANG_PERIOD;
-      if (ph < BANG_LEN) {
-        var f = Math.ceil((1 - ph / BANG_LEN) * 4) / 4;
-        glowRing.scale.setScalar(1 + f * 0.45);
-      } else {
-        glowRing.scale.setScalar(1);
+      var bang = ph < BANG_LEN ? Math.ceil((1 - ph / BANG_LEN) * 4) / 4 : 0;
+
+      // Everything this scene shows is STEPPED (flicker swap + quantized
+      // bang; the glow ring texture is a pure radial gradient, so spinning
+      // it was invisible) — so only re-render the WebGL buffer when a step
+      // actually flips. The canvas covers ~2300x1800 visual px behind the
+      // card; Gecko re-rasterizes that upscale every time the buffer is
+      // dirtied, and 60Hz dirtying alone dragged Firefox to ~11fps. At
+      // step cadence (~6 renders/s) the swirl looks identical and the
+      // upscale cost drops ~10x. Pupils keep lerping every frame — they
+      // are DOM divs, not canvas content.
+      var sceneKey = flickFrame + ':' + bang;
+      if (sceneKey !== lastSceneKey) {
+        lastSceneKey = sceneKey;
+        tunnel.material.map = flickFrame ? stripeTexB : stripeTexA;
+        // the kyogen clip silhouette flips with the spike pattern
+        if (clipFrame && clipPaths[flickFrame]) {
+          clipFrame.style.clipPath = clipPaths[flickFrame];
+        }
+        glowRing.scale.setScalar(1 + bang * 0.45);
+        renderer.render(scene, camera);
       }
-      renderer.render(scene, camera);
       updatePupils();
       rafId = requestAnimationFrame(frame);
     }
