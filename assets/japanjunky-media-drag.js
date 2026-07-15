@@ -9,6 +9,10 @@
 (function () {
   'use strict';
 
+  // Handheld: players are desktop-only and hold-drag would fight touch
+  // scrolling — the whole module stands down.
+  if (window.JJ_MOBILE) return;
+
   var DRAG_THRESHOLD = 6; // layout px of movement before a press becomes a drag
   // Controls/links inside a draggable source that must keep their own behavior.
   var EXCLUDE = 'button, input, select, textarea, .jj-grid__card-cond-chip, .jj-pdp-back';
