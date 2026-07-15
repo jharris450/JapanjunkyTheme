@@ -15,6 +15,10 @@
 (function () {
   'use strict';
 
+  // Handheld mode: guy's drag/throw physics are mouse-built — returns in
+  // Phase 5 with a touch design or stays desktop-only.
+  if (window.JJ_MOBILE) return;
+
   var SRC = (window.JJ_SCREENSAVER_CONFIG || {}).guyTexture || '';
   if (!SRC) return;
 

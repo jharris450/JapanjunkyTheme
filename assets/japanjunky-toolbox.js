@@ -8,6 +8,10 @@
 (function () {
   'use strict';
 
+  // Handheld mode: hover fan menu + drag-to-spawn players are desktop
+  // interactions — returns in Phase 5 with a touch design.
+  if (window.JJ_MOBILE) return;
+
   var toolbox = document.getElementById('jj-toolbox');
   var btn = document.getElementById('jj-toolbox-btn');
   var fan = document.getElementById('jj-toolbox-fan');

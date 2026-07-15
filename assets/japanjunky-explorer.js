@@ -57,7 +57,9 @@
   function applyXf() {
     win.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
   }
-  if (bar) {
+  // Handheld mode: windows are always fullscreen (japanjunky-mobile.css)
+  // — no drag, no resize. Min/close/address/folder view stay live.
+  if (bar && !window.JJ_MOBILE) {
     bar.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.jj-explorer__ctl')) return;
       if (win.classList.contains('jj-explorer--max')) return;
@@ -99,6 +101,7 @@
   }
   win.querySelectorAll('.jj-explorer__rs').forEach(function (h) {
     h.addEventListener('pointerdown', function (e) {
+      if (window.JJ_MOBILE) return; // handheld: fullscreen, no resize
       if (win.classList.contains('jj-explorer--max')) return;
       lockLayout();
       var dir = h.getAttribute('data-rs');

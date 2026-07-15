@@ -11,6 +11,9 @@
 (function () {
   'use strict';
 
+  // Handheld mode: no pointer, no cursor — skip installing cursor sets.
+  if (window.JJ_MOBILE) return;
+
   var sets = window.JJ_CURSOR_SETS;
   if (!sets || !sets.std) return;
 
