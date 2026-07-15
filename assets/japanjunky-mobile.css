@@ -78,3 +78,47 @@ html.jj-mobile .jj-clock-popover {
   top: calc(var(--jj-mobile-topbar-h) + 4px);
   bottom: auto;
 }
+
+/* --- Handheld chrome: bottom command bar --- */
+/* Hidden by default (desktop); only the handheld class reveals it.
+   Same chrome layer scheme as the taskbar (z 10010, under the global
+   CRT shader canvas at 20000). */
+.jj-cmdbar {
+  display: none;
+}
+
+html.jj-mobile .jj-cmdbar {
+  display: flex;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--jj-mobile-cmdbar-h);
+  background: #0a0a0a;
+  border-top: 1px solid #333;
+  z-index: 10010;
+  font-size: 12px;
+}
+
+html.jj-mobile .jj-cmdbar__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 4px;
+  color: var(--jj-text);
+  text-decoration: none;
+  background: #111;
+  border: 1px solid #333;
+  box-shadow: var(--jj-tactile);
+}
+
+html.jj-mobile .jj-cmdbar__btn:active {
+  box-shadow: var(--jj-tactile-pressed);
+  transform: translate(2px, 2px);
+}
+
+html.jj-mobile .jj-cmdbar__count {
+  color: var(--jj-secondary);
+}

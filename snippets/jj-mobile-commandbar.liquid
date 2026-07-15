@@ -1,0 +1,9 @@
+{%- comment -%} Handheld bottom command bar — thumb-zone nav (Pocket PC
+    command bar). Rendered on all pages; display gated to html.jj-mobile
+    in japanjunky-mobile.css so desktop never shows it. {%- endcomment -%}
+<nav class="jj-cmdbar" id="jj-cmdbar" aria-label="Quick navigation">
+  <a class="jj-cmdbar__btn" href="{{ routes.all_products_collection_url }}">CATALOG</a>
+  <a class="jj-cmdbar__btn" href="{{ routes.search_url }}">SEARCH</a>
+  <a class="jj-cmdbar__btn" href="{{ routes.cart_url }}">CART{% if cart.item_count > 0 %}<span class="jj-cmdbar__count" id="jj-cmdbar-cart-count">{{ cart.item_count }}</span>{% endif %}</a>
+  <a class="jj-cmdbar__btn" href="/pages/watchlist">WATCH</a>
+</nav>
