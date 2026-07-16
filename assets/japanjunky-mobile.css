@@ -452,3 +452,12 @@ html.jj-mobile .jj-mhero__daruma-slot {
 html.jj-mobile .jj-mrecords__card {
   animation: jj-crt-on 0.3s ease-out backwards;
 }
+
+/* Momentum scrolling (Task 9): native inner scrollers keep their own
+   momentum and never chain scroll into the page underneath. */
+html.jj-mobile #jj-scroll,
+html.jj-mobile .jj-explorer__main,
+html.jj-mobile .jj-pdp-info {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
