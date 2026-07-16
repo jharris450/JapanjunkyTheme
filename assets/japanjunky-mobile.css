@@ -310,8 +310,8 @@ html.jj-mobile #jj-bundle-canvas {
   bottom: auto;
   float: none;
   display: block;
-  width: 74%;             /* big — the box is the star of this stage */
-  max-width: 380px;
+  width: 84%;             /* the box is the star — dwarfs the daruma like desktop (550 vs 100) */
+  max-width: 440px;
   height: auto;
   aspect-ratio: 1;
   margin: 0;              /* LEFT-aligned so it clears the centered burst tip + leaves room for the daruma */
@@ -320,15 +320,15 @@ html.jj-mobile #jj-bundle-canvas {
 
 /* Daruma on the box's flap: absolute at the box's right edge, vertically
    centered on it. Center via top offset (NOT translate — the float/jiggle
-   keyframes own transform). Sized up to sit level with the bigger box. */
+   keyframes own transform). Kept SMALL relative to the box (desktop ratio). */
 html.jj-mobile .jj-daruma {
   position: absolute;
-  left: 55%;              /* overlaps the box's right edge = on the opening flap */
+  left: 73%;              /* sits on the box's right/flap edge */
   right: auto;
-  top: calc(50% - 77px);  /* half of 154px height */
+  top: calc(50% - 56px);  /* half of 113px height */
   bottom: auto;
-  width: 120px;
-  height: 154px;          /* 100:128 desktop source aspect at 120 wide */
+  width: 88px;
+  height: 113px;          /* 100:128 desktop source aspect at 88 wide */
 }
 
 /* Daruma FX (loot light + dice), shown only during a reroll: overlay the doll,
@@ -337,7 +337,7 @@ html.jj-mobile .jj-daruma {
    above the doll), so exact placement is a device tuning pass. */
 html.jj-mobile #jj-daruma-fx {
   position: absolute;
-  left: calc(55% - 66px); /* doll is left:55% / 120px wide → center the wider FX on it */
+  left: calc(73% - 82px); /* doll is left:73% / 88px wide → center the wider FX on it */
   right: auto;
   top: calc(50% - 130px);
   bottom: auto;
