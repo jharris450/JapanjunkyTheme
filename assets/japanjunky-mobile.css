@@ -290,7 +290,7 @@ html.jj-mobile .jj-scroll__screen--mhero {
    keyframe — it restates transform WITHOUT the -50% centering and would fling
    the head off-card. Pupils track the live rect + viewport in JS. */
 html.jj-mobile .jj-kyogen {
-  left: 50%;
+  left: 40%; /* off-centered LEFT like desktop (head sits left of the copy) */
   top: 50%;
   width: 300px;
   height: auto;
@@ -310,25 +310,25 @@ html.jj-mobile #jj-bundle-canvas {
   bottom: auto;
   float: none;
   display: block;
-  width: 62%;
-  max-width: 300px;
+  width: 74%;             /* big — the box is the star of this stage */
+  max-width: 380px;
   height: auto;
   aspect-ratio: 1;
-  margin: 4px auto 0;
-  touch-action: pan-y; /* vertical pans scroll the page; horizontal drags spin */
+  margin: 0;              /* LEFT-aligned so it clears the centered burst tip + leaves room for the daruma */
+  touch-action: pan-y;    /* vertical pans scroll the page; horizontal drags spin */
 }
 
 /* Daruma on the box's flap: absolute at the box's right edge, vertically
    centered on it. Center via top offset (NOT translate — the float/jiggle
-   keyframes own transform). */
+   keyframes own transform). Sized up to sit level with the bigger box. */
 html.jj-mobile .jj-daruma {
   position: absolute;
-  left: auto;
-  right: 3%;
-  top: calc(50% - 54px); /* half of 107px height */
+  left: 55%;              /* overlaps the box's right edge = on the opening flap */
+  right: auto;
+  top: calc(50% - 77px);  /* half of 154px height */
   bottom: auto;
-  width: 84px;
-  height: 107px; /* 100:128 desktop source aspect at 84 wide */
+  width: 120px;
+  height: 154px;          /* 100:128 desktop source aspect at 120 wide */
 }
 
 /* Daruma FX (loot light + dice), shown only during a reroll: overlay the doll,
@@ -337,8 +337,8 @@ html.jj-mobile .jj-daruma {
    above the doll), so exact placement is a device tuning pass. */
 html.jj-mobile #jj-daruma-fx {
   position: absolute;
-  left: auto;
-  right: calc(3% - 84px); /* doll is right:3%, 84px wide → center the wider FX on it */
+  left: calc(55% - 66px); /* doll is left:55% / 120px wide → center the wider FX on it */
+  right: auto;
   top: calc(50% - 130px);
   bottom: auto;
   transform: none;
@@ -483,8 +483,8 @@ html.jj-mobile .jj-scroll__screen--mhero {
 html.jj-mobile .jj-mhero__daruma-slot {
   position: relative;
   display: block;
-  margin-top: 4px;
-  padding-bottom: 8px;
+  margin-top: 64px;   /* push the stage DOWN clear of the burst bleeding below the card */
+  padding-bottom: 12px;
 }
 
 /* Records: a 2-per-row grid (overrides the .jj-grid 1-col rule the list
