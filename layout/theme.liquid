@@ -335,6 +335,11 @@
         <span class="jj-daruma__half jj-daruma__half--top" aria-hidden="true">
           <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
         </span>
+        {%- comment -%} Reroll hint: two curved gold arrows (up-left, down-right)
+            flanking the doll, reading as a circular reload glyph so the daruma
+            reads as the reroll control. CSS-drawn (Fixedsys has no ↻). {%- endcomment -%}
+        <span class="jj-daruma__reload jj-daruma__reload--l" aria-hidden="true"></span>
+        <span class="jj-daruma__reload jj-daruma__reload--r" aria-hidden="true"></span>
       </button>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
       <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>

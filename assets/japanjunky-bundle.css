@@ -210,6 +210,47 @@
   100% { transform: translate(-1px, 0) rotate(-3deg); }
 }
 
+/* Reroll hint: two curved gold arrows flanking the doll — left arc opens up
+   with an UP head, right arc opens down with a DOWN head, together reading as
+   the universal circular reload glyph so the daruma reads as "reroll". Drawn
+   in CSS (Fixedsys has no ↻ glyph); they ride the doll's float as one unit and
+   only show while the button is shown (JS reveals it once the box is open).
+   Shared by desktop AND handheld (same reparented #jj-bundle-reroll button). */
+.jj-daruma__reload {
+  position: absolute;
+  top: 50%;
+  margin-top: -11px;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  color: var(--jj-secondary, #f5d742);
+  filter: drop-shadow(0 0 4px rgba(245, 215, 66, 0.55));
+}
+/* Quarter-ring arc. border-radius survives crt.css's global 0-reset via
+   !important on this class selector (see gotcha_global_border_radius_reset). */
+.jj-daruma__reload::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid transparent;
+  border-radius: 50% !important;
+}
+/* Arrowhead (CSS triangle), centered horizontally on the arc's open end. */
+.jj-daruma__reload::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  margin-left: -4px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+.jj-daruma__reload--l { left: -30px; }
+.jj-daruma__reload--l::before { border-top-color: currentColor; border-left-color: currentColor; }
+.jj-daruma__reload--l::after { top: -4px; border-bottom: 6px solid currentColor; } /* head points up */
+.jj-daruma__reload--r { right: -30px; }
+.jj-daruma__reload--r::before { border-bottom-color: currentColor; border-right-color: currentColor; }
+.jj-daruma__reload--r::after { bottom: -4px; border-top: 6px solid currentColor; } /* head points down */
+
 /* Loot light + dice: rendered on the #jj-daruma-fx three.js canvas
    (japanjunky-daruma.js) — luminous gold smoke wisps + sparks that curl
    around the doll's lifted top half, and two physics-tumbled 6-face bone

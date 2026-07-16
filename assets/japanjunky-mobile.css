@@ -275,7 +275,7 @@ html.jj-mobile #jj-bundle-canvas {
   left: auto;
   bottom: auto;
   float: right;
-  width: 60%;
+  width: 78%;
   height: auto;
   aspect-ratio: 1;
   margin: 0 0 4px 10px;
@@ -283,8 +283,24 @@ html.jj-mobile #jj-bundle-canvas {
 }
 
 /* Kyogen backdrop + swirl are sized to the card by info-swirl.js's fitCanvas
-   (ResizeObserver on #jj-product-info) — no mobile transform needed. With no
-   fine pointer the pupils rest looking at the card's product info. */
+   (ResizeObserver on #jj-product-info). With no fine pointer the pupils rest
+   looking at the card's product info. BUT the .jj-kyogen IMG itself is placed
+   with DESKTOP pixel offsets (bundle.css: left calc(50% - 305px), width 330px)
+   sized for a ~550px card — on a ~360px phone card that shoves the whole head
+   ~125px off the LEFT edge, so the pop/burst never sits behind the box. Re-fit
+   it to the card: centered, sized as a % of the card, so the bang silhouette
+   reveals behind the crate. Center via transform, so drop the float keyframe
+   (it restates transform WITHOUT the -50% centering and would fling the head
+   off-card). Pupils track the live rect in JS, so they follow. */
+html.jj-mobile .jj-kyogen {
+  left: 50%;
+  top: 50%;
+  width: 66%;
+  height: auto;
+  aspect-ratio: 425 / 612; /* source sprite aspect (keeps the head un-squished) */
+  transform: translate(-50%, -50%) perspective(700px) rotateY(14deg) rotate(-2deg);
+  animation: none;
+}
 
 /* Daruma: reparented into #jj-mhero-daruma-slot (flex-centered, 140px tall).
    Desktop anchors it absolute at left calc(100%+108px) / bottom calc(20vh-…)
@@ -456,36 +472,27 @@ html.jj-mobile .jj-mhero__daruma-slot {
   justify-content: center;
 }
 
-/* Records: a horizontal swipe strip (overrides the .jj-grid 1-col rule the
-   list shares). Horizontal pan scrolls the strip; vertical pan still scrolls
-   the page. */
+/* Records: a 2-per-row grid (overrides the .jj-grid 1-col rule the list
+   shares). Was a horizontal swipe strip, but with no scroll affordance the
+   albums read as cut-off and the pan-x lock stole vertical scroll — you
+   couldn't tap-and-drag down through them (same bug the catalog had). A
+   plain 2-col grid closes the gap to the catalog, shows all five at once,
+   and scrolls with the page natively (no touch-action override). */
 html.jj-mobile .jj-mrecords {
-  display: flex;
-  flex-direction: row;
-  grid-template-columns: none; /* undo .jj-grid */
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 4px 12px 12px;
-  touch-action: pan-x;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-
-html.jj-mobile .jj-mrecords::-webkit-scrollbar {
-  display: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 12px;
+  padding: 4px 12px 16px;
 }
 
 html.jj-mobile .jj-mrecords__card {
-  flex: 0 0 44vw; /* ~2 cards + a peek of the third in view */
-  max-width: 220px;
   /* deal in with the CRT power-on flash, staggered per card
      (animation-delay set inline by JJ_MobileRecords.populate) */
   animation: jj-crt-on 0.3s ease-out backwards;
 }
 
-/* The shared cover cap (max-width 70vw, centered) would shrink the strip
-   cards oddly — let them fill their fixed track instead. */
+/* The shared cover cap (max-width 70vw, centered) would shrink the grid
+   cards oddly — let them fill their column instead. */
 html.jj-mobile .jj-mrecords__card .jj-grid__card-img-wrap {
   max-width: none;
 }

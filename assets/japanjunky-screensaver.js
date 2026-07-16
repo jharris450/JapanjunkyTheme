@@ -1114,7 +1114,7 @@
   // right edge) — sit it just above him and shrink the plane so it fits the
   // narrow FOV. Tunable.
   var BUBBLE_OFFSET = window.JJ_MOBILE
-    ? { x: -0.2, y: 1.5, z: 0 }
+    ? { x: 1.3, y: 1.6, z: 0 } // shifted screen-LEFT off his head (+x = screen left); was x:-0.2 (sat across his horns/face)
     : { x: 2.0, y: 2.0, z: 0 };
 
   function drawBubble(text) {
