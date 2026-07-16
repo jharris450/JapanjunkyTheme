@@ -542,12 +542,14 @@
     if (!tsunoActivated) {
       var im = tsunoMoodIdx;
       var iTint = TSUNO_MOODS.tint[im];
+      // Handheld: greet from upper-center; x=-4 idle is off-screen in portrait.
+      var basePos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
       // Mirrored (+1, not the usual -1): he idles on the right now, so he
       // faces back in toward the page center.
       tsunoMesh.scale.set(1, 1, 1);
-      tsunoMesh.position.x = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
-      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      tsunoMesh.position.x = basePos.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
+      tsunoMesh.position.y = basePos.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
+      tsunoMesh.position.z = basePos.z;
       tsunoMesh.material.uniforms.uTint.value.set(iTint[0], iTint[1], iTint[2]);
       tsunoMesh.material.uniforms.uAlpha.value = 0.8 * TSUNO_MOODS.glowMult[im];
       tsunoMesh.lookAt(camera.position);
@@ -1223,10 +1225,11 @@
         y: tsunoMesh.position.y,
         z: tsunoMesh.position.z
       };
+      var returnPos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
       tsunoTransition.endPos = {
-        x: TSUNO_IDLE_POS.x,
-        y: TSUNO_IDLE_POS.y,
-        z: TSUNO_IDLE_POS.z
+        x: returnPos.x,
+        y: returnPos.y,
+        z: returnPos.z
       };
     }
   }
