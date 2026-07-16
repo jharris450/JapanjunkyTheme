@@ -31,7 +31,9 @@
       for (var i = 0; i < pool.length; i++) {
         var card = window.JJ_GridCard.createCard(pool[i], 'mhero');
         card.classList.add('jj-mrecords__card');
-        card.style.animationDelay = (i * 120) + 'ms';
+        // File out one at a time — a clear per-card gap so the records drop
+        // into the grid sequentially, not all at once.
+        card.style.animationDelay = (i * 170) + 'ms';
         recordsEl.appendChild(card);
       }
     },
