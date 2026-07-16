@@ -24,18 +24,29 @@
   var recordsEl = document.getElementById('jj-mrecords');
   if (!recordsEl) return; // homepage only
 
+  function makeCard(product) {
+    var card = window.JJ_GridCard.createCard(product, 'mhero');
+    card.classList.add('jj-mrecords__card');
+    return card;
+  }
+
   window.JJ_MobileRecords = {
+    // populate() drops all cards at once (fallback / non-animated path).
     populate: function (pool) {
       if (!recordsEl || !window.JJ_GridCard) return;
       recordsEl.innerHTML = '';
       for (var i = 0; i < pool.length; i++) {
-        var card = window.JJ_GridCard.createCard(pool[i], 'mhero');
-        card.classList.add('jj-mrecords__card');
-        // File out one at a time — a clear per-card gap so the records drop
-        // into the grid sequentially, not all at once.
+        var card = makeCard(pool[i]);
         card.style.animationDelay = (i * 170) + 'ms';
         recordsEl.appendChild(card);
       }
+    },
+    // append() adds ONE card — the bundle stage calls this per record as the
+    // matching 3D record fans out of the box, so each grid card drops in in
+    // sync with a record leaving the crate.
+    append: function (product) {
+      if (!recordsEl || !window.JJ_GridCard) return;
+      recordsEl.appendChild(makeCard(product)); // drop-in animation runs on insert
     },
     clear: function () {
       if (recordsEl) recordsEl.innerHTML = '';

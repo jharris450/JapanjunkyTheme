@@ -738,6 +738,42 @@
     showBundleInfo();
     startLoop();
 
+    // Deal the 3D records OUT of the box one by one: each stack record fans
+    // out (spread + tilt), slides down toward the camera and shrinks away as
+    // it leaves the crate, and the moment it launches its DOM grid card drops
+    // into the grid below — the handheld stand-in for the desktop deal-to-
+    // crescent (here they file DOWNWARD, into the grid underneath the box).
+    function mobileDeal(pool) {
+      var api = window.JJ_MobileRecords;
+      if (api && api.clear) api.clear();
+      var n = pool.length;
+      pool.forEach(function (p, i) {
+        setTimeout(function () {
+          var mesh = stack[i];
+          if (mesh) {
+            var sx = mesh.position.x, sy = mesh.position.y, sz = mesh.position.z;
+            var srz = mesh.rotation.z;
+            var fanX = (i - (n - 1) / 2) * 0.72; // splay left→right around center
+            tween(640, function (e) {
+              // Two phases so the record clearly LEAVES the crate instead of
+              // dropping behind the front flap: (1) pop forward out of the
+              // mouth + splay, then (2) file DOWN and out of frame toward the
+              // grid below.
+              var pop = Math.min(e / 0.45, 1);          // 0→1 over the first ~45%
+              var drop = Math.max((e - 0.45) / 0.55, 0); // 0→1 over the rest
+              mesh.position.x = sx + fanX * e;
+              mesh.position.y = sy + 0.45 * pop - 3.4 * drop; // lift out, then fall below
+              mesh.position.z = sz + 1.7 * pop;               // come forward, clear of the flap
+              mesh.rotation.z = srz + fanX * 0.32 * e;        // fan tilt
+            }, function () {
+              if (mesh) mesh.visible = false;
+            });
+          }
+          if (api && api.append) api.append(p);
+        }, i * 240); // one at a time, clearly spaced
+      });
+    }
+
     var opened = false;
     function openAndDeal() {
       if (opened || FSM.isLocked(state) || state !== 'closed' || aligning) return;
@@ -747,7 +783,7 @@
       alignFront(500, function () {
         openFlaps(function () {          // openFlaps owns closed→opening→open
           canvas.style.cursor = 'grab';
-          if (window.JJ_MobileRecords) window.JJ_MobileRecords.populate(pool);
+          mobileDeal(pool);
           if (darumaBtn) darumaBtn.style.display = '';
         });
       });
@@ -790,7 +826,7 @@
             setState(FSM.next(state, 'shaken'));  // shaking → opening
             tween(600, function (e) { setFlaps(e); }, function () {
               setState(FSM.next(state, 'opened')); // opening → open
-              if (window.JJ_MobileRecords) window.JJ_MobileRecords.populate(pool);
+              mobileDeal(pool);
             });
           });
         });
