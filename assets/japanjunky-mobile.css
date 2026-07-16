@@ -486,6 +486,11 @@ html.jj-mobile .jj-mhero__daruma-slot {
   display: block;
   margin-top: 64px;   /* push the stage DOWN clear of the burst bleeding below the card */
   padding-bottom: 12px;
+  /* Recenter the open box + daruma: the right flap swings out and the daruma
+     rides it, so the visual mass leans right — nudge the whole stage left.
+     (Moves box + daruma + FX together; transparent canvas margin clips at the
+     screen edge harmlessly.) */
+  transform: translateX(-32px);
 }
 
 /* Records: a 2-per-row grid (overrides the .jj-grid 1-col rule the list
