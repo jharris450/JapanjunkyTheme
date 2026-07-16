@@ -282,24 +282,42 @@ html.jj-mobile #jj-bundle-canvas {
   touch-action: pan-y;
 }
 
-/* Kyogen backdrop + swirl are sized to the card by info-swirl.js's fitCanvas
-   (ResizeObserver on #jj-product-info). With no fine pointer the pupils rest
-   looking at the card's product info. BUT the .jj-kyogen IMG itself is placed
-   with DESKTOP pixel offsets (bundle.css: left calc(50% - 305px), width 330px)
-   sized for a ~550px card — on a ~360px phone card that shoves the whole head
-   ~125px off the LEFT edge, so the pop/burst never sits behind the box. Re-fit
-   it to the card: centered, sized as a % of the card, so the bang silhouette
-   reveals behind the crate. Center via transform, so drop the float keyframe
-   (it restates transform WITHOUT the -50% centering and would fling the head
-   off-card). Pupils track the live rect in JS, so they follow. */
+/* --- Pop/bang backdrop (kyogen mask + burst ring) ---
+   info-swirl.js's fitCanvas sizes the swirl canvas AND the .jj-kyogen-clip
+   frame to ~5x the card so the jagged burst RING hugs the card edge — on
+   desktop that ring shows AROUND the card (the zone doesn't clip). But the
+   mobile card is overflow:hidden, so the ring is clipped away and only the
+   black burst-center survives = "pop not showing at all". And .jj-kyogen
+   itself uses desktop px offsets (left calc(50% - 305px), width 330px) that
+   land it off-card at random per viewport.
+   Fix: scale the whole cluster DOWN so the ring lands INSIDE the card, and
+   re-center the mask. fitCanvas only writes width/height/left/top (never
+   transform), and both layers are centered on the card, so a center-origin
+   scale survives every re-fit and keeps them put. Verified on-device sizes
+   are a tuning pass — scale/opacity below are the starting point. */
+html.jj-mobile #jj-swirl-canvas {
+  transform: rotate(-7deg) scale(0.46); /* rotate = desktop tilt; scale pulls the ring into the card */
+  transform-origin: 50% 50%;
+  opacity: 1;
+}
+html.jj-mobile .jj-kyogen-clip {
+  transform: scale(0.46); /* match the swirl so the clip silhouette stays aligned (also shrinks the mask it holds) */
+  transform-origin: 50% 50%;
+}
+/* Mask: centered on the card (left/top 50% is relative to the clip frame,
+   which fitCanvas centers on the card; translate re-centers the head). The
+   clip scale above renders this ~2x smaller. Drop the float keyframe — it
+   restates transform WITHOUT the -50% centering and would fling the head
+   off-card. Pupils track the live rect in JS, so they follow. */
 html.jj-mobile .jj-kyogen {
   left: 50%;
   top: 50%;
-  width: 66%;
+  width: 150px;
   height: auto;
   aspect-ratio: 425 / 612; /* source sprite aspect (keeps the head un-squished) */
   transform: translate(-50%, -50%) perspective(700px) rotateY(14deg) rotate(-2deg);
   animation: none;
+  opacity: 0.55;
 }
 
 /* Daruma: reparented into #jj-mhero-daruma-slot (flex-centered, 140px tall).
