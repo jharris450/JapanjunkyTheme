@@ -72,7 +72,7 @@
       if (!recordsEl || !window.JJ_GridCard) return;
       recordsEl.innerHTML = '';
       for (var i = 0; i < pool.length; i++) {
-        var card = window.JJ_GridCard.createCard(pool[i]);
+        var card = window.JJ_GridCard.createCard(pool[i], 'mhero');
         card.classList.add('jj-mrecords__card');
         card.style.animationDelay = (i * 120) + 'ms';
         recordsEl.appendChild(card);
