@@ -728,6 +728,11 @@
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     buildBox();
+    // Zoom the camera IN on mobile so the box fills its canvas (desktop frames
+    // it at ~50% inside a 550px canvas; the mobile canvas is smaller, so dolly
+    // closer to make the box read big — the flap still clears the frame at 4.2).
+    camera.position.z = 4.2;
+    camera.updateProjectionMatrix();
     buildLights();
     setFlaps(0);
     showBundleInfo();

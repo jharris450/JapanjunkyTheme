@@ -310,22 +310,23 @@ html.jj-mobile #jj-bundle-canvas {
   bottom: auto;
   float: none;
   display: block;
-  width: 84%;             /* the box is the star — dwarfs the daruma like desktop (550 vs 100) */
-  max-width: 440px;
+  width: 100%;            /* fill the whole section, as big as it goes (desktop scale) */
+  max-width: 480px;
   height: auto;
   aspect-ratio: 1;
-  margin: 0;              /* LEFT-aligned so it clears the centered burst tip + leaves room for the daruma */
+  margin: 0 auto;
   touch-action: pan-y;    /* vertical pans scroll the page; horizontal drags spin */
 }
 
-/* Daruma on the box's flap: absolute at the box's right edge, vertically
-   centered on it. Center via top offset (NOT translate — the float/jiggle
-   keyframes own transform). Kept SMALL relative to the box (desktop ratio). */
+/* Daruma OVER the box's open right flap (desktop flap.png): absolute, sitting
+   on the flap panel — ~58% across the box, vertically centered. Center via top
+   offset (NOT translate — the float/jiggle keyframes own transform). Kept
+   small relative to the box (desktop 550-box / 100-doll ratio). */
 html.jj-mobile .jj-daruma {
   position: absolute;
-  left: 73%;              /* sits on the box's right/flap edge */
+  left: 63%;              /* centered on the right flap panel of the open box */
   right: auto;
-  top: calc(50% - 56px);  /* half of 113px height */
+  top: calc(50% - 56px);  /* half of 113px height → vertically centered on the box */
   bottom: auto;
   width: 88px;
   height: 113px;          /* 100:128 desktop source aspect at 88 wide */
@@ -337,7 +338,7 @@ html.jj-mobile .jj-daruma {
    above the doll), so exact placement is a device tuning pass. */
 html.jj-mobile #jj-daruma-fx {
   position: absolute;
-  left: calc(73% - 82px); /* doll is left:73% / 88px wide → center the wider FX on it */
+  left: calc(63% - 82px); /* doll is left:63% / 88px wide → center the wider FX on it */
   right: auto;
   top: calc(50% - 130px);
   bottom: auto;
