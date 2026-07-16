@@ -251,10 +251,14 @@ html.jj-mobile .jj-product-zone {
   pointer-events: none;
 }
 
-/* Pop card: relative, centered in the mhero mount; overflow clips the
-   oversized kyogen backdrop. Overrides the desktop margin-top:auto /
-   margin-bottom (product-info.css:7-18; the #jj-product-zone descendant rule
-   stops matching once the panel is reparented out of the zone). */
+/* Pop card: the desktop composition — the product info sits in the burst's
+   black interior with the kyogen behind it, and the burst ring is allowed to
+   run off the page (user: "fine if the burst runs off the page, just like
+   desktop"). So overflow is VISIBLE here; the horizontal bleed is clipped at
+   the screen edge by #jj-scroll/#jj-mhero (overflow-x:clip below) exactly like
+   the desktop fixed zone clips at the viewport. The box graphic is reparented
+   OUT to the slot below (bundle-stage initMobile) — no room for it on top of
+   the copy at phone width. */
 html.jj-mobile #jj-product-info {
   position: relative;
   width: 100%;
@@ -262,91 +266,82 @@ html.jj-mobile #jj-product-info {
   margin: 0 auto;
   padding: 16px;
   border: 1px solid #444;
-  overflow: hidden;
+  overflow: visible;
 }
 
-/* Box canvas rides the card's top-right like the desktop graphic spot.
-   Desktop (bundle.css:21): absolute, left calc(100%-275px),
-   bottom calc(20vh-329.4px), 550x550. Mobile: in-flow float sized to the
-   card; left/bottom zeroed so `position:relative` doesn't inherit the desktop
-   offsets. Vertical pans over it keep scrolling; horizontal drags spin. */
-html.jj-mobile #jj-bundle-canvas {
-  position: relative;
-  left: auto;
-  bottom: auto;
-  float: right;
-  width: 78%;
-  height: auto;
-  aspect-ratio: 1;
-  margin: 0 0 4px 10px;
-  touch-action: pan-y;
+/* Kill the horizontal page scroll the off-page burst would otherwise create,
+   while keeping native vertical scroll. overflow-x:clip (not hidden) leaves
+   the y axis visible so it doesn't turn these into nested scrollers. */
+html.jj-mobile .jj-scroll,
+html.jj-mobile .jj-scroll__screen--mhero {
+  overflow-x: clip;
 }
 
 /* --- Pop/bang backdrop (kyogen mask + burst ring) ---
-   info-swirl.js's fitCanvas sizes the swirl canvas AND the .jj-kyogen-clip
-   frame to ~5x the card so the jagged burst RING hugs the card edge — on
-   desktop that ring shows AROUND the card (the zone doesn't clip). But the
-   mobile card is overflow:hidden, so the ring is clipped away and only the
-   black burst-center survives = "pop not showing at all". And .jj-kyogen
-   itself uses desktop px offsets (left calc(50% - 305px), width 330px) that
-   land it off-card at random per viewport.
-   Fix: scale the whole cluster DOWN so the ring lands INSIDE the card, and
-   re-center the mask. fitCanvas only writes width/height/left/top (never
-   transform), and both layers are centered on the card, so a center-origin
-   scale survives every re-fit and keeps them put. Verified on-device sizes
-   are a tuning pass — scale/opacity below are the starting point. */
-html.jj-mobile #jj-swirl-canvas {
-  transform: rotate(-7deg) scale(0.46); /* rotate = desktop tilt; scale pulls the ring into the card */
-  transform-origin: 50% 50%;
-  opacity: 1;
-}
-html.jj-mobile .jj-kyogen-clip {
-  transform: scale(0.46); /* match the swirl so the clip silhouette stays aligned (also shrinks the mask it holds) */
-  transform-origin: 50% 50%;
-}
-/* Mask: centered on the card (left/top 50% is relative to the clip frame,
-   which fitCanvas centers on the card; translate re-centers the head). The
-   clip scale above renders this ~2x smaller. Drop the float keyframe — it
-   restates transform WITHOUT the -50% centering and would fling the head
-   off-card. Pupils track the live rect in JS, so they follow. */
+   info-swirl.js's fitCanvas sizes the swirl canvas + .jj-kyogen-clip to ~5x
+   the card so the jagged burst ring hugs the card edge and the black interior
+   frames the copy — the whole point of the desktop look. With overflow now
+   visible + the ancestor clip, that ring bleeds to the screen edge like
+   desktop. The swirl keeps its desktop tilt (no override needed here).
+   Only the mask needs fixing: .jj-kyogen uses desktop px offsets (left
+   calc(50% - 305px)) that shove it off the LEFT on a phone. Re-center it on
+   the card (left/top 50% is relative to the clip frame, which fitCanvas
+   centers on the card; translate re-centers the head). Drop the float
+   keyframe — it restates transform WITHOUT the -50% centering and would fling
+   the head off-card. Pupils track the live rect + viewport in JS. */
 html.jj-mobile .jj-kyogen {
   left: 50%;
   top: 50%;
-  width: 150px;
+  width: 300px;
   height: auto;
   aspect-ratio: 425 / 612; /* source sprite aspect (keeps the head un-squished) */
   transform: translate(-50%, -50%) perspective(700px) rotateY(14deg) rotate(-2deg);
   animation: none;
-  opacity: 0.55;
 }
 
-/* Daruma: reparented into #jj-mhero-daruma-slot (flex-centered, 140px tall).
-   Desktop anchors it absolute at left calc(100%+108px) / bottom calc(20vh-…)
-   (bundle.css:145); zero every anchor so it sits at its flow position,
-   centered by the slot. Float + jiggle/shake transforms ride along. */
-html.jj-mobile .jj-daruma {
+/* --- Box + daruma stage (below the info) ---
+   bundle-stage initMobile reparents #jj-bundle-canvas (then the daruma + fx)
+   into #jj-mhero-daruma-slot. The box centers under the copy; the daruma
+   floats on its right/flap edge like desktop (bundle.css:147 left calc(100%+
+   108px)). */
+html.jj-mobile #jj-bundle-canvas {
   position: relative;
   left: auto;
-  right: auto;
-  top: auto;
+  bottom: auto;
+  float: none;
+  display: block;
+  width: 62%;
+  max-width: 300px;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 4px auto 0;
+  touch-action: pan-y; /* vertical pans scroll the page; horizontal drags spin */
+}
+
+/* Daruma on the box's flap: absolute at the box's right edge, vertically
+   centered on it. Center via top offset (NOT translate — the float/jiggle
+   keyframes own transform). */
+html.jj-mobile .jj-daruma {
+  position: absolute;
+  left: auto;
+  right: 3%;
+  top: calc(50% - 54px); /* half of 107px height */
   bottom: auto;
   width: 84px;
   height: 107px; /* 100:128 desktop source aspect at 84 wide */
 }
 
 /* Daruma FX (loot light + dice), shown only during a reroll: overlay the doll,
-   centered on the slot. Desktop anchors it absolute at card offsets
-   (bundle.css:218); re-center over the doll. Size ≈ 3× the doll (matches the
-   desktop 100px-doll / 300px-fx ratio). The FX renders a fixed 150x180 ortho
-   buffer (dice rise above the doll), so exact vertical placement is a device
-   tuning pass (Task 10 / user check). */
+   which now sits at the box's right/flap edge — center the FX over THAT, not
+   the slot middle. The FX renders a fixed 150x180 ortho buffer (dice rise
+   above the doll), so exact placement is a device tuning pass. */
 html.jj-mobile #jj-daruma-fx {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  right: auto;
+  left: auto;
+  right: calc(3% - 84px); /* doll is right:3%, 84px wide → center the wider FX on it */
+  top: calc(50% - 130px);
   bottom: auto;
-  transform: translate(-50%, -50%);
+  transform: none;
   width: 252px;
   height: 302px;
 }
@@ -482,12 +477,14 @@ html.jj-mobile .jj-scroll__screen--mhero {
   padding: 24px 12px 40px;
 }
 
+/* Box + daruma stage: relative anchor for the reparented box canvas (in
+   flow, centered) + the daruma/FX (absolute, on the box's flap). Height is
+   box-driven. */
 html.jj-mobile .jj-mhero__daruma-slot {
   position: relative;
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  margin-top: 4px;
+  padding-bottom: 8px;
 }
 
 /* Records: a 2-per-row grid (overrides the .jj-grid 1-col rule the list

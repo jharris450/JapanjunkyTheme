@@ -713,6 +713,12 @@
     if (!mount || !infoPanel) { showBundleInfo(); return; } // non-home fallback
 
     mount.appendChild(infoPanel);
+    // Limited width: the box graphic drops BELOW the info card (desktop keeps
+    // it top-right, but here the burst+info own that space). Move the box
+    // canvas out of the card into the slot, AHEAD of the daruma, so the doll
+    // sits on the box's flap — the desktop box↔daruma composition. (`canvas`
+    // is the #jj-bundle-canvas ref from the top of this module.)
+    if (darumaSlot && canvas) darumaSlot.appendChild(canvas);
     var darumaBtn = document.getElementById('jj-bundle-reroll');
     var darumaFx = document.getElementById('jj-daruma-fx');
     if (darumaSlot && darumaBtn) {

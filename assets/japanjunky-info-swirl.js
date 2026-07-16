@@ -76,6 +76,16 @@
         mouse = { x: e.clientX, y: e.clientY };
       }, { passive: true });
     }
+    // Handheld: no cursor — a touch drags the gaze directly; between touches
+    // the eyes fall back to the viewport center (updatePupils), so they keep
+    // watching the user as the burst scrolls through view.
+    if (!finePointer && !reduced) {
+      document.addEventListener('touchmove', function (e) {
+        var t = e.touches && e.touches[0];
+        if (t) mouse = { x: t.clientX, y: t.clientY };
+      }, { passive: true });
+      document.addEventListener('touchend', function () { mouse = null; }, { passive: true });
+    }
 
     EYES.forEach(function (eye) {
       eye.ox = 0; // current pupil offset, natural px
@@ -89,8 +99,14 @@
       // No cursor yet: rest looking at the product info text (card center).
       var target = mouse;
       if (!target) {
-        var cr = card.getBoundingClientRect();
-        target = { x: cr.left + cr.width * 0.5, y: cr.top + cr.height * 0.55 };
+        if (window.JJ_MOBILE) {
+          // Handheld: watch the viewport center — the eyes track the user as
+          // the burst scrolls up/down through the screen.
+          target = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.5 };
+        } else {
+          var cr = card.getBoundingClientRect();
+          target = { x: cr.left + cr.width * 0.5, y: cr.top + cr.height * 0.55 };
+        }
       }
 
       var sx = rect.width / NAT_W;
