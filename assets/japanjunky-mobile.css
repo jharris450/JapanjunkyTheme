@@ -236,10 +236,12 @@ html.jj-mobile .jj-pdp-info {
    cluster lays out in normal flow. Ring crescent, old product viewer, and the
    swirl tunnel stay desktop-only. */
 
-/* Desktop-only hero pieces that don't belong on the handheld. */
+/* Desktop-only hero pieces that don't belong on the handheld. The swirl
+   tunnel + kyogen bang (#jj-swirl-canvas + info-swirl.js) DO run on mobile —
+   they're the "pop" behind the card; info-swirl's fitCanvas sizes both to the
+   reparented card via a ResizeObserver, so no mobile geometry override needed. */
 html.jj-mobile .jj-ring,
-html.jj-mobile #jj-viewer-canvas,
-html.jj-mobile #jj-swirl-canvas {
+html.jj-mobile #jj-viewer-canvas {
   display: none !important;
 }
 
@@ -273,21 +275,16 @@ html.jj-mobile #jj-bundle-canvas {
   left: auto;
   bottom: auto;
   float: right;
-  width: 45%;
+  width: 60%;
   height: auto;
   aspect-ratio: 1;
-  margin: 0 0 8px 12px;
+  margin: 0 0 4px 10px;
   touch-action: pan-y;
 }
 
-/* Kyogen backdrop: desktop centers a 900x750 clip on the card center
-   (bundle.css:67); scale to card size, still the dim ambient layer behind the
-   text (z -1). info-swirl.js no-ops on mobile so the pupils rest at their CSS
-   positions. Starting scale — tune against the device screenshot (Task 10). */
-html.jj-mobile .jj-kyogen-clip {
-  transform: scale(0.42);
-  transform-origin: center;
-}
+/* Kyogen backdrop + swirl are sized to the card by info-swirl.js's fitCanvas
+   (ResizeObserver on #jj-product-info) — no mobile transform needed. With no
+   fine pointer the pupils rest looking at the card's product info. */
 
 /* Daruma: reparented into #jj-mhero-daruma-slot (flex-centered, 140px tall).
    Desktop anchors it absolute at left calc(100%+108px) / bottom calc(20vh-…)
@@ -325,9 +322,21 @@ html.jj-mobile .jj-scroll__indicator {
   bottom: calc(var(--jj-mobile-taskbar-h) + 8px);
 }
 
-/* The scroll wrapper must pan by touch (wheel drove it on desktop). */
+/* Native touch scrolling. Desktop keeps the wrapper (and the hero/under
+   screens) pointer-events:none so hero clicks fall through to the fixed
+   bundle panel behind — and drives #jj-scroll with wheel deltas. On mobile
+   the hero cluster is reparented INTO this flow, so nothing sits behind to
+   click through: flip the wrapper and every screen back to pointer-events:
+   auto and let the browser scroll it natively (the old manual scrollTop
+   driver fought native momentum and caught touches at the region seams). */
 html.jj-mobile .jj-scroll {
+  pointer-events: auto;
   touch-action: pan-y;
+}
+
+html.jj-mobile .jj-scroll__screen--hero,
+html.jj-mobile .jj-scroll__screen--under {
+  pointer-events: auto;
 }
 
 /* --- Catalog: one product per row --- */
@@ -447,10 +456,38 @@ html.jj-mobile .jj-mhero__daruma-slot {
   justify-content: center;
 }
 
-/* Records deal in with the CRT power-on flash, staggered per card
-   (animation-delay set inline by JJ_MobileRecords.populate). */
+/* Records: a horizontal swipe strip (overrides the .jj-grid 1-col rule the
+   list shares). Horizontal pan scrolls the strip; vertical pan still scrolls
+   the page. */
+html.jj-mobile .jj-mrecords {
+  display: flex;
+  flex-direction: row;
+  grid-template-columns: none; /* undo .jj-grid */
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 12px 12px;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+html.jj-mobile .jj-mrecords::-webkit-scrollbar {
+  display: none;
+}
+
 html.jj-mobile .jj-mrecords__card {
+  flex: 0 0 44vw; /* ~2 cards + a peek of the third in view */
+  max-width: 220px;
+  /* deal in with the CRT power-on flash, staggered per card
+     (animation-delay set inline by JJ_MobileRecords.populate) */
   animation: jj-crt-on 0.3s ease-out backwards;
+}
+
+/* The shared cover cap (max-width 70vw, centered) would shrink the strip
+   cards oddly — let them fill their fixed track instead. */
+html.jj-mobile .jj-mrecords__card .jj-grid__card-img-wrap {
+  max-width: none;
 }
 
 /* Momentum scrolling (Task 9): native inner scrollers keep their own

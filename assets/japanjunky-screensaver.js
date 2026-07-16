@@ -347,7 +347,8 @@
   // camera): the pop burst behind the product card covers the old left spot.
   var TSUNO_IDLE_POS = { x: -4.0, y: 0.0, z: 6 };
   // Handheld: portrait FOV crops x=-4 off-screen — greet from upper-center.
-  var TSUNO_MOBILE_IDLE_POS = { x: 0, y: 1.1, z: 6 };
+  // Sits a touch lower than desktop to leave headroom for the bubble above.
+  var TSUNO_MOBILE_IDLE_POS = { x: 0, y: 0.5, z: 6 };
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
   var tsunoLoginPageMode = config.cameraPreset === 'login';
@@ -1098,9 +1099,23 @@
   textMesh.visible = false;
   scene.add(textMesh);
 
+  // Handheld: the 3.2-wide plane overruns the narrow portrait FOV — shrink
+  // both meshes (bubble keeps its -x mirror so the tail still points at him).
+  if (window.JJ_MOBILE) {
+    var BS = 0.62;
+    bubbleMesh.scale.set(-BS, BS, 1);
+    textMesh.scale.set(BS, BS, 1);
+  }
+
   // Bubble offset from Tsuno (3D units). +x = screen LEFT of him: with the
   // idle spot on the screen-right side, the bubble hangs toward page center.
-  var BUBBLE_OFFSET = { x: 2.0, y: 2.0, z: 0 };
+  // Desktop hangs the bubble up-left of Tsuno (he idles on the screen right).
+  // Portrait can't afford x=+2 (Tsuno greets from x=0, so it runs off the
+  // right edge) — sit it just above him and shrink the plane so it fits the
+  // narrow FOV. Tunable.
+  var BUBBLE_OFFSET = window.JJ_MOBILE
+    ? { x: -0.2, y: 1.5, z: 0 }
+    : { x: 2.0, y: 2.0, z: 0 };
 
   function drawBubble(text) {
     var ctx = bubbleCtx;

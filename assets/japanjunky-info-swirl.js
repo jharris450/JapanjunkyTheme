@@ -15,8 +15,10 @@
 (function () {
   'use strict';
 
-  // Handheld mode: kyogen mask + swirl belong to the desktop bundle stage.
-  if (window.JJ_MOBILE) return;
+  // Runs on mobile too (the "pop" behind the reparented card). fitCanvas sizes
+  // the swirl + kyogen clip to the live card via a ResizeObserver, and the
+  // pupil cursor-tracking is already gated on a fine pointer below, so touch
+  // just rests the eyes on the product info — nothing here assumes desktop.
 
   var BUFFER = 512;      // render buffer px; CSS upscale ~2.4x keeps pixels but kills grain-mush
   var TEX = 512;         // burst texture size
