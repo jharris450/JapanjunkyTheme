@@ -25,21 +25,16 @@ html.jj-mobile .jj-explorer__ctl {
   min-width: 40px;
 }
 
-/* --- Handheld chrome: WinCE top taskbar --- */
-/* Windows CE puts the taskbar at the TOP (Start left, tray right) and
-   runs every app fullscreen — period-correct AND touch-correct. Same
-   taskbar DOM as desktop; only geometry moves. */
+/* --- Handheld chrome: bottom Win98 taskbar --- */
+/* One bar: Start | 3 account tabs | tray (muted speaker + clock). The
+   taskbar keeps its desktop bottom anchor; only height + tab strip are
+   mobile. Window tabs stay hidden (apps are fullscreen). */
 html.jj-mobile {
-  --jj-mobile-topbar-h: 40px;
-  --jj-mobile-cmdbar-h: 48px;
+  --jj-mobile-taskbar-h: 44px;
 }
 
 html.jj-mobile .jj-taskbar {
-  top: 0;
-  bottom: auto;
-  height: var(--jj-mobile-topbar-h);
-  border-top: none;
-  border-bottom: 1px solid #333;
+  height: var(--jj-mobile-taskbar-h);
 }
 
 /* Fullscreen apps make window tabs meaningless on the handheld. */
@@ -52,75 +47,106 @@ html.jj-mobile .jj-taskbar::after {
   display: none;
 }
 
-/* The 40px top bar fits the whole 34x37 Tsuno sprite (desktop's 32px bar
-   crops the horns upward on purpose). Undo the menu-open crop — the menu
-   drops DOWN here, so the horns never overlap it. */
-html.jj-mobile .jj-start-btn--active + .jj-start-btn__tsuno {
-  height: 37px;
-}
-
-/* Start menu drops DOWN from the top bar, full width (WinCE). */
-html.jj-mobile .jj-start-menu {
-  top: var(--jj-mobile-topbar-h);
-  bottom: auto;
-  left: 0;
-  right: 0;
-  width: auto;
-  max-height: calc(100vh - var(--jj-mobile-topbar-h) - var(--jj-mobile-cmdbar-h) - 8px);
-  overflow-y: auto;
-  margin-bottom: 0;
-  margin-top: 2px;
-}
-
-/* Tray popups anchor under the top bar instead of above the bottom one. */
-html.jj-mobile .jj-vol-popup,
-html.jj-mobile .jj-clock-popover {
-  top: calc(var(--jj-mobile-topbar-h) + 4px);
-  bottom: auto;
-}
-
-/* --- Handheld chrome: bottom command bar --- */
-/* Hidden by default (desktop); only the handheld class reveals it.
-   Same chrome layer scheme as the taskbar (z 10010, under the global
-   CRT shader canvas at 20000). */
-.jj-cmdbar {
+/* Account tabs: hidden on desktop (base), revealed on the handheld. */
+.jj-taskbar__mtabs {
   display: none;
 }
 
-html.jj-mobile .jj-cmdbar {
+html.jj-mobile .jj-taskbar__mtabs {
   display: flex;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: var(--jj-mobile-cmdbar-h);
-  background: #0a0a0a;
-  border-top: 1px solid #333;
-  z-index: 10010;
-  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  margin: 0 6px;
+  align-self: center;
 }
 
-html.jj-mobile .jj-cmdbar__btn {
+html.jj-mobile .jj-taskbar__mtab {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin: 4px;
+  min-height: 34px;
+  font-size: 14px;
   color: var(--jj-text);
   text-decoration: none;
   background: #111;
   border: 1px solid #333;
   box-shadow: var(--jj-tactile);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-html.jj-mobile .jj-cmdbar__btn:active {
+html.jj-mobile .jj-taskbar__mtab:active {
   box-shadow: var(--jj-tactile-pressed);
-  transform: translate(2px, 2px);
+  transform: translate(1px, 1px);
 }
 
-html.jj-mobile .jj-cmdbar__count {
+html.jj-mobile .jj-taskbar__mtab-count {
   color: var(--jj-secondary);
+}
+
+/* Start menu: desktop-default bottom anchor, stretched full width. */
+html.jj-mobile .jj-start-menu {
+  left: 0;
+  right: 0;
+  width: auto;
+  bottom: var(--jj-mobile-taskbar-h);
+  max-height: calc(100vh - var(--jj-mobile-taskbar-h) - 8px);
+  overflow-y: auto;
+}
+
+/* Tray popups clear the taller bar. */
+html.jj-mobile .jj-vol-popup,
+html.jj-mobile .jj-clock-popover {
+  bottom: calc(var(--jj-mobile-taskbar-h) + 4px);
+}
+
+/* --- Calendar popover --- */
+/* Desktop caps it at 40vw (fine beside a wide taskbar); on a phone that
+   is ~156px — crushed. Full width, columns stacked, finger-sized days. */
+html.jj-mobile .jj-calendar-popover {
+  left: 8px;
+  right: 8px;
+  width: auto;
+  max-width: none;
+  bottom: calc(var(--jj-mobile-taskbar-h) + 4px);
+}
+
+html.jj-mobile .jj-calendar-popover--open {
+  flex-direction: column;
+}
+
+html.jj-mobile .jj-cal-right {
+  width: auto;
+  align-self: center;
+}
+
+html.jj-mobile .jj-cal-grid {
+  font-size: 14px;
+}
+
+html.jj-mobile .jj-cal-grid__day {
+  padding: 8px 0;
+}
+
+html.jj-mobile .jj-cal-grid__header {
+  font-size: 12px;
+}
+
+html.jj-mobile .jj-cal-nav__btn {
+  width: 36px;
+  height: 32px;
+  font-size: 14px;
+}
+
+html.jj-mobile .jj-cal-nav__label {
+  font-size: 16px;
+}
+
+html.jj-mobile .jj-cal-today-btn {
+  font-size: 12px;
+  padding: 6px 8px;
 }
 
 /* Toolbox button: its fan-menu JS is gated off on the handheld, so the
@@ -129,13 +155,20 @@ html.jj-mobile #jj-toolbox {
   display: none;
 }
 
+/* Sound is perma-muted on the handheld (players are desktop-only): the
+   tray speaker is a status glyph, not a control. win95-volume.js still
+   syncs the × mute glyph from JJ_Volume state on load. */
+html.jj-mobile .jj-vol-btn {
+  pointer-events: none;
+}
+
 /* --- Fullscreen explorer --- */
-/* WinCE apps are always maximized: the window fills the strip between
-   the top taskbar and the command bar (mirrors .jj-explorer--max, which
-   proves fixed positioning works from inside the .jj-page layer). */
+/* Handheld apps are always maximized: the window fills the viewport above
+   the bottom taskbar (mirrors .jj-explorer--max, which proves fixed
+   positioning works from inside the .jj-page layer). */
 html.jj-mobile .jj-explorer {
   position: fixed;
-  inset: var(--jj-mobile-topbar-h) 0 var(--jj-mobile-cmdbar-h);
+  inset: 0 0 var(--jj-mobile-taskbar-h);
   width: auto;
   max-width: none;
   height: auto;
@@ -166,8 +199,8 @@ html.jj-mobile .jj-explorer__panel {
    the handheld's bars are top + bottom, so inset the layer between them
    (the explorer inside content pages is viewport-fixed and unaffected). */
 html.jj-mobile .jj-page {
-  top: var(--jj-mobile-topbar-h);
-  bottom: var(--jj-mobile-cmdbar-h);
+  top: 0;
+  bottom: var(--jj-mobile-taskbar-h);
   padding-bottom: 16px;
 }
 
@@ -176,8 +209,8 @@ html.jj-mobile .jj-page {
    top, info panel scrolling underneath on a near-opaque backing so text
    never fights the art. */
 html.jj-mobile .jj-pdp {
-  top: var(--jj-mobile-topbar-h);
-  bottom: var(--jj-mobile-cmdbar-h);
+  top: 0;
+  bottom: var(--jj-mobile-taskbar-h);
   flex-direction: column;
 }
 
@@ -195,44 +228,236 @@ html.jj-mobile .jj-pdp-info {
   touch-action: pan-y;
 }
 
-/* --- Homepage hero (Phase 4) --- */
-/* The desktop bundle stage (3D box + hover ring + daruma + kyogen) is
-   JS-positioned around a 24vw left zone — none of it survives 390px.
-   The handheld hero is panel-only: the wax/sun scene stays as the big
-   visual, the bundle card floats centered over it (typewriter + ATC via
-   bundle-stage.js's JJ_MOBILE branch), the ring/box/FX never build. */
+/* --- Homepage landing: pop card (kyogen + live 3D box + panel) --- */
+/* mobile spec 2026-07-15. bundle-stage.js initMobile() reparents the desktop
+   hero cluster (#jj-product-info — kyogen backdrop + box canvas + panel text —
+   plus the daruma + #jj-daruma-fx) into the in-flow #jj-mhero screen. These
+   rules undo the desktop's fixed-zone / card-bottom-anchored geometry so the
+   cluster lays out in normal flow. Ring crescent, old product viewer, and the
+   swirl tunnel stay desktop-only. */
+
+/* Desktop-only hero pieces that don't belong on the handheld. */
 html.jj-mobile .jj-ring,
-html.jj-mobile #jj-bundle-canvas,
 html.jj-mobile #jj-viewer-canvas,
-html.jj-mobile #jj-swirl-canvas,
-html.jj-mobile .jj-kyogen-clip,
-html.jj-mobile .jj-daruma,
-html.jj-mobile #jj-daruma-fx {
+html.jj-mobile #jj-swirl-canvas {
   display: none !important;
 }
 
+/* The zone is a desktop fixed layer; after the reparent it only hosts the
+   Tsuno greeting bubble. Never let it eat touches meant for the scene/card. */
 html.jj-mobile .jj-product-zone {
+  pointer-events: none;
+}
+
+/* Pop card: relative, centered in the mhero mount; overflow clips the
+   oversized kyogen backdrop. Overrides the desktop margin-top:auto /
+   margin-bottom (product-info.css:7-18; the #jj-product-zone descendant rule
+   stops matching once the panel is reparented out of the zone). */
+html.jj-mobile #jj-product-info {
+  position: relative;
   width: 100%;
-  top: var(--jj-mobile-topbar-h);
-  height: auto;
-  bottom: calc(var(--jj-mobile-cmdbar-h) + 56px); /* clear the CATALOG indicator */
-  align-items: center;
-  padding-left: 0;
-}
-
-html.jj-mobile .jj-product-zone .jj-product-info {
-  margin: auto 16px 0; /* hang low over the scene, clear of the sun */
-  width: calc(100% - 32px); /* the desktop width:100% ignores the side margins */
-  max-width: 420px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
   border: 1px solid #444;
+  overflow: hidden;
 }
 
-/* Scroll indicator sits above the command bar, not the old taskbar. */
+/* Box canvas rides the card's top-right like the desktop graphic spot.
+   Desktop (bundle.css:21): absolute, left calc(100%-275px),
+   bottom calc(20vh-329.4px), 550x550. Mobile: in-flow float sized to the
+   card; left/bottom zeroed so `position:relative` doesn't inherit the desktop
+   offsets. Vertical pans over it keep scrolling; horizontal drags spin. */
+html.jj-mobile #jj-bundle-canvas {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  float: right;
+  width: 45%;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 0 8px 12px;
+  touch-action: pan-y;
+}
+
+/* Kyogen backdrop: desktop centers a 900x750 clip on the card center
+   (bundle.css:67); scale to card size, still the dim ambient layer behind the
+   text (z -1). info-swirl.js no-ops on mobile so the pupils rest at their CSS
+   positions. Starting scale — tune against the device screenshot (Task 10). */
+html.jj-mobile .jj-kyogen-clip {
+  transform: scale(0.42);
+  transform-origin: center;
+}
+
+/* Daruma: reparented into #jj-mhero-daruma-slot (flex-centered, 140px tall).
+   Desktop anchors it absolute at left calc(100%+108px) / bottom calc(20vh-…)
+   (bundle.css:145); zero every anchor so it sits at its flow position,
+   centered by the slot. Float + jiggle/shake transforms ride along. */
+html.jj-mobile .jj-daruma {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  width: 84px;
+  height: 107px; /* 100:128 desktop source aspect at 84 wide */
+}
+
+/* Daruma FX (loot light + dice), shown only during a reroll: overlay the doll,
+   centered on the slot. Desktop anchors it absolute at card offsets
+   (bundle.css:218); re-center over the doll. Size ≈ 3× the doll (matches the
+   desktop 100px-doll / 300px-fx ratio). The FX renders a fixed 150x180 ortho
+   buffer (dice rise above the doll), so exact vertical placement is a device
+   tuning pass (Task 10 / user check). */
+html.jj-mobile #jj-daruma-fx {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: 252px;
+  height: 302px;
+}
+
+/* Scroll indicator sits above the bottom taskbar. */
 html.jj-mobile .jj-scroll__indicator {
-  bottom: calc(var(--jj-mobile-cmdbar-h) + 8px);
+  bottom: calc(var(--jj-mobile-taskbar-h) + 8px);
 }
 
 /* The scroll wrapper must pan by touch (wheel drove it on desktop). */
 html.jj-mobile .jj-scroll {
   touch-action: pan-y;
+}
+
+/* --- Catalog: one product per row --- */
+/* .jj-grid is repeat(4,1fr) with a 600px media query to 2 cols
+   (japanjunky-product-grid.css:84-95); this outweighs both. */
+html.jj-mobile .jj-grid {
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 16px 12px;
+}
+
+/* Full-width card covers would tower — cap and center them. */
+html.jj-mobile .jj-grid__card-img-wrap {
+  max-width: 70vw;
+  margin: 0 auto;
+}
+
+/* --- Text-size floor (user: mobile text too small) --- */
+/* Selectors verified against japanjunky-product-grid.css / -product-info.css /
+   -win95.css / -content.css — all names below match the live source. */
+html.jj-mobile .jj-grid__card-title { font-size: 16px; }
+html.jj-mobile .jj-grid__card-artist { font-size: 14px; }
+html.jj-mobile .jj-grid__card-price,
+html.jj-mobile .jj-grid__card-format,
+html.jj-mobile .jj-grid__card-cond-chip { font-size: 14px; }
+
+html.jj-mobile .jj-product-info__artist { font-size: 18px; }
+html.jj-mobile .jj-product-info__title { font-size: 16px; }
+html.jj-mobile .jj-product-info__meta { font-size: 14px; }
+html.jj-mobile .jj-product-info__price { font-size: 18px; }
+html.jj-mobile .jj-action-btn { font-size: 15px; }
+
+html.jj-mobile .jj-start-menu__item { font-size: 15px; min-height: 40px; }
+html.jj-mobile .jj-start-menu__section-title { font-size: 13px; }
+
+html.jj-mobile .jj-explorer__status { font-size: 13px; }
+html.jj-mobile .jj-prose { font-size: 15px; }
+
+/* --- Text-size floor: static sweep additions ---
+   Emulated-page sweep (brief Step 2) can't run here (no local preview
+   auth) — deferred to Task 10. Substitute: statically scanned every
+   font-size < 13px in japanjunky-product-grid.css, -content.css,
+   -win95.css, -base.css and floored the user-facing ones that actually
+   render on a mobile viewport. Skipped: decorative glyphs/badges
+   (heat-label, filter-badge, .jj-winctl, explorer menubar — explicitly
+   commented "decorative" in source), Win98 system chrome proper
+   (titlebar/menubar/toolbar/address bar/ctl buttons/throbber — the
+   project's hybrid rule keeps chrome authentically Win98-scaled),
+   taskbar/start-btn/clock-tray/vol-popup/shutdown screen (system tray
+   chrome, several already unreachable on mobile — taskbar tabs display:none,
+   volume button pointer-events:none), .jj-explorer__panel contents
+   (panel-desc/also/hint/sel-name/stats — already display:none below
+   680px via the existing @media in japanjunky-content.css, so never
+   render on a phone viewport), and toolbox/media-token/cursor pieces
+   (desktop-only, per brief). */
+
+/* Catalog: quick-add, sold-out flag, empty state */
+html.jj-mobile .jj-grid__card-add { font-size: 14px; }
+html.jj-mobile .jj-grid__card-soldout { font-size: 13px; }
+html.jj-mobile .jj-grid__empty { font-size: 14px; }
+
+/* Catalog scroll indicator ("keep scrolling" prompt) */
+html.jj-mobile .jj-scroll__indicator { font-size: 13px; }
+
+/* Catalog search/filter bar — real controls used to find products */
+html.jj-mobile .jj-grid__search-prompt,
+html.jj-mobile .jj-grid__filter-btn,
+html.jj-mobile .jj-grid__clear-btn,
+html.jj-mobile .jj-grid__count,
+html.jj-mobile .jj-grid__dropdown-item { font-size: 13px; }
+
+/* Typed inputs floored at 16px — anything smaller triggers iOS Safari's
+   auto-zoom-on-focus, which is its own mobile usability bug. */
+html.jj-mobile .jj-grid__search,
+html.jj-mobile .jj-search__input { font-size: 16px; }
+
+/* Contact form label */
+html.jj-mobile .jj-field__label { font-size: 13px; }
+
+/* Explorer folder-view file tiles (e.g. CART / WATCHLIST) — main pane,
+   not the sidebar panel, so it does render on mobile. */
+html.jj-mobile .jj-explorer__file { font-size: 13px; }
+
+/* Win98 "path not found" modal — message + OK button are real content,
+   not chrome */
+html.jj-mobile .jj-explorer-err__msg { font-size: 13px; }
+html.jj-mobile .jj-explorer-err__ok { font-size: 14px; }
+
+/* Explorer folder-view side panel (desc / also-see links / hint / selection
+   name + stats). NOT dead on mobile: the jj-mobile gate keys on screen
+   min-dimension (orientation-stable), so a landscape phone runs 667-915px
+   wide — past content.css's @media (max-width:680px) panel hide — and the
+   fullscreen explorer renders these at 11-12px. Real content, floor it. */
+html.jj-mobile .jj-explorer__panel-desc,
+html.jj-mobile .jj-explorer__panel-also,
+html.jj-mobile .jj-explorer__panel-hint,
+html.jj-mobile .jj-explorer__panel-stats { font-size: 13px; }
+html.jj-mobile .jj-explorer__panel-sel-name { font-size: 14px; }
+
+/* --- Mobile landing screen (homepage hero flow) --- */
+/* Base: desktop never renders this screen. */
+.jj-scroll__screen--mhero {
+  display: none;
+}
+
+html.jj-mobile .jj-scroll__screen--mhero {
+  display: block;
+  pointer-events: auto;
+  padding: 24px 12px 40px;
+}
+
+html.jj-mobile .jj-mhero__daruma-slot {
+  position: relative;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Records deal in with the CRT power-on flash, staggered per card
+   (animation-delay set inline by JJ_MobileRecords.populate). */
+html.jj-mobile .jj-mrecords__card {
+  animation: jj-crt-on 0.3s ease-out backwards;
+}
+
+/* Momentum scrolling (Task 9): native inner scrollers keep their own
+   momentum and never chain scroll into the page underneath. */
+html.jj-mobile #jj-scroll,
+html.jj-mobile .jj-explorer__main,
+html.jj-mobile .jj-pdp-info {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }

@@ -79,3 +79,17 @@ describe('manager (injected store)', () => {
     expect(seen).toEqual([T08, 0]); // tapered 0.8, then muted; no event after unsubscribe
   });
 });
+
+describe('mobile perma-mute', () => {
+  it('boots muted with a null store when window.JJ_MOBILE is set', async () => {
+    const { vi } = await import('vitest');
+    vi.resetModules();
+    const setItem = vi.fn();
+    global.window = { JJ_MOBILE: true, localStorage: { getItem: () => null, setItem } };
+    const Vmobile = await import('../assets/japanjunky-volume.js').then(m => m.default || m);
+    expect(Vmobile.isMuted()).toBe(true);
+    expect(Vmobile.getEffective()).toBe(0);
+    expect(setItem).not.toHaveBeenCalled();
+    delete global.window;
+  });
+});

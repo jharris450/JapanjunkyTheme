@@ -75,6 +75,9 @@
         var countEl = document.getElementById('jj-nav-cart-count');
         if (countEl) countEl.textContent = cart.item_count;
 
+        var mtabCount = document.getElementById('jj-mtab-cart-count');
+        if (mtabCount) mtabCount.textContent = cart.item_count > 0 ? String(cart.item_count) : '';
+
         var btn = document.getElementById('jj-start-btn');
         if (btn) {
           btn.classList.toggle('jj-start-btn--has-cart', cart.item_count > 0);

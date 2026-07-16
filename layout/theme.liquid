@@ -367,6 +367,16 @@
     <div class="jj-scroll__screen jj-scroll__screen--hero">
       <button class="jj-scroll__indicator" id="jj-scroll-indicator" type="button" aria-label="Scroll to catalog">&#9660; CATALOG</button>
     </div>
+    {%- comment -%} Handheld landing (mobile spec 2026-07-15): pop-card mount,
+        daruma slot, records list — in the scroll FLOW, unlike the desktop's
+        fixed hero layers. Desktop never shows this screen (base CSS hides it;
+        html.jj-mobile reveals). On mobile, bundle-stage.js reparents
+        #jj-product-info and the daruma into the mounts. {%- endcomment -%}
+    <div class="jj-scroll__screen jj-scroll__screen--mhero" id="jj-mhero">
+      <div class="jj-mhero__card-mount" id="jj-mhero-card-mount"></div>
+      <div class="jj-mhero__daruma-slot" id="jj-mhero-daruma-slot"></div>
+      <div class="jj-grid jj-mrecords" id="jj-mrecords"></div>
+    </div>
     <div class="jj-scroll__screen jj-scroll__screen--under" aria-hidden="true"></div>
     <div class="jj-scroll__screen jj-scroll__screen--grid">
       {% render 'jj-grid-bar' %}

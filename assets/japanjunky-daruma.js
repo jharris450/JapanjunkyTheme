@@ -11,8 +11,13 @@
 (function () {
   'use strict';
 
-  // Handheld mode: daruma rides the desktop bundle stage (hidden there).
-  if (window.JJ_MOBILE) return;
+  // Handheld: enabled (mobile spec 2026-07-15) — bundle-stage.js reparents
+  // the doll + #jj-daruma-fx into the landing's daruma slot. The FX scene is
+  // reparent-safe and DPR-independent: it renders to a fixed 150x180 ortho
+  // buffer (setSize updateStyle=false; CX/SEAM/TOP are buffer coords, no
+  // viewport/rect/DPR reads), CSS upscales it pixelated — nothing to cap.
+  // Touch: the click sequence fires as-is; the CSS-only pointerenter peg
+  // rattle simply never runs (acceptable degrade).
 
   var btn = document.getElementById('jj-bundle-reroll');
   if (!btn || !btn.classList.contains('jj-daruma')) return;

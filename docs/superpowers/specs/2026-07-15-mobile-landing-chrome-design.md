@@ -127,3 +127,48 @@ Controller in japanjunky-mobile.js (homepage only):
   user's real-device check is the merge gate.
 - All work on a feature branch; merge to `main` (= live deploy) only after
   the user's device check.
+
+## Addendum (2026-07-15, after build) — outcomes
+
+Built on branch `mobile-landing`, 11 commits, all 10 plan tasks reviewed
+clean (per-task spec + quality gate; two review loops caught real defects —
+see below). Shipped essentially as specced. Notable outcomes:
+
+- **Chrome (Task 3).** The WinCE top-bar + separate command bar from the
+  parent (2026-07-14) spec were reverted to a single bottom Win98 taskbar;
+  `jj-mobile-commandbar.liquid` deleted. 3 account tabs live in the
+  window-tab slot: ACCOUNT (→ LOG IN when logged out) · CART+count · WATCH.
+- **Pop card (Task 7).** Built as specced — the desktop hero cluster
+  (`#jj-product-info` + daruma + `#jj-daruma-fx`) is reparented into the
+  in-flow `#jj-mhero` screen and driven by `initMobile()`, reusing the
+  desktop box engine + reroll FSM verbatim; a DOM records list
+  (`JJ_MobileRecords`) stands in for the ring crescent. Daruma FX enabled on
+  mobile — its scene renders a fixed 150×180 ortho buffer with no
+  viewport/DPR reads, so it is reparent-safe and needs no DPR cap (the
+  brief's assumed `setPixelRatio` call did not exist).
+- **Tsuno (Task 8).** Greets from a new `TSUNO_MOBILE_IDLE_POS` (upper-center;
+  desktop x=−4 is off-screen in portrait) and rides the pre-existing
+  `JJ_ScrollFollow` rig — no new follow code. Roam-wake gated off on mobile.
+  Review caught that a per-frame idle-bob and the return-transition endpoint
+  also hardcoded the desktop idle position (would have reverted Tsuno
+  off-screen one frame after placement); both fixed to be mobile-aware.
+- **Records list (Task 6).** Reuses the grid `createCard` export, so record
+  cards inherit cover-spin, condition chips, quick-ATC, and the watch star
+  for free, plus the Task-5 1-col rule.
+
+**Not run here / device-check gate.** Live Playwright emulation (every task's
+final step) could not run in the build environment — `shopify theme dev`
+needs interactive auth and the branch is not on `main`, so there was no
+preview to drive. Static verification stood in throughout (JS parse, FSM
+trace on paper, selector/dangling-var greps, brace balance, 94/94 vitest,
+desktop-untouched confirmed: every mobile CSS rule is `html.jj-mobile`-keyed
+bar two permitted base `display:none` exceptions). Per the bundle lid-gap
+lesson, emulation was never the oracle anyway — the user's real-device check
+is the merge gate.
+
+**Starting values to tune on device** (function-safe, all flagged in code
+comments): kyogen backdrop `scale(0.42)`, box canvas `45%` width,
+`#jj-daruma-fx` `252×302` center (dice rise above the doll — vertical
+placement is the fiddly one; FX shows only during a reroll and degrades
+gracefully). Fling-glide decay is per-RAF-tick, so feel varies with refresh
+rate (polish note).

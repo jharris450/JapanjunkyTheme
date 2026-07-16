@@ -85,7 +85,16 @@
   // Default instance bound to localStorage (browser) or a null store (tests/Node).
   var ls = null;
   try { ls = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage : null; } catch (e) { ls = null; }
-  var instance = create(ls);
+  // Handheld: sound is permanently muted — players are desktop-only and the
+  // tray icon is display-only. Null store: the forced mute must never leak
+  // into another session through localStorage.
+  var instance;
+  if (typeof window !== 'undefined' && window.JJ_MOBILE) {
+    instance = create(null);
+    instance.setMuted(true);
+  } else {
+    instance = create(ls);
+  }
   instance.clamp01 = clamp01;
   instance.taper = taper;
   instance.MAX_GAIN = MAX_GAIN;

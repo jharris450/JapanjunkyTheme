@@ -346,6 +346,8 @@
   // Idle on the screen-RIGHT side (world +x = screen left with the default
   // camera): the pop burst behind the product card covers the old left spot.
   var TSUNO_IDLE_POS = { x: -4.0, y: 0.0, z: 6 };
+  // Handheld: portrait FOV crops x=-4 off-screen — greet from upper-center.
+  var TSUNO_MOBILE_IDLE_POS = { x: 0, y: 1.1, z: 6 };
   // Product page: Tsuno starts in a calm resting position near portal edge
   var tsunoProductPageMode = config.cameraPreset === 'product';
   var tsunoLoginPageMode = config.cameraPreset === 'login';
@@ -540,12 +542,14 @@
     if (!tsunoActivated) {
       var im = tsunoMoodIdx;
       var iTint = TSUNO_MOODS.tint[im];
+      // Handheld: greet from upper-center; x=-4 idle is off-screen in portrait.
+      var basePos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
       // Mirrored (+1, not the usual -1): he idles on the right now, so he
       // faces back in toward the page center.
       tsunoMesh.scale.set(1, 1, 1);
-      tsunoMesh.position.x = TSUNO_IDLE_POS.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
-      tsunoMesh.position.y = TSUNO_IDLE_POS.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
-      tsunoMesh.position.z = TSUNO_IDLE_POS.z;
+      tsunoMesh.position.x = basePos.x + Math.sin(t * 0.3) * TSUNO_MOODS.swayAmp[im];
+      tsunoMesh.position.y = basePos.y + Math.sin(t * TSUNO_MOODS.bobFreq[im] * 2 * Math.PI) * TSUNO_MOODS.bobAmp[im];
+      tsunoMesh.position.z = basePos.z;
       tsunoMesh.material.uniforms.uTint.value.set(iTint[0], iTint[1], iTint[2]);
       tsunoMesh.material.uniforms.uAlpha.value = 0.8 * TSUNO_MOODS.glowMult[im];
       tsunoMesh.lookAt(camera.position);
@@ -894,7 +898,9 @@
 
       tsunoMesh = new THREE.Mesh(ghostGeo, mat);
       tsunoMesh.scale.x = -1; // flip horizontally to face the catalogue
-      var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS : (tsunoProductPageMode ? TSUNO_PRODUCT_POS : TSUNO_IDLE_POS);
+      var tsunoStartPos = tsunoLoginPageMode ? TSUNO_LOGIN_POS
+        : (tsunoProductPageMode ? TSUNO_PRODUCT_POS
+        : (window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS));
       tsunoMesh.position.set(tsunoStartPos.x, tsunoStartPos.y, tsunoStartPos.z);
       tsunoRig.add(tsunoMesh);
 
@@ -915,7 +921,8 @@
       }
 
       // Place Tsuno at idle position — personality system activates on first product selection
-      tsunoMesh.position.set(TSUNO_IDLE_POS.x, TSUNO_IDLE_POS.y, TSUNO_IDLE_POS.z);
+      var idlePos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
+      tsunoMesh.position.set(idlePos.x, idlePos.y, idlePos.z);
 
       // On the product page there is no "first product selection" to activate
       // the personality system, so bootstrap the floating idle immediately.
@@ -1218,10 +1225,11 @@
         y: tsunoMesh.position.y,
         z: tsunoMesh.position.z
       };
+      var returnPos = window.JJ_MOBILE ? TSUNO_MOBILE_IDLE_POS : TSUNO_IDLE_POS;
       tsunoTransition.endPos = {
-        x: TSUNO_IDLE_POS.x,
-        y: TSUNO_IDLE_POS.y,
-        z: TSUNO_IDLE_POS.z
+        x: returnPos.x,
+        y: returnPos.y,
+        z: returnPos.z
       };
     }
   }
@@ -1232,6 +1240,9 @@
   // the personality system with a deliberate "peek" wake gesture. No-op if
   // Tsuno is already activated, not idle, or on the product/login pages.
   document.addEventListener('jj:tsuno-wake', function () {
+    // Handheld: Tsuno stays in his greeting float and tracks the scroll
+    // (JJ_ScrollFollow rig); roaming would carry him off the portrait FOV.
+    if (window.JJ_MOBILE) return;
     if (!tsunoMesh || tsunoState !== 'idle') return;
     if (tsunoProductPageMode || tsunoLoginPageMode) return;
     if (tsunoActivated) return;

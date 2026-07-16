@@ -253,7 +253,7 @@
     }
 
     return {
-      attach: function (wrap, url, backUrl, label) {
+      attach: function (wrap, url, backUrl, label, owner) {
         var cv = document.createElement('canvas');
         cv.className = 'jj-grid__card-canvas';
         cv.width = SIZE;
@@ -265,16 +265,31 @@
           ctx: cv.getContext('2d'),
           frontTex: frontTex,
           backTex: backUrl ? getTexture(backUrl) : frontTex, // default to 1st image
-          visible: false
+          visible: false,
+          canvas: cv, // kept so reset() can re-observe survivors after disconnect()
+          owner: owner || 'catalog'
         };
         cv._jjSpinCard = card;
         cards.push(card);
         wrap.appendChild(cv);
         observer.observe(cv);
       },
+      // Only catalog-owned cards are torn down here (renderGrid() calls this
+      // on every filter/sort/search/clear). Foreign-owned cards (e.g. the
+      // mobile record-hero canvases, owner 'mhero') must survive a catalog
+      // re-render, but observer.disconnect() unobserves EVERYTHING — so
+      // survivors have to be re-observed individually or their covers would
+      // freeze right along with the ones we're intentionally dropping.
       reset: function () {
         observer.disconnect();
-        cards = [];
+        var survivors = [];
+        for (var i = 0; i < cards.length; i++) {
+          if (cards[i].owner !== 'catalog') survivors.push(cards[i]);
+        }
+        cards = survivors;
+        for (var j = 0; j < cards.length; j++) {
+          observer.observe(cards[j].canvas);
+        }
         syncLoop();
       }
     };
@@ -410,7 +425,7 @@
       });
   }
 
-  function createCard(p) {
+  function createCard(p, owner) {
     var card = document.createElement('a');
     card.className = 'jj-grid__card';
     card.href = '/products/' + encodeURIComponent(p.handle);
@@ -425,7 +440,7 @@
     imgWrap.className = 'jj-grid__card-img-wrap';
     var alt = (p.artist ? p.artist + ' - ' : '') + p.title;
     if (p.image && spinEngine) {
-      spinEngine.attach(imgWrap, p.image, p.imageBack, alt);
+      spinEngine.attach(imgWrap, p.image, p.imageBack, alt, owner);
     } else if (p.image) {
       var img = document.createElement('img');
       img.className = 'jj-grid__card-img';
@@ -996,5 +1011,9 @@
   applySort();
   renderGrid();
   updateCount();
+
+  // Handheld records list (japanjunky-mobile.js) reuses the exact grid card
+  // (cover spin, condition chips, quick-ATC, watch star all ride along).
+  window.JJ_GridCard = { createCard: createCard };
 
 })();
