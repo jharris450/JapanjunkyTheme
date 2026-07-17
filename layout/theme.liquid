@@ -335,19 +335,10 @@
         <span class="jj-daruma__half jj-daruma__half--top" aria-hidden="true">
           <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
         </span>
-        {%- comment -%} Reroll hint: a circular reload glyph — two HALF arrows
-            (flat on the inner edge, barb flares OUT one side only — shape after
-            arrow.png) arranged as a refresh ring (layout after reload.jpg) with
-            the daruma sitting in the ring's center, so the doll reads as the
-            reroll control. Short quarter-arcs leave big top/bottom gaps so the
-            pair flanks the doll's left & right. Baked to a PNG that's already
-            Floyd-Steinberg palette-dithered with the JJ_Dither CRT palette (the
-            global dither pipeline only rasterizes <img>s, so a vector <svg>
-            never got the grain) — image, not inline SVG, so it matches the
-            doll sprite's stipple. Source path preserved:
-            "M29.79,24 A47 47 0 0 0 29.79,96 L25.29,101.37 L40.49,100 L33,92.17
-             A42 42 0 0 1 33,27.83 Z" + a 180°-rotated twin, gold→amber fill. {%- endcomment -%}
-        <img class="jj-daruma__reload" src="{{ 'daruma-reload.png' | asset_url }}" alt="" aria-hidden="true">
+        {%- comment -%} Reroll ring PARKED (user call 2026-07-17): the flanking
+            reload arrows are removed for now — not the look wanted. Asset
+            (daruma-reload.png) + .jj-daruma__reload CSS kept so re-adding is one
+            <img> line here. {%- endcomment -%}
       </button>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>
       <div class="jj-product-info__jp-name" id="jj-pi-jp-name"></div>
