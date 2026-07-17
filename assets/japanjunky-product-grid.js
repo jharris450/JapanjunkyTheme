@@ -112,7 +112,14 @@
 
     var renderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas: glCanvas, alpha: true, antialias: false });
+      // preserveDrawingBuffer: this ONE offscreen canvas is rendered per-card
+      // then drawImage()'d into each card's 2D canvas. Without a preserved
+      // buffer, mobile tiled GPUs may clear the drawing buffer before a given
+      // card's drawImage reads it — that card copies a blank frame and flashes.
+      // Which card loses the race is nondeterministic, so a different random
+      // product flickered on each reload. Desktop GPUs preserve it in practice
+      // (why it was mobile-only). Keeping the buffer makes every readback valid.
+      renderer = new THREE.WebGLRenderer({ canvas: glCanvas, alpha: true, antialias: false, preserveDrawingBuffer: true });
     } catch (err) {
       return null; // WebGL unavailable — cards fall back to static images
     }

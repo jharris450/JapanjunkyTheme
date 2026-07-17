@@ -269,6 +269,14 @@ html.jj-mobile #jj-product-info {
   overflow: visible;
 }
 
+/* Description fills the card's full width on mobile. Desktop reserves
+   padding-right:104px because the 3D box hangs over the card's right edge
+   there (product-info.css:119); on mobile the box is reparented to the slot
+   BELOW, so nothing overlaps — reclaim that column for the copy. */
+html.jj-mobile .jj-product-info__meta {
+  padding-right: 0;
+}
+
 /* Kill the horizontal page scroll the off-page burst would otherwise create,
    while keeping native vertical scroll. overflow-x:clip (not hidden) leaves
    the y axis visible so it doesn't turn these into nested scrollers. */
@@ -524,6 +532,15 @@ html.jj-mobile .jj-mrecords__card {
    cards oddly — let them fill their column instead. */
 html.jj-mobile .jj-mrecords__card .jj-grid__card-img-wrap {
   max-width: none;
+}
+
+/* Odd count (5 records) leaves the last card alone on its row, pinned LEFT.
+   Span the full row and center it — kept to one-column width (half the row
+   minus half the 12px column gap) so it matches the cards above it. */
+html.jj-mobile .jj-mrecords__card:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc(50% - 6px);
 }
 
 /* Momentum scrolling (Task 9): native inner scrollers keep their own
