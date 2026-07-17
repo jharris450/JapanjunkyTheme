@@ -211,23 +211,22 @@
   100% { transform: translate(-1px, 0) rotate(-3deg); }
 }
 
-/* Reroll hint: a circular reload glyph — two SOLID angular arrows (shape after
-   arrow.png: flat shaft, triangular head, squared-off tail) arranged as a
-   refresh ring (layout after reload.jpg: the top arrow sweeps over the top with
-   a DOWN head at the right, its 180°-rotated twin sweeps under the bottom) with
-   the daruma sitting in the ring's CENTER so the doll reads as "reroll". SVG
-   (Fixedsys has no ↻ glyph); rides the doll's float as one unit and only shows
-   while the button is shown (JS reveals it once the box is open). Shared by
-   desktop AND handheld (same reparented #jj-bundle-reroll button); % sizing
-   tracks the doll box on both. */
+/* Reroll hint: two SOLID full-arrowhead arrows (shape after arrow.png) standing
+   VERTICALLY on the LEFT and RIGHT of the doll, spaced apart so the daruma sits
+   BETWEEN them — the left arrow curves up with an UP head, its 180°-rotated twin
+   curves down with a DOWN head (layout after reload.jpg). SVG (Fixedsys has no
+   ↻ glyph); rides the doll's float as one unit and only shows while the button
+   is shown (JS reveals it once the box is open). Shared by desktop AND handheld
+   (same reparented #jj-bundle-reroll button); % sizing tracks the doll box, sized
+   at 200% so the arrows clear the doll body (140% overlapped it). */
 .jj-daruma__reload {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 140%;   /* larger than the doll so the arrows ring around it */
-  height: 140%;
+  width: 200%;   /* wide enough that the side arrows sit OUTSIDE the doll body */
+  height: 200%;
   transform: translate(-50%, -50%);
-  z-index: 0;    /* behind the doll halves (z 1) — doll sits inside the ring */
+  z-index: 0;    /* behind the doll halves (z 1) — doll sits between the arrows */
   pointer-events: none;
   overflow: visible;
   color: var(--jj-secondary, #f5d742);
