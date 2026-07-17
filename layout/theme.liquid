@@ -335,15 +335,17 @@
         <span class="jj-daruma__half jj-daruma__half--top" aria-hidden="true">
           <img class="jj-daruma__img" src="{{ 'daruma-body.png' | asset_url }}" alt="">
         </span>
-        {%- comment -%} Reroll hint: a circular reload glyph — two SOLID angular
-            arrows (shape after arrow.png) arranged as a refresh ring (layout
-            after reload.jpg) with the daruma sitting in the ring's center, so
-            the doll reads as the reroll control. SVG (Fixedsys has no ↻); the
+        {%- comment -%} Reroll hint: a circular reload glyph — two HALF arrows
+            (flat on the inner edge, barb flares OUT one side only — shape after
+            arrow.png) arranged as a refresh ring (layout after reload.jpg) with
+            the daruma sitting in the ring's center, so the doll reads as the
+            reroll control. Short quarter-arcs leave big top/bottom gaps so the
+            pair flanks the doll's left & right. SVG (Fixedsys has no ↻); the
             second path is the first rotated 180° for the symmetric refresh
             pair. {%- endcomment -%}
         <svg class="jj-daruma__reload" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
-          <path d="M28.60,100.19 A51 51 0 0 1 28.60,19.81 L25.52,15.87 L51.66,12.73 L35.37,28.48 L32.30,24.54 A45 45 0 0 0 32.30,95.46 Z"></path>
-          <path transform="rotate(180 60 60)" d="M28.60,100.19 A51 51 0 0 1 28.60,19.81 L25.52,15.87 L51.66,12.73 L35.37,28.48 L32.30,24.54 A45 45 0 0 0 32.30,95.46 Z"></path>
+          <path d="M29.79,24.00 A47 47 0 0 0 29.79,96.00 L25.29,101.37 L40.49,100.00 L33.00,92.17 A42 42 0 0 1 33.00,27.83 Z"></path>
+          <path transform="rotate(180 60 60)" d="M29.79,24.00 A47 47 0 0 0 29.79,96.00 L25.29,101.37 L40.49,100.00 L33.00,92.17 A42 42 0 0 1 33.00,27.83 Z"></path>
         </svg>
       </button>
       <div class="jj-product-info__artist" id="jj-pi-artist"></div>

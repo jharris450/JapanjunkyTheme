@@ -155,7 +155,9 @@
   cursor: pointer;
   pointer-events: auto;
   filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
-  animation: jj-daruma-float 5.5s ease-in-out infinite;
+  /* No animation on the button itself — the DOLL (halves) and the reload RING
+     float independently (each on its own keyframes/period) so the arrows read
+     as separate objects the doll floats in FRONT of, not a rigid unit. */
 }
 
 @keyframes jj-daruma-float {
@@ -173,6 +175,7 @@
   display: block;
   z-index: 1; /* doll paints OVER the reload ring (z 0) so it sits inside it */
   transition: transform 0.3s ease-out;
+  animation: jj-daruma-float 5.5s ease-in-out infinite; /* doll's own float */
 }
 
 .jj-daruma__img {
@@ -191,15 +194,16 @@
   transform: translate(-7px, -46px) rotate(-17deg);
 }
 
-/* Hover/focus: the doll rattles gently — the dice shifting inside.
-   steps(1) held poses, no easing. Suppressed while split open (.is-open
+/* Hover/focus: the DOLL rattles gently — the dice shifting inside. The RING
+   spins in response (arrows react to the doll's shake without being part of
+   it). steps(1) held poses, no easing. Suppressed while split open (.is-open
    comes later in the file and wins the tie). */
-.jj-daruma:hover,
-.jj-daruma:focus-visible {
+.jj-daruma:hover .jj-daruma__half,
+.jj-daruma:focus-visible .jj-daruma__half {
   animation: jj-daruma-jiggle 0.55s steps(1, end) infinite;
 }
 
-.jj-daruma.is-open {
+.jj-daruma.is-open .jj-daruma__half {
   animation: none;
 }
 
@@ -211,20 +215,24 @@
   100% { transform: translate(-1px, 0) rotate(-3deg); }
 }
 
-/* Reroll hint: two SOLID full-arrowhead arrows (shape after arrow.png) standing
-   VERTICALLY on the LEFT and RIGHT of the doll, spaced apart so the daruma sits
-   BETWEEN them — the left arrow curves up with an UP head, its 180°-rotated twin
-   curves down with a DOWN head (layout after reload.jpg). SVG (Fixedsys has no
-   ↻ glyph); rides the doll's float as one unit and only shows while the button
-   is shown (JS reveals it once the box is open). Shared by desktop AND handheld
-   (same reparented #jj-bundle-reroll button); % sizing tracks the doll box, sized
-   at 200% so the arrows clear the doll body (140% overlapped it). */
+/* Reroll hint: two HALF arrows (flat on the inner edge, barb flares OUT one
+   side only — shape after arrow.png) forming a refresh ring, standing on the
+   LEFT and RIGHT of the doll — short quarter-arcs with big top/bottom gaps so
+   the pair flanks the doll and the daruma is the FOCUS in front of them (the
+   ring paints at z 0, doll halves at z 1, so the arcs behind the body are
+   hidden — only the flanking slivers + heads show). Left arc's head points
+   down, its 180°-rotated twin's head points up (layout after reload.jpg).
+   SVG (Fixedsys has no ↻); floats on its OWN period (independent of the doll)
+   and spins on hover/shake. Only shows while the button is shown (JS reveals it
+   once the box is open). Shared by desktop AND handheld (same reparented
+   #jj-bundle-reroll button); % sizing tracks the doll box, at 165% — smaller
+   than the old 200% so the doll dominates while the arrows still flank it. */
 .jj-daruma__reload {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 200%;   /* wide enough that the side arrows sit OUTSIDE the doll body */
-  height: 200%;
+  width: 165%;   /* smaller than the doll; arcs peek at its left/right edges */
+  height: 165%;
   max-width: none; /* base.css caps img/video/svg at 100% — that clamped this to
                       the button size and buried the ring inside the doll body */
   transform: translate(-50%, -50%);
@@ -234,6 +242,34 @@
   color: var(--jj-secondary, #f5d742);
   fill: currentColor;
   filter: drop-shadow(0 0 4px rgba(245, 215, 66, 0.55));
+  /* Own float — a slower period than the doll's 5.5s so the two drift out of
+     phase and read as independent objects. Keeps the centering translate. */
+  animation: jj-daruma-reload-float 6.7s ease-in-out infinite;
+}
+
+/* Idle: gentle independent bob (base transform keeps the ring centered). */
+@keyframes jj-daruma-reload-float {
+  0%, 100% { transform: translate(-50%, calc(-50% - 2px)) rotate(-4deg); }
+  50%      { transform: translate(-50%, calc(-50% + 5px)) rotate(4deg); }
+}
+
+/* Doll shakes (hover jiggle OR post-reroll rattle) → the ring SPINS in
+   response — the arrows react to the doll without being attached to it. */
+.jj-daruma:hover .jj-daruma__reload,
+.jj-daruma:focus-visible .jj-daruma__reload,
+.jj-daruma.is-shaking .jj-daruma__reload {
+  animation: jj-daruma-reload-spin 0.9s linear infinite;
+}
+
+@keyframes jj-daruma-reload-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Split open: hold the ring still and centered while the doll deals its dice. */
+.jj-daruma.is-open .jj-daruma__reload {
+  animation: none;
+  transform: translate(-50%, -50%);
 }
 
 /* Loot light + dice: rendered on the #jj-daruma-fx three.js canvas
@@ -254,10 +290,11 @@
   image-rendering: pixelated;
 }
 
-/* After the doll snaps shut, it rattles — the dice being shaken for the
-   next roll. steps(1) = held poses with hard jumps, no easing. Replaces
-   the idle float for its duration (float resumes when the class drops). */
-.jj-daruma.is-shaking {
+/* After the doll snaps shut, the DOLL rattles — the dice being shaken for the
+   next roll (the ring spins alongside via the .is-shaking rule above). steps(1)
+   = held poses with hard jumps, no easing. Replaces the idle float for its
+   duration (float resumes when the class drops). */
+.jj-daruma.is-shaking .jj-daruma__half {
   animation: jj-daruma-shake 0.6s steps(1, end);
 }
 
