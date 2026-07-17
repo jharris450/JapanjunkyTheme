@@ -379,6 +379,13 @@ html.jj-mobile .jj-scroll__screen--under {
   pointer-events: auto;
 }
 
+/* Shorten the underworld spacer on mobile: a full 100vh blank screen left too
+   long a scroll between the dealt records and the catalog head (user call).
+   40vh keeps a brief underscene descent without the dead gap. */
+html.jj-mobile .jj-scroll__screen--under {
+  height: 40vh;
+}
+
 /* --- Catalog: one product per row --- */
 /* .jj-grid is repeat(4,1fr) with a 600px media query to 2 cols
    (japanjunky-product-grid.css:84-95); this outweighs both. */
