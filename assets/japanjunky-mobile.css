@@ -355,9 +355,11 @@ html.jj-mobile #jj-daruma-fx {
   height: 302px;
 }
 
-/* Scroll indicator sits above the bottom taskbar. */
+/* Scroll indicator ("▼ CATALOG") sits above the bottom taskbar, lifted clear
+   of the pop/bang burst that bleeds down over the bottom of the hero (user:
+   the burst was blocking it). +48px = ~40px above the old +8px resting spot. */
 html.jj-mobile .jj-scroll__indicator {
-  bottom: calc(var(--jj-mobile-taskbar-h) + 8px);
+  bottom: calc(var(--jj-mobile-taskbar-h) + 48px);
 }
 
 /* Native touch scrolling. Desktop keeps the wrapper (and the hero/under
