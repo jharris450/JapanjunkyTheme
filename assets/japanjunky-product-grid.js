@@ -482,7 +482,21 @@
     // All conditions shown together. In-stock = colored + selectable,
     // out-of-stock = greyed + struck. Selecting drives which variant the
     // add button buys and which price the row shows.
-    var conds = p.conditions || [];
+    // The catalog passes collapsed cards (buildCards) carrying .conditions;
+    // callers that pass a RAW JJ_PRODUCTS variant (mobile sample records via
+    // JJ_BundlePool.pickRecords → JJ_GridCard.createCard) have none. Without
+    // this fallback `selected` stays null and an in-stock record renders
+    // "SOLD OUT" — synthesize a one-entry condition list from the variant.
+    var conds = p.conditions;
+    if (!conds || !conds.length) {
+      conds = [{
+        condition: p.condition,
+        variantId: p.variantId,
+        available: p.available,
+        price: p.price,
+        priceCents: p.priceCents
+      }];
+    }
     var selected = null;
     for (var s = 0; s < conds.length; s++) {
       if (conds[s].available) { selected = conds[s]; break; }
