@@ -222,8 +222,9 @@
    ring paints at z 0, doll halves at z 1, so the arcs behind the body are
    hidden — only the flanking slivers + heads show). Left arc's head points
    down, its 180°-rotated twin's head points up (layout after reload.jpg).
-   SVG (Fixedsys has no ↻); floats on its OWN period (independent of the doll)
-   and spins on hover/shake. Only shows while the button is shown (JS reveals it
+   Pre-dithered gold PNG (daruma-reload.png, baked with the JJ_Dither palette so
+   it grains like the doll sprite); floats on its OWN period (independent of the
+   doll) and spins on hover/shake. Only shows while the button is shown (reveals
    once the box is open). Shared by desktop AND handheld (same reparented
    #jj-bundle-reroll button); % sizing tracks the doll box, at 165% — smaller
    than the old 200% so the doll dominates while the arrows still flank it. */
@@ -239,8 +240,9 @@
   z-index: 0;    /* behind the doll halves (z 1) — doll sits between the arrows */
   pointer-events: none;
   overflow: visible;
-  color: var(--jj-secondary, #f5d742);
-  fill: currentColor;
+  /* Pre-dithered gold PNG (daruma-reload.png) — upscale crisp, no smearing,
+     matching the doll sprite's palette-dithered grain. */
+  image-rendering: pixelated;
   filter: drop-shadow(0 0 4px rgba(245, 215, 66, 0.55));
   /* Own float — a slower period than the doll's 5.5s so the two drift out of
      phase and read as independent objects. Keeps the centering translate. */
@@ -263,7 +265,7 @@
 
 @keyframes jj-daruma-reload-spin {
   from { transform: translate(-50%, -50%) rotate(0deg); }
-  to   { transform: translate(-50%, -50%) rotate(360deg); }
+  to   { transform: translate(-50%, -50%) rotate(-360deg); } /* counter-clockwise */
 }
 
 /* Split open: hold the ring still and centered while the doll deals its dice. */
