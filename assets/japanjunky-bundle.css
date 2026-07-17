@@ -225,6 +225,8 @@
   top: 50%;
   width: 200%;   /* wide enough that the side arrows sit OUTSIDE the doll body */
   height: 200%;
+  max-width: none; /* base.css caps img/video/svg at 100% — that clamped this to
+                      the button size and buried the ring inside the doll body */
   transform: translate(-50%, -50%);
   z-index: 0;    /* behind the doll halves (z 1) — doll sits between the arrows */
   pointer-events: none;
