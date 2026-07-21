@@ -35,6 +35,10 @@
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
   camera.position.set(0, 0, 5);
+  // Product page: pull the camera in so the album cover fills its own viewer
+  // window instead of floating small in a sea of black. Vinyl slides out to
+  // x≈2.0, still clears the frame at this distance.
+  if (isProductPage) camera.position.z = 3.7;
 
   var shaderRes = 240;
   if (window.JJ_SCREENSAVER_CONFIG && window.JJ_SCREENSAVER_CONFIG.resolution) {
