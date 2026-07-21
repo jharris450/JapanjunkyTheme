@@ -204,27 +204,26 @@ html.jj-mobile .jj-page {
   padding-bottom: 16px;
 }
 
-/* Product page: desktop is a fixed side-by-side split (360px info panel
-   + 3D viewer). The handheld stacks them — record viewer as the hero on
-   top, info panel scrolling underneath on a near-opaque backing so text
-   never fights the art. */
-html.jj-mobile .jj-pdp {
-  top: 0;
-  bottom: var(--jj-mobile-taskbar-h);
+/* Product page: desktop lays the spec sheet + 3D viewer side by side inside
+   the Win98 window's main pane. The handheld (window already fullscreened
+   above; the sidebar panel is hidden < 680px) stacks the two columns — record
+   viewer as the hero on top, spec sheet scrolling underneath. */
+html.jj-mobile .jj-pdp-win {
   flex-direction: column;
+  gap: 12px;
 }
 
 html.jj-mobile .jj-pdp-viewer {
-  order: -1; /* DOM has info first; art leads on the handheld */
-  flex: 0 0 42%;
+  order: -1; /* DOM has the spec first; art leads on the handheld */
+  flex: 0 0 44vh;
+  min-height: 0;
 }
 
 html.jj-mobile .jj-pdp-info {
   width: auto;
   max-width: none;
   flex: 1 1 auto;
-  min-height: 0; /* let the flex item shrink so overflow-y can scroll */
-  background: rgba(8, 5, 3, 0.92);
+  padding: 4px 4px 16px;
   touch-action: pan-y;
 }
 

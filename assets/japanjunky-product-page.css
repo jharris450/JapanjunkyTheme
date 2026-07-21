@@ -1,45 +1,29 @@
 /* ============================================
    JAPANJUNKY PRODUCT PAGE
-   Terminal-styled product detail — extends
-   jj-product-info visual language.
+   Terminal-styled product detail (spec sheet +
+   3D cover/vinyl) laid out inside the Win98
+   explorer window's main pane.
    ============================================ */
 
-/* --- Layout: full viewport, two-zone overlay --- */
-.jj-pdp {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
+/* --- Layout: two columns inside .jj-explorer__main --- */
+.jj-pdp-win {
   display: flex;
-  align-items: stretch;
-  pointer-events: none;
+  align-items: flex-start; /* viewer keeps its own height, not the spec's */
+  gap: 16px;
+  min-height: 100%;
   font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
 }
 
-/* --- Left: Product info panel --- */
+/* --- Left: terminal spec sheet --- */
 .jj-pdp-info {
-  width: 360px;
-  max-width: 40vw;
-  padding: 16px 20px 20px;
-  background: rgba(8, 5, 3, 0.7);
-  overflow-y: auto;
-  pointer-events: auto;
+  position: relative;
+  width: 320px;
+  max-width: 46%;
+  flex-shrink: 0;
+  padding: 4px 16px 16px 4px;
   display: flex;
   flex-direction: column;
   gap: 0;
-  z-index: 2;
-}
-
-/* --- Back button --- */
-.jj-pdp-back {
-  font-family: inherit;
-  font-size: 11px;
-  color: var(--jj-accent, #33ff33);
-  text-decoration: none;
-  margin-bottom: 12px;
-  display: inline-block;
-}
-.jj-pdp-back:hover {
-  text-shadow: 0 0 6px rgba(51, 255, 51, 0.6);
 }
 
 /* --- Artist --- */
@@ -225,18 +209,19 @@
   border-top: 1px solid #222;
 }
 
-/* --- Right: Viewer canvas zone ---
-   Background: warm amber radial glow behind the 3D viewer canvas so the
-   right side of the page reads as portal-lit (matching the homepage) instead
-   of a black void. The gradient is centered roughly where the 500px canvas
-   sits (top:50% right:10%, so ~65% across the viewer zone horizontally). */
+/* --- Right: Viewer canvas column ---
+   Warm amber radial glow behind the 3D cover/vinyl so the column reads as
+   portal-lit (matching the homepage) instead of a black void, centered where
+   the fluid canvas sits. The canvas fills the column; the viewer (product-
+   viewer.js) tracks its box via ResizeObserver, so any size renders crisp. */
 .jj-pdp-viewer {
-  flex: 1;
+  flex: 1 1 auto;
   position: relative;
-  pointer-events: auto;
+  min-width: 260px;
+  height: 520px;
   background:
     radial-gradient(
-      ellipse 55% 60% at 65% 50%,
+      ellipse 60% 60% at 50% 50%,
       rgba(232, 90, 15, 0.22) 0%,
       rgba(102, 40, 10, 0.12) 35%,
       rgba(40, 15, 5, 0.05) 65%,
@@ -246,11 +231,9 @@
 
 #jj-pdp-viewer-canvas {
   position: absolute;
-  top: 50%;
-  right: 10%;
-  width: 500px;
-  height: 500px;
-  transform: translateY(-50%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: auto;
   cursor: grab;
 }
@@ -263,11 +246,9 @@
 .jj-pdp-info--entering {
   animation: jj-slide-in-left 0.4s ease-out;
 }
-/* Dedicated keyframe preserves translateY(-50%) so the canvas stays
-   vertically centered after the animation finishes (fill-mode: both). */
 @keyframes jj-pdp-canvas-in {
-  from { transform: translateY(-50%) scale(0.8); opacity: 0; }
-  to   { transform: translateY(-50%) scale(1);   opacity: 1; }
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 .jj-pdp-viewer--entering #jj-pdp-viewer-canvas {
   animation: jj-pdp-canvas-in 0.4s ease-out 0.1s both;
