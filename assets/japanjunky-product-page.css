@@ -12,7 +12,11 @@
    take over (translate-relative — see japanjunky-explorer.js / -viewer-window.js).
    Absolute + margin:0 keeps the resize edge-math stable (auto-margin lock is a
    no-op). Desktop only; the handheld stacks them (japanjunky-mobile.css). */
-.jj-pdp-page .jj-explorer {
+/* NOTE: the viewer window carries BOTH classes (jj-explorer jj-viewerwin), so
+   the spec-window selector must :not(.jj-viewerwin) it out — otherwise this
+   rule (higher specificity than .jj-viewerwin) clobbers the viewer's position
+   and drops it exactly on top of the spec window. */
+.jj-pdp-page .jj-explorer:not(.jj-viewerwin) {
   position: absolute;
   left: 4%;
   top: 16px;
@@ -25,11 +29,16 @@
 
 /* The 3D viewer floats upper-right, inset from the edge and overlapping the
    spec window's right side (it starts focused/on top — see viewer-window.js).
-   Shorter than the spec window so the desktop reads as two distinct windows. */
-.jj-viewerwin {
+   Shorter than the spec window so the desktop reads as two distinct windows.
+   Scoped to .jj-pdp-page so it out-specifies the base .jj-explorer rules
+   (width:100%/margin:auto/position:relative) regardless of stylesheet order.
+   left/bottom:auto cancel any values inherited from those base rules. */
+.jj-pdp-page .jj-viewerwin {
   position: absolute;
   right: 14%;
+  left: auto;
   top: 13%;
+  bottom: auto;
   width: 29%;
   min-width: 260px;
   max-width: 460px;
@@ -38,10 +47,9 @@
   margin: 0;
 }
 
-/* Maximize must beat the positioning overrides above (both raise specificity
-   past the base .jj-explorer--max rule, so restate the maximized geometry). */
+/* Maximize must beat the positioning rules above (restate the max geometry). */
 .jj-pdp-page .jj-explorer.jj-explorer--max,
-.jj-viewerwin.jj-explorer--max {
+.jj-pdp-page .jj-viewerwin.jj-explorer--max {
   position: fixed;
   inset: 0 0 32px;
   width: auto;
