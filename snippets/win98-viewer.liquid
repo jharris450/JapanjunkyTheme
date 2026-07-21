@@ -1,0 +1,45 @@
+{%- comment -%}
+  Lightweight Win98/IE "browser" window that holds the product page's 3D
+  cover + vinyl viewer as a SECOND window beside the spec-sheet explorer.
+  Reuses the .jj-explorer chrome styling (border/bevel/titlebar/controls) but
+  is a standalone instance driven by japanjunky-viewer-window.js (drag /
+  resize / min / max / close). The shared japanjunky-explorer.js binds by id
+  (#jj-explorer) and never touches this window. No address bar, toolbar, or
+  folder view — it's a viewer, not a file browser.
+
+  Params:
+    title — window title (default '3D Viewer')
+    icon  — win95-start-icon name (default 'box')
+{%- endcomment -%}
+{%- assign vw_title = title | default: '3D Viewer' -%}
+{%- assign vw_icon = icon | default: 'box' -%}
+
+<div class="jj-explorer jj-viewerwin" id="jj-viewerwin" data-title="{{ vw_title | escape }}">
+  <header class="jj-explorer__titlebar" id="jj-viewerwin-titlebar">
+    <span class="jj-explorer__titleicon" aria-hidden="true">{% render 'win95-start-icon', icon: vw_icon %}</span>
+    <h2 class="jj-explorer__title">{{ vw_title }}</h2>
+    <span class="jj-explorer__ctls">
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--min" id="jj-viewerwin-min" aria-label="Minimize">_</button>
+      <button type="button" class="jj-explorer__ctl" id="jj-viewerwin-max" aria-label="Maximize">&#9633;</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="jj-viewerwin-close" aria-label="Close">&times;</button>
+    </span>
+  </header>
+
+  {%- comment -%} Stage: warm amber portal-glow behind the fluid 3D canvas.
+      product-viewer.js auto-inits on #jj-pdp-viewer-canvas wherever it lives
+      and tracks its box via ResizeObserver, so drag/resize just work. {%- endcomment -%}
+  <div class="jj-viewerwin__stage" id="jj-viewerwin-stage">
+    <canvas id="jj-pdp-viewer-canvas" aria-label="3D product viewer"></canvas>
+  </div>
+
+  {%- comment -%} Resize handles (edges + corners); hidden while maximized /
+      on the handheld (japanjunky-mobile.css). {%- endcomment -%}
+  <span class="jj-explorer__rs jj-explorer__rs--n"  data-rs="n"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--s"  data-rs="s"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--e"  data-rs="e"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--w"  data-rs="w"  aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--ne" data-rs="ne" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--nw" data-rs="nw" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--se" data-rs="se" aria-hidden="true"></span>
+  <span class="jj-explorer__rs jj-explorer__rs--sw" data-rs="sw" aria-hidden="true"></span>
+</div>

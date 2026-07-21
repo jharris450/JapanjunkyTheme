@@ -5,22 +5,51 @@
    explorer window's main pane.
    ============================================ */
 
-/* --- Layout: two columns inside .jj-explorer__main --- */
-.jj-pdp-win {
-  display: flex;
-  align-items: flex-start; /* viewer keeps its own height, not the spec's */
-  gap: 16px;
-  min-height: 100%;
-  font-family: 'Fixedsys Excelsior 3.01', 'DotGothic16', monospace;
+/* --- Two windows on the page ---
+   The product page hosts two draggable windows side by side inside the fixed
+   .jj-page layer: the spec-sheet explorer (left) and the standalone 3D viewer
+   window (right). Both ship with an initial cascade position, then drag/resize
+   take over (translate-relative — see japanjunky-explorer.js / -viewer-window.js).
+   Absolute + margin:0 keeps the resize edge-math stable (auto-margin lock is a
+   no-op). Desktop only; the handheld stacks them (japanjunky-mobile.css). */
+.jj-pdp-page .jj-explorer {
+  position: absolute;
+  left: 2%;
+  top: 16px;
+  bottom: 44px; /* clear the 32px taskbar + a margin */
+  width: 48%;
+  max-width: 540px;
+  height: auto;
+  margin: 0;
 }
 
-/* --- Left: terminal spec sheet --- */
+.jj-viewerwin {
+  position: absolute;
+  right: 2%;
+  top: 52px; /* cascade offset below the spec window */
+  bottom: 44px;
+  width: 46%;
+  max-width: 520px;
+  height: auto;
+  min-width: 300px;
+  margin: 0;
+}
+
+/* Maximize must beat the positioning overrides above (both raise specificity
+   past the base .jj-explorer--max rule, so restate the maximized geometry). */
+.jj-pdp-page .jj-explorer.jj-explorer--max,
+.jj-viewerwin.jj-explorer--max {
+  position: fixed;
+  inset: 0 0 32px;
+  width: auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
+}
+
+/* --- Spec sheet: single column filling the explorer main pane --- */
 .jj-pdp-info {
   position: relative;
-  width: 320px;
-  max-width: 46%;
-  flex-shrink: 0;
-  padding: 4px 16px 16px 4px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -209,16 +238,16 @@
   border-top: 1px solid #222;
 }
 
-/* --- Right: Viewer canvas column ---
-   Warm amber radial glow behind the 3D cover/vinyl so the column reads as
-   portal-lit (matching the homepage) instead of a black void, centered where
-   the fluid canvas sits. The canvas fills the column; the viewer (product-
-   viewer.js) tracks its box via ResizeObserver, so any size renders crisp. */
-.jj-pdp-viewer {
+/* --- Viewer window stage ---
+   Body of the standalone 3D viewer window: a warm amber radial glow (portal-
+   lit, matching the homepage) behind the fluid 3D canvas. The canvas fills the
+   stage; product-viewer.js tracks its box via ResizeObserver, so any window
+   size renders crisp. overflow:hidden keeps the cover inside the bevel. */
+.jj-viewerwin__stage {
   flex: 1 1 auto;
   position: relative;
-  min-width: 260px;
-  height: 520px;
+  min-height: 0;
+  overflow: hidden;
   background:
     radial-gradient(
       ellipse 60% 60% at 50% 50%,
@@ -245,13 +274,6 @@
 /* --- Entrance animation --- */
 .jj-pdp-info--entering {
   animation: jj-slide-in-left 0.4s ease-out;
-}
-@keyframes jj-pdp-canvas-in {
-  from { transform: scale(0.8); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-.jj-pdp-viewer--entering #jj-pdp-viewer-canvas {
-  animation: jj-pdp-canvas-in 0.4s ease-out 0.1s both;
 }
 
 /* --- Condition color code ---
