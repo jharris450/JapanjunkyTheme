@@ -38,7 +38,7 @@
   // Product page: pull the camera in so the album cover fills its own viewer
   // window instead of floating small in a sea of black. Vinyl slides out to
   // x≈2.0, still clears the frame at this distance.
-  if (isProductPage) camera.position.z = 3.7;
+  if (isProductPage) camera.position.z = 3.2;
 
   var shaderRes = 240;
   if (window.JJ_SCREENSAVER_CONFIG && window.JJ_SCREENSAVER_CONFIG.resolution) {
@@ -496,6 +496,10 @@
       if (vinylSlideProgress > 1) vinylSlideProgress = 1;
       var ease = 1 - Math.pow(1 - vinylSlideProgress, 3); // ease-out cubic
       vinylMesh.position.x = ease * 1.1; // slide right to 50% pulled out
+      // Keep the cover + record pair centered in-frame: as the disc slides
+      // out to the right, drift the whole group left by half the distance so
+      // the composition stays centered instead of hugging the right edge.
+      if (currentModel) currentModel.position.x = -ease * 0.5;
       return;
     }
 
