@@ -43,9 +43,6 @@
   {{ 'japanjunky-ring-carousel.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-bundle.css' | asset_url | stylesheet_tag }}
   {{ 'japanjunky-mobile.css' | asset_url | stylesheet_tag }}
-  {% if settings.splash_enabled %}
-  {{ 'japanjunky-splash.css' | asset_url | stylesheet_tag }}
-  {% endif %}
   {% if template.suffix == 'login' %}
   {{ 'japanjunky-auth.css' | asset_url | stylesheet_tag }}
   {% endif %}
@@ -268,21 +265,7 @@
   app-like (html/body overflow:hidden, no document scroll), so a fixed,
   viewport-sized wrapper keeps position:fixed descendants correct.
 {%- endcomment -%}
-{%- comment -%}
-  ENTER button lives on <body>, OUTSIDE #jj-crt-content. The barrel filter makes
-  the wrapper a z-index:auto stacking context, which would trap the button below
-  the splash display canvas (a body-child at z-index:100000). Kept at body level
-  so its z-index:100001 competes in the root context and paints above the canvas.
-{%- endcomment -%}
-{% if settings.splash_enabled and template == 'index' %}
-<button id="jj-splash-enter" class="jj-splash-enter" aria-label="Enter site" style="display:none;">[ENTER]</button>
-{% endif %}
 <div id="jj-crt-content">
-{% if settings.splash_enabled and template == 'index' %}
-<canvas id="jj-splash" aria-hidden="true" tabindex="-1" style="display:none;"></canvas>
-<div id="jj-homepage" style="opacity:0;">
-<script>try{if(sessionStorage.getItem('jj-entered')){document.getElementById('jj-homepage').style.opacity='';}}catch(e){}</script>
-{% endif %}
 
 <canvas id="jj-screensaver" aria-hidden="true" tabindex="-1" style="
   position:fixed;top:0;left:0;width:40vw;height:40vh;
@@ -409,28 +392,6 @@
   {%- comment -%} Taskbar (fixed at bottom) {%- endcomment -%}
   {% sections 'footer-group' %}
 
-{% if settings.splash_enabled and template == 'index' %}
-</div>
-{% endif %}
-
-  {% if settings.splash_enabled %}
-  <script>
-    {% if template == 'index' %}
-    try {
-      if (!sessionStorage.getItem('jj-entered')) {
-        window.JJ_SPLASH_ACTIVE = true;
-        window.JJ_SPLASH_CONFIG = {
-          ghostTexture: {{ 'tsuno-daishi.jpg' | asset_url | json }},
-          swirlSpeed: '{{ settings.screensaver_orbit_speed | default: "slow" }}',
-          resolution: {{ settings.screensaver_resolution | default: 240 }},
-          fps: {{ settings.screensaver_fps | default: 24 }}
-        };
-      }
-    } catch (e) {}
-    {% endif %}
-  </script>
-  {% endif %}
-
   <script>
     window.JJ_SCREENSAVER_CONFIG = {
       enabled: {{ settings.screensaver_enabled | default: true }},
@@ -450,6 +411,10 @@
     };
   </script>
   <script src="{{ 'three.min.js' | asset_url }}" defer></script>
+  {%- comment -%} FPS governor: publishes window.JJ_Perf + html.jj-fx-mid/low
+      BEFORE any scene module inits, so heavy effects shed on throttled
+      devices (weak GPU, high-DPI, thermal / iOS Low Power). {%- endcomment -%}
+  <script src="{{ 'japanjunky-perf.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
   {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
@@ -540,14 +505,11 @@
   <script src="{{ 'japanjunky-cart-page.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-page.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-viewer-window.js' | asset_url }}" defer></script>
-  {% if settings.splash_enabled %}
-  <script src="{{ 'japanjunky-splash.js' | asset_url }}" defer></script>
-  {% endif %}
 {%- comment -%} CRT Shader: Three.js overlay canvas. z 20000 = the GLOBAL
     effect layer: it rides above ALL chrome inside #jj-crt-content (taskbar
     10010, toolbox 10011, popups 10015, shutdown 10020) so scanlines/grille/
     dither cover the whole tube — individual elements must NOT add their own
-    raster overlays. Only the splash (100000, deliberate) escapes it.
+    raster overlays.
     Anything needing the effects must live INSIDE #jj-crt-content — the
     wrapper's barrel filter makes it a stacking context, so body-level
     siblings always paint above this canvas regardless of z. {%- endcomment -%}

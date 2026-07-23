@@ -370,7 +370,10 @@
       return;
     }
 
-    var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x
+    // Quality-governed DPR cap. JJ_Perf lowers this on throttled devices so
+    // the fill-rate-heavy fullscreen pass renders fewer pixels. 2x on 'high'.
+    var perfDprCap = 2;
+    var dpr = Math.min(window.devicePixelRatio || 1, perfDprCap);
     renderer.setPixelRatio(dpr);
     renderer.setSize(window.innerWidth, window.innerHeight, false);
     renderer.setClearColor(0x000000, 0);
@@ -427,12 +430,38 @@
     function onResize() {
       var w = window.innerWidth;
       var h = window.innerHeight;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, perfDprCap);
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       uniforms.uResolution.value.set(w * dpr, h * dpr);
     }
     window.addEventListener('resize', onResize);
+
+    // ─── Adaptive quality ────────────────────────────────────────
+    // Shed the expensive per-pixel effects (bloom + chromatic aberration are
+    // multi-tap) and lower render DPR when the governor reports a weak frame
+    // rate. Base values captured post-reduced-motion so restoring 'high'
+    // preserves the accessibility state.
+    var baseBloom  = uniforms.uBloomIntensity.value;
+    var baseChroma = uniforms.uChromaticAberration.value;
+    if (window.JJ_Perf) {
+      window.JJ_Perf.onChange(function (t) {
+        if (t === 'low') {
+          perfDprCap = 1;
+          uniforms.uBloomIntensity.value = 0;
+          uniforms.uChromaticAberration.value = 0;
+        } else if (t === 'mid') {
+          perfDprCap = 1.25;
+          uniforms.uBloomIntensity.value = baseBloom * 0.5;
+          uniforms.uChromaticAberration.value = baseChroma * 0.5;
+        } else { // high
+          perfDprCap = 2;
+          uniforms.uBloomIntensity.value = baseBloom;
+          uniforms.uChromaticAberration.value = baseChroma;
+        }
+        onResize();
+      });
+    }
 
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {

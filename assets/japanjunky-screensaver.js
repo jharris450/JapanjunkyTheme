@@ -1390,12 +1390,11 @@
 
     var src = pixelBuffer;
     var dst = displayImageData.data;
+    var rowBytes = resW * 4;
     for (var row = 0; row < resH; row++) {
-      var srcRow = (resH - 1 - row) * resW * 4;
-      var dstRow = row * resW * 4;
-      for (var col = 0; col < resW * 4; col++) {
-        dst[dstRow + col] = src[srcRow + col];
-      }
+      var srcRow = (resH - 1 - row) * rowBytes;
+      // native memcpy per row (was a byte-by-byte JS loop — ~410K assigns/frame)
+      dst.set(src.subarray(srcRow, srcRow + rowBytes), row * rowBytes);
     }
 
     if (window.JJ_ScreensaverPost) {
@@ -1406,7 +1405,10 @@
     // Underscene: hand the below-the-fold module its mirrored, wax-less
     // frame (japanjunky-underscene.js). Every other frame — the underworld
     // is decayed anyway, and it halves the extra readback cost.
-    if (window.JJ_UnderScene && JJ_UnderScene.wantsFrame() && (inverseFrameFlip = !inverseFrameFlip)) {
+    // The inverse pass is a SECOND readback + dither. On 'low' skip it — the
+    // underworld is decayed anyway and this halves the per-frame stall cost.
+    var lowFx = window.JJ_Perf && JJ_Perf.tier === 'low';
+    if (!lowFx && window.JJ_UnderScene && JJ_UnderScene.wantsFrame() && (inverseFrameFlip = !inverseFrameFlip)) {
       JJ_UnderScene.receiveFrame(renderInverseFrame(), displayCanvas);
     }
   }
@@ -1473,12 +1475,10 @@
 
     var src = pixelBuffer;
     var dst = inverseImageData.data;
+    var rowBytesInv = resW * 4;
     for (var row = 0; row < resH; row++) {
-      var srcRow = (resH - 1 - row) * resW * 4;
-      var dstRow = row * resW * 4;
-      for (var col = 0; col < resW * 4; col++) {
-        dst[dstRow + col] = src[srcRow + col];
-      }
+      var srcRow = (resH - 1 - row) * rowBytesInv;
+      dst.set(src.subarray(srcRow, srcRow + rowBytesInv), row * rowBytesInv);
     }
     if (window.JJ_ScreensaverPost) {
       JJ_ScreensaverPost.dither(inverseImageData);
@@ -1549,6 +1549,7 @@
   // ─── Animation Loop ──────────────────────────────────────────
   var targetInterval = 1000 / (config.fps || 24);
   var throttledInterval = 1000 / 18; // 18fps during product viewing
+  var lowFxInterval = 1000 / 15;     // JJ_Perf 'low': fewer readback stalls
   var productViewing = false;
   var lastFrame = 0;
   var huePhase = 0;          // accumulates the music-reactive hue drift
@@ -1560,6 +1561,9 @@
     if (isPaused()) return;
 
     var interval = productViewing ? throttledInterval : targetInterval;
+    if (window.JJ_Perf && JJ_Perf.tier === 'low' && interval < lowFxInterval) {
+      interval = lowFxInterval;
+    }
     if (time - lastFrame < interval) return;
     lastFrame = time;
 

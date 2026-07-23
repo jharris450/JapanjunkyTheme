@@ -4,12 +4,6 @@
     "settings": [
       {
         "type": "checkbox",
-        "id": "splash_enabled",
-        "label": "Enable splash screen (once per session)",
-        "default": true
-      },
-      {
-        "type": "checkbox",
         "id": "screensaver_enabled",
         "label": "Enable homepage screensaver",
         "default": true
