@@ -4,3 +4,6 @@ node_modules/
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+
+# Claude dev preview screenshots (not theme assets)
+.claude/*.png

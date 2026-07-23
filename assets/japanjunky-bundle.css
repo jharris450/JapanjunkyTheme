@@ -203,6 +203,15 @@
   animation: jj-daruma-jiggle 0.55s steps(1, end) infinite;
 }
 
+/* Handheld idle: after the box first spills records the doll rattles
+   FOREVER (dice ready to reroll) instead of the gentle float — bundle-stage
+   adds .is-idle-shaking on first mobile deal. Held-pose loop, same shake as
+   the post-reroll rattle. Placed before .is-open so the split still holds
+   still. */
+.jj-daruma.is-idle-shaking .jj-daruma__half {
+  animation: jj-daruma-shake 0.6s steps(1, end) infinite;
+}
+
 .jj-daruma.is-open .jj-daruma__half {
   animation: none;
 }
@@ -266,6 +275,11 @@
 @keyframes jj-daruma-reload-spin {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to   { transform: translate(-50%, -50%) rotate(-360deg); } /* counter-clockwise */
+}
+
+/* Handheld idle rattle → the ring spins alongside it (matches .is-shaking). */
+.jj-daruma.is-idle-shaking .jj-daruma__reload {
+  animation: jj-daruma-reload-spin 0.9s linear infinite;
 }
 
 /* Split open: hold the ring still and centered while the doll deals its dice. */

@@ -784,7 +784,14 @@
         openFlaps(function () {          // openFlaps owns closed→opening→open
           canvas.style.cursor = 'grab';
           mobileDeal(pool);
-          if (darumaBtn) darumaBtn.style.display = '';
+          if (darumaBtn) {
+            darumaBtn.style.display = '';
+            // Handheld: once the box has spilled its first records the doll no
+            // longer rests on the idle float — it rattles continuously (dice
+            // ready to reroll). Held-pose shake loop, suppressed while split
+            // open (see .is-open overrides in japanjunky-bundle.css).
+            darumaBtn.classList.add('is-idle-shaking');
+          }
         });
       });
     }
