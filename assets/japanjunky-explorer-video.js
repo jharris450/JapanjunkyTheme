@@ -584,14 +584,18 @@
       send('playVideo');
     }
     // Backing-off retry while the player reports it is not running. Reset
-    // whenever it does run, so a later stall gets a fresh budget.
+    // whenever it does run, so a later stall gets a fresh budget. Neither
+    // the budget nor the give-up clock runs while the tab is hidden: YouTube
+    // sends nothing from a background tab, and burning the budget there
+    // would strip the iframe before the visitor ever looks. onVis restarts
+    // both with a fresh budget.
     function scheduleNudge() {
-      if (dead || nudgeTimer) return;
+      if (dead || nudgeTimer || document.hidden) return;
       if (dbg.nudges >= YT_NUDGE_MAX) { fail('never started after ' + dbg.nudges + ' nudges'); return; }
       var wait = YT_NUDGE_BASE * Math.pow(2, dbg.nudges);
       nudgeTimer = setTimeout(function () {
         nudgeTimer = 0;
-        if (dead || dbg.playing) return;
+        if (dead || dbg.playing || document.hidden) return;
         dbg.nudges++;
         play('nudge ' + dbg.nudges);
         scheduleNudge();
@@ -599,9 +603,12 @@
     }
     function armGiveUp() {
       if (giveUpTimer) clearTimeout(giveUpTimer);
+      if (document.hidden) return;
       giveUpTimer = setTimeout(function () {
         giveUpTimer = 0;
-        if (!dead && !dbg.playing) fail('not playing ' + (YT_GIVEUP_MS / 1000) + 's after ready');
+        if (dead || dbg.playing) return;
+        if (document.hidden) return; // onVis re-arms
+        fail('not playing ' + (YT_GIVEUP_MS / 1000) + 's after ready');
       }, YT_GIVEUP_MS);
     }
     function onMsg(e) {
@@ -649,7 +656,17 @@
       api.warn(why + '; poster only');
     }
     function onVis() {
-      if (!document.hidden && dbg.ready && !dbg.playing) play('visible');
+      if (document.hidden) {
+        if (nudgeTimer) { clearTimeout(nudgeTimer); nudgeTimer = 0; }
+        if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = 0; }
+        return;
+      }
+      if (dbg.ready && !dbg.playing) {
+        dbg.nudges = 0;
+        play('visible');
+        armGiveUp();
+        scheduleNudge();
+      }
     }
     window.addEventListener('message', onMsg);
     document.addEventListener('visibilitychange', onVis);
