@@ -5,22 +5,54 @@
  * snippets/win98-explorer.liquid when a product has a custom.video
  * metafield) with a muted looping product video:
  *   1. custom.video → hidden <video> → 256px buffer → JJ_Dither → canvas
- *   2. poster image only (reduced motion / jj-fx-low, or the video fails)
- *   3. no source at all → tear removed, random Kyosai bones instead
- *
- * YouTube was source #2 until 2026-09-14 and was dropped: a cross-origin
- * iframe cannot sit inside the CRT barrel filter (#jj-crt-content goes
- * black in Chromium), and YouTube's autoplay is refused in enough real
- * browsers (hidden tab at load, blockers) that the hole showed a play
- * button instead of a video. An mp4 we draw ourselves has none of that.
+ *   2. custom.youtube_url → youtube-nocookie iframe driven over its
+ *      postMessage API (see startYouTube for the hard-won rules)
+ *   3. poster image only (reduced motion / jj-fx-low at load, or every
+ *      player fails)
+ *   4. no source at all → tear removed, random Kyosai bones instead
  *
  * The ring is two JJ_Burst.paintTear canvases (fray variants) swapped on a
  * stepped cadence, with the hole clip-path'd to the matching silhouette.
  * Everything here is decorative and pointer-events:none; no audio, no
  * controls.
+ *
+ * Debug overlay: load the product page with ?jjdebug=1 (or set
+ * localStorage 'jj-debug' = '1') and a small readout of the player state,
+ * perf tier, fps and visibility is drawn over the tear. JJ_ExplorerVideo._yt
+ * holds the same data plus an event history.
  */
 (function () {
   'use strict';
+
+  /* ================= YouTube URL parsing ================= */
+  var ID_RE = /(?:v=|youtu\.be\/|shorts\/|live\/|embed\/|^)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/;
+  var TIME_RE = /[?&#](?:t|start)=([0-9hms]+)/;
+
+  // '90' | '1m30s' | '2h' → seconds; unparseable → 0
+  function parseTime(s) {
+    if (!s) return 0;
+    if (/^\d+$/.test(s)) return parseInt(s, 10);
+    var h = /(\d+)h/.exec(s), m = /(\d+)m/.exec(s), sec = /(\d+)s/.exec(s);
+    return (h ? +h[1] * 3600 : 0) + (m ? +m[1] * 60 : 0) + (sec ? +sec[1] : 0);
+  }
+
+  // Any watch / youtu.be / shorts / live / embed URL or a bare 11-char ID →
+  // { id, start } | null
+  function parseYouTube(str) {
+    if (!str) return null;
+    str = String(str).trim();
+    var m = ID_RE.exec(str);
+    if (!m) return null;
+    var t = TIME_RE.exec(str);
+    return { id: m[1], start: t ? parseTime(t[1]) : 0 };
+  }
+
+  window.JJ_ExplorerVideo = { parseYouTube: parseYouTube, parseTime: parseTime };
+
+  var DEBUG = false;
+  try {
+    DEBUG = /[?&]jjdebug=1/.test(location.search) || localStorage.getItem('jj-debug') === '1';
+  } catch (e) { /* storage blocked */ }
 
   /* ================= mount ================= */
   var RING_BUF = 384;      // ring buffer long side; short side follows the box aspect
@@ -28,6 +60,7 @@
   var SWAP_MS = 500;       // fray variant swap cadence
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
+  var YT_OVERSIZE = 1.3;   // YouTube iframe vs the hole's bounding box (crops its title bar/logo)
   var FILL_MIN = 0.8;      // mp4/poster: widen only if narrower than this fraction of the hole
   var PALETTE_N = 6;       // max cover colours in the lip gradient
   var HUE_BINS = 12;
@@ -157,8 +190,9 @@
     }
 
     var videoSrc = tear.getAttribute('data-video') || '';
-    if (!videoSrc) {
-      bail('no video source');
+    var yt = parseYouTube(tear.getAttribute('data-youtube'));
+    if (!videoSrc && !yt) {
+      bail('no usable source (bad YouTube URL?)');
       return;
     }
 
@@ -167,7 +201,8 @@
       !!(window.JJ_Perf && window.JJ_Perf.tier === 'low');
 
     /* ---------- poster (always) ---------- */
-    var posterSrc = tear.getAttribute('data-poster') || '';
+    var posterSrc = tear.getAttribute('data-poster') ||
+      (yt ? 'https://i.ytimg.com/vi/' + yt.id + '/hqdefault.jpg' : '');
     if (posterSrc) poster.src = posterSrc;
 
     /* ---------- ring ---------- */
@@ -227,6 +262,8 @@
     //   video's own aspect — the frame is shown whole top-to-bottom at the
     //   centre and the lens tips past the frame stay black void. Widened
     //   only if that would leave more than (1 - FILL_MIN) of the hole empty.
+    //   YouTube (cover): full cover × YT_OVERSIZE so its title bar and logo
+    //   fall outside the ragged clip.
     function sizePlayer(p) {
       var W = tear.offsetWidth, H = tear.offsetHeight;
       if (!W || !H) return;
@@ -235,18 +272,19 @@
       var c2 = Math.cos(th) * Math.cos(th), s2 = Math.sin(th) * Math.sin(th);
       var hx = Math.sqrt(a * a * c2 + b * b * s2);
       var hy = Math.sqrt(a * a * s2 + b * b * c2);
-      var eh = 2 * hy;
+      var over = p.cover ? YT_OVERSIZE : 1;
+      var eh = 2 * hy * over;
       var ew = eh * p.aspect;
-      var minW = 2 * hx * FILL_MIN;
+      var minW = 2 * hx * over * (p.cover ? 1 : FILL_MIN);
       if (ew < minW) { ew = minW; eh = ew / p.aspect; }
       p.el.style.width = Math.round(ew) + 'px';
       p.el.style.height = Math.round(eh) + 'px';
       p.el.style.transform = playerTransform;
     }
 
-    function mountPlayer(el, aspect) {
+    function mountPlayer(el, aspect, cover) {
       el.classList.add('jj-explorer__tear-player');
-      var p = { el: el, aspect: aspect };
+      var p = { el: el, aspect: aspect, cover: !!cover };
       players.push(p);
       sizePlayer(p);
       hole.insertBefore(el, grid);
@@ -372,7 +410,7 @@
       setOnRun: function (fn) { onRun = fn; },
       isRunning: function () { return running; }
     };
-    startPlayers(api, videoSrc);
+    startPlayers(api, videoSrc, yt);
     evalRunning();
   });
 
@@ -485,10 +523,185 @@
     v.src = src;
   }
 
-  // video → poster (already showing). Warns once on failure.
-  function startPlayers(api, videoSrc) {
-    startVideo(api, videoSrc, function (why) {
+  /* ================= YouTube ================= */
+  // Third attempt at this source (2026-09-14). Rules learned the hard way:
+  //
+  //  * A cross-origin iframe cannot be painted inside the SVG barrel filter
+  //    japanjunky-crt.css puts on #jj-crt-content — Chromium blacks out the
+  //    whole wrapper. So the page drops the barrel (jj-crt-no-barrel, the
+  //    same path the shader takes on Firefox/handheld). Scanlines etc. stay.
+  //  * autoplay=1 alone is not enough: YouTube gives up when the tab is
+  //    hidden/unfocused at load and never retries. So the player is driven
+  //    over enablejsapi/postMessage: mute + playVideo on ready, again when
+  //    the tab becomes visible, and a capped, backing-off nudge whenever it
+  //    reports unstarted/cued/paused.
+  //  * NEVER send pauseVideo. v2 paused on the perf governor's low tier and
+  //    on document.hidden; the tier flaps on a loaded page and every pause
+  //    surfaced YouTube's big play button → flicker. The browser throttles
+  //    hidden tabs on its own; a low tier just parks the ring loop.
+  //  * The tear must never show a play button: if the nudges run out, or
+  //    YouTube reports an error, the iframe is unmounted and the poster
+  //    (YouTube's own thumbnail) stays. Static beats broken.
+  var YT_NUDGE_MAX = 6;          // attempts after the first play
+  var YT_NUDGE_BASE = 1200;      // ms; doubles each attempt
+  var YT_GIVEUP_MS = 20000;      // not playing this long after ready → poster
+
+  function startYouTube(api, yt) {
+    document.documentElement.classList.add('jj-crt-no-barrel');
+
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + yt.id +
+      '?autoplay=1&mute=1&loop=1&playlist=' + yt.id +
+      '&controls=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&start=' + (yt.start || 0) +
+      '&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
+    f.setAttribute('allow', 'autoplay; encrypted-media');
+    f.setAttribute('frameborder', '0');
+    f.setAttribute('aria-hidden', 'true');
+    f.title = 'Product video';
+    f.tabIndex = -1;
+    var player = api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
+    api.grid.hidden = false;
+
+    var dbg = { ready: false, state: null, nudges: 0, error: null, playing: false, gaveUp: null, log: [] };
+    window.JJ_ExplorerVideo._yt = dbg;
+    function note(what) {
+      dbg.log.push(Math.round(performance.now()) + ' ' + what);
+      if (dbg.log.length > 40) dbg.log.shift();
+    }
+
+    var dead = false, nudgeTimer = 0, giveUpTimer = 0;
+    function send(func, args) {
+      if (dead || !f.contentWindow) return;
+      try {
+        f.contentWindow.postMessage(JSON.stringify(
+          func === 'listening' ? { event: 'listening', id: 1, channel: 'widget' }
+                               : { event: 'command', func: func, args: args || [] }), '*');
+      } catch (e) { /* detached */ }
+    }
+    function play(why) {
+      note('play(' + why + ')');
+      send('mute');
+      send('playVideo');
+    }
+    // Backing-off retry while the player reports it is not running. Reset
+    // whenever it does run, so a later stall gets a fresh budget.
+    function scheduleNudge() {
+      if (dead || nudgeTimer) return;
+      if (dbg.nudges >= YT_NUDGE_MAX) { fail('never started after ' + dbg.nudges + ' nudges'); return; }
+      var wait = YT_NUDGE_BASE * Math.pow(2, dbg.nudges);
+      nudgeTimer = setTimeout(function () {
+        nudgeTimer = 0;
+        if (dead || dbg.playing) return;
+        dbg.nudges++;
+        play('nudge ' + dbg.nudges);
+        scheduleNudge();
+      }, wait);
+    }
+    function armGiveUp() {
+      if (giveUpTimer) clearTimeout(giveUpTimer);
+      giveUpTimer = setTimeout(function () {
+        giveUpTimer = 0;
+        if (!dead && !dbg.playing) fail('not playing ' + (YT_GIVEUP_MS / 1000) + 's after ready');
+      }, YT_GIVEUP_MS);
+    }
+    function onMsg(e) {
+      if (dead || e.source !== f.contentWindow) return;
+      var m = e.data;
+      if (typeof m === 'string') { try { m = JSON.parse(m); } catch (err) { return; } }
+      if (!m || typeof m !== 'object') return;
+      if (m.event === 'onReady') {
+        dbg.ready = true;
+        note('onReady');
+        play('ready');
+        armGiveUp();
+        scheduleNudge();
+      } else if (m.event === 'onError') {
+        dbg.error = m.info;
+        note('onError ' + m.info);
+        fail('YouTube error ' + m.info);
+      } else if (m.event === 'infoDelivery' && m.info && typeof m.info.playerState === 'number') {
+        var s = m.info.playerState;
+        if (s !== dbg.state) note('state ' + s);
+        dbg.state = s;
+        // 1 playing, 3 buffering → healthy. -1 unstarted, 2 paused, 5 cued → nudge.
+        if (s === 1 || s === 3) {
+          dbg.playing = true;
+          dbg.nudges = 0;
+          if (nudgeTimer) { clearTimeout(nudgeTimer); nudgeTimer = 0; }
+          if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = 0; }
+        } else if (s === -1 || s === 2 || s === 5) {
+          dbg.playing = false;
+          if (dbg.ready) { armGiveUp(); scheduleNudge(); }
+        }
+      }
+    }
+    function fail(why) {
+      if (dead) return;
+      dead = true;
+      dbg.gaveUp = why;
+      note('FAIL ' + why);
+      window.removeEventListener('message', onMsg);
+      document.removeEventListener('visibilitychange', onVis);
+      if (nudgeTimer) clearTimeout(nudgeTimer);
+      if (giveUpTimer) clearTimeout(giveUpTimer);
+      api.unmountPlayer(player);
+      api.grid.hidden = true;
       api.warn(why + '; poster only');
+    }
+    function onVis() {
+      if (!document.hidden && dbg.ready && !dbg.playing) play('visible');
+    }
+    window.addEventListener('message', onMsg);
+    document.addEventListener('visibilitychange', onVis);
+    f.addEventListener('load', function () {
+      note('iframe load');
+      send('listening');
     });
+    // No pause on low tier / hidden — see the rules above.
+    api.setOnRun(null);
+  }
+
+  // video → YouTube → poster (already showing). Each hop warns once.
+  function startPlayers(api, videoSrc, yt) {
+    function afterVideo(why) {
+      api.warn(why + (yt ? '; using YouTube' : '; poster only'));
+      if (yt) startYouTube(api, yt);
+    }
+    if (videoSrc) {
+      startVideo(api, videoSrc, afterVideo);
+    } else {
+      startYouTube(api, yt);
+    }
+    if (DEBUG) mountDebug(api);
+  }
+
+  /* ================= debug overlay ================= */
+  function mountDebug(api) {
+    var box = document.createElement('pre');
+    box.id = 'jj-tear-debug';
+    box.style.cssText = 'position:absolute;left:4px;top:4px;z-index:50;margin:0;padding:4px 6px;' +
+      'font:10px/1.35 monospace;color:#33ff33;background:rgba(0,0,0,.85);border:1px solid #33ff33;' +
+      'pointer-events:none;white-space:pre;max-width:60%;';
+    var zone = document.getElementById('jj-explorer-tear-zone') || api.tear.parentNode;
+    zone.appendChild(box);
+    function tick() {
+      var y = window.JJ_ExplorerVideo._yt;
+      var lines = [
+        'tear debug',
+        'vis ' + document.visibilityState + '  running ' + api.isRunning(),
+        'tier ' + (window.JJ_Perf ? window.JJ_Perf.tier + ' ' + window.JJ_Perf.fps + 'fps' : 'n/a') +
+          '  reduced ' + window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+        'players ' + api.tear.querySelectorAll('.jj-explorer__tear-player').length +
+          '  iframe ' + !!api.tear.querySelector('iframe') + '  canvas ' + !!api.tear.querySelector('canvas.jj-explorer__tear-player')
+      ];
+      if (y) {
+        lines.push('yt ready ' + y.ready + ' state ' + y.state + ' playing ' + y.playing +
+          ' nudges ' + y.nudges + (y.error ? ' error ' + y.error : '') + (y.gaveUp ? ' GAVE UP: ' + y.gaveUp : ''));
+        lines = lines.concat(y.log.slice(-6));
+      }
+      box.textContent = lines.join('\n');
+    }
+    tick();
+    setInterval(tick, 500);
   }
 })();
