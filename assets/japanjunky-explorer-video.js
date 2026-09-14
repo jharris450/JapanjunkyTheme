@@ -52,6 +52,63 @@
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
   var OVERSIZE = 1.3;      // player rect vs the hole's bounding box (crops YouTube chrome)
+  var PALETTE_N = 3;       // dominant cover colours used for the lip speckle
+
+  /* ================= cover palette ================= */
+  // Downsample the product cover to a tiny canvas and take the most common
+  // colour bins (3 bits per channel), skipping near-black, then snap each
+  // to the CRT phosphor palette so the lip still reads as the site's
+  // palette. cb(list of [r,g,b]) — never called on failure.
+  function samplePalette(url, cb) {
+    if (!url) return;
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      try {
+        var S = 24;
+        var c = document.createElement('canvas');
+        c.width = S; c.height = S;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, S, S);
+        var d = ctx.getImageData(0, 0, S, S).data;
+        var bins = {};
+        for (var i = 0; i < d.length; i += 4) {
+          var r = d[i], g = d[i + 1], b = d[i + 2];
+          if (d[i + 3] < 128 || Math.max(r, g, b) < 48) continue; // clear / near-black
+          var key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
+          var bin = bins[key] || (bins[key] = { n: 0, r: 0, g: 0, b: 0 });
+          bin.n++; bin.r += r; bin.g += g; bin.b += b;
+        }
+        var list = [];
+        for (var k in bins) if (bins.hasOwnProperty(k)) list.push(bins[k]);
+        list.sort(function (a, b2) { return b2.n - a.n; });
+        var out = [];
+        var pal = window.JJ_Dither && window.JJ_Dither.PALETTE;
+        for (var j = 0; j < list.length && out.length < PALETTE_N; j++) {
+          var m = [Math.round(list[j].r / list[j].n), Math.round(list[j].g / list[j].n), Math.round(list[j].b / list[j].n)];
+          // lift dim tones so the lip stays visible on the dark pane
+          var mx = Math.max(m[0], m[1], m[2]);
+          if (mx < 140) { var f = 140 / mx; m = [Math.min(255, Math.round(m[0] * f)), Math.min(255, Math.round(m[1] * f)), Math.min(255, Math.round(m[2] * f))]; }
+          if (pal) m = nearestPalette(m, pal);
+          var dup = false;
+          for (var q = 0; q < out.length; q++) if (out[q][0] === m[0] && out[q][1] === m[1] && out[q][2] === m[2]) dup = true;
+          if (!dup) out.push(m);
+        }
+        if (out.length) cb(out);
+      } catch (e) { /* tainted or decode failure: keep the default lip */ }
+    };
+    img.src = url;
+  }
+
+  function nearestPalette(rgb, pal) {
+    var best = pal[0], bd = Infinity;
+    for (var i = 0; i < pal.length; i++) {
+      var dr = rgb[0] - pal[i][0], dg = rgb[1] - pal[i][1], db = rgb[2] - pal[i][2];
+      var dist = dr * dr + dg * dg + db * db;
+      if (dist < bd) { bd = dist; best = pal[i]; }
+    }
+    return [best[0], best[1], best[2]];
+  }
 
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -121,18 +178,25 @@
     // Buffer aspect follows the box so the fibre grain is uniform; repaint
     // only when the aspect actually moves (explorer drag-resize spams fit()).
     var ringAspect = 0;
-    function paintRings(W, H) {
+    var ringColors = null; // { lips: [...] } once the cover palette resolves
+    function paintRings(W, H, force) {
       var aspect = W / H;
-      if (ringAspect && Math.abs(aspect / ringAspect - 1) < 0.03) return;
+      if (!force && ringAspect && Math.abs(aspect / ringAspect - 1) < 0.03) return;
       ringAspect = aspect;
       var bw = aspect >= 1 ? RING_BUF : Math.round(RING_BUF * aspect);
       var bh = aspect >= 1 ? Math.round(RING_BUF / aspect) : RING_BUF;
       for (var k = 0; k < 2; k++) {
         rings[k].width = Math.max(8, bw);
         rings[k].height = Math.max(8, bh);
-        Burst.paintTear(rings[k], k);
+        Burst.paintTear(rings[k], k, ringColors);
       }
     }
+    // Lip colour from the product cover (async; parchment until it lands).
+    samplePalette(tear.getAttribute('data-palette'), function (lips) {
+      ringColors = { lips: lips };
+      var W = tear.offsetWidth, H = tear.offsetHeight;
+      if (W && H) paintRings(W, H, true);
+    });
     var outerMax = Math.max(Burst.tearOuter(0), Burst.tearOuter(1));
     var clips = ['', ''];
     var variant = 0;

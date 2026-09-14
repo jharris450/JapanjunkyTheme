@@ -75,7 +75,11 @@
   // never jumps. A fine sawtooth fray on top is reseeded per variant, so
   // swapping variants makes the edge shiver like fibres.
   var TEAR_LOBES = 9;
-  var TEAR_BASE = 0.72;
+  var TEAR_BASE = 0.66;
+  // Lens shape: the base radius bulges along the long edges (u = 0 / 0.5)
+  // and pinches at the pointed ends (u = 0.25 / 0.75), so the slash is
+  // widest through its middle.
+  var TEAR_BULGE = 0.18;
   var TEAR_TEETH = 40;
 
   function smooth(t) { return t * t * (3 - 2 * t); }
@@ -99,7 +103,7 @@
 
   function tearEdge(u, variant) {
     var phase = fract(u);
-    var r = TEAR_BASE;
+    var r = TEAR_BASE + TEAR_BULGE * Math.abs(Math.cos(2 * Math.PI * phase));
     for (var i = 0; i < TEAR_LOBES; i++) {
       var L = TEAR_LOBE[i]; var c = L.c, w = L.w, a = L.a;
       var d = phase - c;
@@ -152,13 +156,14 @@
   }
 
   // Paint one tear variant into a canvas (any aspect). Layers outside-in from
-  // the torn edge: transparent → parchment lip with dark speckle → ink
+  // the torn edge: transparent → lip (speckled from colors.lips, a list of
+  // [r,g,b] — by default one parchment tone — plus dark speckle) → ink
   // shadow (alpha 0.85) → solid black void. All noise is hashed, so the
   // result is deterministic (Node-testable, and the two variants only
-  // differ where the fray moved).
+  // differ where the fray moved). colors.lip (single) is still honoured.
   function paintTear(canvas, variant, colors) {
     colors = colors || {};
-    var lip = colors.lip || [224, 213, 192];
+    var lips = colors.lips && colors.lips.length ? colors.lips : [colors.lip || [224, 213, 192]];
     var ink = colors.ink || [10, 10, 10];
     // Any aspect: normalised per axis, so the tear stretches with the box
     // exactly like buildClipPath's polygon does (f * W/2, f * H/2).
@@ -183,6 +188,7 @@
         var n = hash(x * 7 + y * 13, 17 + variant);
         if (r > edge - lw) {
           var dark = n < 0.22;
+          var lip = lips[Math.floor(hash(x * 3 + y * 5, 23 + variant) * lips.length) % lips.length];
           d[i] = dark ? ink[0] : lip[0];
           d[i + 1] = dark ? ink[1] : lip[1];
           d[i + 2] = dark ? ink[2] : lip[2];

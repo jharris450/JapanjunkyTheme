@@ -13,6 +13,8 @@
     video_src    — optional mp4 URL (product page: custom.video metafield).
     video_poster — optional poster image URL for that video.
     youtube_url  — optional YouTube URL/ID (product page: custom.youtube_url).
+    palette_src  — optional small image URL (product cover) whose dominant
+                   colours tint the tear's torn-paper lip.
                    video_src or youtube_url set → the torn-page video hole
                    (#jj-explorer-tear, japanjunky-explorer-video.js) renders
                    next to the bones span and the JS decides which paints;
@@ -93,7 +95,8 @@
     <div class="jj-explorer__tear" id="jj-explorer-tear"
          data-video="{{ video_src | escape }}"
          data-poster="{{ video_poster | escape }}"
-         data-youtube="{{ youtube_url | escape }}">
+         data-youtube="{{ youtube_url | escape }}"
+         data-palette="{{ palette_src | escape }}">
       <canvas class="jj-explorer__tear-ring" data-variant="0"></canvas>
       <canvas class="jj-explorer__tear-ring" data-variant="1" hidden></canvas>
       <div class="jj-explorer__tear-hole" id="jj-explorer-tear-hole">
