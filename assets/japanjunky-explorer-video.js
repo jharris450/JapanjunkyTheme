@@ -51,7 +51,8 @@
   var SWAP_MS = 500;       // fray variant swap cadence
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
-  var OVERSIZE = 1.3;      // player rect vs the hole's bounding box (crops YouTube chrome)
+  var YT_OVERSIZE = 1.3;   // YouTube iframe vs the hole's bounding box (crops its title bar/logo)
+  var FILL_MIN = 0.8;      // mp4/poster: widen only if narrower than this fraction of the hole
   var PALETTE_N = 6;       // max cover colours in the lip gradient
   var HUE_BINS = 12;
 
@@ -244,11 +245,16 @@
       if (clips[v]) hole.style.clipPath = clips[v];
     }
 
-    // Cover rectangle for a straight player of the given aspect: the hole's
+    // Straight player of the given aspect inside the tilted hole. The hole's
     // outer ellipse (semi-axes outerMax * W/2, outerMax * H/2) is tilted by
-    // rotDeg relative to the player, so cover its axis-aligned bounding box
-    // (in the player's frame), then OVERSIZE so YouTube's title bar and
-    // logo land outside the ragged clip.
+    // rotDeg relative to the player; hx/hy are its axis-aligned bounding
+    // half-extents in the player's frame.
+    //   mp4 / poster: height = the hole's vertical extent, width from the
+    //   video's own aspect — the frame is shown whole top-to-bottom at the
+    //   centre and the lens tips past the frame stay black void. Widened
+    //   only if that would leave more than (1 - FILL_MIN) of the hole empty.
+    //   YouTube: full cover × YT_OVERSIZE so its title bar and logo fall
+    //   outside the ragged clip.
     function sizePlayer(p) {
       var W = tear.offsetWidth, H = tear.offsetHeight;
       if (!W || !H) return;
@@ -257,18 +263,19 @@
       var c2 = Math.cos(th) * Math.cos(th), s2 = Math.sin(th) * Math.sin(th);
       var hx = Math.sqrt(a * a * c2 + b * b * s2);
       var hy = Math.sqrt(a * a * s2 + b * b * c2);
-      var eh = 2 * hy * OVERSIZE;
+      var over = p.cover ? YT_OVERSIZE : 1;
+      var eh = 2 * hy * over;
       var ew = eh * p.aspect;
-      var minW = 2 * hx * OVERSIZE;
+      var minW = 2 * hx * over * (p.cover ? 1 : FILL_MIN);
       if (ew < minW) { ew = minW; eh = ew / p.aspect; }
       p.el.style.width = Math.round(ew) + 'px';
       p.el.style.height = Math.round(eh) + 'px';
       p.el.style.transform = playerTransform;
     }
 
-    function mountPlayer(el, aspect) {
+    function mountPlayer(el, aspect, cover) {
       el.classList.add('jj-explorer__tear-player');
-      var p = { el: el, aspect: aspect };
+      var p = { el: el, aspect: aspect, cover: !!cover };
       players.push(p);
       sizePlayer(p);
       hole.insertBefore(el, grid);
@@ -522,7 +529,7 @@
     f.setAttribute('aria-hidden', 'true');
     f.title = 'Product video';
     f.tabIndex = -1;
-    api.mountPlayer(f, 16 / 9);
+    api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
     api.grid.hidden = false;
   }
 

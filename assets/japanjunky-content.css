@@ -458,12 +458,12 @@
      ring is tilted: explorer-video.js counter-rotates the poster/player
      so the video stays straight. It reads --jj-tear-rot for both; the
      ring buffer follows the box aspect so the torn fibres stay uniform. */
-  --jj-tear-rot: -20deg;
+  --jj-tear-rot: -14deg;
   left: 50%;
   top: 50%;
   z-index: 0;
-  width: 140%;
-  height: 62%;
+  width: 135%;
+  height: 72%;
   opacity: 0.5;
   pointer-events: none;
   transform: translate(-50%, -50%) rotate(var(--jj-tear-rot));

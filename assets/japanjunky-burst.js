@@ -75,11 +75,11 @@
   // never jumps. A fine sawtooth fray on top is reseeded per variant, so
   // swapping variants makes the edge shiver like fibres.
   var TEAR_LOBES = 9;
-  var TEAR_BASE = 0.66;
+  var TEAR_BASE = 0.62;
   // Lens shape: the base radius bulges along the long edges (u = 0 / 0.5)
   // and pinches at the pointed ends (u = 0.25 / 0.75), so the slash is
   // widest through its middle.
-  var TEAR_BULGE = 0.18;
+  var TEAR_BULGE = 0.24;
   var TEAR_TEETH = 40;
 
   function smooth(t) { return t * t * (3 - 2 * t); }
