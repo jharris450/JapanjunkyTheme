@@ -531,16 +531,74 @@
     // a canvas and never needs this.
     document.documentElement.classList.add('jj-crt-no-barrel');
     var f = document.createElement('iframe');
+    // enablejsapi + origin: the player's postMessage channel. autoplay=1
+    // alone is not enough in real Chrome — YouTube gives up (big play
+    // button, or a spinner) when the tab was hidden/unfocused at load, and
+    // never retries on its own. We drive it: mute + playVideo on ready,
+    // nudge it whenever it reports unstarted/paused/cued while the tear is
+    // running, and pause/resume with the page's own hidden/in-view state.
     f.src = 'https://www.youtube-nocookie.com/embed/' + yt.id +
       '?autoplay=1&mute=1&loop=1&playlist=' + yt.id +
-      '&controls=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&start=' + (yt.start || 0);
+      '&controls=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&start=' + (yt.start || 0) +
+      '&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
     f.setAttribute('allow', 'autoplay; encrypted-media');
     f.setAttribute('frameborder', '0');
     f.setAttribute('aria-hidden', 'true');
     f.title = 'Product video';
     f.tabIndex = -1;
-    api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
+    var player = api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
     api.grid.hidden = false;
+
+    var dbg = { ready: false, state: null, nudges: 0, error: null };
+    window.JJ_ExplorerVideo._yt = dbg;
+    var dead = false, lastNudge = 0, NUDGE_GAP = 1500;
+    function send(func, args) {
+      if (dead || !f.contentWindow) return;
+      try {
+        f.contentWindow.postMessage(JSON.stringify(
+          func === 'listening' ? { event: 'listening', id: 1, channel: 'widget' }
+                               : { event: 'command', func: func, args: args || [] }), '*');
+      } catch (e) {}
+    }
+    function play() { send('mute'); send('playVideo'); }
+    function onMsg(e) {
+      if (dead || e.source !== f.contentWindow) return;
+      var m = e.data;
+      if (typeof m === 'string') { try { m = JSON.parse(m); } catch (err) { return; } }
+      if (!m || typeof m !== 'object') return;
+      if (m.event === 'onReady') {
+        dbg.ready = true;
+        if (api.isRunning()) play();
+      } else if (m.event === 'onError') {
+        dbg.error = m.info;
+        fail('YouTube error ' + m.info);
+      } else if (m.event === 'infoDelivery' && m.info && typeof m.info.playerState === 'number') {
+        dbg.state = m.info.playerState;
+        // -1 unstarted, 2 paused, 5 cued while we want it running: nudge.
+        if (api.isRunning() && (dbg.state === -1 || dbg.state === 2 || dbg.state === 5)) {
+          var now = performance.now();
+          if (now - lastNudge > NUDGE_GAP) { lastNudge = now; dbg.nudges++; play(); }
+        }
+      }
+    }
+    function fail(why) {
+      if (dead) return;
+      dead = true;
+      window.removeEventListener('message', onMsg);
+      api.setOnRun(null);
+      api.unmountPlayer(player);
+      api.grid.hidden = true;
+      api.warn(why + '; poster only');
+    }
+    window.addEventListener('message', onMsg);
+    f.addEventListener('load', function () {
+      send('listening');
+      if (api.isRunning()) play();
+    });
+    api.setOnRun(function (on) {
+      if (!dbg.ready) return; // onReady handles the first play
+      if (on) play(); else send('pauseVideo');
+    });
   }
 
   // video → YouTube → poster (already showing). Each hop warns once.
