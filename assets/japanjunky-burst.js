@@ -156,8 +156,9 @@
   }
 
   // Paint one tear variant into a canvas (any aspect). Layers outside-in from
-  // the torn edge: transparent → lip (speckled from colors.lips, a list of
-  // [r,g,b] — by default one parchment tone — plus dark speckle) → ink
+  // the torn edge: transparent → lip (a stippled gradient walking colors.lips,
+  // a list of [r,g,b], once around the edge — by default one parchment
+  // tone — plus dark speckle) → ink
   // shadow (alpha 0.85) → solid black void. All noise is hashed, so the
   // result is deterministic (Node-testable, and the two variants only
   // differ where the fray moved). colors.lip (single) is still honoured.
@@ -188,7 +189,18 @@
         var n = hash(x * 7 + y * 13, 17 + variant);
         if (r > edge - lw) {
           var dark = n < 0.22;
-          var lip = lips[Math.floor(hash(x * 3 + y * 5, 23 + variant) * lips.length) % lips.length];
+          // Gradient around the edge: lips[] is walked once per revolution
+          // of u, blending neighbours by stipple (hash pick) rather than a
+          // smooth lerp so it stays in the dithered CRT language.
+          var lip;
+          if (lips.length === 1) {
+            lip = lips[0];
+          } else {
+            var t = u * lips.length;
+            var li0 = Math.floor(t) % lips.length;
+            var li1 = (li0 + 1) % lips.length;
+            lip = hash(x * 3 + y * 5, 23 + variant) < (t - Math.floor(t)) ? lips[li1] : lips[li0];
+          }
           d[i] = dark ? ink[0] : lip[0];
           d[i + 1] = dark ? ink[1] : lip[1];
           d[i + 2] = dark ? ink[2] : lip[2];

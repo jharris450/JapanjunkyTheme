@@ -52,12 +52,15 @@
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
   var OVERSIZE = 1.3;      // player rect vs the hole's bounding box (crops YouTube chrome)
-  var PALETTE_N = 3;       // dominant cover colours used for the lip speckle
+  var PALETTE_N = 6;       // max cover colours in the lip gradient
+  var HUE_BINS = 12;
 
   /* ================= cover palette ================= */
-  // Downsample the product cover to a tiny canvas and take the most common
-  // colour bins (3 bits per channel), skipping near-black, then snap each
-  // to the CRT phosphor palette so the lip still reads as the site's
+  // Downsample the product cover to a tiny canvas and build a spectrum of
+  // its colours: saturated pixels are binned by hue, the strongest bins are
+  // kept (up to PALETTE_N) and ordered around the colour wheel so the lip
+  // reads as a gradient across the cover's palette. Covers with too little
+  // colour fall back to their most common bright tones snapped to the CRT
   // palette. cb(list of [r,g,b]) — never called on failure.
   function samplePalette(url, cb) {
     if (!url) return;
@@ -65,39 +68,71 @@
     img.crossOrigin = 'anonymous';
     img.onload = function () {
       try {
-        var S = 24;
+        var S = 32;
         var c = document.createElement('canvas');
         c.width = S; c.height = S;
         var ctx = c.getContext('2d');
         ctx.drawImage(img, 0, 0, S, S);
         var d = ctx.getImageData(0, 0, S, S).data;
-        var bins = {};
+        var hue = [], bins = {}, total = 0;
+        for (var hb = 0; hb < HUE_BINS; hb++) hue.push({ n: 0, r: 0, g: 0, b: 0, h: hb });
         for (var i = 0; i < d.length; i += 4) {
           var r = d[i], g = d[i + 1], b = d[i + 2];
-          if (d[i + 3] < 128 || Math.max(r, g, b) < 48) continue; // clear / near-black
+          if (d[i + 3] < 128) continue;
+          var mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          if (mx < 48) continue; // near-black
+          total++;
+          // most-common bright bins (fallback path)
           var key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
           var bin = bins[key] || (bins[key] = { n: 0, r: 0, g: 0, b: 0 });
           bin.n++; bin.r += r; bin.g += g; bin.b += b;
+          // hue spectrum (saturated pixels only)
+          var sat = (mx - mn) / mx;
+          if (sat < 0.3 || mx < 70) continue;
+          var h;
+          if (mx === r) h = ((g - b) / (mx - mn) + 6) % 6;
+          else if (mx === g) h = (b - r) / (mx - mn) + 2;
+          else h = (r - g) / (mx - mn) + 4;
+          var hb2 = Math.floor(h / 6 * HUE_BINS) % HUE_BINS;
+          hue[hb2].n++; hue[hb2].r += r; hue[hb2].g += g; hue[hb2].b += b;
         }
-        var list = [];
-        for (var k in bins) if (bins.hasOwnProperty(k)) list.push(bins[k]);
-        list.sort(function (a, b2) { return b2.n - a.n; });
         var out = [];
-        var pal = window.JJ_Dither && window.JJ_Dither.PALETTE;
-        for (var j = 0; j < list.length && out.length < PALETTE_N; j++) {
-          var m = [Math.round(list[j].r / list[j].n), Math.round(list[j].g / list[j].n), Math.round(list[j].b / list[j].n)];
-          // lift dim tones so the lip stays visible on the dark pane
-          var mx = Math.max(m[0], m[1], m[2]);
-          if (mx < 140) { var f = 140 / mx; m = [Math.min(255, Math.round(m[0] * f)), Math.min(255, Math.round(m[1] * f)), Math.min(255, Math.round(m[2] * f))]; }
-          if (pal) m = nearestPalette(m, pal);
-          var dup = false;
-          for (var q = 0; q < out.length; q++) if (out[q][0] === m[0] && out[q][1] === m[1] && out[q][2] === m[2]) dup = true;
-          if (!dup) out.push(m);
+        var strong = hue.filter(function (q) { return q.n >= Math.max(3, total * 0.01); });
+        strong.sort(function (a, b2) { return b2.n - a.n; });
+        strong = strong.slice(0, PALETTE_N);
+        strong.sort(function (a, b2) { return a.h - b2.h; }); // around the wheel
+        for (var j = 0; j < strong.length; j++) out.push(lift(meanOf(strong[j]), 170));
+        if (out.length < 2) {
+          // little colour in the cover: most common bright tones instead
+          var list = [];
+          for (var k in bins) if (bins.hasOwnProperty(k)) list.push(bins[k]);
+          list.sort(function (a, b3) { return b3.n - a.n; });
+          var pal = window.JJ_Dither && window.JJ_Dither.PALETTE;
+          out = [];
+          for (var m = 0; m < list.length && out.length < 3; m++) {
+            var col = lift(meanOf(list[m]), 140);
+            if (pal) col = nearestPalette(col, pal);
+            var dup = false;
+            for (var q2 = 0; q2 < out.length; q2++) if (out[q2][0] === col[0] && out[q2][1] === col[1] && out[q2][2] === col[2]) dup = true;
+            if (!dup) out.push(col);
+          }
         }
         if (out.length) cb(out);
       } catch (e) { /* tainted or decode failure: keep the default lip */ }
     };
     img.src = url;
+  }
+
+  function meanOf(bin) {
+    return [Math.round(bin.r / bin.n), Math.round(bin.g / bin.n), Math.round(bin.b / bin.n)];
+  }
+
+  // Lift dim tones so the lip stays visible on the dark pane.
+  function lift(m, floor) {
+    var mx = Math.max(m[0], m[1], m[2]);
+    if (!mx || mx >= floor) return m;
+    var f = floor / mx;
+    return [Math.min(255, Math.round(m[0] * f)), Math.min(255, Math.round(m[1] * f)), Math.min(255, Math.round(m[2] * f))];
   }
 
   function nearestPalette(rgb, pal) {
