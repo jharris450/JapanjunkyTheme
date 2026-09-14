@@ -176,7 +176,7 @@
                        resolution >= 360p (the theme dithers a 160px-wide
                        buffer, so anything bigger is wasted bandwidth),
                        else the first mp4. Its preview image is the poster.
-      custom.youtube — URL (any watch / youtu.be / shorts / embed form or a
+      custom.youtube_url — URL (any watch / youtu.be / shorts / embed form or a
                        bare ID); the ID is parsed client-side.
     Both blank → the snippet renders no tear and the explorer keeps its
     random Kyosai bones. {%- endcomment -%}
@@ -198,7 +198,7 @@
     {%- assign win_poster = win_vid.preview_image | image_url: width: 480 -%}
   {%- endif -%}
 {%- endif -%}
-{%- assign win_yt = p.metafields.custom.youtube.value | default: '' -%}
+{%- assign win_yt = p.metafields.custom.youtube_url.value | default: '' -%}
 
 <div class="jj-page jj-pdp-page">
   {%- comment -%} Two windows: the spec-sheet explorer + a standalone viewer
