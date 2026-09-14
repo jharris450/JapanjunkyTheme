@@ -2,47 +2,25 @@
  * Japanjunky — Explorer tear video (product page)
  *
  * Fills the torn-page hole (#jj-explorer-tear, rendered by
- * snippets/win98-explorer.liquid when a product has a video metafield) with
- * a muted looping product video:
- *   1. custom.video  → hidden <video> → 160px buffer → JJ_Dither → canvas
- *   2. custom.youtube → youtube-nocookie iframe, oversized so the ragged
- *      clip crops YouTube's title bar and logo
- *   3. poster image only (reduced motion / jj-fx-low, or both players fail)
- *   4. nothing usable at all → tear removed, random Kyosai bones instead
+ * snippets/win98-explorer.liquid when a product has a custom.video
+ * metafield) with a muted looping product video:
+ *   1. custom.video → hidden <video> → 256px buffer → JJ_Dither → canvas
+ *   2. poster image only (reduced motion / jj-fx-low, or the video fails)
+ *   3. no source at all → tear removed, random Kyosai bones instead
+ *
+ * YouTube was source #2 until 2026-09-14 and was dropped: a cross-origin
+ * iframe cannot sit inside the CRT barrel filter (#jj-crt-content goes
+ * black in Chromium), and YouTube's autoplay is refused in enough real
+ * browsers (hidden tab at load, blockers) that the hole showed a play
+ * button instead of a video. An mp4 we draw ourselves has none of that.
  *
  * The ring is two JJ_Burst.paintTear canvases (fray variants) swapped on a
  * stepped cadence, with the hole clip-path'd to the matching silhouette.
- * Everything here is decorative and pointer-events:none; there is no
- * audio, no controls, and the YouTube player is never driven through its
- * API (pausing it would surface the play button + title).
+ * Everything here is decorative and pointer-events:none; no audio, no
+ * controls.
  */
 (function () {
   'use strict';
-
-  /* ================= YouTube URL parsing ================= */
-  var ID_RE = /(?:v=|youtu\.be\/|shorts\/|live\/|embed\/|^)([A-Za-z0-9_-]{11})(?![A-Za-z0-9_-])/;
-  var TIME_RE = /[?&#](?:t|start)=([0-9hms]+)/;
-
-  // '90' | '1m30s' | '2h' → seconds; unparseable → 0
-  function parseTime(s) {
-    if (!s) return 0;
-    if (/^\d+$/.test(s)) return parseInt(s, 10);
-    var h = /(\d+)h/.exec(s), m = /(\d+)m/.exec(s), sec = /(\d+)s/.exec(s);
-    return (h ? +h[1] * 3600 : 0) + (m ? +m[1] * 60 : 0) + (sec ? +sec[1] : 0);
-  }
-
-  // Any watch / youtu.be / shorts / live / embed URL or a bare 11-char ID →
-  // { id, start } | null
-  function parseYouTube(str) {
-    if (!str) return null;
-    str = String(str).trim();
-    var m = ID_RE.exec(str);
-    if (!m) return null;
-    var t = TIME_RE.exec(str);
-    return { id: m[1], start: t ? parseTime(t[1]) : 0 };
-  }
-
-  window.JJ_ExplorerVideo = { parseYouTube: parseYouTube, parseTime: parseTime };
 
   /* ================= mount ================= */
   var RING_BUF = 384;      // ring buffer long side; short side follows the box aspect
@@ -50,7 +28,6 @@
   var SWAP_MS = 500;       // fray variant swap cadence
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
-  var YT_OVERSIZE = 1.3;   // YouTube iframe vs the hole's bounding box (crops its title bar/logo)
   var FILL_MIN = 0.8;      // mp4/poster: widen only if narrower than this fraction of the hole
   var PALETTE_N = 6;       // max cover colours in the lip gradient
   var HUE_BINS = 12;
@@ -180,9 +157,8 @@
     }
 
     var videoSrc = tear.getAttribute('data-video') || '';
-    var yt = parseYouTube(tear.getAttribute('data-youtube'));
-    if (!videoSrc && !yt) {
-      bail('no usable source (bad YouTube URL?)');
+    if (!videoSrc) {
+      bail('no video source');
       return;
     }
 
@@ -191,8 +167,7 @@
       !!(window.JJ_Perf && window.JJ_Perf.tier === 'low');
 
     /* ---------- poster (always) ---------- */
-    var posterSrc = tear.getAttribute('data-poster') ||
-      (yt ? 'https://i.ytimg.com/vi/' + yt.id + '/hqdefault.jpg' : '');
+    var posterSrc = tear.getAttribute('data-poster') || '';
     if (posterSrc) poster.src = posterSrc;
 
     /* ---------- ring ---------- */
@@ -252,8 +227,6 @@
     //   video's own aspect — the frame is shown whole top-to-bottom at the
     //   centre and the lens tips past the frame stay black void. Widened
     //   only if that would leave more than (1 - FILL_MIN) of the hole empty.
-    //   YouTube: full cover × YT_OVERSIZE so its title bar and logo fall
-    //   outside the ragged clip.
     function sizePlayer(p) {
       var W = tear.offsetWidth, H = tear.offsetHeight;
       if (!W || !H) return;
@@ -262,19 +235,18 @@
       var c2 = Math.cos(th) * Math.cos(th), s2 = Math.sin(th) * Math.sin(th);
       var hx = Math.sqrt(a * a * c2 + b * b * s2);
       var hy = Math.sqrt(a * a * s2 + b * b * c2);
-      var over = p.cover ? YT_OVERSIZE : 1;
-      var eh = 2 * hy * over;
+      var eh = 2 * hy;
       var ew = eh * p.aspect;
-      var minW = 2 * hx * over * (p.cover ? 1 : FILL_MIN);
+      var minW = 2 * hx * FILL_MIN;
       if (ew < minW) { ew = minW; eh = ew / p.aspect; }
       p.el.style.width = Math.round(ew) + 'px';
       p.el.style.height = Math.round(eh) + 'px';
       p.el.style.transform = playerTransform;
     }
 
-    function mountPlayer(el, aspect, cover) {
+    function mountPlayer(el, aspect) {
       el.classList.add('jj-explorer__tear-player');
-      var p = { el: el, aspect: aspect, cover: !!cover };
+      var p = { el: el, aspect: aspect };
       players.push(p);
       sizePlayer(p);
       hole.insertBefore(el, grid);
@@ -380,8 +352,6 @@
 
     // Perf governor downshift (it lands seconds after mount, so it cannot be
     // read once at load): 'low' parks the ring loop and the mp4 dither loop.
-    // The YouTube iframe, if any, is left alone — the player API would
-    // surface its controls.
     if (window.JJ_Perf && typeof window.JJ_Perf.onChange === 'function') {
       window.JJ_Perf.onChange(function (t) {
         lowFx = (t === 'low');
@@ -402,7 +372,7 @@
       setOnRun: function (fn) { onRun = fn; },
       isRunning: function () { return running; }
     };
-    startPlayers(api, videoSrc, yt);
+    startPlayers(api, videoSrc);
     evalRunning();
   });
 
@@ -515,102 +485,10 @@
     v.src = src;
   }
 
-  // YouTube: privacy-enhanced embed, muted autoplay loop, no controls,
-  // oversized so the ragged clip crops the title bar and logo. Never
-  // driven through the player API.
-  function startYouTube(api, yt) {
-    // A cross-origin (out-of-process) iframe cannot be painted inside the
-    // SVG barrel filter that japanjunky-crt.css puts on #jj-crt-content:
-    // Chromium blacks out the whole filtered wrapper (window chrome,
-    // wallpaper, the tear itself) the moment the YouTube iframe mounts.
-    // The audio player dodges this by hosting its (invisible) iframe outside
-    // the wrapper; this one has to be visible inside the explorer, so drop
-    // the barrel for the page instead — the same jj-crt-no-barrel path the
-    // shader already takes on Firefox and handheld. Scanlines/grille/vignette
-    // (the WebGL overlay) are unaffected and stay on. The mp4 path draws to
-    // a canvas and never needs this.
-    document.documentElement.classList.add('jj-crt-no-barrel');
-    var f = document.createElement('iframe');
-    // enablejsapi + origin: the player's postMessage channel. autoplay=1
-    // alone is not enough in real Chrome — YouTube gives up (big play
-    // button, or a spinner) when the tab was hidden/unfocused at load, and
-    // never retries on its own. We drive it: mute + playVideo on ready,
-    // nudge it whenever it reports unstarted/paused/cued while the tear is
-    // running, and pause/resume with the page's own hidden/in-view state.
-    f.src = 'https://www.youtube-nocookie.com/embed/' + yt.id +
-      '?autoplay=1&mute=1&loop=1&playlist=' + yt.id +
-      '&controls=0&rel=0&playsinline=1&disablekb=1&iv_load_policy=3&start=' + (yt.start || 0) +
-      '&enablejsapi=1&origin=' + encodeURIComponent(location.origin);
-    f.setAttribute('allow', 'autoplay; encrypted-media');
-    f.setAttribute('frameborder', '0');
-    f.setAttribute('aria-hidden', 'true');
-    f.title = 'Product video';
-    f.tabIndex = -1;
-    var player = api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
-    api.grid.hidden = false;
-
-    var dbg = { ready: false, state: null, nudges: 0, error: null };
-    window.JJ_ExplorerVideo._yt = dbg;
-    var dead = false, lastNudge = 0, NUDGE_GAP = 1500;
-    function send(func, args) {
-      if (dead || !f.contentWindow) return;
-      try {
-        f.contentWindow.postMessage(JSON.stringify(
-          func === 'listening' ? { event: 'listening', id: 1, channel: 'widget' }
-                               : { event: 'command', func: func, args: args || [] }), '*');
-      } catch (e) {}
-    }
-    function play() { send('mute'); send('playVideo'); }
-    function onMsg(e) {
-      if (dead || e.source !== f.contentWindow) return;
-      var m = e.data;
-      if (typeof m === 'string') { try { m = JSON.parse(m); } catch (err) { return; } }
-      if (!m || typeof m !== 'object') return;
-      if (m.event === 'onReady') {
-        dbg.ready = true;
-        if (api.isRunning()) play();
-      } else if (m.event === 'onError') {
-        dbg.error = m.info;
-        fail('YouTube error ' + m.info);
-      } else if (m.event === 'infoDelivery' && m.info && typeof m.info.playerState === 'number') {
-        dbg.state = m.info.playerState;
-        // -1 unstarted, 2 paused, 5 cued while we want it running: nudge.
-        if (api.isRunning() && (dbg.state === -1 || dbg.state === 2 || dbg.state === 5)) {
-          var now = performance.now();
-          if (now - lastNudge > NUDGE_GAP) { lastNudge = now; dbg.nudges++; play(); }
-        }
-      }
-    }
-    function fail(why) {
-      if (dead) return;
-      dead = true;
-      window.removeEventListener('message', onMsg);
-      api.setOnRun(null);
-      api.unmountPlayer(player);
-      api.grid.hidden = true;
+  // video → poster (already showing). Warns once on failure.
+  function startPlayers(api, videoSrc) {
+    startVideo(api, videoSrc, function (why) {
       api.warn(why + '; poster only');
-    }
-    window.addEventListener('message', onMsg);
-    f.addEventListener('load', function () {
-      send('listening');
-      if (api.isRunning()) play();
     });
-    api.setOnRun(function (on) {
-      if (!dbg.ready) return; // onReady handles the first play
-      if (on) play(); else send('pauseVideo');
-    });
-  }
-
-  // video → YouTube → poster (already showing). Each hop warns once.
-  function startPlayers(api, videoSrc, yt) {
-    function afterVideo(why) {
-      api.warn(why + (yt ? '; using YouTube' : '; poster only'));
-      if (yt) startYouTube(api, yt);
-    }
-    if (videoSrc) {
-      startVideo(api, videoSrc, afterVideo);
-    } else {
-      startYouTube(api, yt);
-    }
   }
 })();

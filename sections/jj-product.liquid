@@ -171,15 +171,15 @@
 {%- endif -%}
 
 {%- comment -%} Product video for the explorer's torn-page hole
-    (japanjunky-explorer-video.js). Two metafields, video wins:
+    (japanjunky-explorer-video.js). One metafield:
       custom.video   — File (video): first mp4 source at the lowest
-                       resolution >= 360p (the theme dithers a 160px-wide
+                       resolution >= 360p (the theme dithers a 256px-wide
                        buffer, so anything bigger is wasted bandwidth),
                        else the first mp4. Its preview image is the poster.
-      custom.youtube_url — URL (any watch / youtu.be / shorts / embed form or a
-                       bare ID); the ID is parsed client-side.
-    Both blank → the snippet renders no tear and the explorer keeps its
-    random Kyosai bones. {%- endcomment -%}
+    Blank → the snippet renders no tear and the explorer keeps its random
+    Kyosai bones. custom.youtube_url still feeds the audio player only; it
+    was a tear source until 2026-09-14 (iframe vs CRT filter + autoplay
+    refusals made it unreliable). {%- endcomment -%}
 {%- assign win_video = '' -%}
 {%- assign win_poster = '' -%}
 {%- assign win_vid = p.metafields.custom.video.value -%}
@@ -198,7 +198,6 @@
     {%- assign win_poster = win_vid.preview_image | image_url: width: 480 -%}
   {%- endif -%}
 {%- endif -%}
-{%- assign win_yt = p.metafields.custom.youtube_url.value | default: '' -%}
 {%- comment -%} Tiny copy of the cover: explorer-video.js samples its dominant
     colours for the tear's torn-paper lip. {%- endcomment -%}
 {%- assign win_palette = '' -%}
@@ -209,7 +208,7 @@
 <div class="jj-page jj-pdp-page">
   {%- comment -%} Two windows: the spec-sheet explorer + a standalone viewer
       window holding the 3D cover/vinyl. {%- endcomment -%}
-  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt, palette_src: win_palette %}
+  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, palette_src: win_palette %}
   {% render 'win98-viewer', title: '3D Viewer', icon: 'box' %}
 </div>
 

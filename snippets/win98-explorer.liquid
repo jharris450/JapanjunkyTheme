@@ -12,13 +12,14 @@
     objects — status-bar object count (default 1)
     video_src    — optional mp4 URL (product page: custom.video metafield).
     video_poster — optional poster image URL for that video.
-    youtube_url  — optional YouTube URL/ID (product page: custom.youtube_url).
     palette_src  — optional small image URL (product cover) whose dominant
                    colours tint the tear's torn-paper lip.
-                   video_src or youtube_url set → the torn-page video hole
+                   video_src set → the torn-page video hole
                    (#jj-explorer-tear, japanjunky-explorer-video.js) renders
                    next to the bones span and the JS decides which paints;
-                   the bones only show if every video source fails.
+                   the bones only show if the video fails. (YouTube was a
+                   source once; dropped 2026-09-14 — an iframe can't live
+                   under the CRT filter and its autoplay is unreliable.)
 
   Behavior (drag / resize / minimize / maximize / close / address routing /
   folder view) lives in assets/japanjunky-explorer.js. Styles:
@@ -90,12 +91,11 @@
         the hole div is clip-path'd to the same silhouette and holds the
         poster (always) plus the player the JS mounts above it. Nothing in
         here is interactive — it is a watermark behind the pane content. {%- endcomment -%}
-    {%- if video_src != blank or youtube_url != blank -%}
+    {%- if video_src != blank -%}
     <div class="jj-explorer__tear-zone" id="jj-explorer-tear-zone" aria-hidden="true" inert>
     <div class="jj-explorer__tear" id="jj-explorer-tear"
          data-video="{{ video_src | escape }}"
          data-poster="{{ video_poster | escape }}"
-         data-youtube="{{ youtube_url | escape }}"
          data-palette="{{ palette_src | escape }}">
       <canvas class="jj-explorer__tear-ring" data-variant="0"></canvas>
       <canvas class="jj-explorer__tear-ring" data-variant="1" hidden></canvas>
