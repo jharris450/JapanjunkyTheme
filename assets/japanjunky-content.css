@@ -404,6 +404,7 @@
   min-height: 0;
   display: flex;
   position: relative; /* anchors the bone-art watermark */
+  overflow: hidden;   /* the diagonal tear slash is clipped at the pane edge */
 }
 
 /* Kyosai bone art watermark: lower-right of the pane area, behind the
@@ -442,16 +443,19 @@
    tilt, so ring, hole and video rotate together. */
 .jj-explorer__tear {
   position: absolute;
-  right: 10px;
-  bottom: 8px;
+  /* a diagonal slash across the whole pane: wide box centred on the pane,
+     tilted. explorer-video.js reads --jj-tear-rot so its pulse transform
+     keeps the same tilt; the ring buffer follows the box aspect so the
+     torn fibres stay uniform. .jj-explorer__body clips the overhang. */
+  --jj-tear-rot: -20deg;
+  left: 50%;
+  top: 50%;
   z-index: 0;
-  width: 420px;
-  height: 360px;
-  max-width: 70%;
-  max-height: 80%;
+  width: 118%;
+  height: 70%;
   opacity: 0.5;
   pointer-events: none;
-  transform: rotate(-4deg);
+  transform: translate(-50%, -50%) rotate(var(--jj-tear-rot));
   transform-origin: center;
 }
 .jj-explorer__tear-ring {
@@ -477,7 +481,7 @@
   max-width: none;
   border: 0;
   pointer-events: none;
-  filter: saturate(1.2) contrast(1.15);
+  filter: saturate(1.1) contrast(1.05); /* light touch: source clips are often 480p */
 }
 .jj-explorer__tear-poster {
   width: 100%;
@@ -492,7 +496,7 @@ canvas.jj-explorer__tear-player {
 .jj-explorer__tear-grid {
   position: absolute;
   inset: 0;
-  opacity: 0.18;
+  opacity: 0.1;
   background-image:
     linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%),
     linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%);
