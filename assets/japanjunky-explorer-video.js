@@ -187,11 +187,16 @@
       if (zone && mainPane && zone.parentNode) {
         var zr = zone.parentNode.getBoundingClientRect();
         var mr = mainPane.getBoundingClientRect();
+        // Rects are visual px under html{zoom}; style px are CSS px that the
+        // zoom re-scales at paint — divide the zoom back out (explorer.js
+        // does the same for drag). Without this the zone lands off-pane
+        // and .jj-explorer__body's overflow:hidden swallows the tear.
+        var z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
         if (mr.width && mr.height) {
-          zone.style.left = Math.round(mr.left - zr.left) + 'px';
-          zone.style.top = Math.round(mr.top - zr.top) + 'px';
-          zone.style.width = Math.round(mr.width) + 'px';
-          zone.style.height = Math.round(mr.height) + 'px';
+          zone.style.left = Math.round((mr.left - zr.left) / z) + 'px';
+          zone.style.top = Math.round((mr.top - zr.top) / z) + 'px';
+          zone.style.width = Math.round(mr.width / z) + 'px';
+          zone.style.height = Math.round(mr.height / z) + 'px';
           zone.style.right = 'auto';
           zone.style.bottom = 'auto';
         }
