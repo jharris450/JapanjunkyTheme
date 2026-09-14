@@ -176,11 +176,12 @@
                        resolution >= 360p (the theme dithers a 256px-wide
                        buffer, so anything bigger is wasted bandwidth),
                        else the first mp4. Its preview image is the poster.
-      custom.youtube_url — URL (any watch / youtu.be / shorts / embed form or a
+      custom.youtube — URL (any watch / youtu.be / shorts / embed form or a
                        bare ID); the ID is parsed client-side. The merchant
                        cannot re-host label footage, so this is the only
                        legal video source for most records — see the long
-                       note on startYouTube in explorer-video.js.
+                       note on startYouTube in explorer-video.js. Falls back
+                       to custom.youtube_url (the music player's link).
     Both blank → the snippet renders no tear and the explorer keeps its
     random Kyosai bones. {%- endcomment -%}
 {%- assign win_video = '' -%}
@@ -203,7 +204,10 @@
 {%- endif -%}
 {%- comment -%} Tiny copy of the cover: explorer-video.js samples its dominant
     colours for the tear's torn-paper lip. {%- endcomment -%}
-{%- assign win_yt = p.metafields.custom.youtube_url.value | default: '' -%}
+{%- comment -%} custom.youtube is the tear's own video (a real MV / live clip);
+    custom.youtube_url belongs to the music player and is often a still cover
+    with audio, so it is only the fallback. {%- endcomment -%}
+{%- assign win_yt = p.metafields.custom.youtube.value | default: p.metafields.custom.youtube_url.value | default: '' -%}
 {%- assign win_palette = '' -%}
 {%- if p.featured_image != blank -%}
   {%- assign win_palette = p.featured_image | image_url: width: 64 -%}
