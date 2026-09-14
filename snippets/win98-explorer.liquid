@@ -89,7 +89,8 @@
         poster (always) plus the player the JS mounts above it. Nothing in
         here is interactive — it is a watermark behind the pane content. {%- endcomment -%}
     {%- if video_src != blank or youtube_url != blank -%}
-    <div class="jj-explorer__tear" id="jj-explorer-tear" aria-hidden="true" inert
+    <div class="jj-explorer__tear-zone" id="jj-explorer-tear-zone" aria-hidden="true" inert>
+    <div class="jj-explorer__tear" id="jj-explorer-tear"
          data-video="{{ video_src | escape }}"
          data-poster="{{ video_poster | escape }}"
          data-youtube="{{ youtube_url | escape }}">
@@ -99,6 +100,7 @@
         <img class="jj-explorer__tear-poster" id="jj-explorer-tear-poster" alt="">
         <span class="jj-explorer__tear-grid" hidden></span>
       </div>
+    </div>
     </div>
     {%- endif -%}
     <aside class="jj-explorer__panel">

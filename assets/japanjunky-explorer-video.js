@@ -51,7 +51,7 @@
   var SWAP_MS = 500;       // fray variant swap cadence
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
-  var OVERSIZE = 1.5;      // player rect vs the hole's inner ellipse (crops YouTube chrome)
+  var OVERSIZE = 1.3;      // player rect vs the hole's bounding box (crops YouTube chrome)
 
   function ready(fn) {
     if (document.readyState === 'loading') {
@@ -111,6 +111,12 @@
       if (cssRot) rot = cssRot;
     } catch (e) { /* keep default */ }
     var baseTransform = 'translate(-50%, -50%) rotate(' + rot + ')';
+    var rotDeg = parseFloat(rot) || 0;
+    // Only the ring tilts: the poster/player inside the hole are turned back
+    // by the same angle so the video reads straight through the slash.
+    var playerTransform = 'translate(-50%, -50%) rotate(' + (-rotDeg) + 'deg)';
+    var zone = document.getElementById('jj-explorer-tear-zone');
+    var mainPane = document.getElementById('jj-explorer-main');
 
     // Buffer aspect follows the box so the fibre grain is uniform; repaint
     // only when the aspect actually moves (explorer drag-resize spams fit()).
@@ -127,11 +133,10 @@
         Burst.paintTear(rings[k], k);
       }
     }
-    var inner = [Burst.tearInner(0), Burst.tearInner(1)];
-    var innerMin = Math.min(inner[0], inner[1]);
+    var outerMax = Math.max(Burst.tearOuter(0), Burst.tearOuter(1));
     var clips = ['', ''];
     var variant = 0;
-    var players = []; // { el, aspect } — sized to cover the inner ellipse
+    var players = []; // { el, aspect } — sized to cover the hole; the poster is one too
 
     function showVariant(v) {
       variant = v;
@@ -140,17 +145,26 @@
       if (clips[v]) hole.style.clipPath = clips[v];
     }
 
-    // Cover rectangle for a player of the given aspect: the inner ellipse
-    // (semi-axes innerMin * W/2, innerMin * H/2) scaled by OVERSIZE.
+    // Cover rectangle for a straight player of the given aspect: the hole's
+    // outer ellipse (semi-axes outerMax * W/2, outerMax * H/2) is tilted by
+    // rotDeg relative to the player, so cover its axis-aligned bounding box
+    // (in the player's frame), then OVERSIZE so YouTube's title bar and
+    // logo land outside the ragged clip.
     function sizePlayer(p) {
       var W = tear.offsetWidth, H = tear.offsetHeight;
       if (!W || !H) return;
-      var eh = H * innerMin * OVERSIZE;
+      var a = outerMax * W / 2, b = outerMax * H / 2;
+      var th = rotDeg * Math.PI / 180;
+      var c2 = Math.cos(th) * Math.cos(th), s2 = Math.sin(th) * Math.sin(th);
+      var hx = Math.sqrt(a * a * c2 + b * b * s2);
+      var hy = Math.sqrt(a * a * s2 + b * b * c2);
+      var eh = 2 * hy * OVERSIZE;
       var ew = eh * p.aspect;
-      var minW = W * innerMin * OVERSIZE;
+      var minW = 2 * hx * OVERSIZE;
       if (ew < minW) { ew = minW; eh = ew / p.aspect; }
       p.el.style.width = Math.round(ew) + 'px';
       p.el.style.height = Math.round(eh) + 'px';
+      p.el.style.transform = playerTransform;
     }
 
     function mountPlayer(el, aspect) {
@@ -168,6 +182,20 @@
     }
 
     function fit() {
+      // Pin the zone over the product-info pane (right of the sidebar) so the
+      // slash lives in the spec sheet, not across the whole explorer body.
+      if (zone && mainPane && zone.parentNode) {
+        var zr = zone.parentNode.getBoundingClientRect();
+        var mr = mainPane.getBoundingClientRect();
+        if (mr.width && mr.height) {
+          zone.style.left = Math.round(mr.left - zr.left) + 'px';
+          zone.style.top = Math.round(mr.top - zr.top) + 'px';
+          zone.style.width = Math.round(mr.width) + 'px';
+          zone.style.height = Math.round(mr.height) + 'px';
+          zone.style.right = 'auto';
+          zone.style.bottom = 'auto';
+        }
+      }
       var W = tear.offsetWidth, H = tear.offsetHeight;
       if (!W || !H) return;
       paintRings(W, H);
@@ -176,9 +204,14 @@
       hole.style.clipPath = clips[variant];
       players.forEach(sizePlayer);
     }
+    // The poster is sized and counter-rotated exactly like a player (16:9
+    // box, object-fit: cover inside it).
+    players.push({ el: poster, aspect: 16 / 9 });
     fit();
     if ('ResizeObserver' in window) {
-      new ResizeObserver(fit).observe(tear); // explorer window is resizable
+      var ro = new ResizeObserver(fit);
+      ro.observe(tear); // explorer window is resizable
+      if (mainPane) ro.observe(mainPane);
     }
     window.addEventListener('resize', fit);
     showVariant(0);

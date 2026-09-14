@@ -82,12 +82,18 @@
 
   // Lobe geometry is loop-invariant (variant only reseeds the fray), so
   // hash it once: paintTear calls tearEdge 65k times per variant.
+  // JAG_MID boosts lobes near u = 0 / 0.5 (the long top and bottom edges
+  // of the slash box) so the tear is most ragged along its middle, and
+  // calmer at the two pointed ends (u = 0.25 / 0.75).
+  var JAG_MID = 0.9;
   var TEAR_LOBE = [];
   for (var li = 0; li < TEAR_LOBES; li++) {
+    var lc = (li + 0.5 * hash(li, 3)) / TEAR_LOBES;   // uneven centre
     TEAR_LOBE.push({
-      c: (li + 0.5 * hash(li, 3)) / TEAR_LOBES,   // uneven centre
+      c: lc,
       w: 0.035 + 0.05 * hash(li, 5),              // half-width in u
       a: (hash(li, 9) - 0.35) * 0.3               // some tear out, some fold in
+         * (1 + JAG_MID * Math.abs(Math.cos(2 * Math.PI * lc)))
     });
   }
 
@@ -122,13 +128,25 @@
   }
 
   // Radius of the largest circle guaranteed inside the void (edge minus
-  // lip minus shadow, minimised over the angle). Sizes the player.
+  // lip minus shadow, minimised over the angle).
   function tearInner(variant) {
     var m = Infinity;
     for (var k = 0; k < 720; k++) {
       var u = k / 720;
       var r = tearVoidEdge(u, variant);
       if (r < m) m = r;
+    }
+    return m;
+  }
+
+  // Largest void radius (maximised over the angle): the player must cover
+  // an ellipse of this size (times the box half-extents) to fill the hole.
+  function tearOuter(variant) {
+    var m = -Infinity;
+    for (var k = 0; k < 720; k++) {
+      var u = k / 720;
+      var r = tearVoidEdge(u, variant);
+      if (r > m) m = r;
     }
     return m;
   }
@@ -194,6 +212,7 @@
     tearLipWidth: tearLipWidth,
     tearVoidEdge: tearVoidEdge,
     tearInner: tearInner,
+    tearOuter: tearOuter,
     paintTear: paintTear
   };
 })();

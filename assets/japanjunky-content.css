@@ -441,18 +441,29 @@
    canvases; japanjunky-explorer-video.js swaps them, clip-paths the hole
    to the same silhouette and mounts the player. The whole box carries the
    tilt, so ring, hole and video rotate together. */
+/* Zone: the rectangle the tear lives in. explorer-video.js pins it over
+   #jj-explorer-main (the product-info pane, right of the sidebar) and it
+   clips the slash's overhang; the inset below is only the pre-JS guess
+   (sidebar width). */
+.jj-explorer__tear-zone {
+  position: absolute;
+  inset: 0 0 0 191px;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
 .jj-explorer__tear {
   position: absolute;
-  /* a diagonal slash across the whole pane: wide box centred on the pane,
-     tilted. explorer-video.js reads --jj-tear-rot so its pulse transform
-     keeps the same tilt; the ring buffer follows the box aspect so the
-     torn fibres stay uniform. .jj-explorer__body clips the overhang. */
+  /* a diagonal slash across the zone: wide box centred, tilted. Only the
+     ring is tilted: explorer-video.js counter-rotates the poster/player
+     so the video stays straight. It reads --jj-tear-rot for both; the
+     ring buffer follows the box aspect so the torn fibres stay uniform. */
   --jj-tear-rot: -20deg;
   left: 50%;
   top: 50%;
   z-index: 0;
-  width: 118%;
-  height: 70%;
+  width: 140%;
+  height: 62%;
   opacity: 0.5;
   pointer-events: none;
   transform: translate(-50%, -50%) rotate(var(--jj-tear-rot));
