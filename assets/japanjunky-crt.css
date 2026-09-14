@@ -434,7 +434,10 @@ html.jj-crt-shader-active #jj-crt-content {
 /* Firefox (jj-crt-no-barrel set by crt-shader.js): Gecko runs the SVG
    displacement filter on the CPU over the full viewport every frame —
    3 fps measured. Drop the barrel only; the wrapper keeps its fixed
-   viewport clip so layout matches the other browsers. */
+   viewport clip so layout matches the other browsers.
+   Also set by japanjunky-explorer-video.js when the product explorer's tear
+   falls back to a YouTube iframe: a cross-origin iframe inside this
+   reference filter makes Chromium paint the whole wrapper black. */
 html.jj-crt-no-barrel #jj-crt-content {
   filter: none;
 }

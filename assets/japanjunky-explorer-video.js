@@ -47,7 +47,6 @@
   /* ================= mount ================= */
   var RING_BUF = 384;      // ring buffer long side; short side follows the box aspect
   var DEFAULT_ROT = '-20deg'; // fallback when --jj-tear-rot is unreadable
-  var DEFAULT_ROT = '-20deg'; // fallback when --jj-tear-rot is unreadable
   var SWAP_MS = 500;       // fray variant swap cadence
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
@@ -520,6 +519,17 @@
   // oversized so the ragged clip crops the title bar and logo. Never
   // driven through the player API.
   function startYouTube(api, yt) {
+    // A cross-origin (out-of-process) iframe cannot be painted inside the
+    // SVG barrel filter that japanjunky-crt.css puts on #jj-crt-content:
+    // Chromium blacks out the whole filtered wrapper (window chrome,
+    // wallpaper, the tear itself) the moment the YouTube iframe mounts.
+    // The audio player dodges this by hosting its (invisible) iframe outside
+    // the wrapper; this one has to be visible inside the explorer, so drop
+    // the barrel for the page instead — the same jj-crt-no-barrel path the
+    // shader already takes on Firefox and handheld. Scanlines/grille/vignette
+    // (the WebGL overlay) are unaffected and stay on. The mp4 path draws to
+    // a canvas and never needs this.
+    document.documentElement.classList.add('jj-crt-no-barrel');
     var f = document.createElement('iframe');
     f.src = 'https://www.youtube-nocookie.com/embed/' + yt.id +
       '?autoplay=1&mute=1&loop=1&playlist=' + yt.id +
