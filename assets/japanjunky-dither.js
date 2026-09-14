@@ -13,7 +13,7 @@
 (function () {
   'use strict';
 
-  // ─── JapanJunky CRT Phosphor Palette (32 colors) ──────────────
+  // ─── JapanJunky CRT Phosphor Palette (30 colors) ──────────────
   // Built from the site's color system: grayscale ramp + phosphor hues.
   // Covers enough range to render product photos recognizably while
   // keeping the restricted, CRT-display feel.
@@ -108,9 +108,10 @@
   //  3/16  5/16  1/16
   //
   // Core: dither an ImageData buffer in place (also reused by the bundle
-  // box texture pipeline via JJ_Dither.ditherImageData). `palette` is
-  // optional — defaults to the full phosphor palette; pass
-  // JJ_Dither.NEUTRAL_PALETTE for neutral surfaces.
+  // box texture pipeline and the explorer tear video loop via
+  // JJ_Dither.ditherImageData). `palette` is optional — defaults to the
+  // full phosphor palette; pass JJ_Dither.NEUTRAL_PALETTE for neutral
+  // surfaces. Alpha is left untouched.
   function ditherImageData(imageData, w, h, palette) {
     palette = palette || PALETTE;
     var data = imageData.data;
@@ -254,6 +255,7 @@
     ditherAll: ditherAll,
     ditherSingle: ditherSingle,
     ditherImageData: ditherImageData,
+    PALETTE: PALETTE,
     NEUTRAL_PALETTE: NEUTRAL_PALETTE
   };
 

@@ -165,42 +165,27 @@
 
     /* Kyogen clip: instead of a static ellipse, clip the mask with the
        bang's ACTUAL black-interior silhouette so the head fills right up
-       to the jagged gold edge and never crosses it. blackEdgeV mirrors the
-       texture painter's layer math exactly (keep the two in sync); the
-       screen mapping is radius = 0.85/(1+v) of the half-frame (long-lens
-       tunnel: 1/(1+v)), the cylinder's u wraps clockwise from screen
-       bottom (rotation.x = PI/2 + mirrored lookAt camera), and the CSS
-       rotate(-7deg) on the canvas is baked in as +7deg CCW in y-up math
-       coords. Two polygons — one per flicker variant — swap with the
-       texture in the frame loop. */
-    var SPIKES = 14;
-    function blackEdgeV(u, variant) {
-      var st = (u + variant * 0.5 / SPIKES) * SPIKES;
-      var spike = Math.floor(st) % SPIKES;
-      var tri = 1 - Math.abs(2 * (st - Math.floor(st)) - 1);
-      var h = Math.sin(spike * 127.1 + (1 + variant * 7) * 311.7) * 43758.5453;
-      var amp = (spike % 2 ? 0.45 : 1.0) * (0.6 + 0.4 * (h - Math.floor(h)));
-      return 0.43 - tri * amp * 0.16 * 1.65;
+       to the jagged gold edge and never crosses it. The spike math lives
+       in japanjunky-burst.js (JJ_Burst) and is shared with the texture
+       painter below, so the two cannot drift. Screen mapping is
+       radius = 0.85/(1+v) of the half-frame (long-lens tunnel: 1/(1+v)),
+       0.985 sits a hair inside the boundary clear of the AA fringe, the
+       cylinder's u wraps clockwise from screen bottom (rotation.x = PI/2 +
+       mirrored lookAt camera), and the CSS rotate(-7deg) on the canvas is
+       baked in as rotDeg 7 (CCW in y-up math coords). Two polygons — one
+       per flicker variant — swap with the texture in the frame loop. */
+    var Burst = window.JJ_Burst;
+    if (!Burst) return; // shared math missing — no portal, same as no THREE
+
+    function bangScreenEdge(u, variant) {
+      return 0.985 * 0.85 / (1 + Burst.bangBlackEdgeV(u, variant));
     }
 
     var clipFrame = document.getElementById('jj-kyogen-clip');
     var clipPaths = ['', ''];
 
     function buildClipPath(variant, W, H) {
-      var N = 168, pts = [];
-      var rot = 7 * Math.PI / 180;
-      for (var k = 0; k < N; k++) {
-        var u = k / N;
-        // 0.985: sit a hair inside the boundary, clear of the AA fringe
-        var f = 0.985 * 0.85 / (1 + blackEdgeV(u, variant));
-        var beta = -Math.PI / 2 - u * Math.PI * 2;
-        var px = f * Math.cos(beta) * W / 2;
-        var py = f * Math.sin(beta) * H / 2;
-        var rx = px * Math.cos(rot) - py * Math.sin(rot);
-        var ry = px * Math.sin(rot) + py * Math.cos(rot);
-        pts.push((50 + (rx / W) * 100).toFixed(2) + '% ' + (50 - (ry / H) * 100).toFixed(2) + '%');
-      }
-      return 'polygon(' + pts.join(',') + ')';
+      return Burst.buildClipPath(bangScreenEdge, variant, W, H, { rotDeg: 7 });
     }
 
     function fitCanvas() {
@@ -248,22 +233,11 @@
       var red = parseColor(RED);
       var gold = parseColor(GOLD);
       var dark = [10, 2, 2]; // near-black red, keeps the burst on the site's black
-      var SPIKES = 14; // zigzag tips around the outline
-      function hash(k, salt) {
-        var h = Math.sin(k * 127.1 + salt * 311.7) * 43758.5453;
-        return h - Math.floor(h);
-      }
       for (var y = 0; y < TEX; y++) {
         for (var x = 0; x < TEX; x++) {
           var u = x / TEX, v = y / TEX;
-          // jagged spike displacement: triangle wave per spike, tip
-          // height varies spike to spike so the outline isn't uniform
-          var st = (u + variant * 0.5 / SPIKES) * SPIKES;
-          var spike = Math.floor(st) % SPIKES;
-          var tri = 1 - Math.abs(2 * (st - Math.floor(st)) - 1); // 0 valley -> 1 tip
-          // long/short alternation + per-spike jitter: comic bang, not a gear
-          var amp = (spike % 2 ? 0.45 : 1.0) * (0.6 + 0.4 * hash(spike, 1 + variant * 7));
-          var jag = tri * amp * 0.16;
+          // jagged spike displacement (shared with the clip polygon)
+          var jag = Burst.bangJag(u, variant);
           // layer boundaries in v, all echoing the same jagged outline
           // (smaller v = further out; tips push the whole shape outward).
           // The burst is a RING: past blackV everything is a near-black

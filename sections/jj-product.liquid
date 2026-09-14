@@ -170,10 +170,40 @@
   {%- assign win_path = p.handle | upcase | prepend: 'CATALOG\' -%}
 {%- endif -%}
 
+{%- comment -%} Product video for the explorer's torn-page hole
+    (japanjunky-explorer-video.js). Two metafields, video wins:
+      custom.video   — File (video): first mp4 source at the lowest
+                       resolution >= 360p (the theme dithers a 160px-wide
+                       buffer, so anything bigger is wasted bandwidth),
+                       else the first mp4. Its preview image is the poster.
+      custom.youtube — URL (any watch / youtu.be / shorts / embed form or a
+                       bare ID); the ID is parsed client-side.
+    Both blank → the snippet renders no tear and the explorer keeps its
+    random Kyosai bones. {%- endcomment -%}
+{%- assign win_video = '' -%}
+{%- assign win_poster = '' -%}
+{%- assign win_vid = p.metafields.custom.video.value -%}
+{%- if win_vid != blank and win_vid.sources != blank -%}
+  {%- assign win_mp4s = win_vid.sources | where: 'format', 'mp4' | sort: 'height' -%}
+  {%- for win_src in win_mp4s -%}
+    {%- if win_src.height >= 360 -%}
+      {%- assign win_video = win_src.url -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
+  {%- if win_video == blank and win_mp4s.size > 0 -%}
+    {%- assign win_video = win_mp4s.first.url -%}
+  {%- endif -%}
+  {%- if win_video != blank and win_vid.preview_image != blank -%}
+    {%- assign win_poster = win_vid.preview_image | image_url: width: 480 -%}
+  {%- endif -%}
+{%- endif -%}
+{%- assign win_yt = p.metafields.custom.youtube.value | default: '' -%}
+
 <div class="jj-page jj-pdp-page">
   {%- comment -%} Two windows: the spec-sheet explorer + a standalone viewer
       window holding the 3D cover/vinyl. {%- endcomment -%}
-  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size %}
+  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt %}
   {% render 'win98-viewer', title: '3D Viewer', icon: 'box' %}
 </div>
 

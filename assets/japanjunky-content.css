@@ -432,6 +432,84 @@
   background-size: contain;
 }
 
+/* --- Torn-page video hole (product page) ---
+   Same slot as the bones (lower-right of the pane, behind the content,
+   half opacity) but bigger: a ragged hole torn through the pane with a
+   muted product video playing inside. japanjunky-burst.js paints the two
+   ring variants (parchment lip + ink shadow + black void) into the
+   canvases; japanjunky-explorer-video.js swaps them, clip-paths the hole
+   to the same silhouette and mounts the player. The whole box carries the
+   tilt, so ring, hole and video rotate together. */
+.jj-explorer__tear {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 0;
+  width: 420px;
+  height: 360px;
+  max-width: 70%;
+  max-height: 80%;
+  opacity: 0.5;
+  pointer-events: none;
+  transform: rotate(-4deg);
+  transform-origin: center;
+}
+.jj-explorer__tear-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated; /* 256px buffer stretched = chunky torn fibres */
+}
+.jj-explorer__tear-hole {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* pre-JS fallback; explorer-video.js swaps in the ragged polygon */
+  clip-path: ellipse(34% 34% at 50% 50%);
+}
+.jj-explorer__tear-poster,
+.jj-explorer__tear-player {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: none;
+  border: 0;
+  pointer-events: none;
+  filter: saturate(1.2) contrast(1.15);
+}
+.jj-explorer__tear-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+canvas.jj-explorer__tear-player {
+  image-rendering: pixelated; /* 160px dithered buffer upscaled */
+}
+/* Fake dither grid over the YouTube iframe (cross-origin: can't be
+   dithered for real). 2px checker at low alpha. */
+.jj-explorer__tear-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image:
+    linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%),
+    linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+  pointer-events: none;
+}
+/* Hidden mp4 source element: must stay rendered (not display:none is
+   safest across browsers for drawImage), so park it at 1px, invisible. */
+.jj-explorer__tear-src {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Skeletons variant: two ALIGNED vertical sprite strips (built on the
    same 160x183 frame) as pseudo-element layers. Flame cycles 3 frames,
    the skeletons hold one dithered body while their flame-facing edge

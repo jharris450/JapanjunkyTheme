@@ -396,10 +396,24 @@
   // modifier class picks which asset vars (set inline by the snippet)
   // the CSS uses. Skeletons variant runs the flame + rim-light sprite
   // animation from japanjunky-content.css.
+  //
+  // Product page: when the snippet also rendered #jj-explorer-tear (a
+  // product video is configured) the pick is left to
+  // japanjunky-explorer-video.js, which only calls JJ_ExplorerBones.pick()
+  // if every video source fails. The bones span stays in the DOM unpainted
+  // until then.
   var bones = document.getElementById('jj-explorer-bones');
-  if (bones) {
+
+  function pickBones() {
+    if (!bones) return;
     bones.classList.add(Math.random() < 0.5
       ? 'jj-explorer__bones--skulls'
       : 'jj-explorer__bones--skele');
+  }
+
+  window.JJ_ExplorerBones = { pick: pickBones };
+
+  if (bones && !document.getElementById('jj-explorer-tear')) {
+    pickBones();
   }
 })();

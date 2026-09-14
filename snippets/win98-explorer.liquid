@@ -10,6 +10,13 @@
     path    — address-bar segment after C:\JAPANJUNKY\ (e.g. 'PAGES\ABOUT')
     icon    — win95-start-icon name for titlebar + sidebar (default 'doc')
     objects — status-bar object count (default 1)
+    video_src    — optional mp4 URL (product page: custom.video metafield).
+    video_poster — optional poster image URL for that video.
+    youtube_url  — optional YouTube URL/ID (product page: custom.youtube).
+                   video_src or youtube_url set → the torn-page video hole
+                   (#jj-explorer-tear, japanjunky-explorer-video.js) renders
+                   next to the bones span and the JS decides which paints;
+                   the bones only show if every video source fails.
 
   Behavior (drag / resize / minimize / maximize / close / address routing /
   folder view) lives in assets/japanjunky-explorer.js. Styles:
@@ -76,6 +83,24 @@
         rim-light frames + flame frames) animated in japanjunky-content.css. {%- endcomment -%}
     <span class="jj-explorer__bones" id="jj-explorer-bones" aria-hidden="true"
           style="--jj-bones-skulls-img: url('{{ 'jj-bones-skulls.png' | asset_url }}'); --jj-bones-skel-img: url('{{ 'jj-bones-skel-strip.png' | asset_url }}'); --jj-bones-flame-img: url('{{ 'jj-bones-flame-strip.png' | asset_url }}')"></span>
+    {%- comment -%} Torn-page video hole (product page only; see the param
+        comment). Two ring canvases = the two fray variants the JS swaps;
+        the hole div is clip-path'd to the same silhouette and holds the
+        poster (always) plus the player the JS mounts above it. Nothing in
+        here is interactive — it is a watermark behind the pane content. {%- endcomment -%}
+    {%- if video_src != blank or youtube_url != blank -%}
+    <div class="jj-explorer__tear" id="jj-explorer-tear" aria-hidden="true" inert
+         data-video="{{ video_src | escape }}"
+         data-poster="{{ video_poster | escape }}"
+         data-youtube="{{ youtube_url | escape }}">
+      <canvas class="jj-explorer__tear-ring" data-variant="0"></canvas>
+      <canvas class="jj-explorer__tear-ring" data-variant="1" hidden></canvas>
+      <div class="jj-explorer__tear-hole" id="jj-explorer-tear-hole">
+        <img class="jj-explorer__tear-poster" id="jj-explorer-tear-poster" alt="">
+        <span class="jj-explorer__tear-grid" hidden></span>
+      </div>
+    </div>
+    {%- endif -%}
     <aside class="jj-explorer__panel">
       <span class="jj-explorer__panel-icon" id="jj-explorer-panel-icon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
       <div class="jj-explorer__panel-title" id="jj-explorer-panel-title">{{ title }}</div>

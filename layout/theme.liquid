@@ -428,6 +428,9 @@
   <script src="{{ 'japanjunky-cursor-light.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-mobile.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-dither.js' | asset_url }}" defer></script>
+  {%- comment -%} Shared jagged-silhouette math: homepage kyogen bang (info-swirl)
+      + product explorer tear (explorer-video). Pure functions, all templates. {%- endcomment -%}
+  <script src="{{ 'japanjunky-burst.js' | asset_url }}" defer></script>
   {%- comment -%} Watchlist state for JS-rendered grid stars (ids the customer already watches + login flag). {%- endcomment -%}
   <script>
     window.JJ_LOGGED_IN = {% if customer %}true{% else %}false{% endif %};
@@ -501,6 +504,11 @@
   {% endif %}
   <script src="{{ 'japanjunky-calendar.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-explorer.js' | asset_url }}" defer></script>
+  {% if template == 'product' %}
+  {%- comment -%} Torn-page video hole in the spec-sheet explorer (custom.video /
+      custom.youtube metafields). After explorer.js: uses JJ_ExplorerBones. {%- endcomment -%}
+  <script src="{{ 'japanjunky-explorer-video.js' | asset_url }}" defer></script>
+  {% endif %}
   <script src="{{ 'japanjunky-cart.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-cart-page.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-product-page.js' | asset_url }}" defer></script>
