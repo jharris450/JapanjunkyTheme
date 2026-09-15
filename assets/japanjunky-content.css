@@ -537,12 +537,14 @@ canvas.jj-explorer__tear-player {
   image-rendering: pixelated; /* 160px dithered buffer upscaled */
 }
 /* Over a main-pane background (see .jj-explorer--has-bg above): dim the
-   ring and the video so the product text reads, without any transparency.
+   video so the product text reads, without any transparency; the torn
+   lip itself is pushed the other way so the outline pops against the
+   dimmed video and the bg (merchant call, 2026-09-15: "outline brighter").
    A CSS filter on .jj-explorer__tear-player is already proven on the live
    YouTube iframe (the saturate/contrast rule above) — only SVG url()
    filters black out cross-origin iframes in Chromium. */
 .jj-explorer--has-bg .jj-explorer__tear-ring {
-  filter: brightness(0.65);
+  filter: brightness(1.15);
 }
 .jj-explorer--has-bg .jj-explorer__tear-poster,
 .jj-explorer--has-bg .jj-explorer__tear-player {
