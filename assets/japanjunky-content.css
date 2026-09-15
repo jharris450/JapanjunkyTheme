@@ -405,6 +405,7 @@
   display: flex;
   position: relative; /* anchors the bone-art watermark */
   overflow: hidden;   /* the diagonal tear slash is clipped at the pane edge */
+  --jj-explorer-pane-left: 190px; /* panel width, border included (global border-box) */
 }
 
 /* Kyosai bone art watermark: lower-right of the pane area, behind the
@@ -441,13 +442,37 @@
    canvases; japanjunky-explorer-video.js swaps them, clip-paths the hole
    to the same silhouette and mounts the player. The whole box carries the
    tilt, so ring, hole and video rotate together. */
+/* --- Main-pane background (product page, custom.explorer_background) ---
+   Full-bleed image behind #jj-explorer-main only: pinned by CSS to the
+   pane's rect (panel width is 190px total under the theme's global
+   border-box reset; the pane is the flex-fill sibling, so the rects
+   coincide). Sits under the tear zone (same z, but earlier in the DOM)
+   and under the panes (z 1). Doesn't scroll with the pane content, like
+   the bones/tear. japanjunky-dither.js dithers the <img> to the phosphor
+   palette on DOM ready (<=480px buffer, upscaled). */
+.jj-explorer__bg {
+  position: absolute;
+  inset: 0 0 0 var(--jj-explorer-pane-left);
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.jj-explorer__bg-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.35;
+  image-rendering: pixelated;
+}
 /* Zone: the rectangle the tear lives in. explorer-video.js pins it over
    #jj-explorer-main (the product-info pane, right of the sidebar) and it
    clips the slash's overhang; the inset below is only the pre-JS guess
    (sidebar width). */
 .jj-explorer__tear-zone {
   position: absolute;
-  inset: 0 0 0 191px;
+  inset: 0 0 0 var(--jj-explorer-pane-left);
   overflow: hidden;
   z-index: 0;
   pointer-events: none;
@@ -469,6 +494,12 @@
   transform: translate(-50%, -50%) rotate(var(--jj-tear-rot));
   transform-origin: center;
 }
+/* Over a main-pane background the tear is solid: the half-opacity
+   watermark treatment exists so the tear reads as a ghost on the bare
+   pane; on top of an image it just bleeds the image through the video.
+   .jj-explorer--has-bg is set by the snippet when background_src is set. */
+.jj-explorer--has-bg .jj-explorer__tear { opacity: 1; }
+
 .jj-explorer__tear-ring {
   position: absolute;
   inset: 0;
@@ -855,6 +886,7 @@ canvas.jj-explorer__tear-player {
 /* Narrow screens: drop the web panel */
 @media (max-width: 680px) {
   .jj-explorer__panel { display: none; }
+  .jj-explorer__body { --jj-explorer-pane-left: 0px; } /* no panel: the pane spans the body */
 }
 
 /* --- FAQ accordion --- */

@@ -12,13 +12,18 @@
     objects — status-bar object count (default 1)
     video_src    — optional mp4 URL (product page: custom.video metafield).
     video_poster — optional poster image URL for that video.
-    youtube_url  — optional YouTube URL/ID (product page: custom.youtube_url).
+    youtube_url  — optional YouTube URL/ID (product page: custom.youtube,
+                   fallback custom.youtube_url).
     palette_src  — optional small image URL (product cover) whose dominant
                    colours tint the tear's torn-paper lip.
-                   video_src or youtube_url set → the torn-page video hole
-                   (#jj-explorer-tear, japanjunky-explorer-video.js) renders
-                   next to the bones span and the JS decides which paints;
-                   the bones only show if every video source fails.
+    background_src — optional image URL (product page:
+                   custom.explorer_background) drawn full-bleed behind the
+                   main pane only (.jj-explorer__bg), under the tear.
+                   video_src or youtube_url set = the torn-page video hole
+                   (#jj-explorer-tear, japanjunky-explorer-video.js).
+                   Any of video_src / youtube_url / background_src set = the
+                   Kyosai bones span is not rendered at all (a failed video
+                   leaves the pane plain, or on the background).
 
   Behavior (drag / resize / minimize / maximize / close / address routing /
   folder view) lives in assets/japanjunky-explorer.js. Styles:
@@ -32,7 +37,7 @@
     view's entry for a page matches that page's own status bar. {%- endcomment -%}
 {%- assign win_kb = title | size | times: 53 | modulo: 340 | plus: 24 -%}
 
-<div class="jj-explorer" id="jj-explorer" data-title="{{ title | escape }}">
+<div class="jj-explorer{% if background_src != blank %} jj-explorer--has-bg{% endif %}" id="jj-explorer" data-title="{{ title | escape }}">
   <header class="jj-explorer__titlebar" id="jj-explorer-titlebar">
     <span class="jj-explorer__titleicon" aria-hidden="true">{% render 'win95-start-icon', icon: win_icon %}</span>
     <h1 class="jj-explorer__title">{{ title }}</h1>
@@ -78,13 +83,25 @@
   </div>
 
   <div class="jj-explorer__body">
-    {%- comment -%} Kyosai bone art watermark, pinned to the main pane's
-        lower-right behind the content (IE folder-watermark treatment).
-        japanjunky-explorer.js picks one of the two artworks per page load
-        (modifier class). Skeletons = two aligned sprite strips (skeleton
-        rim-light frames + flame frames) animated in japanjunky-content.css. {%- endcomment -%}
+    {%- comment -%} Watermark slot, lowest layer of the body. Exactly one of:
+        - Kyosai bone art (default: no video, no youtube, no background),
+          pinned lower-right; japanjunky-explorer.js picks one of the two
+          artworks per page load (modifier class). Skeletons = two aligned
+          sprite strips animated in japanjunky-content.css.
+        - Main-pane background (background_src): full-bleed image behind
+          #jj-explorer-main only, dithered by japanjunky-dither.js. Renders
+          DOM-before the tear zone so the tear paints above it.
+        The bones are NOT a fallback for a failed video: any of the three
+        params set = no bones span at all. {%- endcomment -%}
+    {%- if video_src == blank and youtube_url == blank and background_src == blank -%}
     <span class="jj-explorer__bones" id="jj-explorer-bones" aria-hidden="true"
           style="--jj-bones-skulls-img: url('{{ 'jj-bones-skulls.png' | asset_url }}'); --jj-bones-skel-img: url('{{ 'jj-bones-skel-strip.png' | asset_url }}'); --jj-bones-flame-img: url('{{ 'jj-bones-flame-strip.png' | asset_url }}')"></span>
+    {%- endif -%}
+    {%- if background_src != blank -%}
+    <div class="jj-explorer__bg" id="jj-explorer-bg" aria-hidden="true">
+      <img class="jj-explorer__bg-img" src="{{ background_src | escape }}" crossorigin="anonymous" alt="">
+    </div>
+    {%- endif -%}
     {%- comment -%} Torn-page video hole (product page only; see the param
         comment). Two ring canvases = the two fray variants the JS swaps;
         the hole div is clip-path'd to the same silhouette and holds the

@@ -227,7 +227,10 @@
   // ─── Public API ────────────────────────────────────────────────
 
   function ditherAll() {
-    var containers = document.querySelectorAll('.jj-thumb-img img, .jj-detail-image img');
+    // .jj-explorer__bg-img: the product explorer's main-pane background
+    // (snippets/win98-explorer.liquid); crossorigin="anonymous" on it is
+    // what keeps the CDN image readable by getImageData.
+    var containers = document.querySelectorAll('.jj-thumb-img img, .jj-detail-image img, .jj-explorer__bg-img');
     containers.forEach(function (img) {
       if (img.complete && img.naturalWidth > 0) {
         ditherImage(img);

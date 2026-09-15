@@ -10,7 +10,9 @@
  *      startYouTube for the hard-won rules)
  *   3. poster image only (reduced motion / jj-fx-low at load, or every
  *      player fails)
- *   4. no source at all → tear removed, random Kyosai bones instead
+ *   4. no usable source → tear removed; pane left plain (or on its
+ *      custom.explorer_background). Bones are not a fallback: the snippet
+ *      renders them only when no video/youtube/background metafield is set.
  *
  * The ring is two JJ_Burst.paintTear canvases (fray variants) swapped on a
  * stepped cadence, with the hole clip-path'd to the matching silhouette.
@@ -199,11 +201,13 @@
       if (window.console) console.warn('explorer: tear video — ' + msg);
     }
 
-    // Nothing can paint: drop the tear and let the bones take the slot.
+    // Nothing can paint: drop the tear. The pane is left plain (or on its
+    // custom.explorer_background); the Kyosai bones are NOT a fallback —
+    // the snippet only renders them when no video/youtube/background
+    // metafield is set at all.
     function bail(why) {
-      warn(why + '; bones instead');
+      warn(why + '; tear removed');
       if (tear.parentNode) tear.parentNode.removeChild(tear);
-      if (window.JJ_ExplorerBones) window.JJ_ExplorerBones.pick();
     }
 
     if (!Burst || !hole || !poster || !grid || rings.length < 2) {

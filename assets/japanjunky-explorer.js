@@ -397,11 +397,11 @@
   // the CSS uses. Skeletons variant runs the flame + rim-light sprite
   // animation from japanjunky-content.css.
   //
-  // Product page: when the snippet also rendered #jj-explorer-tear (a
-  // product video is configured) the pick is left to
-  // japanjunky-explorer-video.js, which only calls JJ_ExplorerBones.pick()
-  // if every video source fails. The bones span stays in the DOM unpainted
-  // until then.
+  // Product page: the snippet (snippets/win98-explorer.liquid) renders the
+  // bones span only when none of the video/youtube/background metafields
+  // are set. When any of them is set there is no bones span in the DOM at
+  // all, so pickBones() below is a no-op. JJ_ExplorerBones stays exported
+  // for compatibility, but nothing calls it anymore.
   var bones = document.getElementById('jj-explorer-bones');
 
   function pickBones() {

@@ -182,8 +182,7 @@
                        legal video source for most records — see the long
                        note on startYouTube in explorer-video.js. Falls back
                        to custom.youtube_url (the music player's link).
-    Both blank → the snippet renders no tear and the explorer keeps its
-    random Kyosai bones. {%- endcomment -%}
+    Both blank → the snippet renders no tear; the bones only appear if custom.explorer_background is blank too. {%- endcomment -%}
 {%- assign win_video = '' -%}
 {%- assign win_poster = '' -%}
 {%- assign win_vid = p.metafields.custom.video.value -%}
@@ -208,6 +207,16 @@
     custom.youtube_url belongs to the music player and is often a still cover
     with audio, so it is only the fallback. {%- endcomment -%}
 {%- assign win_yt = p.metafields.custom.youtube.value | default: p.metafields.custom.youtube_url.value | default: '' -%}
+{%- comment -%} custom.explorer_background — File (image): drawn full-bleed
+    behind the explorer's main pane (never the sidebar), under the tear.
+    Merchant defines the metafield in admin > Custom data > Products, key
+    explorer_background, type File, images only. Blank = no background.
+    Any of video / youtube / background set = the Kyosai bones are not
+    rendered (see snippets/win98-explorer.liquid). {%- endcomment -%}
+{%- assign win_bg = '' -%}
+{%- if p.metafields.custom.explorer_background.value != blank -%}
+  {%- assign win_bg = p.metafields.custom.explorer_background.value | image_url: width: 800 -%}
+{%- endif -%}
 {%- assign win_palette = '' -%}
 {%- if p.featured_image != blank -%}
   {%- assign win_palette = p.featured_image | image_url: width: 64 -%}
@@ -216,7 +225,7 @@
 <div class="jj-page jj-pdp-page">
   {%- comment -%} Two windows: the spec-sheet explorer + a standalone viewer
       window holding the 3D cover/vinyl. {%- endcomment -%}
-  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt, palette_src: win_palette %}
+  {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt, palette_src: win_palette, background_src: win_bg %}
   {% render 'win98-viewer', title: '3D Viewer', icon: 'box' %}
 </div>
 
