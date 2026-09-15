@@ -71,7 +71,7 @@
   // mp4 look is tuned to sit on par with the YouTube path (raw frame + the
   // 2px checker in .jj-explorer__tear-grid at 0.1 alpha): the merchant found
   // the earlier 256px / 0.7 stipple far heavier than the iframe (2026-09-15).
-  var VID_W = 384;          // dither buffer width: 480p sources upscale ~1.25x, no visible blocks
+  var VID_W = 320;          // dither buffer width: midway between 256 (too blocky) and 384 (too clean), merchant-tuned
   var DITHER_MIX = 0.3;     // dithered frame blended over the raw frame (1 = full dither, 0 = none)
   var VID_FPS = 12;
   var YT_NUDGE_MAX = 6;          // attempts after the first play
