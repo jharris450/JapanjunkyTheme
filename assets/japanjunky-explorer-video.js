@@ -72,7 +72,16 @@
   var YT_NUDGE_MAX = 6;          // attempts after the first play
   var YT_NUDGE_BASE = 1200;      // ms; doubles each attempt
   var YT_GIVEUP_MS = 20000;      // not playing this long after ready → poster
-  var YT_REVEAL_DELAY = 900;     // ms after "playing" before the iframe is shown (bezel fade)
+  // ms after "playing" before the iframe is shown. YouTube's embed (at the
+  // tear's ~600px size and smaller) draws a centred play/pause control at
+  // start that controls=0 does not remove; measured 2026-09-14 via CDP
+  // inside the embed on the live store: it stays ~3.9 s after playerState
+  // 1 (ytp-autohide lands at ~3 s, the button leaves ~0.9 s later), both
+  // on first start and after every loop restart (-1 -> 3 -> 1). 900 ms
+  // revealed it mid-flight = the play button the merchant kept seeing.
+  // 3.9 s + ~1 s margin; the test in tests/burst-math.test.js pins the floor.
+  var YT_REVEAL_DELAY = 5000;
+  window.JJ_ExplorerVideo.YT_REVEAL_DELAY = YT_REVEAL_DELAY; // exposed for tests/burst-math.test.js
   var YT_FADE_MS = 400;          // iframe cross-fade over the poster
   var FILL_MIN = 0.8;      // mp4/poster: widen only if narrower than this fraction of the hole
   var PALETTE_N = 6;       // max cover colours in the lip gradient
@@ -567,12 +576,13 @@
     f.title = 'Product video';
     f.tabIndex = -1;
     // Start transparent over the poster (YouTube's own thumbnail): the title
-    // strip and the play/pause bezel YouTube flashes at start cannot be
-    // styled from outside, so the iframe is only shown once it reports
-    // playing, after a beat for the bezel to fade, and hidden again if it
-    // ever stops.
+    // strip and the centred play/pause control YouTube shows at start cannot
+    // be styled from outside, so the iframe is only shown once it reports
+    // playing AND YT_REVEAL_DELAY has passed (the control's measured
+    // lifetime, see the constant), and hidden again if it ever stops. A loop
+    // restart reports -1 first, so it conceals, then re-reveals the same way.
     f.style.opacity = '0';
-    f.style.transition = 'opacity ' + YT_FADE_MS + 'ms ease';
+    f.style.transition = 'none';
     var player = api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
     api.grid.hidden = false;
     var revealTimer = 0;
@@ -580,11 +590,17 @@
       if (revealTimer) return;
       revealTimer = setTimeout(function () {
         revealTimer = 0;
-        if (!dead && dbg.playing) f.style.opacity = '1';
+        if (dead || !dbg.playing) return;
+        f.style.transition = 'opacity ' + YT_FADE_MS + 'ms ease'; // fade in only
+        f.style.opacity = '1';
       }, YT_REVEAL_DELAY);
     }
     function conceal() {
       if (revealTimer) { clearTimeout(revealTimer); revealTimer = 0; }
+      // Cut, never fade out: YouTube redraws the centred control the moment
+      // it reports -1/2/5 (loop restart included), and a 400 ms fade-out
+      // would show it over the poster.
+      f.style.transition = 'none';
       f.style.opacity = '0';
     }
 
