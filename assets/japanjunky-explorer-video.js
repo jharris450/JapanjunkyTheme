@@ -545,6 +545,8 @@
   var YT_NUDGE_MAX = 6;          // attempts after the first play
   var YT_NUDGE_BASE = 1200;      // ms; doubles each attempt
   var YT_GIVEUP_MS = 20000;      // not playing this long after ready → poster
+  var YT_REVEAL_DELAY = 900;     // ms after "playing" before the iframe is shown (bezel fade)
+  var YT_FADE_MS = 400;          // iframe cross-fade over the poster
 
   function startYouTube(api, yt) {
     document.documentElement.classList.add('jj-crt-no-barrel');
@@ -559,8 +561,27 @@
     f.setAttribute('aria-hidden', 'true');
     f.title = 'Product video';
     f.tabIndex = -1;
+    // Start transparent over the poster (YouTube's own thumbnail): the title
+    // strip and the play/pause bezel YouTube flashes at start cannot be
+    // styled from outside, so the iframe is only shown once it reports
+    // playing, after a beat for the bezel to fade, and hidden again if it
+    // ever stops.
+    f.style.opacity = '0';
+    f.style.transition = 'opacity ' + YT_FADE_MS + 'ms ease';
     var player = api.mountPlayer(f, 16 / 9, true); // cover: hide YouTube chrome under the clip
     api.grid.hidden = false;
+    var revealTimer = 0;
+    function reveal() {
+      if (revealTimer) return;
+      revealTimer = setTimeout(function () {
+        revealTimer = 0;
+        if (!dead && dbg.playing) f.style.opacity = '1';
+      }, YT_REVEAL_DELAY);
+    }
+    function conceal() {
+      if (revealTimer) { clearTimeout(revealTimer); revealTimer = 0; }
+      f.style.opacity = '0';
+    }
 
     var dbg = { ready: false, state: null, nudges: 0, error: null, playing: false, gaveUp: null, log: [] };
     window.JJ_ExplorerVideo._yt = dbg;
@@ -636,8 +657,10 @@
           dbg.nudges = 0;
           if (nudgeTimer) { clearTimeout(nudgeTimer); nudgeTimer = 0; }
           if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = 0; }
+          if (s === 1) reveal(); // buffering keeps whatever is showing
         } else if (s === -1 || s === 2 || s === 5) {
           dbg.playing = false;
+          conceal();
           if (dbg.ready) { armGiveUp(); scheduleNudge(); }
         }
       }
@@ -651,6 +674,7 @@
       document.removeEventListener('visibilitychange', onVis);
       if (nudgeTimer) clearTimeout(nudgeTimer);
       if (giveUpTimer) clearTimeout(giveUpTimer);
+      if (revealTimer) clearTimeout(revealTimer);
       api.unmountPlayer(player);
       api.grid.hidden = true;
       api.warn(why + '; poster only');
