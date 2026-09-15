@@ -270,19 +270,24 @@
 }
 
 /* IE-throbber slot at the menubar's right end (the Windows-flag box in
-   filebrowser.png), rebuilt with the Tsuno start-logo ink mask in the
-   day's mood tint (--jj-tsuno-mood from win95-menu.js). The PNG is
-   authored at 34x37 with the dither baked in — mask-size stays 1:1; the
-   short menubar row CROPS the horns from the top (start-button trick),
-   it never overflows into the toolbar. Negative top/bottom/right margins
-   bleed the box to the row's edges past the menubar's 2px/6px padding
-   (right included — without -6px the padding shows as a gap there). */
+   filebrowser.png), rebuilt as the rising-sun ensign: risingsunthrobber.png
+   is a 56x56 1-bit alpha mask (disc + 16 rays, clipped to a circle) in flag
+   red over the black well. The composition is kept true to the flag: the
+   38x24 slot has the flag's ~1.5:1 aspect, the sun sits at 39% from the
+   left (left/top below), and the disc is half the slot height (12px). The
+   ray disc is OVERSIZED and centred on the sun: its radius (28px) beats the
+   distance from the sun to the slot's far corner (~26.5px), so the rays
+   reach every corner at every angle while it slowly turns; overflow:hidden
+   crops the rest. mask-size stays 1:1 so the pixel edges render crisp.
+   Negative top/bottom/right margins bleed the box to the row's edges past
+   the menubar's 2px/6px padding (right included: without -6px the padding
+   shows as a gap there). */
 .jj-explorer__throbber {
   width: 38px;
   align-self: stretch;
   margin: -2px -6px -2px auto;
   flex-shrink: 0;
-  position: relative; /* sprite is absolute so its 37px can't grow the row */
+  position: relative; /* sprite is absolute so its 56px can't grow the row */
   overflow: hidden;
   background: var(--jj-black, #000);
   border-left: 1px solid #222;
@@ -290,27 +295,48 @@
     inset 1px 1px 0 rgba(0, 0, 0, 0.85),
     inset -1px -1px 0 rgba(224, 213, 192, 0.12);
 }
-.jj-explorer__throbber-tsuno {
+.jj-explorer__throbber-sun {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  margin-left: -17px;
-  width: 34px;
-  height: 37px;
-  background: var(--jj-tsuno-mood, var(--jj-primary, #e8313a));
-  -webkit-mask-image: var(--jj-tsuno-logo);
-  mask-image: var(--jj-tsuno-logo);
-  -webkit-mask-size: 34px 37px;
-  mask-size: 34px 37px;
+  top: 50%;
+  left: 39%; /* sun centre in the flag (194/500) */
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  background: var(--jj-primary, #e8313a);
+  -webkit-mask-image: var(--jj-throbber-sun);
+  mask-image: var(--jj-throbber-sun);
+  -webkit-mask-size: 56px 56px;
+  mask-size: 56px 56px;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  -webkit-mask-position: bottom center;
-  mask-position: bottom center;
-  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)));
+  -webkit-mask-position: center;
+  mask-position: center;
+  filter: drop-shadow(0 0 3px var(--jj-primary, #e8313a));
+  animation: jj-throbber-spin 16s linear infinite;
 }
-.jj-explorer__throbber:hover .jj-explorer__throbber-tsuno {
-  filter: drop-shadow(0 0 3px var(--jj-tsuno-mood, var(--jj-primary, #e8313a)))
-          brightness(1.35);
+/* CRT scanlines over the flag: the well's black shows through every other
+   row so the red reads as phosphor, not a flat fill. */
+.jj-explorer__throbber::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 1px,
+    rgba(0, 0, 0, 0.35) 1px 2px
+  );
+}
+/* Hover = the IE throbber "busy" spin: faster, brighter. */
+.jj-explorer__throbber:hover .jj-explorer__throbber-sun {
+  filter: drop-shadow(0 0 3px var(--jj-primary, #e8313a)) brightness(1.35);
+  animation-duration: 3s;
+}
+@keyframes jj-throbber-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jj-explorer__throbber-sun { animation: none; }
 }
 
 /* --- Menu bar (decorative) --- */

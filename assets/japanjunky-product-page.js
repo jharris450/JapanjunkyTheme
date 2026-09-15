@@ -37,6 +37,9 @@
     for (var i = 0; i < variantBtns.length; i++) {
       variantBtns[i].addEventListener('click', function () {
         var btn = this;
+        // Sold-out grades are shown (greyed + struck) but not selectable,
+        // same as the catalog card chips.
+        if (btn.classList.contains('jj-pdp-variant-btn--out')) return;
         var vid = btn.getAttribute('data-variant-id');
         var vprice = btn.getAttribute('data-variant-price');
         var vavail = btn.getAttribute('data-variant-available') === 'true';

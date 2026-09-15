@@ -85,6 +85,11 @@ html.jj-mobile .jj-taskbar__mtab:active {
 html.jj-mobile .jj-taskbar__mtab-count {
   color: var(--jj-secondary);
 }
+/* Gap only when a count is showing: a fixed &nbsp; left CART off-centre
+   whenever the cart was empty. */
+html.jj-mobile .jj-taskbar__mtab-count:not(:empty) {
+  margin-left: 4px;
+}
 
 /* Start menu: desktop-default bottom anchor, stretched full width. */
 html.jj-mobile .jj-start-menu {
@@ -251,6 +256,18 @@ html.jj-mobile .jj-pdp-page .jj-explorer__main {
 html.jj-mobile .jj-pdp-info {
   padding: 4px 4px 12px;
   touch-action: pan-y;
+}
+
+/* No scrollbar at all on the handheld product page: scrollbar.js skips
+   the Win95 widget for .jj-pdp-page, and the native bars of the scrolling
+   layer + spec pane are hidden here (finger-scroll needs no affordance). */
+html.jj-mobile .jj-pdp-page,
+html.jj-mobile .jj-pdp-page .jj-pdp-info {
+  scrollbar-width: none;
+}
+html.jj-mobile .jj-pdp-page::-webkit-scrollbar,
+html.jj-mobile .jj-pdp-page .jj-pdp-info::-webkit-scrollbar {
+  display: none;
 }
 
 /* Viewer window: no resize / min / max on the handheld (drag + resize are

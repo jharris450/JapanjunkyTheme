@@ -115,7 +115,8 @@
         {%- elsif _v_cond == 'vg' or _v_cond == 'vg+' or _v_cond contains 'very' -%}
           {%- assign v_cond_class = 'jj-cond-vg' -%}
         {%- endif -%}
-      <button class="jj-pdp-variant-btn {{ v_cond_class }}{% if variant == current_variant %} jj-pdp-variant-btn--active{% endif %}"
+      <button class="jj-pdp-variant-btn {{ v_cond_class }}{% if variant == current_variant %} jj-pdp-variant-btn--active{% endif %}{% unless variant.available %} jj-pdp-variant-btn--out{% endunless %}"
+              {% unless variant.available %}aria-disabled="true"{% endunless %}
               data-variant-id="{{ variant.id }}"
               data-variant-price="{{ variant.price | money }}"
               data-variant-available="{{ variant.available }}"

@@ -56,11 +56,13 @@
     <span class="jj-explorer__menu">Tools</span>
     <span class="jj-explorer__menu">Help</span>
     {%- comment -%} IE-throbber slot from filebrowser.png (the Windows-flag
-        box at the menubar's right end), rebuilt with the Tsuno start-logo
-        mask in the day's mood tint. Stays inside this row: the box crops
-        the sprite from the top, same trick as the start button. {%- endcomment -%}
-    <span class="jj-explorer__throbber" aria-hidden="true" style="--jj-tsuno-logo: url('{{ 'tsuno-start-logo.png' | asset_url }}')">
-      <span class="jj-explorer__throbber-tsuno"></span>
+        box at the menubar's right end), rebuilt as a spinning rising sun:
+        risingsunthrobber.png is an alpha mask in flag red, sun offset left
+        like the ensign (CSS in japanjunky-content.css). The ray disc is
+        oversized so it fills the slot at every angle; the box crops the
+        rest. {%- endcomment -%}
+    <span class="jj-explorer__throbber" aria-hidden="true" style="--jj-throbber-sun: url('{{ 'risingsunthrobber.png' | asset_url }}')">
+      <span class="jj-explorer__throbber-sun"></span>
     </span>
   </nav>
 

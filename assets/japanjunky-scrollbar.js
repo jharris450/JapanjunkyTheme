@@ -14,6 +14,9 @@
   var el = document.querySelector('.jj-page') ||
            document.querySelector('.jj-pdp-info');
   if (!el) return; // homepage / login — no in-page scroll container
+  // Handheld product page: the stacked windows scroll natively with the
+  // finger; no scrollbar at all there (native one hidden in mobile.css).
+  if (window.JJ_MOBILE && el.classList.contains('jj-pdp-page')) return;
 
   var LINE = 40;       // px per arrow nudge
   var REPEAT_MS = 50;  // hold-to-repeat interval
