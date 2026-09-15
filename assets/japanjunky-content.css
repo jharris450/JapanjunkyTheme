@@ -494,11 +494,14 @@
   transform: translate(-50%, -50%) rotate(var(--jj-tear-rot));
   transform-origin: center;
 }
-/* Over a main-pane background the tear is solid: the half-opacity
+/* Over a main-pane background the tear is nearly solid: the half-opacity
    watermark treatment exists so the tear reads as a ghost on the bare
    pane; on top of an image it just bleeds the image through the video.
+   0.7, not 1: at full opacity the ring + video out-shout the spec-sheet
+   text drawn above them (merchant call, 2026-09-15). The bg image itself
+   stays at its own 0.35.
    .jj-explorer--has-bg is set by the snippet when background_src is set. */
-.jj-explorer--has-bg .jj-explorer__tear { opacity: 1; }
+.jj-explorer--has-bg .jj-explorer__tear { opacity: 0.7; }
 
 .jj-explorer__tear-ring {
   position: absolute;
