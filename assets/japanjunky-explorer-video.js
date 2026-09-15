@@ -5,8 +5,9 @@
  * snippets/win98-explorer.liquid when a product has a custom.video
  * metafield) with a muted looping product video:
  *   1. custom.video → hidden <video> → 256px buffer → JJ_Dither → canvas
- *   2. custom.youtube_url → youtube-nocookie iframe driven over its
- *      postMessage API (see startYouTube for the hard-won rules)
+ *   2. custom.youtube (fallback custom.youtube_url, the music player's link)
+ *      → youtube-nocookie iframe driven over its postMessage API (see
+ *      startYouTube for the hard-won rules)
  *   3. poster image only (reduced motion / jj-fx-low at load, or every
  *      player fails)
  *   4. no source at all → tear removed, random Kyosai bones instead
@@ -61,6 +62,18 @@
   var PULSE_EVERY = 4500;  // ms between pulses
   var PULSE_LEN = 300;     // ms a pulse holds
   var YT_OVERSIZE = 1.3;   // YouTube iframe vs the hole's bounding box (crops its title bar/logo)
+  // NB: every module-level constant must sit ABOVE ready(): the theme loads
+  // this script with defer, so ready() runs its callback synchronously and a
+  // var declared further down is still undefined at that moment (bit us once:
+  // "opacity undefinedms" silently dropped the iframe fade).
+  var VID_W = 256;          // dither buffer width: fine enough that 480p sources stay readable
+  var DITHER_MIX = 0.7;     // dithered frame blended over the raw frame (1 = full dither, 0 = none)
+  var VID_FPS = 12;
+  var YT_NUDGE_MAX = 6;          // attempts after the first play
+  var YT_NUDGE_BASE = 1200;      // ms; doubles each attempt
+  var YT_GIVEUP_MS = 20000;      // not playing this long after ready → poster
+  var YT_REVEAL_DELAY = 900;     // ms after "playing" before the iframe is shown (bezel fade)
+  var YT_FADE_MS = 400;          // iframe cross-fade over the poster
   var FILL_MIN = 0.8;      // mp4/poster: widen only if narrower than this fraction of the hole
   var PALETTE_N = 6;       // max cover colours in the lip gradient
   var HUE_BINS = 12;
@@ -415,9 +428,6 @@
   });
 
   /* ================= players ================= */
-  var VID_W = 256;          // dither buffer width: fine enough that 480p sources stay readable
-  var DITHER_MIX = 0.7;     // dithered frame blended over the raw frame (1 = full dither, 0 = none)
-  var VID_FPS = 12;
 
   // Shopify mp4 → hidden <video> → small buffer → Floyd-Steinberg to the
   // phosphor palette → visible canvas. onFail(why) tears everything down
@@ -542,11 +552,6 @@
   //  * The tear must never show a play button: if the nudges run out, or
   //    YouTube reports an error, the iframe is unmounted and the poster
   //    (YouTube's own thumbnail) stays. Static beats broken.
-  var YT_NUDGE_MAX = 6;          // attempts after the first play
-  var YT_NUDGE_BASE = 1200;      // ms; doubles each attempt
-  var YT_GIVEUP_MS = 20000;      // not playing this long after ready → poster
-  var YT_REVEAL_DELAY = 900;     // ms after "playing" before the iframe is shown (bezel fade)
-  var YT_FADE_MS = 400;          // iframe cross-fade over the poster
 
   function startYouTube(api, yt) {
     document.documentElement.classList.add('jj-crt-no-barrel');
