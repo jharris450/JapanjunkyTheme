@@ -27,7 +27,8 @@
       : String.fromCharCode(0x30A1 + Math.floor(Math.random() * (0x30FA - 0x30A1)));
   }
 
-  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var BASE_DPR = Math.min(window.devicePixelRatio || 1, 2);
+  var DPR = BASE_DPR;
   var W = 0, H = 0;
   // Lite (japanjunky-perf.js latch): every clearRect+redraw dirties a
   // fullscreen layer the software compositor must re-raster. 12 fps and
@@ -118,9 +119,10 @@
   if (!reduce) requestAnimationFrame(frame);
 
   if (window.JJ_Perf && window.JJ_Perf.onLite) {
-    window.JJ_Perf.onLite(function () {
-      MIN_DT = 1000 / 12;
-      if (DPR !== 1) { DPR = 1; resize(); }
+    window.JJ_Perf.onLite(function (on) {
+      MIN_DT = on ? 1000 / 12 : 0;
+      var want = on ? 1 : BASE_DPR;
+      if (DPR !== want) { DPR = want; resize(); }
     });
   }
 

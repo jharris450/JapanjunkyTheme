@@ -28,37 +28,41 @@
  * scanlines instead of the WebGL overlay, no swirl canvas, throttled
  * glyph-field / bundle box / viewer / card spins.
  *
- * Lite LATCHES — once on, on for the page's life. The structural changes
- * (barrel on/off, overlay swap) would be jarring if the governor's up/down
- * hysteresis toggled them every few seconds. Because it is permanent it is
- * only ever latched on MEASURED evidence: the tier must sit at 'low' for a
- * sustained stretch (LITE_LATCH_MS) — a load-time dip must not cost the page
- * its bang/overlay for good. The soft-GPU probe (WebGL refuses
- * `failIfMajorPerformanceCaveat` — Chromium with accel off) only shortens
- * the confirmation: no warm-up and a short sustain, so the slideshow lasts
- * ~1.5 s instead of ~8. A probe that the frame rate does not corroborate
- * does nothing. (Brave regression, 2026-09-16: a renderer-name heuristic —
- * "SwiftShader"/"Basic Render Driver" — pinned the tier at 'low' on a
- * healthy GPU because Brave's fingerprint farbling spoofs the WebGL renderer
- * string. Never trust the renderer string; Firefox on WARP is caught by the
- * measured latch anyway — it runs ~13 fps.) Once lite is latched WITH a
- * positive probe, the tier is capped at 'low': a CPU renderer never earns
- * the smooth knobs back.
+ * Lite is decided on MEASURED evidence only: the smoothed frame rate must
+ * sit below the 'low' threshold for a sustained stretch, outside the
+ * load-jank window, before it latches (the frame rate, not the tier — the
+ * tier lags recovery by design and fired the latch after dips ended). The
+ * soft-GPU probe (WebGL refuses `failIfMajorPerformanceCaveat` — Chromium
+ * with accel off) only shortens that confirmation and starts the page at
+ * 'mid'; it never latches or pins anything by itself.
+ *
+ * Brave (2026-09-16): Brave's fingerprint Shields spoof the WebGL renderer
+ * string and can fail the caveat probe on a healthy GPU. A first version
+ * keyed on the renderer name and pinned 'low' at load — bang, underscene and
+ * the tear video all vanished. Rules that fell out of it:
+ *   - never read WEBGL_debug_renderer_info for decisions;
+ *   - a latch reached through the probe path is REVERSIBLE: if the frame
+ *     rate then holds above UNLITE_FPS for UNLITE_MS, lite is undone once
+ *     (consumers receive fn(false) and restore). If it latches again after
+ *     that, it is permanent. A latch reached purely by measurement (no probe,
+ *     e.g. Firefox on WARP at ~13 fps) is permanent from the start — lite is
+ *     what makes its frame rate good, so recovery there would loop.
  *
  * Consumers:
  *   JJ_Perf.tier              -> current tier string
  *   JJ_Perf.onChange(fn)      -> fn(tier) on every tier change; also fired
  *                                immediately with the current tier
  *   JJ_Perf.fps               -> smoothed fps (for debugging)
- *   JJ_Perf.lite              -> boolean, latched
+ *   JJ_Perf.lite              -> boolean
  *   JJ_Perf.softGpu           -> boolean, load-time probe result
- *   JJ_Perf.onLite(fn)        -> fn() once, when lite latches (immediately if
- *                                already lite); returns unsubscribe
+ *   JJ_Perf.onLite(fn)        -> fn(true) when lite latches (immediately if
+ *                                already lite), fn(false) if it is undone;
+ *                                returns unsubscribe
  *
  * The <html> element also carries jj-fx-mid / jj-fx-low classes so pure-CSS
  * effects can be shed without JS ('high' carries no class), plus jj-fx-lite
- * (latched) and jj-soft-gpu (probe). Lite also adds jj-crt-no-barrel — the
- * same class Firefox/handheld already use to drop the barrel filter.
+ * and jj-soft-gpu (probe). Lite also toggles jj-crt-no-barrel — the same
+ * class Firefox/handheld use to drop the barrel filter.
  *
  * Override for testing: localStorage 'jj-fx-force' = 'high'|'mid'|'low'
  * pins the tier and disables measurement ('low' also latches lite);
@@ -107,25 +111,50 @@
   var lite = false;
   var liteListeners = [];
   var maxTier = 'high';
+  var liteReversible = false;   // set when the latch came through the probe path
+  var unlatchedOnce = false;    // the second latch is permanent
 
-  function latchLite() {
+  function notifyLite(on) {
+    var fns = liteListeners.slice();
+    for (var i = 0; i < fns.length; i++) {
+      try { fns[i](on); } catch (e) {}
+    }
+  }
+
+  function latchLite(viaProbe) {
     if (lite || forcedLite === '0') return;
     lite = true;
+    liteReversible = !!viaProbe && !unlatchedOnce;
     root.classList.add('jj-fx-lite');
     root.classList.add('jj-crt-no-barrel');
     // Probe + measurement agree: a CPU renderer never earns the knobs back.
     if (softGpu) maxTier = 'low';
-    var fns = liteListeners; liteListeners = [];
-    for (var i = 0; i < fns.length; i++) {
-      try { fns[i](); } catch (e) {}
-    }
+    notifyLite(true);
   }
 
-  // Sustained-'low' requirement before the permanent latch. The probe only
-  // shortens it; it never latches on its own.
-  var LITE_LATCH_MS = softGpu ? 1500 : 5000;
-  var LITE_MIN_AGE_MS = softGpu ? 0 : 8000;   // no latch inside the load-jank window
-  var lowTierSince = 0;
+  function unlatchLite() {
+    if (!lite || !liteReversible) return;
+    lite = false;
+    liteReversible = false;
+    unlatchedOnce = true;
+    maxTier = 'high';
+    root.classList.remove('jj-fx-lite');
+    // Gecko / handheld own this class too (crt-shader.js, theme.liquid gate).
+    if (!window.JJ_MOBILE && !(typeof CSS !== 'undefined' && CSS.supports && CSS.supports('-moz-appearance', 'none'))) {
+      root.classList.remove('jj-crt-no-barrel');
+    }
+    notifyLite(false);
+    // The frame rate just proved itself for UNLITE_MS; don't make the
+    // underscene / tear video wait out the 4 s upshift from a stale 'low'.
+    if (tier === 'low') setTier('mid');
+  }
+
+  // Sustained-'low' requirement before the latch; the probe only shortens it.
+  var LITE_LATCH_MS = softGpu ? 2000 : 5000;
+  var LITE_MIN_AGE_MS = softGpu ? 2500 : 8000;   // no latch inside the load-jank window
+  // Recovery (probe-path latch only): this good, this long, and lite was wrong.
+  var UNLITE_FPS = 56, UNLITE_MS = 6000;
+  var lowTierSince = 0, goodSince = 0;
   var startedAt = 0;
 
   var tier = 'high';
@@ -164,7 +193,7 @@
 
   function frame(now) {
     requestAnimationFrame(frame);
-    if (!last) { last = now; startedAt = now; warmupUntil = now + (softGpu ? 0 : 1500); return; }
+    if (!last) { last = now; startedAt = now; warmupUntil = now + 1500; return; }
     var dt = now - last;
     last = now;
     // Ignore absurd gaps (tab was backgrounded / debugger paused).
@@ -176,16 +205,25 @@
 
     var t = now;
 
-    // Lite latch: 'low' must hold for LITE_LATCH_MS, and not inside the
-    // load-jank window. A dip that recovers costs nothing permanent.
+    // Lite latch / recovery. Keyed on the smoothed FRAME RATE, not the tier:
+    // the tier deliberately lags recovery (4 s upshift), so a tier-based
+    // latch fired after a dip had already ended.
     if (!lite) {
-      if (tier === 'low') {
+      if (smoothed < TO_LOW) {
         lowTierSince = lowTierSince || t;
-        if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) latchLite();
+        if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) latchLite(softGpu);
       } else {
         lowTierSince = 0;
       }
+    } else if (liteReversible) {
+      if (smoothed > UNLITE_FPS) {
+        goodSince = goodSince || t;
+        if (t - goodSince > UNLITE_MS) { unlatchLite(); goodSince = 0; lowTierSince = 0; }
+      } else {
+        goodSince = 0;
+      }
     }
+
     // Track how long we've been in each band.
     if (smoothed < TO_LOW) { lowSince = lowSince || t; } else { lowSince = 0; }
     if (smoothed < TO_MID) { midSince = midSince || t; } else { midSince = 0; }
@@ -225,8 +263,8 @@
     },
     onLite: function (fn) {
       if (typeof fn !== 'function') return function () {};
-      if (lite) { try { fn(); } catch (e) {} return function () {}; }
       liteListeners.push(fn);
+      if (lite) { try { fn(true); } catch (e) {} }
       return function () {
         var i = liteListeners.indexOf(fn);
         if (i !== -1) liteListeners.splice(i, 1);
@@ -234,16 +272,17 @@
     }
   };
 
-  if (forcedLite === '1') latchLite();
+  if (forcedLite === '1') latchLite(false);
 
   if (forced) {
     setTier(forced);
-    if (forced === 'low') latchLite();
+    if (forced === 'low') latchLite(false);
     // Pinned — no measurement loop.
   } else {
-    // Probe positive: start at 'low' (cheap, reversible knobs) so the first
-    // seconds are not a slideshow; the frame loop confirms before lite.
-    if (softGpu) setTier('low');
+    // Probe positive: start at 'mid' (cheap, reversible knobs) — not 'low',
+    // which would park the product page's tear video at mount — and let the
+    // frame loop confirm before anything structural happens.
+    if (softGpu) setTier('mid');
     else applyClass(tier);
     requestAnimationFrame(frame);
   }

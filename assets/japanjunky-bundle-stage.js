@@ -399,7 +399,7 @@
   }
   window.addEventListener('resize', resize);
   if (window.JJ_Perf && window.JJ_Perf.onLite) {
-    window.JJ_Perf.onLite(function () { liteScale = 0.5; liteMinDt = 1000 / 30; resize(); });
+    window.JJ_Perf.onLite(function (on) { liteScale = on ? 0.5 : 1; liteMinDt = on ? 1000 / 30 : 0; resize(); });
   }
   if (typeof ResizeObserver !== 'undefined') {
     try { new ResizeObserver(resize).observe(canvas); } catch (e) {}

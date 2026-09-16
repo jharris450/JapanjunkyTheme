@@ -419,10 +419,11 @@
 
     var startTime = performance.now();
     var running = true;
-    // Lite shed (japanjunky-perf.js latch): the fullscreen pass is a per-frame
+    // Lite shed (japanjunky-perf.js): the fullscreen pass is a per-frame
     // full-viewport re-raster on a software compositor (measured -4 fps of a
-    // 21 fps budget). Once shed it never resumes — visibility/resume are
-    // gated on it; crt.css hides the canvas and shows the CSS scanlines.
+    // 21 fps budget). A shed overlay is dead — visibility/resume are gated on
+    // it; crt.css hides the canvas and shows the CSS scanlines. If lite is
+    // undone, init() builds a fresh overlay on the same canvas.
     var shed = false;
 
     function animate() {
@@ -478,22 +479,21 @@
       }
     });
 
-    if (window.JJ_Perf && window.JJ_Perf.onLite) {
-      window.JJ_Perf.onLite(function () {
-        shed = true;
-        running = false;
-        // Free the GPU-side buffers; the canvas is display:none via crt.css.
-        try { renderer.dispose(); } catch (e) {}
-      });
-    }
-
     animate();
 
     window.JJ_CRT_SHADER = {
       uniforms: uniforms,
       renderer: renderer,
       pause: function () { running = false; },
-      resume: function () { if (shed) return; running = true; animate(); }
+      resume: function () { if (shed) return; running = true; animate(); },
+      shed: function () {
+        shed = true;
+        running = false;
+        window.removeEventListener('resize', onResize);
+        // Free the GPU-side buffers; the canvas is display:none via crt.css.
+        try { renderer.dispose(); } catch (e) {}
+      },
+      isShed: function () { return shed; }
     };
   }
 
@@ -525,10 +525,12 @@
     // lands AFTER init is handled inside initShaderOverlay (shed) and by the
     // jj-crt-no-barrel class the governor adds (filter: none in crt.css).
     var lite = !!(window.JJ_Perf && window.JJ_Perf.lite);
+    var barrelInjected = false;
     if (isGecko || window.JJ_MOBILE || lite) {
       document.documentElement.classList.add('jj-crt-no-barrel');
     } else {
       initBarrelDistortion(cfg);
+      barrelInjected = true;
     }
 
     // Add class to <html> (not body) so the SVG filter on the root element
@@ -539,6 +541,24 @@
     document.documentElement.classList.add('jj-crt-shader-active');
 
     if (!lite) initShaderOverlay(cfg);
+
+    // Lite toggles after init: on -> shed the running overlay (the governor
+    // adds jj-crt-no-barrel, crt.css drops the filter + hides the canvas);
+    // off (probe-path latch undone, see perf.js) -> inject the barrel if it
+    // never was, and build a fresh overlay.
+    if (window.JJ_Perf && window.JJ_Perf.onLite) {
+      window.JJ_Perf.onLite(function (on) {
+        if (on) {
+          if (window.JJ_CRT_SHADER && window.JJ_CRT_SHADER.shed) window.JJ_CRT_SHADER.shed();
+        } else {
+          if (!barrelInjected && !isGecko && !window.JJ_MOBILE) {
+            initBarrelDistortion(cfg);
+            barrelInjected = true;
+          }
+          if (!window.JJ_CRT_SHADER || window.JJ_CRT_SHADER.isShed()) initShaderOverlay(cfg);
+        }
+      });
+    }
   }
 
   // ─── Bootstrap ───────────────────────────────────────────────

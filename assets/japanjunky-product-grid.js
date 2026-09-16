@@ -211,7 +211,7 @@
     // WebGL render + drawImage per frame; 15 fps keeps the spin readable.
     var liteMinDt = 0;
     if (window.JJ_Perf && window.JJ_Perf.onLite) {
-      window.JJ_Perf.onLite(function () { liteMinDt = 1000 / 15; });
+      window.JJ_Perf.onLite(function (on) { liteMinDt = on ? 1000 / 15 : 0; });
     }
 
     var observer = new IntersectionObserver(function (entries) {

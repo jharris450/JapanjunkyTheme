@@ -144,7 +144,7 @@
     camera.updateProjectionMatrix();
   }
   if (window.JJ_Perf && window.JJ_Perf.onLite) {
-    window.JJ_Perf.onLite(function () { liteScale = 0.5; liteMinDt = 1000 / 30; if (animating) resize(); });
+    window.JJ_Perf.onLite(function (on) { liteScale = on ? 0.5 : 1; liteMinDt = on ? 1000 / 30 : 0; if (animating) resize(); });
   }
 
   window.addEventListener('resize', resize);

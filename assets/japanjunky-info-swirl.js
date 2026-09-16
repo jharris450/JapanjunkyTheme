@@ -411,7 +411,7 @@
     }
 
     if (window.JJ_Perf && window.JJ_Perf.onLite) {
-      window.JJ_Perf.onLite(function () { lite = true; evalRunning(); });
+      window.JJ_Perf.onLite(function (on) { lite = !!on; evalRunning(); });
     }
 
     document.addEventListener('visibilitychange', evalRunning);
