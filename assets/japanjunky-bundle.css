@@ -76,7 +76,10 @@ html.jj-fx-lite .jj-swirl-lite {
    transparent, inserted after .jj-kyogen-clip so it paints OVER the head
    (same z -1, later sibling) and hides the crown with its own gold edge. */
 .jj-swirl-lite--back { z-index: -2; }
-.jj-swirl-lite--front { z-index: -1; }
+/* Opaque, unlike the canvas's 0.9: at 0.9 the head under the ring bled
+   through at 10%. The 10% scene blend the canvas had is the one visible
+   lite difference on the ring itself. */
+.jj-swirl-lite--front { z-index: -1; opacity: 1; }
 
 /* Lite head: float animation and pupil tracking both stay. Measured on a
    software compositor (2026-09-16): the float itself is free; any CSS mask

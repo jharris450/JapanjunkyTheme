@@ -219,8 +219,10 @@
         clipPaths[1] = buildClipPath(1, W, H);
         // Lite: no CSS clip on the frame at all (any non-rectangular mask —
         // polygon OR border-radius ellipse — cost 8-12 fps on a software
-        // compositor); the bang image above the head does the hiding.
+        // compositor); the bang image above the head + the dilated mask
+        // baked into the head bitmap do the hiding.
         clipFrame.style.clipPath = lite ? '' : clipPaths[0];
+        if (lite) liteBakeHead(W, H);
       }
     }
     fitCanvas();
@@ -464,8 +466,16 @@
                           transparent, inserted AFTER the head so it paints
                           above it — the gold edge itself hides the crown,
                           pixel-exact and in sync with the flicker
-       Three static images, no masks; the float slides the head under a
-       fixed edge exactly as the polygon clip did. */
+       Plus one more piece, because the ring band is thin (~21 px at the
+       spike valleys) and the crown reaches ~35 px past the interior edge:
+       the head bitmap gets the interior polygon baked into its alpha,
+       DILATED by LITE_HEAD_INSET so the head always ends INSIDE the ring
+       band (never over the scene beyond it) and never short of it (no
+       black gap). The opaque ring above hides that baked edge, the float's
+       11 px wobble and the flicker's variant mismatch alike — the visible
+       edge is always the ring's own pixels, as on the GPU path.
+       Four static images, no CSS masks. */
+    var LITE_HEAD_INSET = 1.04;   // interior polygon scale for the head bake (~+6 px at valleys)
     function parsePolygon(css, W, H) {
       var m = /polygon\((.*)\)/.exec(css || '');
       if (!m) return null;
@@ -504,6 +514,89 @@
         if (polyPath(x, v, BUFFER)) { x.fill(); x.stroke(); }
       }
       return c.toDataURL('image/png');
+    }
+
+    /* Head mask bake: every head pixel is pushed through the head's own CSS
+       transform (DOMMatrix, perspective included) into frame space and kept
+       only inside the dilated interior polygon. Needs an untainted bitmap —
+       the theme <img> has no crossorigin, so a CORS copy is loaded (Shopify's
+       CDN sends ACAO *). If that fails the head stays unbaked: the ring
+       still hides the crown wherever the band is thick, and only the valley
+       slivers show. */
+    var liteHeadImg = kyogen.querySelector('.jj-kyogen__img');
+    var liteHeadBitmap = null, liteHeadLoading = false, liteHeadFailed = false;
+    var liteBakeKey = '';
+
+    function liteBakeHead(W, H) {
+      if (!liteHeadImg || !clipFrame || liteHeadFailed) return;
+      if (!liteHeadBitmap) {
+        if (!liteHeadLoading) {
+          liteHeadLoading = true;
+          var cors = new Image();
+          cors.crossOrigin = 'anonymous';
+          cors.onload = function () { liteHeadBitmap = cors; liteHeadLoading = false; fitCanvas(); };
+          cors.onerror = function () { liteHeadFailed = true; liteHeadLoading = false; };
+          cors.src = liteHeadImg.currentSrc || liteHeadImg.src;
+        }
+        return;
+      }
+      var key = W + 'x' + H;
+      if (key === liteBakeKey) return;
+      var pts = parsePolygon(Burst.buildClipPath(bangScreenEdge, 0, W, H, { rotDeg: 7, inset: LITE_HEAD_INSET }), W, H);
+      if (!pts) return;
+      try {
+        // 1. dilated polygon -> alpha mask in frame space (capped resolution)
+        var sc = Math.min(1, 1024 / W);
+        var mw = Math.ceil(W * sc), mh = Math.ceil(H * sc);
+        var mc = document.createElement('canvas');
+        mc.width = mw; mc.height = mh;
+        var mx = mc.getContext('2d');
+        mx.fillStyle = '#fff';
+        mx.beginPath();
+        for (var i = 0; i < pts.length; i++) {
+          if (i) mx.lineTo(pts[i][0] * sc, pts[i][1] * sc); else mx.moveTo(pts[i][0] * sc, pts[i][1] * sc);
+        }
+        mx.closePath();
+        mx.fill();
+        var mask = mx.getImageData(0, 0, mw, mh).data;
+
+        // 2. head layout box in frame space (untransformed) + its transform
+        var hx = kyogen.offsetLeft, hy = kyogen.offsetTop, hw = kyogen.offsetWidth, hh = kyogen.offsetHeight;
+        if (!hw || !hh) return;
+        var prevAnim = kyogen.style.animation;
+        kyogen.style.animation = 'none';          // base transform, float phase 0
+        var M = new DOMMatrix(getComputedStyle(kyogen).transform);
+        kyogen.style.animation = prevAnim;
+        var ox = hx + hw / 2, oy = hy + hh / 2;   // transform-origin: 50% 50%
+
+        // 3. push every head pixel through M, drop the ones outside the mask
+        var nw = liteHeadBitmap.naturalWidth, nh = liteHeadBitmap.naturalHeight;
+        var oc = document.createElement('canvas');
+        oc.width = nw; oc.height = nh;
+        var ocx = oc.getContext('2d');
+        ocx.drawImage(liteHeadBitmap, 0, 0);
+        var od = ocx.getImageData(0, 0, nw, nh);
+        var d = od.data;
+        var m11 = M.m11, m21 = M.m21, m41 = M.m41, m12 = M.m12, m22 = M.m22, m42 = M.m42, m14 = M.m14, m24 = M.m24, m44 = M.m44;
+        for (var py = 0; py < nh; py++) {
+          var ly = (py + 0.5) / nh * hh - hh / 2;
+          for (var px = 0; px < nw; px++) {
+            var idx = (py * nw + px) * 4 + 3;
+            if (d[idx] === 0) continue;
+            var lx = (px + 0.5) / nw * hw - hw / 2;
+            var w = m14 * lx + m24 * ly + m44;
+            var fx = ox + (m11 * lx + m21 * ly + m41) / w;
+            var fy = oy + (m12 * lx + m22 * ly + m42) / w;
+            var mi = Math.round(fx * sc), mj = Math.round(fy * sc);
+            if (mi < 0 || mj < 0 || mi >= mw || mj >= mh || mask[(mj * mw + mi) * 4 + 3] < 128) d[idx] = 0;
+          }
+        }
+        ocx.putImageData(od, 0, 0);
+        liteHeadImg.src = oc.toDataURL('image/png');
+        liteBakeKey = key;
+      } catch (e) {
+        liteHeadFailed = true;
+      }
     }
 
     function liteBuild() {
