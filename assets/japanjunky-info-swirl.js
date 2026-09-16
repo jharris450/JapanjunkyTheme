@@ -216,7 +216,12 @@
         clipFrame.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
         clipPaths[0] = buildClipPath(0, W, H);
         clipPaths[1] = buildClipPath(1, W, H);
-        clipFrame.style.clipPath = clipPaths[0];
+        // Lite: no CSS clip on the frame at all (any non-rectangular mask —
+        // polygon OR border-radius ellipse — cost 8-12 fps on a software
+        // compositor). The same polygon is baked into the head image's
+        // alpha instead (liteBakeHead); a resize re-bakes.
+        clipFrame.style.clipPath = lite ? '' : clipPaths[0];
+        if (lite) liteBakeHead(W, H);
       }
     }
     fitCanvas();
@@ -441,6 +446,123 @@
       return c.toDataURL('image/png');
     }
 
+    /* Head mask bake (lite). The GPU path clips .jj-kyogen-clip with the
+       bang's jagged interior polygon so the head's crown hides behind the
+       gold edge. A CSS mask over an animating, perspective-transformed head
+       re-rasterizes every frame on a software compositor (measured: polygon
+       -8 fps, border-radius ellipse -12 fps, plain rectangle free). So here
+       the polygon is applied ONCE to the head bitmap: every head pixel is
+       pushed through the head's own CSS transform (DOMMatrix, perspective
+       included) into frame space and tested against the rasterized polygon.
+       The float then carries the baked edge with it — at most 11 px of
+       wobble against a black interior at 0.4 opacity. Frame variant 0 only
+       (the two flicker polygons differ by a few px).
+       Needs an untainted bitmap: the theme <img> has no crossorigin, so a
+       CORS copy is loaded (Shopify's CDN sends ACAO *). If that fails, the
+       fallback is a plain rectangular overflow clip on a frame shrunk to the
+       interior (LITE_FALLBACK class in bundle.css) — free, top of head still
+       hidden, square corners. */
+    var liteHeadImg = kyogen.querySelector('.jj-kyogen__img');
+    var liteHeadBitmap = null, liteHeadLoading = false, liteHeadFailed = false;
+    var liteBakeKey = '';
+
+    function parsePolygon(css, W, H) {
+      var m = /polygon\((.*)\)/.exec(css || '');
+      if (!m) return null;
+      var pts = [];
+      m[1].split(',').forEach(function (pair) {
+        var xy = pair.trim().split(/\s+/);
+        if (xy.length < 2) return;
+        pts.push([parseFloat(xy[0]) / 100 * W, parseFloat(xy[1]) / 100 * H]);
+      });
+      return pts.length >= 3 ? pts : null;
+    }
+
+    function liteHeadFallback(W, H) {
+      // Rectangle clip on a frame shrunk to the interior (valleys ~0.585).
+      var Wi = Math.round(W * 0.60), Hi = Math.round(H * 0.60);
+      clipFrame.style.width = Wi + 'px';
+      clipFrame.style.height = Hi + 'px';
+      clipFrame.style.left = 'calc(50% - ' + Math.round(Wi / 2) + 'px)';
+      clipFrame.style.top = 'calc(50% - ' + Math.round(Hi / 2) + 'px)';
+      clipFrame.classList.add('jj-kyogen-clip--rect');
+    }
+
+    function liteBakeHead(W, H) {
+      if (!liteHeadImg || !clipFrame) return;
+      if (liteHeadFailed) { liteHeadFallback(W, H); return; }
+      if (!liteHeadBitmap) {
+        if (!liteHeadLoading) {
+          liteHeadLoading = true;
+          var cors = new Image();
+          cors.crossOrigin = 'anonymous';
+          cors.onload = function () { liteHeadBitmap = cors; liteHeadLoading = false; fitCanvas(); };
+          cors.onerror = function () { liteHeadFailed = true; liteHeadLoading = false; fitCanvas(); };
+          cors.src = liteHeadImg.currentSrc || liteHeadImg.src;
+        }
+        return;
+      }
+      var key = W + 'x' + H;
+      if (key === liteBakeKey) return;
+      var pts = parsePolygon(clipPaths[0], W, H);
+      if (!pts) return;
+      try {
+        // 1. polygon -> alpha mask in frame space (capped resolution)
+        var s = Math.min(1, 1024 / W);
+        var mw = Math.ceil(W * s), mh = Math.ceil(H * s);
+        var mc = document.createElement('canvas');
+        mc.width = mw; mc.height = mh;
+        var mx = mc.getContext('2d');
+        mx.fillStyle = '#fff';
+        mx.beginPath();
+        for (var i = 0; i < pts.length; i++) {
+          if (i) mx.lineTo(pts[i][0] * s, pts[i][1] * s); else mx.moveTo(pts[i][0] * s, pts[i][1] * s);
+        }
+        mx.closePath();
+        mx.fill();
+        var mask = mx.getImageData(0, 0, mw, mh).data;
+
+        // 2. head layout box in frame space (untransformed) + its transform
+        var hx = kyogen.offsetLeft, hy = kyogen.offsetTop, hw = kyogen.offsetWidth, hh = kyogen.offsetHeight;
+        if (!hw || !hh) return;
+        var prevAnim = kyogen.style.animation;
+        kyogen.style.animation = 'none';          // base transform, float phase 0
+        var M = new DOMMatrix(getComputedStyle(kyogen).transform);
+        kyogen.style.animation = prevAnim;
+        var ox = hx + hw / 2, oy = hy + hh / 2;   // transform-origin: 50% 50%
+
+        // 3. push every head pixel through M, drop the ones outside the mask
+        var nw = liteHeadBitmap.naturalWidth, nh = liteHeadBitmap.naturalHeight;
+        var oc = document.createElement('canvas');
+        oc.width = nw; oc.height = nh;
+        var ocx = oc.getContext('2d');
+        ocx.drawImage(liteHeadBitmap, 0, 0);
+        var od = ocx.getImageData(0, 0, nw, nh);
+        var d = od.data;
+        var m11 = M.m11, m21 = M.m21, m41 = M.m41, m12 = M.m12, m22 = M.m22, m42 = M.m42, m14 = M.m14, m24 = M.m24, m44 = M.m44;
+        for (var py = 0; py < nh; py++) {
+          var ly = (py + 0.5) / nh * hh - hh / 2;
+          for (var px = 0; px < nw; px++) {
+            var idx = (py * nw + px) * 4 + 3;
+            if (d[idx] === 0) continue;
+            var lx = (px + 0.5) / nw * hw - hw / 2;
+            var w = m14 * lx + m24 * ly + m44;
+            var fx = ox + (m11 * lx + m21 * ly + m41) / w;
+            var fy = oy + (m12 * lx + m22 * ly + m42) / w;
+            var mi = Math.round(fx * s), mj = Math.round(fy * s);
+            if (mi < 0 || mj < 0 || mi >= mw || mj >= mh || mask[(mj * mw + mi) * 4 + 3] < 128) d[idx] = 0;
+          }
+        }
+        ocx.putImageData(od, 0, 0);
+        liteHeadImg.src = oc.toDataURL('image/png');
+        liteBakeKey = key;
+        clipFrame.classList.remove('jj-kyogen-clip--rect');
+      } catch (e) {
+        liteHeadFailed = true;
+        liteHeadFallback(W, H);
+      }
+    }
+
     function liteBuild() {
       if (liteSrc) return;
       liteSrc = [liteSnapshot(0), liteSnapshot(1)];
@@ -492,16 +614,20 @@
       window.JJ_Perf.onLite(function (on) {
         lite = !!on;
         if (lite) liteBuild();
+        fitCanvas();          // clip frame: interior ellipse (lite) or polygon
         evalRunning();
       });
     }
 
     document.addEventListener('visibilitychange', evalRunning);
     if ('IntersectionObserver' in window) {
+      // Observe the CARD, not the canvas: in lite the canvas is display:none
+      // and reports "not intersecting", which parked the lite loops (pupils
+      // + flicker froze, 2026-09-16). The canvas/img/clip all ride the card.
       new IntersectionObserver(function (entries) {
         inView = entries[0].isIntersecting;
         evalRunning();
-      }).observe(canvas);
+      }).observe(card);
     }
 
     if (reduced) {
