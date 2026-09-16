@@ -188,6 +188,10 @@
       return Burst.buildClipPath(bangScreenEdge, variant, W, H, { rotDeg: 7 });
     }
 
+    // Lite (japanjunky-perf.js): the burst as a plain <img>, same box as the
+    // canvas. info-swirl builds it from two WebGL snapshots (see liteBuild).
+    var liteImg = null;
+
     function fitCanvas() {
       var w = card.offsetWidth, h = card.offsetHeight;
       if (!w || !h) return;
@@ -197,6 +201,12 @@
       canvas.style.height = H + 'px';
       canvas.style.left = 'calc(50% - ' + Math.round(W / 2) + 'px)';
       canvas.style.top = 'calc(50% - ' + Math.round(H / 2) + 'px)';
+      if (liteImg) {
+        liteImg.style.width = canvas.style.width;
+        liteImg.style.height = canvas.style.height;
+        liteImg.style.left = canvas.style.left;
+        liteImg.style.top = canvas.style.top;
+      }
       // kyogen clip frame rides the same rect; its spike polygons are in %
       // of this box but W/H-dependent through the -7deg rotation, so rebuild
       if (clipFrame) {
@@ -402,16 +412,86 @@
       }
     }
 
-    // Lite (japanjunky-perf.js latch): the canvas is display:none via
-    // bundle.css; stop dirtying the buffer + flipping the clip-path too.
+    /* ---------- lite (japanjunky-perf.js) ----------
+       A visible WebGL canvas costs a software compositor ~35 fps here even
+       when nothing is drawn into it (measured 2026-09-16: static burst
+       canvas 60 -> 25 fps, and shrinking it to 900x750 css changed nothing —
+       the cost is the WebGL surface, not its area). So in lite the WebGL
+       canvas is display:none (bundle.css) and the burst is TWO SNAPSHOTS —
+       one per flicker variant, CSS filter baked in — shown through a plain
+       <img>. Swapping src at the original FLICKER cadence (and flipping the
+       kyogen clip-path with it) keeps the flash; the head keeps its pupils
+       on a DOM-only loop. No WebGL work after the two snapshots.
+       QA: window.JJ_SWIRL_LITE = { flicker: false, pupils: false } parks
+       either loop (read live). */
     var lite = false;
+    var liteSrc = null;        // [variantA, variantB] data URLs
+    var liteTimer = 0, liteRaf = 0, liteFrame = 0;
+    var LITE_FILTER = 'saturate(1.15) contrast(1.1) brightness(0.95)'; // = #jj-swirl-canvas filter
+
+    function liteSnapshot(variant) {
+      tunnel.material.map = variant ? stripeTexB : stripeTexA;
+      glowRing.scale.setScalar(1);
+      renderer.render(scene, camera);
+      var c = document.createElement('canvas');
+      c.width = c.height = BUFFER;
+      var x = c.getContext('2d');
+      try { x.filter = LITE_FILTER; } catch (e) {}
+      x.drawImage(canvas, 0, 0);   // same task as the render: buffer still valid
+      return c.toDataURL('image/png');
+    }
+
+    function liteBuild() {
+      if (liteSrc) return;
+      liteSrc = [liteSnapshot(0), liteSnapshot(1)];
+      liteImg = document.createElement('img');
+      liteImg.className = 'jj-swirl-lite';
+      liteImg.alt = '';
+      liteImg.setAttribute('aria-hidden', 'true');
+      liteImg.draggable = false;
+      liteImg.src = liteSrc[0];
+      canvas.parentNode.insertBefore(liteImg, canvas.nextSibling);
+      fitCanvas();
+    }
+
+    function liteFlags() { return window.JJ_SWIRL_LITE || {}; }
+
+    function liteTick() {
+      liteRaf = 0;
+      if (!lite || document.hidden || !inView) return;
+      if (liteFlags().pupils !== false) updatePupils();
+      liteRaf = requestAnimationFrame(liteTick);
+    }
+
+    function liteFlicker() {
+      if (!lite || document.hidden || !inView || liteFlags().flicker === false) return;
+      liteFrame ^= 1;
+      if (liteImg) liteImg.src = liteSrc[liteFrame];
+      if (clipFrame && clipPaths[liteFrame]) clipFrame.style.clipPath = clipPaths[liteFrame];
+    }
+
+    function evalLite() {
+      var on = lite && !document.hidden && inView;
+      if (on) {
+        if (!liteRaf) liteRaf = requestAnimationFrame(liteTick);
+        if (!liteTimer) liteTimer = setInterval(liteFlicker, FLICKER * 1000);
+      } else {
+        if (liteRaf) { cancelAnimationFrame(liteRaf); liteRaf = 0; }
+        if (liteTimer) { clearInterval(liteTimer); liteTimer = 0; }
+      }
+    }
 
     function evalRunning() {
       setRunning(!reduced && !lite && !document.hidden && inView);
+      evalLite();
     }
 
     if (window.JJ_Perf && window.JJ_Perf.onLite) {
-      window.JJ_Perf.onLite(function (on) { lite = !!on; evalRunning(); });
+      window.JJ_Perf.onLite(function (on) {
+        lite = !!on;
+        if (lite) liteBuild();
+        evalRunning();
+      });
     }
 
     document.addEventListener('visibilitychange', evalRunning);

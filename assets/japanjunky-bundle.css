@@ -43,14 +43,40 @@
    software compositor has to re-blend (13 -> 40 fps in Firefox, 26 -> 60 in
    Chrome with the rest shed, 2026-09-16). The card loses its background
    flourish, same as the no-WebGL path; info-swirl.js also parks its loop.
-   The kyogen head goes with it: it lives inside the bang's black interior
-   (odd floating over the bare scene without it), and its perspective +
-   rotate + opacity layer with the 7 s float animation is re-rasterized
-   every frame by a software compositor — Brave with acceleration off went
-   32 -> 60 fps with just the head hidden (2026-09-16). */
-html.jj-fx-lite #jj-swirl-canvas,
-html.jj-fx-lite .jj-kyogen-clip {
+   Superseded the same day by the <img> burst below: only the WebGL
+   canvas itself hides now. */
+html.jj-fx-lite #jj-swirl-canvas {
   display: none !important;
+}
+
+/* Lite burst (2026-09-16, "get the bang back"): a visible WebGL surface
+   costs a software compositor ~35 fps even static, so info-swirl.js
+   snapshots the two flicker frames into this <img> (filter baked in) and
+   swaps src at the FLICKER cadence. Same box/rotation/opacity as the
+   canvas; no filter here (already in the pixels). */
+.jj-swirl-lite {
+  display: none;
+  position: absolute;
+  left: calc(50% - 450px);
+  top: calc(50% - 375px);
+  width: 900px;
+  height: 750px;
+  max-width: none;
+  z-index: -2;
+  opacity: 0.9;
+  pointer-events: none;
+  image-rendering: pixelated;
+  transform: rotate(-7deg);
+}
+html.jj-fx-lite .jj-swirl-lite {
+  display: block;
+}
+
+/* Lite head: back, but its 7 s float is off — the perspective/opacity layer
+   re-rasterizing every frame is what cost 32 -> 60 fps in Brave with
+   acceleration off; static it measured ~2 fps. Pupils still track (DOM). */
+html.jj-fx-lite .jj-kyogen {
+  animation: none;
 }
 
 #jj-swirl-canvas {
