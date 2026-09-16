@@ -28,13 +28,17 @@
  * scanlines instead of the WebGL overlay, no swirl canvas, throttled
  * glyph-field / bundle box / viewer / card spins.
  *
- * Lite is decided on MEASURED evidence only: the smoothed frame rate must
- * sit below the 'low' threshold for a sustained stretch, outside the
- * load-jank window, before it latches (the frame rate, not the tier — the
- * tier lags recovery by design and fired the latch after dips ended). The
- * soft-GPU probe (WebGL refuses `failIfMajorPerformanceCaveat` — Chromium
- * with accel off) only shortens that confirmation and starts the page at
- * 'mid'; it never latches or pins anything by itself.
+ * Two ways in:
+ *   1. soft-GPU probe at load: WebGL refuses `failIfMajorPerformanceCaveat`
+ *      (Chromium with acceleration off). Lite from the first frame, tier
+ *      starts 'mid' and is capped there. Waiting for measurement instead
+ *      meant every accel-off visitor watched barrel + bang appear, stutter
+ *      and vanish ~4 s in.
+ *   2. measured: the smoothed frame rate sits below the 'low' threshold for
+ *      a sustained stretch outside the load-jank window (the frame rate, not
+ *      the tier — the tier lags recovery by design and a tier-keyed latch
+ *      fired after dips had ended). Covers Firefox software compositing,
+ *      where WebGL still passes the caveat check.
  *
  * Brave (2026-09-16): Brave's fingerprint Shields spoof the WebGL renderer
  * string and can fail the caveat probe on a healthy GPU. A first version
@@ -127,8 +131,8 @@
     liteReversible = !!viaProbe && !unlatchedOnce;
     root.classList.add('jj-fx-lite');
     root.classList.add('jj-crt-no-barrel');
-    // Probe + measurement agree: a CPU renderer never earns the knobs back.
-    if (softGpu) maxTier = 'low';
+    // A CPU renderer never earns 'high' (CRT DPR/bloom — shed anyway).
+    if (softGpu) maxTier = 'mid';
     notifyLite(true);
   }
 
@@ -149,9 +153,9 @@
     if (tier === 'low') setTier('mid');
   }
 
-  // Sustained-'low' requirement before the latch; the probe only shortens it.
-  var LITE_LATCH_MS = softGpu ? 2000 : 5000;
-  var LITE_MIN_AGE_MS = softGpu ? 2500 : 8000;   // no latch inside the load-jank window
+  // Sustained-low requirement before the measured latch (path 2).
+  var LITE_LATCH_MS = 5000;
+  var LITE_MIN_AGE_MS = 8000;   // no latch inside the load-jank window
   // Recovery (probe-path latch only): this good, this long, and lite was wrong.
   // DISABLED (2026-09-16): the Brave report turned out to be a real soft GPU
   // (acceleration switched off in brave://settings), and once lite sheds
@@ -287,10 +291,14 @@
     if (forced === 'low') latchLite(false);
     // Pinned — no measurement loop.
   } else {
-    // Probe positive: start at 'mid' (cheap, reversible knobs) — not 'low',
-    // which would park the product page's tear video at mount — and let the
-    // frame loop confirm before anything structural happens.
-    if (softGpu) setTier('mid');
+    // Probe positive: lite from the first frame. Waiting for the frame loop
+    // to confirm meant every accel-off visitor watched the barrel + bang
+    // appear, stutter for ~4 s and vanish (Brave report, 2026-09-16). The
+    // caveat flag is the browser's own "this WebGL is software" verdict —
+    // trust it. Tier starts at 'mid' (not 'low', which would park the
+    // product page's tear video at mount and skip the underscene); the loop
+    // still drops it to 'low' if the shed page cannot hold the rate.
+    if (softGpu) { setTier('mid'); latchLite(true); }
     else applyClass(tier);
     requestAnimationFrame(frame);
   }
