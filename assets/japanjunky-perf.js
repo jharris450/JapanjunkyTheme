@@ -41,12 +41,12 @@
  * keyed on the renderer name and pinned 'low' at load — bang, underscene and
  * the tear video all vanished. Rules that fell out of it:
  *   - never read WEBGL_debug_renderer_info for decisions;
- *   - a latch reached through the probe path is REVERSIBLE: if the frame
- *     rate then holds above UNLITE_FPS for UNLITE_MS, lite is undone once
- *     (consumers receive fn(false) and restore). If it latches again after
- *     that, it is permanent. A latch reached purely by measurement (no probe,
- *     e.g. Firefox on WARP at ~13 fps) is permanent from the start — lite is
- *     what makes its frame rate good, so recovery there would loop.
+ *   - lite is permanent for the page. A reversible variant exists behind
+ *     UNLITE_ENABLED (consumers already accept fn(false) and restore) but is
+ *     off: lite is what makes a soft GPU's frame rate good, so "fps is fine
+ *     now" is not evidence the probe was wrong — see the note at the flag.
+ *   The Brave case itself was a REAL soft GPU: acceleration switched off in
+ *   brave://settings while testing crashes. Lite was correct there.
  *
  * Consumers:
  *   JJ_Perf.tier              -> current tier string
@@ -153,6 +153,14 @@
   var LITE_LATCH_MS = softGpu ? 2000 : 5000;
   var LITE_MIN_AGE_MS = softGpu ? 2500 : 8000;   // no latch inside the load-jank window
   // Recovery (probe-path latch only): this good, this long, and lite was wrong.
+  // DISABLED (2026-09-16): the Brave report turned out to be a real soft GPU
+  // (acceleration switched off in brave://settings), and once lite sheds
+  // enough, a real soft GPU reaches 60 fps too — so recovery undid lite,
+  // the page fell back to ~6 fps, and re-latched: a 10 s barrel/bang flicker
+  // on every load for every accel-off visitor. A probe false-positive has
+  // not been observed in any browser; if one turns up, prefer fixing the
+  // probe over re-enabling this.
+  var UNLITE_ENABLED = false;
   var UNLITE_FPS = 56, UNLITE_MS = 6000;
   var lowTierSince = 0, goodSince = 0;
   var startedAt = 0;
@@ -215,7 +223,7 @@
       } else {
         lowTierSince = 0;
       }
-    } else if (liteReversible) {
+    } else if (liteReversible && UNLITE_ENABLED) {
       if (smoothed > UNLITE_FPS) {
         goodSince = goodSince || t;
         if (t - goodSince > UNLITE_MS) { unlatchLite(); goodSince = 0; lowTierSince = 0; }

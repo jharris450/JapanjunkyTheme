@@ -42,8 +42,14 @@
    upscaled to ~2300x1800 css px behind the card — the single largest layer a
    software compositor has to re-blend (13 -> 40 fps in Firefox, 26 -> 60 in
    Chrome with the rest shed, 2026-09-16). The card loses its background
-   flourish, same as the no-WebGL path; info-swirl.js also parks its loop. */
-html.jj-fx-lite #jj-swirl-canvas {
+   flourish, same as the no-WebGL path; info-swirl.js also parks its loop.
+   The kyogen head goes with it: it lives inside the bang's black interior
+   (odd floating over the bare scene without it), and its perspective +
+   rotate + opacity layer with the 7 s float animation is re-rasterized
+   every frame by a software compositor — Brave with acceleration off went
+   32 -> 60 fps with just the head hidden (2026-09-16). */
+html.jj-fx-lite #jj-swirl-canvas,
+html.jj-fx-lite .jj-kyogen-clip {
   display: none !important;
 }
 
