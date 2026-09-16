@@ -471,10 +471,17 @@
        the head bitmap gets the interior polygon baked into its alpha,
        DILATED by LITE_HEAD_INSET so the head always ends INSIDE the ring
        band (never over the scene beyond it) and never short of it (no
-       black gap). The opaque ring above hides that baked edge, the float's
-       11 px wobble and the flicker's variant mismatch alike — the visible
-       edge is always the ring's own pixels, as on the GPU path.
-       Four static images, no CSS masks. */
+       black gap). The opaque ring above hides that baked edge and the
+       float's 11 px wobble — the visible edge is always the ring's own
+       pixels, as on the GPU path.
+       The bake is PER VARIANT (two head bitmaps, swapped in liteFlicker in
+       the same tick as the ring): the two flicker patterns are offset half
+       a spike, so where one has a valley the other has a tip reaching ~23%
+       further out — far more than the band or the dilation can cover. A
+       head baked to variant 0 alone left a black notch under every
+       variant-1 tip (2026-09-16, "head cut off"). Swapping the head with
+       the ring is exactly what the GPU path does with its clip polygon.
+       Five static images, no CSS masks. */
     var LITE_HEAD_INSET = 1.04;   // interior polygon scale for the head bake (~+6 px at valleys)
     function parsePolygon(css, W, H) {
       var m = /polygon\((.*)\)/.exec(css || '');
@@ -525,6 +532,7 @@
        slivers show. */
     var liteHeadImg = kyogen.querySelector('.jj-kyogen__img');
     var liteHeadBitmap = null, liteHeadLoading = false, liteHeadFailed = false;
+    var liteHeadSrc = null;    // [variantA, variantB] baked head data URLs
     var liteBakeKey = '';
 
     function liteBakeHead(W, H) {
@@ -542,25 +550,8 @@
       }
       var key = W + 'x' + H;
       if (key === liteBakeKey) return;
-      var pts = parsePolygon(Burst.buildClipPath(bangScreenEdge, 0, W, H, { rotDeg: 7, inset: LITE_HEAD_INSET }), W, H);
-      if (!pts) return;
       try {
-        // 1. dilated polygon -> alpha mask in frame space (capped resolution)
-        var sc = Math.min(1, 1024 / W);
-        var mw = Math.ceil(W * sc), mh = Math.ceil(H * sc);
-        var mc = document.createElement('canvas');
-        mc.width = mw; mc.height = mh;
-        var mx = mc.getContext('2d');
-        mx.fillStyle = '#fff';
-        mx.beginPath();
-        for (var i = 0; i < pts.length; i++) {
-          if (i) mx.lineTo(pts[i][0] * sc, pts[i][1] * sc); else mx.moveTo(pts[i][0] * sc, pts[i][1] * sc);
-        }
-        mx.closePath();
-        mx.fill();
-        var mask = mx.getImageData(0, 0, mw, mh).data;
-
-        // 2. head layout box in frame space (untransformed) + its transform
+        // 1. head layout box in frame space (untransformed) + its transform
         var hx = kyogen.offsetLeft, hy = kyogen.offsetTop, hw = kyogen.offsetWidth, hh = kyogen.offsetHeight;
         if (!hw || !hh) return;
         var prevAnim = kyogen.style.animation;
@@ -568,31 +559,59 @@
         var M = new DOMMatrix(getComputedStyle(kyogen).transform);
         kyogen.style.animation = prevAnim;
         var ox = hx + hw / 2, oy = hy + hh / 2;   // transform-origin: 50% 50%
+        var m11 = M.m11, m21 = M.m21, m41 = M.m41, m12 = M.m12, m22 = M.m22, m42 = M.m42, m14 = M.m14, m24 = M.m24, m44 = M.m44;
 
-        // 3. push every head pixel through M, drop the ones outside the mask
+        // 2. source head pixels (untainted CORS copy)
         var nw = liteHeadBitmap.naturalWidth, nh = liteHeadBitmap.naturalHeight;
         var oc = document.createElement('canvas');
         oc.width = nw; oc.height = nh;
         var ocx = oc.getContext('2d');
         ocx.drawImage(liteHeadBitmap, 0, 0);
-        var od = ocx.getImageData(0, 0, nw, nh);
-        var d = od.data;
-        var m11 = M.m11, m21 = M.m21, m41 = M.m41, m12 = M.m12, m22 = M.m22, m42 = M.m42, m14 = M.m14, m24 = M.m24, m44 = M.m44;
-        for (var py = 0; py < nh; py++) {
-          var ly = (py + 0.5) / nh * hh - hh / 2;
-          for (var px = 0; px < nw; px++) {
-            var idx = (py * nw + px) * 4 + 3;
-            if (d[idx] === 0) continue;
-            var lx = (px + 0.5) / nw * hw - hw / 2;
-            var w = m14 * lx + m24 * ly + m44;
-            var fx = ox + (m11 * lx + m21 * ly + m41) / w;
-            var fy = oy + (m12 * lx + m22 * ly + m42) / w;
-            var mi = Math.round(fx * sc), mj = Math.round(fy * sc);
-            if (mi < 0 || mj < 0 || mi >= mw || mj >= mh || mask[(mj * mw + mi) * 4 + 3] < 128) d[idx] = 0;
+        var src = ocx.getImageData(0, 0, nw, nh).data;
+
+        var sc = Math.min(1, 1024 / W);
+        var mw = Math.ceil(W * sc), mh = Math.ceil(H * sc);
+        var mc = document.createElement('canvas');
+        mc.width = mw; mc.height = mh;
+        var mx = mc.getContext('2d');
+        var srcs = [];
+        for (var variant = 0; variant < 2; variant++) {
+          // 3. this variant's dilated interior polygon -> alpha mask in
+          //    frame space (capped resolution)
+          var pts = parsePolygon(Burst.buildClipPath(bangScreenEdge, variant, W, H, { rotDeg: 7, inset: LITE_HEAD_INSET }), W, H);
+          if (!pts) return;
+          mx.clearRect(0, 0, mw, mh);
+          mx.fillStyle = '#fff';
+          mx.beginPath();
+          for (var i = 0; i < pts.length; i++) {
+            if (i) mx.lineTo(pts[i][0] * sc, pts[i][1] * sc); else mx.moveTo(pts[i][0] * sc, pts[i][1] * sc);
           }
+          mx.closePath();
+          mx.fill();
+          var mask = mx.getImageData(0, 0, mw, mh).data;
+
+          // 4. push every head pixel through M, drop the ones outside the mask
+          var od = ocx.createImageData(nw, nh);
+          var d = od.data;
+          d.set(src);
+          for (var py = 0; py < nh; py++) {
+            var ly = (py + 0.5) / nh * hh - hh / 2;
+            for (var px = 0; px < nw; px++) {
+              var idx = (py * nw + px) * 4 + 3;
+              if (d[idx] === 0) continue;
+              var lx = (px + 0.5) / nw * hw - hw / 2;
+              var w = m14 * lx + m24 * ly + m44;
+              var fx = ox + (m11 * lx + m21 * ly + m41) / w;
+              var fy = oy + (m12 * lx + m22 * ly + m42) / w;
+              var mi = Math.round(fx * sc), mj = Math.round(fy * sc);
+              if (mi < 0 || mj < 0 || mi >= mw || mj >= mh || mask[(mj * mw + mi) * 4 + 3] < 128) d[idx] = 0;
+            }
+          }
+          ocx.putImageData(od, 0, 0);
+          srcs.push(oc.toDataURL('image/png'));
         }
-        ocx.putImageData(od, 0, 0);
-        liteHeadImg.src = oc.toDataURL('image/png');
+        liteHeadSrc = srcs;
+        liteHeadImg.src = srcs[liteFrame];
         liteBakeKey = key;
       } catch (e) {
         liteHeadFailed = true;
@@ -635,9 +654,11 @@
       if (!lite || document.hidden || !inView || liteFlags().flicker === false) return;
       liteFrame ^= 1;
       if (liteImg) liteImg.src = liteSrc[liteFrame];
-      // No clip-path flip in lite: bundle.css swaps the polygon mask for a
-      // border-radius ellipse there (the polygon mask alone cost ~8 fps on a
-      // software compositor; the head's float is free once it is gone).
+      // The head follows the ring: its per-variant bake (liteBakeHead) is
+      // the lite stand-in for the GPU path's clip-path flip. No CSS mask —
+      // any mask on the floating head cost 8-12 fps on a software
+      // compositor; a src swap on a 120x173 sprite is free.
+      if (liteHeadSrc && liteHeadImg) liteHeadImg.src = liteHeadSrc[liteFrame];
     }
 
     function evalLite() {
