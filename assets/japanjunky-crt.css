@@ -442,6 +442,19 @@ html.jj-crt-no-barrel #jj-crt-content {
   filter: none;
 }
 
+/* Lite (html.jj-fx-lite, latched by japanjunky-perf.js: soft-GPU probe or a
+   measured 'low' tier — hardware acceleration off, Firefox software
+   compositing). The WebGL overlay canvas is off; the CSS scanline + vignette
+   layer (::after) comes back as the CRT signature. The grille (::before) and
+   the multiply damper wires (.jj-body::before) stay off: under software
+   compositing the wires alone measured 36 -> 27 fps (2026-09-16). */
+html.jj-fx-lite #jj-crt-shader-canvas {
+  display: none !important;
+}
+html.jj-fx-lite.jj-crt-shader-active .jj-crt-overlay::after {
+  display: block !important;
+}
+
 @media (prefers-contrast: more) {
   html.jj-crt-shader-active #jj-crt-content {
     filter: none;

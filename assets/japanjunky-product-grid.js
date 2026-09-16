@@ -207,6 +207,12 @@
     var rafId = null;
     var lastTime = 0;
     var clock = 0;
+    // Lite (japanjunky-perf.js latch): each visible card is a software
+    // WebGL render + drawImage per frame; 15 fps keeps the spin readable.
+    var liteMinDt = 0;
+    if (window.JJ_Perf && window.JJ_Perf.onLite) {
+      window.JJ_Perf.onLite(function () { liteMinDt = 1000 / 15; });
+    }
 
     var observer = new IntersectionObserver(function (entries) {
       for (var i = 0; i < entries.length; i++) {
@@ -238,6 +244,7 @@
 
     function tick(now) {
       rafId = requestAnimationFrame(tick);
+      if (liteMinDt && now - lastTime < liteMinDt) return;
       var dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
       clock += dt;

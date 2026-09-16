@@ -419,6 +419,11 @@
 
     var startTime = performance.now();
     var running = true;
+    // Lite shed (japanjunky-perf.js latch): the fullscreen pass is a per-frame
+    // full-viewport re-raster on a software compositor (measured -4 fps of a
+    // 21 fps budget). Once shed it never resumes — visibility/resume are
+    // gated on it; crt.css hides the canvas and shows the CSS scanlines.
+    var shed = false;
 
     function animate() {
       if (!running) return;
@@ -466,12 +471,21 @@
     document.addEventListener('visibilitychange', function () {
       if (document.hidden) {
         running = false;
-      } else {
+      } else if (!shed) {
         running = true;
         startTime = performance.now() - uniforms.uTime.value * 1000.0;
         animate();
       }
     });
+
+    if (window.JJ_Perf && window.JJ_Perf.onLite) {
+      window.JJ_Perf.onLite(function () {
+        shed = true;
+        running = false;
+        // Free the GPU-side buffers; the canvas is display:none via crt.css.
+        try { renderer.dispose(); } catch (e) {}
+      });
+    }
 
     animate();
 
@@ -479,7 +493,7 @@
       uniforms: uniforms,
       renderer: renderer,
       pause: function () { running = false; },
-      resume: function () { running = true; animate(); }
+      resume: function () { if (shed) return; running = true; animate(); }
     };
   }
 
@@ -504,7 +518,14 @@
 
     // Handheld mode also skips the barrel (mobile GPUs + the whole-viewport
     // SVG filter are a bad mix; the gate script pre-adds jj-crt-no-barrel).
-    if (isGecko || window.JJ_MOBILE) {
+    // Lite (japanjunky-perf.js: soft-GPU probe or measured 'low', latched):
+    // no barrel AND no WebGL overlay — on a software compositor the barrel
+    // alone cost 6.5 -> 17 fps and the overlay 17 -> 21 (2026-09-16). The CSS
+    // scanline layer takes over (crt.css, html.jj-fx-lite). A latch that
+    // lands AFTER init is handled inside initShaderOverlay (shed) and by the
+    // jj-crt-no-barrel class the governor adds (filter: none in crt.css).
+    var lite = !!(window.JJ_Perf && window.JJ_Perf.lite);
+    if (isGecko || window.JJ_MOBILE || lite) {
       document.documentElement.classList.add('jj-crt-no-barrel');
     } else {
       initBarrelDistortion(cfg);
@@ -513,9 +534,11 @@
     // Add class to <html> (not body) so the SVG filter on the root element
     // doesn't break position:fixed descendants (root element is exempt from
     // creating a new containing block per CSS Filter Effects spec).
+    // Kept in lite too: it also pins #jj-crt-content as the fixed viewport
+    // wrapper the layout expects.
     document.documentElement.classList.add('jj-crt-shader-active');
 
-    initShaderOverlay(cfg);
+    if (!lite) initShaderOverlay(cfg);
   }
 
   // ─── Bootstrap ───────────────────────────────────────────────

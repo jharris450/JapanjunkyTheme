@@ -29,6 +29,10 @@
 
   var DPR = Math.min(window.devicePixelRatio || 1, 2);
   var W = 0, H = 0;
+  // Lite (japanjunky-perf.js latch): every clearRect+redraw dirties a
+  // fullscreen layer the software compositor must re-raster. 12 fps and
+  // DPR 1 cut that ~5-20x; the drift is slow enough that it still reads.
+  var MIN_DT = 0;
   function resize() {
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = Math.floor(W * DPR);
@@ -69,6 +73,7 @@
   function frame(now) {
     if (!running) return;
     requestAnimationFrame(frame);
+    if (MIN_DT && now - last < MIN_DT) return;
     var dt = (now - last) / 1000; last = now;
     if (dt > 0.05) dt = 0.05;
 
@@ -111,6 +116,13 @@
   }
 
   if (!reduce) requestAnimationFrame(frame);
+
+  if (window.JJ_Perf && window.JJ_Perf.onLite) {
+    window.JJ_Perf.onLite(function () {
+      MIN_DT = 1000 / 12;
+      if (DPR !== 1) { DPR = 1; resize(); }
+    });
+  }
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { running = false; }

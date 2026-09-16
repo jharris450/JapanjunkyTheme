@@ -402,8 +402,16 @@
       }
     }
 
+    // Lite (japanjunky-perf.js latch): the canvas is display:none via
+    // bundle.css; stop dirtying the buffer + flipping the clip-path too.
+    var lite = false;
+
     function evalRunning() {
-      setRunning(!reduced && !document.hidden && inView);
+      setRunning(!reduced && !lite && !document.hidden && inView);
+    }
+
+    if (window.JJ_Perf && window.JJ_Perf.onLite) {
+      window.JJ_Perf.onLite(function () { lite = true; evalRunning(); });
     }
 
     document.addEventListener('visibilitychange', evalRunning);

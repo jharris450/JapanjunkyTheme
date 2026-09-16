@@ -31,6 +31,10 @@
   var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
   renderer.setPixelRatio(1); // Keep pixelated
   renderer.setClearColor(0x000000, 0); // Transparent
+  // Lite (japanjunky-perf.js latch): half-res buffer (CSS size unchanged)
+  // + 30 fps — the viewer is 550x550 css (1375 px at zoom 2.5) of software
+  // WebGL whenever a product is open.
+  var liteScale = 1, liteMinDt = 0;
 
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
@@ -135,9 +139,12 @@
     var w = rect.width;
     var h = rect.height;
     if (w === 0 || h === 0) return;
-    renderer.setSize(w, h, false);
+    renderer.setSize(Math.round(w * liteScale), Math.round(h * liteScale), false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+  }
+  if (window.JJ_Perf && window.JJ_Perf.onLite) {
+    window.JJ_Perf.onLite(function () { liteScale = 0.5; liteMinDt = 1000 / 30; if (animating) resize(); });
   }
 
   window.addEventListener('resize', resize);
@@ -583,6 +590,7 @@
   function tick(now) {
     if (!animating) return;
     rafId = requestAnimationFrame(tick);
+    if (liteMinDt && now - lastTime < liteMinDt) return;
 
     var dt = Math.min((now - lastTime) / 1000, 0.1); // cap dt
     lastTime = now;

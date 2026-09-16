@@ -27,6 +27,10 @@
   // ─── Renderer / scene / camera ───────────────────────────────
   var renderer, scene, camera, rafId = null, animating = false, lastTime = 0;
   var webglOK = true;
+  // Lite (japanjunky-perf.js latch): the box canvas is ~1375x1375 px at
+  // zoom 2.5 — 1.9M software-WebGL pixels a frame. Half-res buffer (CSS size
+  // unchanged, image-rendering: pixelated already) + 30 fps.
+  var liteScale = 1, liteMinDt = 0;
   try {
     renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
     renderer.setPixelRatio(1);
@@ -389,11 +393,14 @@
   function resize() {
     var r = canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    renderer.setSize(r.width, r.height, false);
+    renderer.setSize(Math.round(r.width * liteScale), Math.round(r.height * liteScale), false);
     camera.aspect = r.width / r.height;
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
+  if (window.JJ_Perf && window.JJ_Perf.onLite) {
+    window.JJ_Perf.onLite(function () { liteScale = 0.5; liteMinDt = 1000 / 30; resize(); });
+  }
   if (typeof ResizeObserver !== 'undefined') {
     try { new ResizeObserver(resize).observe(canvas); } catch (e) {}
   }
@@ -401,6 +408,7 @@
   function tick(now) {
     if (!animating) return;
     rafId = requestAnimationFrame(tick);
+    if (liteMinDt && now - lastTime < liteMinDt) return;
     lastTime = now;
     updateBox(now);
     renderer.render(scene, camera);

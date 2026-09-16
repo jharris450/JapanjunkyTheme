@@ -38,6 +38,15 @@
    Both centered-ish on the card; the head sits shifted LEFT of card
    center so it never hides behind the box canvas that overlaps the
    card's top-right corner. */
+/* Lite (html.jj-fx-lite, japanjunky-perf.js): the burst is a 512px buffer
+   upscaled to ~2300x1800 css px behind the card — the single largest layer a
+   software compositor has to re-blend (13 -> 40 fps in Firefox, 26 -> 60 in
+   Chrome with the rest shed, 2026-09-16). The card loses its background
+   flourish, same as the no-WebGL path; info-swirl.js also parks its loop. */
+html.jj-fx-lite #jj-swirl-canvas {
+  display: none !important;
+}
+
 #jj-swirl-canvas {
   position: absolute;
   /* fallback size; japanjunky-info-swirl.js re-fits these to the live card
