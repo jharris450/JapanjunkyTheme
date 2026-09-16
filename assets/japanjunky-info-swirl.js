@@ -467,7 +467,9 @@
       if (!lite || document.hidden || !inView || liteFlags().flicker === false) return;
       liteFrame ^= 1;
       if (liteImg) liteImg.src = liteSrc[liteFrame];
-      if (clipFrame && clipPaths[liteFrame]) clipFrame.style.clipPath = clipPaths[liteFrame];
+      // No clip-path flip in lite: bundle.css swaps the polygon mask for a
+      // border-radius ellipse there (the polygon mask alone cost ~8 fps on a
+      // software compositor; the head's float is free once it is gone).
     }
 
     function evalLite() {

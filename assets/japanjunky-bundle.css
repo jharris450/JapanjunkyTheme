@@ -72,11 +72,16 @@ html.jj-fx-lite .jj-swirl-lite {
   display: block;
 }
 
-/* Lite head: back, but its 7 s float is off — the perspective/opacity layer
-   re-rasterizing every frame is what cost 32 -> 60 fps in Brave with
-   acceleration off; static it measured ~2 fps. Pupils still track (DOM). */
-html.jj-fx-lite .jj-kyogen {
-  animation: none;
+/* Lite head: float animation and pupil tracking both stay. Measured on a
+   software compositor (2026-09-16): the float itself is free; what cost
+   ~8 fps was the POLYGON clip-path mask on this frame (re-applied whenever
+   the head or the flicker moves). An overflow + border-radius ellipse clips
+   as cheaply as no clip at all, so lite uses that. !important beats the
+   inline clip-path info-swirl.js writes for the GPU path. */
+html.jj-fx-lite .jj-kyogen-clip {
+  clip-path: none !important;
+  overflow: hidden;
+  border-radius: 50%;
 }
 
 #jj-swirl-canvas {
