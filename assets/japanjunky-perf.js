@@ -30,14 +30,20 @@
  *
  * Lite LATCHES — once on, on for the page's life. The structural changes
  * (barrel on/off, overlay swap) would be jarring if the governor's up/down
- * hysteresis toggled them every few seconds. Two triggers:
- *   1. soft GPU probe at load: WebGL refuses `failIfMajorPerformanceCaveat`
- *      (Chromium with accel off) or names a software renderer (Firefox keeps
- *      the caveat flag green on WARP — "Microsoft Basic Render Driver").
- *      Instant, and it also caps the tier at 'low' so the smooth knobs never
- *      climb back onto a CPU renderer.
- *   2. the measured tier hits 'low' the first time (covers Firefox software
- *      compositing when WebGL itself is still hardware).
+ * hysteresis toggled them every few seconds. Because it is permanent it is
+ * only ever latched on MEASURED evidence: the tier must sit at 'low' for a
+ * sustained stretch (LITE_LATCH_MS) — a load-time dip must not cost the page
+ * its bang/overlay for good. The soft-GPU probe (WebGL refuses
+ * `failIfMajorPerformanceCaveat` — Chromium with accel off) only shortens
+ * the confirmation: no warm-up and a short sustain, so the slideshow lasts
+ * ~1.5 s instead of ~8. A probe that the frame rate does not corroborate
+ * does nothing. (Brave regression, 2026-09-16: a renderer-name heuristic —
+ * "SwiftShader"/"Basic Render Driver" — pinned the tier at 'low' on a
+ * healthy GPU because Brave's fingerprint farbling spoofs the WebGL renderer
+ * string. Never trust the renderer string; Firefox on WARP is caught by the
+ * measured latch anyway — it runs ~13 fps.) Once lite is latched WITH a
+ * positive probe, the tier is capped at 'low': a CPU renderer never earns
+ * the smooth knobs back.
  *
  * Consumers:
  *   JJ_Perf.tier              -> current tier string
@@ -75,9 +81,10 @@
 
   // ─── Soft-GPU probe ──────────────────────────────────────────────
   // A context that fails with failIfMajorPerformanceCaveat is one the browser
-  // itself calls slow (software rasterizer). Firefox does not flag WARP, so
-  // also read the unmasked renderer string. Any thrown error = not soft (an
-  // absent WebGL is a different failure the modules already handle).
+  // itself calls slow (software rasterizer). Only that signal is used — the
+  // unmasked renderer string is farbled by Brave (see header). Any thrown
+  // error = not soft (an absent WebGL is a different failure the modules
+  // already handle).
   function release(gl) {
     try { var lc = gl.getExtension('WEBGL_lose_context'); if (lc) lc.loseContext(); } catch (e) {}
   }
@@ -86,17 +93,10 @@
       var c = document.createElement('canvas');
       var strict = c.getContext('webgl', { failIfMajorPerformanceCaveat: true })
         || c.getContext('experimental-webgl', { failIfMajorPerformanceCaveat: true });
-      if (!strict) {
-        var plain = document.createElement('canvas').getContext('webgl');
-        if (plain) { release(plain); return true; }   // WebGL exists, but only software
-        return false;                                  // no WebGL at all
-      }
-      var soft = false;
-      var ext = strict.getExtension('WEBGL_debug_renderer_info');
-      var name = ext ? strict.getParameter(ext.UNMASKED_RENDERER_WEBGL) : strict.getParameter(strict.RENDERER);
-      if (/SwiftShader|Basic Render Driver|llvmpipe|softpipe|Software(Renderer| Adapter)?\b/i.test(String(name || ''))) soft = true;
-      release(strict);
-      return soft;
+      if (strict) { release(strict); return false; }
+      var plain = document.createElement('canvas').getContext('webgl');
+      if (plain) { release(plain); return true; }     // WebGL exists, but only software
+      return false;                                    // no WebGL at all
     } catch (e) { return false; }
   }
 
@@ -106,20 +106,29 @@
   // ─── Lite latch ──────────────────────────────────────────────────
   var lite = false;
   var liteListeners = [];
+  var maxTier = 'high';
 
   function latchLite() {
     if (lite || forcedLite === '0') return;
     lite = true;
     root.classList.add('jj-fx-lite');
     root.classList.add('jj-crt-no-barrel');
+    // Probe + measurement agree: a CPU renderer never earns the knobs back.
+    if (softGpu) maxTier = 'low';
     var fns = liteListeners; liteListeners = [];
     for (var i = 0; i < fns.length; i++) {
       try { fns[i](); } catch (e) {}
     }
   }
 
+  // Sustained-'low' requirement before the permanent latch. The probe only
+  // shortens it; it never latches on its own.
+  var LITE_LATCH_MS = softGpu ? 1500 : 5000;
+  var LITE_MIN_AGE_MS = softGpu ? 0 : 8000;   // no latch inside the load-jank window
+  var lowTierSince = 0;
+  var startedAt = 0;
+
   var tier = 'high';
-  var maxTier = softGpu ? 'low' : 'high';     // a CPU renderer never earns 'high'
   var listeners = [];
 
   function applyClass(t) {
@@ -130,7 +139,6 @@
 
   function setTier(t) {
     if (TIERS.indexOf(t) > TIERS.indexOf(maxTier)) t = maxTier;
-    if (t === 'low') latchLite();
     if (t === tier) return;
     tier = t;
     applyClass(t);
@@ -156,7 +164,7 @@
 
   function frame(now) {
     requestAnimationFrame(frame);
-    if (!last) { last = now; warmupUntil = now + 1500; return; }
+    if (!last) { last = now; startedAt = now; warmupUntil = now + (softGpu ? 0 : 1500); return; }
     var dt = now - last;
     last = now;
     // Ignore absurd gaps (tab was backgrounded / debugger paused).
@@ -167,6 +175,17 @@
     if (now < warmupUntil) return;
 
     var t = now;
+
+    // Lite latch: 'low' must hold for LITE_LATCH_MS, and not inside the
+    // load-jank window. A dip that recovers costs nothing permanent.
+    if (!lite) {
+      if (tier === 'low') {
+        lowTierSince = lowTierSince || t;
+        if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) latchLite();
+      } else {
+        lowTierSince = 0;
+      }
+    }
     // Track how long we've been in each band.
     if (smoothed < TO_LOW) { lowSince = lowSince || t; } else { lowSince = 0; }
     if (smoothed < TO_MID) { midSince = midSince || t; } else { midSince = 0; }
@@ -219,9 +238,12 @@
 
   if (forced) {
     setTier(forced);
+    if (forced === 'low') latchLite();
     // Pinned — no measurement loop.
   } else {
-    if (softGpu) setTier('low');          // start shed; latches lite at once
+    // Probe positive: start at 'low' (cheap, reversible knobs) so the first
+    // seconds are not a slideshow; the frame loop confirms before lite.
+    if (softGpu) setTier('low');
     else applyClass(tier);
     requestAnimationFrame(frame);
   }
