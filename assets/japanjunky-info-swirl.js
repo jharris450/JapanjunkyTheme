@@ -191,6 +191,7 @@
     // Lite (japanjunky-perf.js): the burst as a plain <img>, same box as the
     // canvas. info-swirl builds it from two WebGL snapshots (see liteBuild).
     var liteImg = null, liteBack = null;
+    var liteBackSrc = null;    // [variantA, variantB] black-interior data URLs
 
     function fitCanvas() {
       var w = card.offsetWidth, h = card.offsetHeight;
@@ -459,8 +460,8 @@
        polygon. Any CSS mask over the floating head costs a software
        compositor 8-12 fps, and baking the mask into the head bitmap left a
        visible cut that moved with the float. So lite OCCLUDES instead:
-         z -2  liteBack : black interior (union of both flicker polygons,
-                          dilated) — the black the head sits on
+         z -2  liteBack : black interior, THIS variant's polygon, dilated —
+                          the black the head sits on (swapped with the ring)
          z -1  head     : unmasked, floats freely
          z -1+ liteImg  : the bang snapshot with its interior punched
                           transparent, inserted AFTER the head so it paints
@@ -507,9 +508,16 @@
       return true;
     }
 
-    // Black interior backing: both variants filled + a fat stroke so the
-    // flicker's slightly different holes never reveal the scene behind.
-    function liteBackSnapshot() {
+    // Black interior backing, PER VARIANT: this variant's interior polygon
+    // filled + a fat stroke (covers the AA seam against the ring's punched
+    // hole; hidden under the opaque band, ~20 buffer px thick at the
+    // valleys). Swapped with the ring in liteFlicker. One static UNION of
+    // both variants (2026-09-16) bled past the ring: the variants are
+    // offset half a spike, so each one's long tips reach ~5% of the
+    // half-frame (~60 css px) beyond the OTHER variant's outer edge — black
+    // wedges outside the bang on every flicker ("black background doesn't
+    // move with the outline").
+    function liteBackSnapshot(variant) {
       var c = document.createElement('canvas');
       c.width = c.height = BUFFER;
       var x = c.getContext('2d');
@@ -517,9 +525,7 @@
       x.strokeStyle = '#000';
       x.lineWidth = 12;
       x.lineJoin = 'round';
-      for (var v = 0; v < 2; v++) {
-        if (polyPath(x, v, BUFFER)) { x.fill(); x.stroke(); }
-      }
+      if (polyPath(x, variant, BUFFER)) { x.fill(); x.stroke(); }
       return c.toDataURL('image/png');
     }
 
@@ -630,7 +636,8 @@
         im.src = src;
         return im;
       }
-      liteBack = mkImg('jj-swirl-lite--back', liteBackSnapshot());
+      liteBackSrc = [liteBackSnapshot(0), liteBackSnapshot(1)];
+      liteBack = mkImg('jj-swirl-lite--back', liteBackSrc[0]);
       canvas.parentNode.insertBefore(liteBack, canvas.nextSibling);          // below the head
       liteImg = mkImg('jj-swirl-lite--front', liteSrc[0]);
       if (clipFrame && clipFrame.parentNode === canvas.parentNode) {
@@ -654,6 +661,8 @@
       if (!lite || document.hidden || !inView || liteFlags().flicker === false) return;
       liteFrame ^= 1;
       if (liteImg) liteImg.src = liteSrc[liteFrame];
+      // The black interior follows the ring too (per-variant, see liteBackSnapshot).
+      if (liteBack && liteBackSrc) liteBack.src = liteBackSrc[liteFrame];
       // The head follows the ring: its per-variant bake (liteBakeHead) is
       // the lite stand-in for the GPU path's clip-path flip. No CSS mask —
       // any mask on the floating head cost 8-12 fps on a software
