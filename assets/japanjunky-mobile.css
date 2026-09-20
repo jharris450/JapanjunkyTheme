@@ -610,3 +610,124 @@ html.jj-mobile .jj-pdp-info {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* --- Product page: text-size floor + caption plates (2026-09-19) ---
+   Spec: docs/superpowers/specs/2026-09-19-mobile-pdp-legibility-design.md
+   The spec sheet ships desktop sizes (11-16px, read under zoom 2.5 there);
+   at zoom 1 on a phone they are unreadable, and the torn video slash spans
+   the whole ~372px pane, so every line sits on the ring lip, the playing
+   video or the 35% explorer background. Two things, both CSS-only and
+   scoped to html.jj-mobile .jj-pdp-*:
+     1. floor every pdp size (15-22px, matching the catalog/hero floors);
+     2. a fit-content caption plate behind each text run so it reads over
+        the video WITHOUT touching the tear (opacity 1 over a bg, always —
+        merchant rule 2026-09-15) or the background. Plates hug the text,
+        so the video stays visible everywhere the copy is not.
+   Buttons + thumbs already carry a rgba(0,0,0,.6) fill; they only grow. */
+html.jj-mobile .jj-pdp-info {
+  gap: 4px;
+}
+html.jj-mobile .jj-pdp-artist,
+html.jj-mobile .jj-pdp-jp-name,
+html.jj-mobile .jj-pdp-title,
+html.jj-mobile .jj-pdp-jp-title,
+html.jj-mobile .jj-pdp-meta .jj-meta-row,
+html.jj-mobile .jj-pdp-price {
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  margin: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+  overflow-wrap: anywhere;
+}
+/* Keep the artist plate clear of the corner watch star (36px + inset). */
+html.jj-mobile .jj-pdp-artist {
+  font-size: 22px;
+  line-height: 1.3;
+  max-width: calc(100% - 48px);
+}
+html.jj-mobile .jj-pdp-jp-name,
+html.jj-mobile .jj-pdp-jp-title {
+  font-size: 15px;
+  line-height: 1.4;
+  color: #aaa; /* was #888: the plate is darker than the bare pane */
+}
+/* The 25% underline would sit inside the plate — the plate gap is the rule. */
+html.jj-mobile .jj-pdp-jp-name {
+  background-image: none;
+  margin-bottom: 6px;
+}
+html.jj-mobile .jj-pdp-title {
+  font-size: 19px;
+  line-height: 1.3;
+}
+html.jj-mobile .jj-pdp-jp-title {
+  margin-bottom: 6px;
+}
+html.jj-mobile .jj-pdp-meta {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+html.jj-mobile .jj-pdp-meta .jj-meta-row {
+  padding: 2px 8px;
+  margin-bottom: 3px;
+}
+html.jj-mobile .jj-pdp-meta .jj-meta-row__label {
+  color: #aaa;
+}
+html.jj-mobile .jj-pdp-price {
+  font-size: 22px;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+html.jj-mobile .jj-pdp-variants {
+  gap: 6px;
+  margin-bottom: 8px;
+}
+html.jj-mobile .jj-pdp-variant-btn {
+  font-size: 15px;
+  min-height: 40px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.72);
+}
+html.jj-mobile .jj-pdp-actions {
+  margin-bottom: 10px;
+}
+html.jj-mobile .jj-pdp-actions .jj-action-btn {
+  font-size: 16px;
+  min-height: 44px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.72);
+}
+html.jj-mobile .jj-pdp-thumbs {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+html.jj-mobile .jj-pdp-thumb {
+  width: 72px;
+  height: 72px;
+}
+html.jj-mobile .jj-pdp-description {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #bbb; /* was #999: reads on the plate, not on the bare pane */
+  padding: 10px;
+  border-top: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+}
+/* Corner watch star: a thumb target, and it sits on the video too. */
+html.jj-mobile .jj-pdp-info .jj-watch-star {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  background: rgba(0, 0, 0, 0.75);
+}
+/* Sold-out grades: #444 at half opacity (product-page.css) disappears on
+   the darker mobile fill over video. Still grey + struck, just readable —
+   which grades are gone is information. !important mirrors the base rule. */
+html.jj-mobile .jj-pdp-variant-btn--out {
+  color: #777 !important;
+  border-color: #444 !important;
+  opacity: 0.8;
+}
