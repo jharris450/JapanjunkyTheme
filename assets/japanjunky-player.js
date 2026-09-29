@@ -2,7 +2,9 @@
  * japanjunky-player.js
  * The single toolbox media player. Tranche 2: a placeholder box with gravity,
  * edge bounce, and settling on the taskbar. Drag/throw and persistence are
- * layered on in later tasks. The 3D model visual is Tranche 3.
+ * layered on in later tasks. 3D visuals: generated PS1 models via JJ_ModelBuilder (tools/blender);
+ * the model canvas has a 240 px backing store inside its 96 px CSS box because the
+ * page is rendered at zoom 2.5 (96 CSS px ~= 240 device px).
  *
  * Exposes window.JJ_Player. Depends on window.JJ_PlayerPhysics.
  */
@@ -147,12 +149,18 @@
   }
 
   function mountModel(tool) {
-    // Only the cassette model exists today; others keep the placeholder label.
-    if (tool !== 'cassette') return false;
-    if (typeof THREE === 'undefined' || !window.JJ_CassetteModel) return false;
+    // All three tools render through JJ_ModelBuilder (generated PS1 models);
+    // fall back to the text label if three.js / the model data / the atlas URL
+    // is missing so a broken asset never breaks spawn.
+    if (typeof THREE === 'undefined' || !window.JJ_ModelBuilder ||
+        !window.JJ_MODELS || !window.JJ_MODELS[tool] ||
+        !window.JJ_MODEL_TEX || !window.JJ_MODEL_TEX[tool]) return false;
     var canvas = document.createElement('canvas');
     canvas.className = 'jj-player__canvas';
-    canvas.width = 96; canvas.height = 96;
+    // 240 px backing store in a 96 px CSS box (the canvas is width/height 100%
+    // of .jj-player, and image-rendering: pixelated): the page runs at zoom 2.5,
+    // so 96 CSS px covers ~240 device px before the dither/CRT passes.
+    canvas.width = canvas.height = 240;
     el.appendChild(canvas);
     try {
       modelRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
@@ -161,11 +169,7 @@
       modelCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
       modelCamera.position.set(0.45, 0.25, 3.1);
       modelCamera.lookAt(0, 0, 0);
-      var tex = function (n) {
-        return (window.JJ_CASSETTE_TEX && window.JJ_CASSETTE_TEX[n]) ||
-               (console.error('[CassetteModel] missing texture key:', n), n);
-      };
-      model = window.JJ_CassetteModel.build(THREE, tex);
+      model = window.JJ_ModelBuilder.build(THREE, tool, window.JJ_MODEL_TEX[tool]);
       modelScene.add(model.group);
       el.classList.add('jj-player--model');
     } catch (e) {

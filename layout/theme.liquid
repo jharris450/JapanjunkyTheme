@@ -472,18 +472,14 @@
   <script src="{{ 'japanjunky-player-physics.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-player-eject.js' | asset_url }}" defer></script>
   <script>
-    window.JJ_CASSETTE_TEX = {
-      'cassette-front.png': "{{ 'cassette-front.png' | asset_url }}",
-      'cassette-back.png': "{{ 'cassette-back.png' | asset_url }}",
-      'cassette-left.png': "{{ 'cassette-left.png' | asset_url }}",
-      'cassette-right.png': "{{ 'cassette-right.png' | asset_url }}",
-      'cassette-top.png': "{{ 'cassette-top.png' | asset_url }}",
-      'cassette-deck.png': "{{ 'cassette-deck.png' | asset_url }}",
-      'cassette-lid-inner.png': "{{ 'cassette-lid-inner.png' | asset_url }}"
+    window.JJ_MODEL_TEX = {
+      cassette: "{{ 'jj-model-cassette.png' | asset_url }}",
+      record: "{{ 'jj-model-record.png' | asset_url }}",
+      cd: "{{ 'jj-model-cd.png' | asset_url }}"
     };
   </script>
-  <script src="{{ 'japanjunky-cassette-math.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-cassette-model.js' | asset_url }}" defer></script>
+  <script src="{{ 'jj-models.js' | asset_url }}" defer></script>
+  <script src="{{ 'japanjunky-model-builder.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-player.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-media-format.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-media-drag.js' | asset_url }}" defer></script>
