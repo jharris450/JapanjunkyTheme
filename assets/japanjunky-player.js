@@ -166,8 +166,12 @@
       modelRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
       modelRenderer.setClearColor(0x000000, 0);
       modelScene = new THREE.Scene();
-      modelCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-      modelCamera.position.set(0.45, 0.25, 3.1);
+      // Long-lens framing agreed with the Blender side (tools/blender renders
+      // its preview PNGs with this exact camera): a narrow 26deg FOV pulled
+      // back to z 4.93 flattens the perspective the way a PS1 item render
+      // looks, and the slight +x/+y offset keeps the three-quarter view.
+      modelCamera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
+      modelCamera.position.set(0.72, 0.40, 4.93);
       modelCamera.lookAt(0, 0, 0);
       model = window.JJ_ModelBuilder.build(THREE, tool, window.JJ_MODEL_TEX[tool]);
       modelScene.add(model.group);

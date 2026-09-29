@@ -1,7 +1,8 @@
 {%- comment -%}
   Toolbox — bottom-right fan menu of media-player tools. Tranche 1 renders the
   button + fan only; dragging a tool to spawn a player arrives in Tranche 2.
-  Tool icons are placeholder ASCII glyphs until the 3D models land (Tranche 3).
+  Cassette shows its rendered model icon (assets/jj-icon-cassette.png, from
+  tools/blender); LP and CD keep placeholder ASCII glyphs until their icons exist.
 {%- endcomment -%}
 <div class="jj-toolbox" id="jj-toolbox">
   <div class="jj-toolbox__fan" id="jj-toolbox-fan" aria-label="Media players toolbox" hidden>
@@ -11,7 +12,7 @@
     </button>
     <button type="button" class="jj-toolbox__tool" data-tool="cassette"
             aria-label="Cassette Walkman" title="Cassette Walkman">
-      <span class="jj-toolbox__tool-glyph" aria-hidden="true">CS</span>
+      <img class="jj-toolbox__tool-icon" src="{{ 'jj-icon-cassette.png' | asset_url }}" alt="" width="64" height="64">
     </button>
     <button type="button" class="jj-toolbox__tool" data-tool="cd"
             aria-label="CD Walkman" title="CD Walkman">

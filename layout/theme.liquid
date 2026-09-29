@@ -477,6 +477,8 @@
       record: "{{ 'jj-model-record.png' | asset_url }}",
       cd: "{{ 'jj-model-cd.png' | asset_url }}"
     };
+    // Model atlas dithering: 'site' (full phosphor palette) | 'neutral' | 'off'.
+    window.JJ_MODEL_DITHER = 'site';
   </script>
   <script src="{{ 'jj-models.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-model-builder.js' | asset_url }}" defer></script>

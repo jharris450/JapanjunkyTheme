@@ -1112,10 +1112,25 @@ svg.jj-start-item-icon {
   display: block;
   image-rendering: pixelated;
 }
-/* Model players keep their framed border + bevel; only the fill goes transparent
-   so the 3D canvas shows through (and the frame survives a render failure). */
+/* Model players drop the window chrome entirely — the spawned 3D object should
+   read as a loose object on the desktop, not a framed thumbnail. The 96px box
+   (and therefore the drag/throw hit area and physics) is unchanged; only the
+   border/bevel/fill go. The text-label fallback (.jj-player without --model)
+   keeps its frame so a render failure still shows something deliberate. */
 .jj-player--model {
   background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+/* Toolbox tool icons (the rendered model preview PNG) — 30px inside the 34px
+   button. pointer-events: none so pointerdown/up still land on the button,
+   which is what japanjunky-toolbox.js binds its drag/spawn handlers to. */
+.jj-toolbox__tool-icon {
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 /* ── Taskbar volume control ─────────────────────────────────── */
