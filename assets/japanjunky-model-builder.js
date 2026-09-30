@@ -33,8 +33,11 @@
  * takes its opacity from the atlas alpha — the dither path preserves alpha, so
  * the painted alpha (~96/255) is what reaches the framebuffer. A part flagged
  * `hidden` starts invisible (the record player's LP: the platter ships blank);
- * `spin` turns it about Y while setPlaying(true); `dynamic_rect` is the atlas
- * rect [x, y, w, h] that setLoaded() repaints with the loaded product's artwork.
+ * `spin` turns it about Y while setPlaying(true); `swing` (radians) is the Y
+ * angle the part EASES to while setPlaying(true) and back from on false — the
+ * record player's tonearm, pivoted on its post, swinging onto the record;
+ * `dynamic_rect` is the atlas rect [x, y, w, h] that setLoaded() repaints with
+ * the loaded product's artwork.
  *
  * window.JJ_ModelBuilder.build(THREE, name, texUrl) -> {
  *   group, meshes, restOpen,
@@ -51,9 +54,10 @@
  * that rect dithered through the active palette, and the result bound to the
  * part's material. setLoaded(null) hides the parts again and drops the texture,
  * so the painted fallback label comes back. An empty/failed labelUrl also keeps
- * the fallback. setPlaying(b) + update(dt) spin the `spin` parts at 33⅓ rpm.
- * Models with none of those parts no-op through all three, so player.js drives
- * every model through one contract.
+ * the fallback. setPlaying(b) + update(dt) spin the `spin` parts at 33⅓ rpm
+ * and ease the `swing` parts to their angle (and back to 0 after
+ * setPlaying(false)) over SWING_SECS. Models with none of those parts no-op
+ * through all three, so player.js drives every model through one contract.
  */
 (function () {
   'use strict';
@@ -63,6 +67,9 @@
   // 33 1/3 rpm = 100/3 / 60 rev/s * 2pi = 3.49 rad/s. The speed a `spin` part
   // (the record player's LP) turns at while a song plays.
   var SPIN_RATE = 3.49;
+  // How long a `swing` part takes to travel between parked and its angle, in
+  // seconds. The lid takes 0.5 s to close (player.js); the arm lands after it.
+  var SWING_SECS = 1.2;
 
   // Default dither palette. theme.liquid (or the harness) may override this
   // before the builder runs for an easy on-site switch.
@@ -247,6 +254,7 @@
     var hinges = [];   // { mesh, angle } for every part with an open_angle
     var hiddenMeshes = [];  // parts that only appear once media is loaded
     var spinners = [];      // parts that turn while a song plays
+    var swingers = [];      // { mesh, angle } for parts that swing out while a song plays
     for (var pi = 0; pi < parts.length; pi++) {
       var part = parts[pi];
       var pm = makeMaterial(!!part.transparent);
@@ -257,6 +265,7 @@
       if (part.transparent) pmesh.renderOrder = 1;   // draw after the opaque parts
       if (part.hidden) { pmesh.visible = false; hiddenMeshes.push(pmesh); }
       if (part.spin) spinners.push(pmesh);
+      if (typeof part.swing === 'number' && isFinite(part.swing)) swingers.push({ mesh: pmesh, angle: part.swing });
       if (part.dynamic_rect && part.dynamic_rect.length === 4) {
         dynParts.push({ mesh: pmesh, mat: pm, rect: part.dynamic_rect, tex: null });
       }
@@ -385,14 +394,27 @@
       img.src = url;
     }
 
-    // ---- playing spin ------------------------------------------------------
+    // ---- playing: spin + swing ----------------------------------------------
     var playing = false;
+    var swingT = 0;         // 0 = parked, 1 = swung out; eased toward `playing`
     function setPlaying(b) { playing = !!b; }
+    function applySwing() {
+      for (var i = 0; i < swingers.length; i++) swingers[i].mesh.rotation.y = swingers[i].angle * swingT;
+    }
     function update(dt) {
-      if (!playing || !spinners.length) return;
       dt = +dt;
       if (!(dt > 0)) return;          // also catches NaN
-      for (var i = 0; i < spinners.length; i++) spinners[i].rotation.y += dt * SPIN_RATE;
+      if (playing) {
+        for (var i = 0; i < spinners.length; i++) spinners[i].rotation.y += dt * SPIN_RATE;
+      }
+      // the swing eases both ways: out while playing, back to parked after
+      var target = playing ? 1 : 0;
+      if (swingers.length && swingT !== target) {
+        var step = dt / SWING_SECS;
+        if (swingT < target) swingT = Math.min(target, swingT + step);
+        else swingT = Math.max(target, swingT - step);
+        applySwing();
+      }
     }
 
     function dispose() {
