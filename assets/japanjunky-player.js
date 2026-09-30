@@ -6,6 +6,15 @@
  * the model canvas has a 240 px backing store inside its 96 px CSS box because the
  * page is rendered at zoom 2.5 (96 CSS px ~= 240 device px).
  *
+ * MEDIA STATE — one rule each, both driven from tryLoadProduct/popOutLoaded:
+ *   lid    `lidTarget = playing ? 0 : model.restOpen` (cassette rests shut and
+ *          pulses open on insert; the record rests OPEN and shuts while playing)
+ *   media  `model.setLoaded(product)` on accept, `setLoaded(null)` on eject/end.
+ *          That is what draws the LP on the record player's platter, with the
+ *          label taken from `product.labelUrl` (the 3rd product image, the same
+ *          one the eject token and the product page use). A model with no
+ *          loadable parts — the cassette today — no-ops.
+ *
  * Exposes window.JJ_Player. Depends on window.JJ_PlayerPhysics.
  */
 (function () {
@@ -174,6 +183,10 @@
       modelCamera.position.set(0.72, 0.40, 4.93);
       modelCamera.lookAt(0, 0, 0);
       model = window.JJ_ModelBuilder.build(THREE, tool, window.JJ_MODEL_TEX[tool]);
+      // Rest state: the lid position this model sits at when nothing is playing
+      // (record 1 = dust cover open, cassette 0). build() has already applied it,
+      // so the tween just has to start there instead of at 0.
+      lidT = lidTarget = model.restOpen || 0;
       modelScene.add(model.group);
       el.classList.add('jj-player--model');
     } catch (e) {
@@ -211,12 +224,34 @@
     lidT = 0; lidTarget = 0;
   }
 
-  // open -> brief hold -> close, used as the "insert tape" beat on accept
+  // The lid rule, one line: lidTarget = playing ? 0 (shut over the media) : rest.
+  // `rest` is the model's own idle lid state (cassette 0, record 1).
+  function restOpen() {
+    return (model && model.restOpen) || 0;
+  }
+
+  // open -> brief hold -> close, the "insert tape" beat on accept. Only models
+  // that rest CLOSED get the pulse; one that rests open (the record) has nothing
+  // to flash — it simply shuts, which loadLid() below does.
   function playInsertBeat() {
     if (!model) return;
     clearTimeout(insertBeatTimer);
     lidTarget = 1;
     insertBeatTimer = setTimeout(function () { lidTarget = 0; }, 650);
+  }
+
+  // media accepted: cassette pulses open then shut; record closes and stays shut
+  function loadLid() {
+    if (!model) return;
+    if (restOpen() === 0) playInsertBeat();
+    else { clearTimeout(insertBeatTimer); insertBeatTimer = null; lidTarget = 0; }
+  }
+
+  // media gone (song ended, popped out, kicked): back to the model's rest state
+  function unloadLid() {
+    if (!model) return;
+    clearTimeout(insertBeatTimer); insertBeatTimer = null;
+    lidTarget = restOpen();
   }
 
   function spawn(tool, x, y) {
@@ -358,7 +393,14 @@
         onEnded: popOutLoaded // song finished on its own — pop it out so the reaction stops
       });
     }
-    if (model) { playInsertBeat(); model.setPlaying(true); }
+    if (model) {
+      loadLid();
+      model.setPlaying(true);
+      // Draw the media itself: the record player puts an LP on the platter with
+      // this product's own label artwork (product.labelUrl, the 3rd product
+      // image). Models without loadable parts no-op.
+      if (model.setLoaded) model.setLoaded(product);
+    }
     return 'accepted';
   }
 
@@ -370,7 +412,11 @@
     if (!el || !loadedProduct) return;
     if (window.JJ_PlayerEject) window.JJ_PlayerEject.eject(loadedProduct, getRect());
     if (window.JJ_PlayerAudio) window.JJ_PlayerAudio.stop();
-    if (model) model.setPlaying(false);
+    if (model) {
+      model.setPlaying(false);
+      unloadLid();
+      if (model.setLoaded) model.setLoaded(null);   // take the LP off the platter
+    }
     loadedProduct = null;
   }
 
