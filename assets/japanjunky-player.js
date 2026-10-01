@@ -247,9 +247,13 @@
     else { clearTimeout(insertBeatTimer); insertBeatTimer = null; lidTarget = 0; }
   }
 
-  // media gone (song ended, popped out, kicked): back to the model's rest state
+  // media gone (song ended, popped out, kicked): back to the model's rest state.
+  // A model that rests SHUT (the cassette, now with a real side-hinged door)
+  // flaps it open and shut on the way out -- the "eject" beat, the same pulse
+  // as on insert; one that rests open simply opens.
   function unloadLid() {
     if (!model) return;
+    if (restOpen() === 0) { playInsertBeat(); return; }
     clearTimeout(insertBeatTimer); insertBeatTimer = null;
     lidTarget = restOpen();
   }

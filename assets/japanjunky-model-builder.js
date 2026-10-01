@@ -28,7 +28,9 @@
  * PARTS — a model entry is a list of named parts (build.py). Each part becomes
  * its own Mesh parented to a tilt node under `group`, positioned AT the part's
  * pivot (its positions are exported relative to that pivot), so hinging it is a
- * plain `mesh.rotation.x`. A part flagged `transparent` (the record player's
+ * plain rotation about its `open_axis` -- 'x' by default (the record and CD
+ * lids, hinged along their back edge) or 'y' (the cassette's door, hinged down
+ * the unit's right edge and swinging out sideways). A part flagged `transparent` (the record player's
  * smoked dust cover) gets transparent + depthWrite:false + renderOrder 1 and
  * takes its opacity from the atlas alpha — the dither path preserves alpha, so
  * the painted alpha (~96/255) is what reaches the framebuffer. A part flagged
@@ -271,7 +273,10 @@
       }
       tiltNode.add(pmesh);
       meshes.push(pmesh);
-      if (typeof part.open_angle === 'number') hinges.push({ mesh: pmesh, angle: part.open_angle });
+      if (typeof part.open_angle === 'number') {
+        hinges.push({ mesh: pmesh, angle: part.open_angle,
+                      axis: (part.open_axis === 'y' || part.open_axis === 'z') ? part.open_axis : 'x' });
+      }
     }
 
     function clamp01(t) {
@@ -282,7 +287,7 @@
 
     function setOpen(t) {
       var k = clamp01(t);
-      for (var i = 0; i < hinges.length; i++) hinges[i].mesh.rotation.x = hinges[i].angle * k;
+      for (var i = 0; i < hinges.length; i++) hinges[i].mesh.rotation[hinges[i].axis] = hinges[i].angle * k;
     }
 
     var restOpen = clamp01(view.rest_open);
