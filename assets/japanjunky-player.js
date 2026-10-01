@@ -225,7 +225,8 @@
   }
 
   // The lid rule, one line: lidTarget = playing ? 0 (shut over the media) : rest.
-  // `rest` is the model's own idle lid state (cassette 0, record 1).
+  // `rest` is the model's own idle lid state (all three rest OPEN since 2026-10-01;
+  // a model that rests shut gets the insert/eject beats below instead).
   function restOpen() {
     return (model && model.restOpen) || 0;
   }
