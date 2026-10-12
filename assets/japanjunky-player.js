@@ -12,8 +12,9 @@
  *   media  `model.setLoaded(product)` on accept, `setLoaded(null)` on eject/end.
  *          That is what draws the LP on the record player's platter, with the
  *          label taken from `product.labelUrl` (the 3rd product image, the same
- *          one the eject token and the product page use). A model with no
- *          loadable parts — the cassette today — no-ops.
+ *          one the eject token and the product page use) and, since 2026-10-12,
+ *          the cassette in the Walkman's well (label bands from the same image).
+ *          A model with no loadable parts would simply no-op.
  *
  * Exposes window.JJ_Player. Depends on window.JJ_PlayerPhysics.
  */
