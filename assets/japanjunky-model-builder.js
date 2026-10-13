@@ -245,9 +245,11 @@
     var view = data.view || {};
     var s = (typeof view.scale === 'number') ? view.scale : 1;
     group.scale.set(s, s, s);
-    // VIEW.tilt lives on a node BETWEEN the group and the parts: player.js spins
-    // the group about Y, so the tilt must not be on the same object or the spin
-    // would happen in the tilted frame and the unit would wobble.
+    // VIEW.tilt lives on a node BETWEEN the group and the parts: player.js
+    // poses the group (an idle float: bob along Y, sway about Y, a hint of
+    // roll; a full spin before 2026-10-12), so the tilt must not be on the
+    // same object or the sway would happen in the tilted frame and the unit
+    // would wobble.
     var tiltNode = new THREE.Object3D();
     tiltNode.rotation.x = (typeof view.tilt === 'number') ? view.tilt : 0;
     group.add(tiltNode);

@@ -158,6 +158,13 @@
     startLoop();
   }
 
+  // Idle float amplitudes (world units / radians) and angular speeds (rad/s):
+  // bob every 2.6 s, sway every 5.3 s, roll every 3.7 s. Change these together
+  // with tools/blender/reach.py's defaults, which size VIEW.scale per model.
+  var FLOAT_BOB = 0.05, FLOAT_BOB_W = 2.42;
+  var FLOAT_SWAY = 0.2, FLOAT_SWAY_W = 1.19;
+  var FLOAT_ROLL = 0.03, FLOAT_ROLL_W = 1.70;
+
   function mountModel(tool) {
     // All three tools render through JJ_ModelBuilder (generated PS1 models);
     // fall back to the text label if three.js / the model data / the atlas URL
@@ -196,6 +203,7 @@
       return false;
     }
     var last = performance.now();
+    var floatT = 0;   // seconds of idle float so far (dt-driven, so a stalled tab resumes smoothly)
     function render(now) {
       modelRaf = requestAnimationFrame(render);
       var dt = (now - last) / 1000; last = now;
@@ -208,7 +216,17 @@
         else lidT = Math.max(lidTarget, lidT - step);
         model.setOpen(lidT);
       }
-      model.group.rotation.y += dt * 0.4; // gentle idle spin
+      // Idle float (2026-10-12; replaced the full idle spin, which showed the
+      // flat players' undersides every turn): the unit hovers at its quarter
+      // pose -- a slow bob, a small sway about Y and a hint of roll, each on
+      // its own period so the motion never visibly loops. Amplitudes are
+      // reach-checked by tools/blender/reach.py: at the bob/sway/roll peaks
+      // every model's open cover stays inside the canvas (record 0.95,
+      // cd 0.95, cassette 0.73 of the half-height).
+      floatT += dt;
+      model.group.position.y = Math.sin(floatT * FLOAT_BOB_W) * FLOAT_BOB;
+      model.group.rotation.y = Math.sin(floatT * FLOAT_SWAY_W) * FLOAT_SWAY;
+      model.group.rotation.z = Math.sin(floatT * FLOAT_ROLL_W + 1.0) * FLOAT_ROLL;
       model.update(dt);
       modelRenderer.render(modelScene, modelCamera);
     }
