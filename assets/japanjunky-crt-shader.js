@@ -15,6 +15,9 @@
  *            = per-pixel COLOUR then the tube-face WARP, over everything in
  *            the wrapper (text, images, canvases, video, the overlay canvas):
  *            - CRT gamma 2.4 vs the LCD's 2.2 (feComponentTransfer, sRGB space)
+ *            - beam-current gain with a soft knee (feComponentTransfer table,
+ *              linear light): the raster mask below darkens the average,
+ *              the real beam puts that energy into brighter lines
  *            - SMPTE-C phosphor gamut re-expressed for an sRGB display
  *              (feColorMatrix in linear light; D65 in = D65 out, no tint)
  *            - CYLINDRICAL Trinitron face (feDisplacementMap: curved
@@ -80,13 +83,34 @@
     barrelScale: 18,           // px shift at the side edges: ~1.5% of half-height,
                                // the perspective sag of a ~1 m radius face at 60 cm
     displacementSize: 256,
-    scanlineIntensity: 0.45,   // depth of the beam profile: 1 = physical (gaps
-                               // between 240p lines ~85 % dark, which would
-                               // halve page brightness on an LCD that can't
-                               // over-drive the lines), 0 = flat. 0.45 keeps
-                               // the crisp line/gap shape at ~80 % brightness.
-                               // Was 0.22 with an inverted profile (narrow dark
-                               // gap on a bright field) until 2026-10-21.
+    scanlineIntensity: 0.40,   // depth of the beam profile: 1 = physical (gaps
+                               // between 240p lines ~85 % dark), 0 = flat.
+                               // 0.40 keeps the crisp line/gap shape (gap =
+                               // 0.64 of the line on white) while the mask
+                               // alone leaves 80 % of the light -- see
+                               // scanlineGain. Was 0.22 with an inverted
+                               // profile (narrow dark gap on a bright field)
+                               // until 2026-10-21; 0.45 unaided read as "too
+                               // dark" on the live site.
+    scanlineGain: 1.25,        // beam-current gain on the content, in linear
+                               // light. A CRT puts the beam's energy into
+                               // narrow lines, so the lines run brighter than
+                               // a flat field and the line-averaged luminance
+                               // stays at the calibrated level. With 0.40 this
+                               // puts a Win95 grey field at 0.89 of flat (the
+                               // 0.22 profile gave 0.90); pure white fields
+                               // sit at 0.80 because an LCD can't go past
+                               // white -- the gain rolls off into a soft knee
+                               // there instead of clipping (192/223/255 ->
+                               // 207/239/255, bevels stay distinct).
+    scanlineGainKnee: 0.6,     // linear-light level where the roll-off starts
+                               // (auto-lowered if the curve would go
+                               // non-monotonic for a big gain)
+    scanlineDepthNoGain: 0.5,  // on the no-barrel paths (Firefox / handheld)
+                               // the SVG chain, and so the gain, is absent:
+                               // the raster mask runs at this fraction of
+                               // scanlineIntensity so the page's average
+                               // brightness doesn't drop there either
     grilleIntensity: 0.18,
     chromaticAberration: 2.5,
     bloomIntensity: 0.22,
@@ -207,6 +231,24 @@
    * Chain: SourceGraphic -> CRT gamma -> phosphor matrix -> cylindrical
    * displacement over a black flood.
    */
+  // Beam-current gain as a 33-point feComponentTransfer table in linear
+  // light: y = G x up to the knee k, then a quadratic that reaches (1, 1)
+  // with a positive slope (k is pulled down if G is too big for the
+  // requested knee). G <= 1 gives the identity.
+  function gainTableValues(cfg) {
+    var G = cfg.scanlineGain, k = cfg.scanlineGainKnee, vals = [], i, x, t, a, y;
+    if (!(G > 1)) G = 1;
+    k = Math.min(k, 1 - 2.2 * (G - 1) / G);
+    a = (G - 1) / ((1 - k) * (1 - k));
+    for (i = 0; i <= 32; i++) {
+      x = i / 32;
+      if (x <= k) y = G * x;
+      else { t = x - k; y = G * k + G * t - a * t * t; }
+      vals.push(Math.min(1, y).toFixed(5));
+    }
+    return vals.join(' ');
+  }
+
   function initBarrelDistortion(cfg) {
     var mapUrl = generateDisplacementMap(cfg.displacementSize, cfg.barrelStrength);
 
@@ -249,11 +291,26 @@
       feGamma.appendChild(fn);
     });
 
-    // ── Colour 2/2: SMPTE-C phosphor gamut, in LINEAR light (the matrix
+    // ── Colour 2/3: beam-current gain (see scanlineGain), LINEAR light.
+    // The overlay's raster mask (scanlineIntensity) only ever darkens; the
+    // tube would show the masked-out energy as brighter lines instead.
+    var feGain = document.createElementNS(svgNS, 'feComponentTransfer');
+    feGain.setAttribute('in', 'crtGamma');
+    feGain.setAttribute('result', 'beamGain');
+    feGain.setAttribute('color-interpolation-filters', 'linearRGB');
+    var table = gainTableValues(cfg);
+    ['feFuncR', 'feFuncG', 'feFuncB'].forEach(function (name) {
+      var fn = document.createElementNS(svgNS, name);
+      fn.setAttribute('type', 'table');
+      fn.setAttribute('tableValues', table);
+      feGain.appendChild(fn);
+    });
+
+    // ── Colour 3/3: SMPTE-C phosphor gamut, in LINEAR light (the matrix
     // mixes emitted light, not code values). Rows sum to 1 so D65 white
     // and every grey pass through unchanged — no tint.
     var feColor = document.createElementNS(svgNS, 'feColorMatrix');
-    feColor.setAttribute('in', 'crtGamma');
+    feColor.setAttribute('in', 'beamGain');
     feColor.setAttribute('result', 'phosphor');
     feColor.setAttribute('type', 'matrix');
     feColor.setAttribute('color-interpolation-filters', 'linearRGB');
@@ -297,6 +354,7 @@
     feComposite.setAttribute('operator', 'over');
 
     filter.appendChild(feGamma);
+    filter.appendChild(feGain);
     filter.appendChild(feColor);
     filter.appendChild(feImage);
     filter.appendChild(feFlood);
@@ -459,6 +517,10 @@
   // ─── Three.js CRT Overlay ──────────────────────────────────────
   function initShaderOverlay(cfg) {
     if (typeof THREE === 'undefined') return;
+    // No SVG chain (Firefox / handheld / lite-undo without barrel) = no
+    // beam gain to pay for the raster mask, so the mask runs shallower.
+    var noGain = document.documentElement.classList.contains('jj-crt-no-barrel')
+      || !document.getElementById('jj-crt-barrel');
 
     var canvas = document.getElementById('jj-crt-shader-canvas');
     if (!canvas) return;
@@ -492,7 +554,7 @@
     var uniforms = {
       uTime:                { value: 0.0 },
       uResolution:          { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) },
-      uScanlineIntensity:   { value: cfg.scanlineIntensity },
+      uScanlineIntensity:   { value: cfg.scanlineIntensity * (noGain ? cfg.scanlineDepthNoGain : 1) },
       uScanlinePeriod:      { value: 4.0 },               // set by applyTubeScale
       uScanSigmaPx:         { value: 1.0 },               // set by applyTubeScale
       uGrilleIntensity:     { value: cfg.grilleIntensity },
