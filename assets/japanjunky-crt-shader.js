@@ -23,9 +23,10 @@
  *            Absent on the no-barrel paths (Firefox / handheld / lite /
  *            YouTube-tear pages), colour included — see init().
  *   Layer 2: Three.js fullscreen quad (scanlines, grille, damper wire, bloom,
- *            vignette, dither). Scanline period, grille pitch and wire
- *            width are derived from the tube's physical dimensions at the
- *            current viewport + DPR (see applyTubeScale), not fixed px.
+ *            vignette, dither). Scanline period + beam profile, grille
+ *            pitch and wire shadow are derived from the tube's physical
+ *            dimensions at the current viewport + DPR (see applyTubeScale),
+ *            not fixed px.
  *
  * Config: window.JJ_CRT_SHADER_CONFIG (optional overrides of `defaults`)
  * Loaded: <script src="{{ 'japanjunky-crt-shader.js' | asset_url }}" defer></script>
@@ -43,10 +44,21 @@
     tubeHeightMm: 200.6,       // viewable raster height
     grillePitchMm: 0.25,       // aperture-grille triad pitch -> 1070 triads across
     scanLines: 240,            // visible raster lines (240p look; 480 = 480i)
+    beamSpotMm: 0.40,          // electron-beam spot FWHM at picture drive. The
+                               // 800 TVL rating puts it at ~0.25 mm at the
+                               // resolution test (low beam current); it blooms
+                               // to ~0.4 mm at normal brightness. Sets the
+                               // scanline profile (each raster line is this
+                               // Gaussian, on a 200.6/240 = 0.84 mm pitch) and
+                               // the width of the damper-wire shadow.
     damperWireY: 0.5,          // ONE wire on a 14" grille, centre of the tube
                                // (fraction of height from the top; < 0 = none)
-    damperWireWidthMm: 0.4,    // shadow width on the phosphor (beam-spread blurred)
-    damperWireOpacity: 0.25,
+    damperWireWidthMm: 0.025,  // the wire itself: 15-30 um tungsten (Sony
+                               // US6166782). Far thinner than the beam spot, so
+                               // its shadow is spot-wide and only wire/spot
+                               // (~6 %) deep ("relatively low contrast") --
+                               // see applyTubeScale
+    damperWireOpacity: 1.0,    // occlusion of the wire itself (1 = opaque)
     grillePitchMin: 3.0,       // device-px floor: 0.25 mm is ~1.8 px on a 1920
                                // viewport, below what an LCD can draw as RGB
                                // stripes (it moirés instead); the physical pitch
@@ -68,7 +80,13 @@
     barrelScale: 18,           // px shift at the side edges: ~1.5% of half-height,
                                // the perspective sag of a ~1 m radius face at 60 cm
     displacementSize: 256,
-    scanlineIntensity: 0.22,
+    scanlineIntensity: 0.45,   // depth of the beam profile: 1 = physical (gaps
+                               // between 240p lines ~85 % dark, which would
+                               // halve page brightness on an LCD that can't
+                               // over-drive the lines), 0 = flat. 0.45 keeps
+                               // the crisp line/gap shape at ~80 % brightness.
+                               // Was 0.22 with an inverted profile (narrow dark
+                               // gap on a bright field) until 2026-10-21.
     grilleIntensity: 0.18,
     chromaticAberration: 2.5,
     bloomIntensity: 0.22,
@@ -308,6 +326,7 @@
     'uniform vec2  uResolution;',
     'uniform float uScanlineIntensity;',
     'uniform float uScanlinePeriod;',
+    'uniform float uScanSigmaPx;',
     'uniform float uGrilleIntensity;',
     'uniform float uGrillePitch;',
     'uniform float uChromaticAberration;',
@@ -341,11 +360,20 @@
     '  vec2 bUv = barrelUV(uv, uBarrelDistortion);',
     '  vec2 bPx = bUv * uResolution;',
     '',
-    '  /* ── Scanlines (Gaussian profile) ─────────────────────── */',
-    '  float scanY = mod(bPx.y, uScanlinePeriod);',
-    '  float scanCenter = uScanlinePeriod * 0.5;',
-    '  float scanDist = abs(scanY - scanCenter) / scanCenter;',
-    '  float scanline = 1.0 - uScanlineIntensity * exp(-scanDist * scanDist * 4.0);',
+    '  /* ── Scanlines: the raster itself ─────────────────────────',
+    '     Each of the 240 lines is the beam spot, a Gaussian of sigma',
+    '     uScanSigmaPx (from beamSpotMm), on a uScanlinePeriod pitch. The',
+    '     phosphor between lines only gets the tails, so the profile is a',
+    '     narrow bright line and a wide dark gap. Summing the three nearest',
+    '     lines and normalising to the on-line peak gives the transmission',
+    '     the LCD can show; uScanlineIntensity scales its depth. ── */',
+    '  float scanD = mod(bPx.y + uScanlinePeriod * 0.5, uScanlinePeriod) - uScanlinePeriod * 0.5;',
+    '  float scanK = -0.5 / (uScanSigmaPx * uScanSigmaPx);',
+    '  float scanSum = exp(scanD * scanD * scanK)',
+    '                + exp((scanD - uScanlinePeriod) * (scanD - uScanlinePeriod) * scanK)',
+    '                + exp((scanD + uScanlinePeriod) * (scanD + uScanlinePeriod) * scanK);',
+    '  float scanPeak = 1.0 + 2.0 * exp(uScanlinePeriod * uScanlinePeriod * scanK);',
+    '  float scanline = 1.0 - uScanlineIntensity * (1.0 - scanSum / scanPeak);',
     '',
     '  /* ── Trinitron Aperture Grille (vertical RGB stripes) ── */',
     '  float grilleX = mod(bPx.x, uGrillePitch);',
@@ -371,10 +399,11 @@
     '  float vignette = 1.0 - uVignetteIntensity * smoothstep(uVignetteStart, uVignetteEnd, vignetteDist);',
     '',
     '  /* ── Damper Wire (ONE on a 14" Trinitron grille, at uDamperWireY) ─',
-    '     Soft-edged shadow band uDamperWireHalfPx either side of the wire;',
-    '     a negative uDamperWireY puts it off-screen (= no wire). ── */',
+    '     Anti-aliased box uDamperWireHalfPx either side of the wire, only',
+    '     uDamperWireOpacity deep (both set by applyTubeScale: beam-spot wide,',
+    '     ~10 % deep). A negative uDamperWireY puts it off-screen (= no wire). ── */',
     '  float wireDist = abs(bPx.y - uDamperWireY * uResolution.y);',
-    '  float damperWires = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(uDamperWireHalfPx * 0.5, uDamperWireHalfPx, wireDist));',
+    '  float damperWires = 1.0 - uDamperWireOpacity * (1.0 - smoothstep(uDamperWireHalfPx - 0.5, uDamperWireHalfPx + 0.5, wireDist));',
     '',
     '  /* ── Beam Scanning ────────────────────────────────────── */',
     '  float beamBrightness = 1.0;',
@@ -465,6 +494,7 @@
       uResolution:          { value: new THREE.Vector2(window.innerWidth * dpr, window.innerHeight * dpr) },
       uScanlineIntensity:   { value: cfg.scanlineIntensity },
       uScanlinePeriod:      { value: 4.0 },               // set by applyTubeScale
+      uScanSigmaPx:         { value: 1.0 },               // set by applyTubeScale
       uGrilleIntensity:     { value: cfg.grilleIntensity },
       uGrillePitch:         { value: cfg.grillePitchMin }, // set by applyTubeScale
       uChromaticAberration: { value: cfg.chromaticAberration },
@@ -476,21 +506,37 @@
       uBarrelDistortion:    { value: cfg.overlayBarrel },
       uBeamScan:            { value: reducedMotion ? false : cfg.beamScan },
       uBeamWidth:           { value: cfg.beamWidth },
-      uDamperWireOpacity:   { value: cfg.damperWireOpacity },
+      uDamperWireOpacity:   { value: 0.0 },               // set by applyTubeScale
       uDamperWireY:         { value: cfg.damperWireY },
       uDamperWireHalfPx:    { value: 1.5 },               // set by applyTubeScale
       uDitherIntensity:     { value: cfg.ditherIntensity }
     };
 
     // Physical -> device px. The tube's 240 raster lines, 1070 grille
-    // triads and 0.4 mm wire shadow are spread over whatever viewport the
+    // triads and 25 um wire are spread over whatever viewport the
     // page has, so their pixel size follows viewport + DPR (a fixed "4 px"
     // period was 270 lines at 1080p and 540 lines at 4K/retina).
     function applyTubeScale(wPx, hPx) {
       uniforms.uScanlinePeriod.value = cfg.scanLines > 0 ? hPx / cfg.scanLines : 4.0;
+      // Beam spot in device px: FWHM = beamSpotMm of the tubeHeightMm raster.
+      // sigma = FWHM / 2.3548; floored at 0.5 px so the line profile can't
+      // alias on a short viewport.
+      var spotPx = hPx * cfg.beamSpotMm / cfg.tubeHeightMm;
+      uniforms.uScanSigmaPx.value = Math.max(0.5, spotPx / 2.3548);
       var triads = cfg.grillePitchMm > 0 ? cfg.tubeWidthMm / cfg.grillePitchMm : 0;
       uniforms.uGrillePitch.value = Math.max(cfg.grillePitchMin, triads > 0 ? wPx / triads : 0);
-      uniforms.uDamperWireHalfPx.value = Math.max(1.0, hPx * (cfg.damperWireWidthMm * 0.5) / cfg.tubeHeightMm);
+      // Wire shadow. The 25 um wire is far thinner than the beam spot, so
+      // the phosphor sees a spot-wide band only wire/spot (~6 %) deep --
+      // Sony US6166782: "the damping wire diameter is smaller than that of
+      // the visible beams' cross section, the shadow is of relatively low
+      // contrast". Below 1 px the band is a single pixel row and the depth
+      // scales with coverage, so the integral the eye sums is the same at
+      // every viewport. The 2026-10-21 first cut drew a 0.4 mm / 25 % band
+      // -- a hard line no 14" PVM shows.
+      var wirePx = hPx * cfg.damperWireWidthMm / cfg.tubeHeightMm;
+      var bandPx = Math.max(1.0, spotPx, wirePx);
+      uniforms.uDamperWireHalfPx.value = bandPx * 0.5;
+      uniforms.uDamperWireOpacity.value = cfg.damperWireOpacity * Math.min(1.0, wirePx / bandPx);
     }
     applyTubeScale(window.innerWidth * dpr, window.innerHeight * dpr);
 
