@@ -3,7 +3,13 @@
  *
  * Client-side Floyd-Steinberg error-diffusion dithering for product images.
  * Dithers to a custom CRT phosphor palette for a unified retro look.
- * Applied to all images inside .jj-thumb-img and .jj-detail-image containers.
+ * Applied to all images inside .jj-thumb-img and .jj-detail-image containers
+ * and to the explorer background (custom.explorer_background metafield).
+ * Site rule (2026-10-22): dithering is applied ONLY to product images and
+ * product-metafield media — this pipeline, the custom.video tear frames
+ * (explorer-video.js) and the cover art on the 3D models (model-builder.js).
+ * Nothing else on the site dithers (the CRT overlay's global checker, the
+ * screensaver's VGA pass and the bundle box texture were removed that day).
  *
  * Inspired by Hypnospace Outlaw's approach: Floyd-Steinberg dithering
  * to a fixed custom palette produces organic stipple patterns that look

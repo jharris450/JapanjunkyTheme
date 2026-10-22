@@ -9,10 +9,14 @@
  * viewer use, shaderRes 240 to match the player's 240 px backing store);
  * otherwise it falls back to MeshBasicMaterial.
  *
- * Texture: when window.JJ_Dither is present the atlas is loaded through an
- * Image, drawn to a 256x256 canvas, Floyd-Steinberg dithered to the site
- * palette and used as a CanvasTexture. window.JJ_MODEL_DITHER selects the
- * palette: 'site' (default) | 'neutral' | 'off'.
+ * Texture: window.JJ_MODEL_DITHER selects the ATLAS treatment: 'site' /
+ * 'neutral' = loaded through an Image, drawn to a 256x256 canvas,
+ * Floyd-Steinberg dithered to that palette and used as a CanvasTexture;
+ * 'off' (default since 2026-10-22, theme.liquid) = plain TextureLoader. The
+ * product cover art painted into the dynamic rects (paintDynamic) is ALWAYS
+ * dithered with the site palette when JJ_Dither is present: it is a product
+ * image, and the site rule is dithering on product images and
+ * product-metafield media only.
  *
  * COLOUR SPACE — the PS1 frag is a raw passthrough (gl_FragColor = texel) and
  * three injects no decode/encode into a ShaderMaterial. On the shader path the
@@ -73,22 +77,29 @@
   // seconds. The lid takes 0.5 s to close (player.js); the arm lands after it.
   var SWING_SECS = 1.2;
 
-  // Default dither palette. theme.liquid (or the harness) may override this
+  // Default atlas treatment. theme.liquid (or the harness) may override this
   // before the builder runs for an easy on-site switch.
-  if (typeof window.JJ_MODEL_DITHER === 'undefined') window.JJ_MODEL_DITHER = 'site';
+  if (typeof window.JJ_MODEL_DITHER === 'undefined') window.JJ_MODEL_DITHER = 'off';
 
   function ditherMode() {
     var m = window.JJ_MODEL_DITHER;
     return (m === 'neutral' || m === 'off') ? m : 'site';
   }
 
-  // Active palette array, or null when dithering is off / unavailable.
+  // Atlas palette array, or null when atlas dithering is off / unavailable.
   function activePalette() {
     var D = window.JJ_Dither;
     if (!D || typeof D.ditherImageData !== 'function') return null;
     var m = ditherMode();
     if (m === 'off') return null;
     return m === 'neutral' ? D.NEUTRAL_PALETTE : D.PALETTE;
+  }
+
+  // Palette for product cover art on the models: the site palette whenever
+  // the dither pipeline is present, regardless of the atlas setting.
+  function mediaPalette() {
+    var D = window.JJ_Dither;
+    return (D && typeof D.ditherImageData === 'function') ? D.PALETTE : null;
   }
 
   function usePS1() {
@@ -318,13 +329,13 @@
     }
 
     // Copy the atlas, draw `img` cover-fit into each dynamic rect, dither that
-    // rect, bind the result. Throws (and is caught by the caller) if the canvas
-    // turns out not to be readable.
+    // rect (product cover art: site palette), bind the result. Throws (and is
+    // caught by the caller) if the canvas turns out not to be readable.
     function paintDynamic(img) {
       var src = atlasSource();
       var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
       if (!src || !iw || !ih) return;
-      var palette = activePalette();
+      var palette = mediaPalette();
       for (var i = 0; i < dynParts.length; i++) {
         var d = dynParts[i];
         var r = d.rect;

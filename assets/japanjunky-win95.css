@@ -18,7 +18,7 @@
   gap: 4px;
   flex-shrink: 0;
   /* Above the page content/scene; deliberately BELOW the global CRT
-     shader canvas (z 20000) so scanlines/grille/dither cover the taskbar
+     shader canvas (z 20000) so scanlines/grille/vignette cover the taskbar
      like everything else on the tube. */
   z-index: 10010;
   font-size: 12px;
@@ -1188,7 +1188,7 @@ svg.jj-start-item-icon {
 .jj-vol-popup[hidden] { display: none; }
 
 /* --- Popup open flash + title glow (volume popup + calendar popover) ---
-   Scanlines/dither/vignette come from the GLOBAL CRT shader canvas
+   Scanlines/grille/vignette come from the GLOBAL CRT shader canvas
    (z 20000, japanjunky-crt-shader.js) — do NOT add per-element raster
    overlays here. Only per-element behaviors live in CSS: the CRT power-on
    flash when a popup opens (display toggle restarts the animation) and

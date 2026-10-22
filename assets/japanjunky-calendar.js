@@ -20,7 +20,7 @@
   // stacking context (z-index 10010) which traps them below the toolbox (10011).
   // Reparent to #jj-crt-content (NOT <body>): as direct wrapper children their
   // z-index beats the toolbox, while staying under the global CRT shader
-  // canvas (z 20000) so scanlines/dither cover them — body-level siblings
+  // canvas (z 20000) so scanlines/grille cover them — body-level siblings
   // would paint above the canvas because the barrel filter makes the wrapper
   // a stacking context. (All logic references them by id, so the move is
   // transparent.) The hover popover loses its CSS descendant `:hover` trigger

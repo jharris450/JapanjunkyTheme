@@ -20,7 +20,7 @@
   // Reparent the popup OUT of the taskbar (whose z:10010 stacking context
   // trapped it below the toolbox, 10011) but INTO #jj-crt-content: as a
   // direct wrapper child its z-index beats the toolbox, while staying under
-  // the global CRT shader canvas (z 20000) so scanlines/dither cover it.
+  // the global CRT shader canvas (z 20000) so scanlines/grille cover it.
   // (On <body> it would paint above the canvas — the barrel filter makes
   // the wrapper a stacking context.) CSS positions it fixed; left is
   // anchored to the speaker button at open time.

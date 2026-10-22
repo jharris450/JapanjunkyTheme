@@ -415,7 +415,10 @@
       BEFORE any scene module inits, so heavy effects shed on throttled
       devices (weak GPU, high-DPI, thermal / iOS Low Power). {%- endcomment -%}
   <script src="{{ 'japanjunky-perf.js' | asset_url }}" defer></script>
-  <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
+  {%- comment -%} japanjunky-screensaver-post.js (VGA 256-colour quantize +
+      Floyd-Steinberg on every screensaver / underscene frame) is no longer
+      loaded: dithering is for product images and product-metafield media only
+      (2026-10-22). The screensaver keeps its low-res pixelated render. {%- endcomment -%}
   {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
   {% endif %}
@@ -477,8 +480,12 @@
       record: "{{ 'jj-model-record.png' | asset_url }}",
       cd: "{{ 'jj-model-cd.png' | asset_url }}"
     };
-    // Model atlas dithering: 'site' (full phosphor palette) | 'neutral' | 'off'.
-    window.JJ_MODEL_DITHER = 'site';
+    // Model ATLAS dithering: 'site' (full phosphor palette) | 'neutral' | 'off'.
+    // 'off' since 2026-10-22 (site rule: dithering only on product images and
+    // product-metafield media) -- the record/cassette/CD atlas is theme art.
+    // The product cover art painted onto the models is still dithered
+    // (japanjunky-model-builder.js paintDynamic).
+    window.JJ_MODEL_DITHER = 'off';
   </script>
   <script src="{{ 'jj-models.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-model-builder.js' | asset_url }}" defer></script>
@@ -514,8 +521,10 @@
 {%- comment -%} CRT Shader: Three.js overlay canvas. z 20000 = the GLOBAL
     effect layer: it rides above ALL chrome inside #jj-crt-content (taskbar
     10010, toolbox 10011, popups 10015, shutdown 10020) so scanlines/grille/
-    dither cover the whole tube — individual elements must NOT add their own
-    raster overlays.
+    vignette cover the whole tube — individual elements must NOT add their own
+    raster overlays. Dithering is NOT a global layer: it is applied only to
+    product images and product-metafield media (japanjunky-dither.js,
+    explorer-video, the cover art on the 3D models), per the 2026-10-22 rule.
     Anything needing the effects must live INSIDE #jj-crt-content — the
     wrapper's barrel filter makes it a stacking context, so body-level
     siblings always paint above this canvas regardless of z. {%- endcomment -%}

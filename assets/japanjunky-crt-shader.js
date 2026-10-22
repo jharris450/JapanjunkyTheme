@@ -26,7 +26,7 @@
  *            Absent on the no-barrel paths (Firefox / handheld / lite /
  *            YouTube-tear pages), colour included — see init().
  *   Layer 2: Three.js fullscreen quad (scanlines, grille, damper wire, bloom,
- *            vignette, dither). Scanline period + beam profile, grille
+ *            vignette). Scanline period + beam profile, grille
  *            pitch and wire shadow are derived from the tube's physical
  *            dimensions at the current viewport + DPR (see applyTubeScale),
  *            not fixed px.
@@ -124,8 +124,10 @@
     vignetteIntensity: 0.35,
     overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
-    beamWidth: 6.0,
-    ditherIntensity: 0.06   // checkerboard phosphor grain over the whole tube
+    beamWidth: 6.0
+    // Removed 2026-10-22 (site rule: dithering only on product images and
+    // product-metafield media): the 2 px checker "phosphor grain" that sat
+    // over the whole tube (ditherIntensity 0.06).
     // Removed 2026-10-21 for accuracy: the animated "volumetric fog" wisps
     // (no such thing on a CRT), a global 30 Hz brightness flicker (the PVM
     // refreshes at 60 Hz — 240p full frames / 480i fields — and 60 Hz
@@ -403,7 +405,6 @@
     'uniform float uDamperWireOpacity;',
     'uniform float uDamperWireY;',
     'uniform float uDamperWireHalfPx;',
-    'uniform float uDitherIntensity;',
     '',
     '/* Cylindrical face warp for overlay UVs (idle while the SVG filter on',
     '   #jj-crt-content warps content and this canvas together). x² only:',
@@ -476,10 +477,6 @@
     '    beamBrightness = 0.85 + 0.15 * exp(-beamDist * beamDist / (beamFalloff * beamFalloff));',
     '  }',
     '',
-    '  /* ── Checker Dither (global phosphor grain, 2px cells) ── */',
-    '  float checker = mod(floor(bPx.x * 0.5) + floor(bPx.y * 0.5), 2.0);',
-    '  float ditherAlpha = uDitherIntensity * checker;',
-    '',
     '  /* ── Power State ──────────────────────────────────────── */',
     '  float powerFade = 1.0;',
     '  if (uTime < 0.4) {',
@@ -508,7 +505,7 @@
     '     INSIDE the transmission product. (It used to scale the darkening',
     '     amount instead, which only lightened the scanlines along the wire',
     '     rows — the wires never actually showed.) */',
-    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * (1.0 - ditherAlpha) * damperWires;',
+    '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * damperWires;',
     '  totalDarken *= beamBrightness;',
     '',
     '  color = phosphorTint + caColor + vec3(bloom);',
@@ -581,8 +578,7 @@
       uBeamWidth:           { value: cfg.beamWidth },
       uDamperWireOpacity:   { value: 0.0 },               // set by applyTubeScale
       uDamperWireY:         { value: cfg.damperWireY },
-      uDamperWireHalfPx:    { value: 1.5 },               // set by applyTubeScale
-      uDitherIntensity:     { value: cfg.ditherIntensity }
+      uDamperWireHalfPx:    { value: 1.5 }                // set by applyTubeScale
     };
 
     // Physical -> device px. The tube's 240 raster lines, 1070 grille

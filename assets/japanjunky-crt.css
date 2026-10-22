@@ -387,7 +387,7 @@
 
 /* ===== IMAGE CONTAINERS ===== */
 /* Phosphor stripe overlay now handled by full-screen aperture grille.
-   Keep position:relative for internal layout and dither overlays. */
+   Keep position:relative for internal layout and effect overlays. */
 
 .jj-thumb-img,
 .jj-detail-image {

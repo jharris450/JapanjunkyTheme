@@ -9,7 +9,7 @@
  *
  * Beneath the scene, this module's canvas shows the DIRECT mirror: the
  * wax shader's own water-reflection continued one screen down (uVShift
- * pass rendered by japanjunky-screensaver.js, same dither pipeline as
+ * pass rendered by japanjunky-screensaver.js, same readback pipeline as
  * the main frame). The reflection dissolves smoothly into black with
  * depth — soft gradient, a light pixel-crumble at the frontier, and
  * swirling spark particles that fly off the decay edge and fade out
@@ -173,7 +173,7 @@
     },
 
     // Called by the screensaver's render loop with the continued-reflection
-    // frame (dithered like the main frame) + the live main frame.
+    // frame (rendered like the main frame) + the live main frame.
     receiveFrame: function (inverse, mainFrame) {
       var now = performance.now();
       var dt = Math.min((now - lastFrameTime) / 1000, 0.1);
