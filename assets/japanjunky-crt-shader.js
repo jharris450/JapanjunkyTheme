@@ -106,11 +106,15 @@
     scanlineGainKnee: 0.6,     // linear-light level where the roll-off starts
                                // (auto-lowered if the curve would go
                                // non-monotonic for a big gain)
-    scanlineDepthNoGain: 0.5,  // on the no-barrel paths (Firefox / handheld)
-                               // the SVG chain, and so the gain, is absent:
-                               // the raster mask runs at this fraction of
-                               // scanlineIntensity so the page's average
-                               // brightness doesn't drop there either
+    scanlineDepthNoGain: 0.75, // on the no-barrel paths (Firefox / handheld /
+                               // YouTube-tear product pages) the SVG chain --
+                               // gamma, gain, phosphors -- is absent. Without
+                               // the gamma the greys are not deepened either,
+                               // so the mask at 0.75 x depth lands on the
+                               // chain path's brightness: harness flat fields
+                               // 2026-10-22, chain path white 0.82 / grey 0.79
+                               // of raw; no chain at 1.0 x 0.78 / 0.78, at
+                               // 0.75 x 0.83 / 0.83, at 0.5 x 0.88 / 0.87.
     grilleIntensity: 0.18,
     chromaticAberration: 2.5,
     bloomIntensity: 0.22,
@@ -517,10 +521,17 @@
   // ─── Three.js CRT Overlay ──────────────────────────────────────
   function initShaderOverlay(cfg) {
     if (typeof THREE === 'undefined') return;
-    // No SVG chain (Firefox / handheld / lite-undo without barrel) = no
-    // beam gain to pay for the raster mask, so the mask runs shallower.
-    var noGain = document.documentElement.classList.contains('jj-crt-no-barrel')
-      || !document.getElementById('jj-crt-barrel');
+    // No SVG chain (Firefox / handheld / YouTube-tear pages / lite-undo
+    // without barrel) = no beam gain to pay for the raster mask, so the mask
+    // runs at scanlineDepthNoGain x depth. Re-evaluated whenever the <html>
+    // class list changes: explorer-video adds jj-crt-no-barrel only once the
+    // YouTube player starts, well after this init ran (until 2026-10-22
+    // product pages kept the full mask with no gain -- darker than home).
+    function noGainNow() {
+      return document.documentElement.classList.contains('jj-crt-no-barrel')
+        || !document.getElementById('jj-crt-barrel');
+    }
+    var noGain = noGainNow();
 
     var canvas = document.getElementById('jj-crt-shader-canvas');
     if (!canvas) return;
@@ -601,6 +612,15 @@
       uniforms.uDamperWireOpacity.value = cfg.damperWireOpacity * Math.min(1.0, wirePx / bandPx);
     }
     applyTubeScale(window.innerWidth * dpr, window.innerHeight * dpr);
+
+    function applyDepth() {
+      uniforms.uScanlineIntensity.value = cfg.scanlineIntensity * (noGainNow() ? cfg.scanlineDepthNoGain : 1);
+    }
+    var classObserver = null;
+    if (typeof MutationObserver !== 'undefined') {
+      classObserver = new MutationObserver(applyDepth);
+      classObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
 
     var material = new THREE.ShaderMaterial({
       vertexShader: CRT_VERT,
@@ -690,6 +710,7 @@
         shed = true;
         running = false;
         window.removeEventListener('resize', onResize);
+        if (classObserver) classObserver.disconnect();
         // Free the GPU-side buffers; the canvas is display:none via crt.css.
         try { renderer.dispose(); } catch (e) {}
       },

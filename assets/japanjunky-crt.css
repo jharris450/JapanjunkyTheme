@@ -147,12 +147,12 @@
    the period to viewport/240, this fallback keeps a fixed 4px). Beam profile:
    each raster line is the ~0.4 mm beam spot (a Gaussian, sigma ~0.9 px at
    this scale) on a 0.84 mm pitch -- a narrow bright line, a wide dark gap
-   (the gap gets only the tails). Stops = 0.5 x 0.40 x (1 - profile): half
-   the shader's depth, because this path has no SVG chain and so no beam
-   gain to pay for the mask (crt-shader.js scanlineGain / scanlineDepthNoGain)
-   -- the page's average brightness stays where it was.
-   Vignette: tighter than 20" — 14" tubes have steeper beam angles
-   at edges, causing more pronounced brightness falloff (40%→0.45).
+   (the gap gets only the tails). Stops = 0.75 x 0.40 x (1 - profile): the
+   shader's scanlineDepthNoGain x depth, because this path has no SVG chain
+   and so no CRT gamma and no beam gain -- at 0.75 x the flat-field
+   brightness matches the GPU path within 1 % (crt-shader.js, 2026-10-22).
+   Vignette 0.35 = the shader's vignetteIntensity, so a page that latches
+   lite mid-session does not get darker edges than it had.
    No tint: the monitor is D65-calibrated, the same white as the display
    (the former 2% warm layer was removed 2026-10-21). The real per-pixel
    colour — CRT gamma + SMPTE-C phosphors — is in the shader's SVG chain. */
@@ -165,19 +165,19 @@
     repeating-linear-gradient(
       to bottom,
       rgba(0, 0, 0, 0.00) 0px,
-      rgba(0, 0, 0, 0.01) calc(0.5px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.09) calc(1px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.15) calc(1.5px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.16) calc(2px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.15) calc(2.5px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.09) calc(3px / var(--jj-zoom)),
-      rgba(0, 0, 0, 0.01) calc(3.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.02) calc(0.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.14) calc(1px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.22) calc(1.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.25) calc(2px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.22) calc(2.5px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.14) calc(3px / var(--jj-zoom)),
+      rgba(0, 0, 0, 0.02) calc(3.5px / var(--jj-zoom)),
       rgba(0, 0, 0, 0.00) calc(4px / var(--jj-zoom))
     ),
     radial-gradient(
       ellipse at center,
       transparent 40%,
-      rgba(0, 0, 0, 0.45) 100%
+      rgba(0, 0, 0, 0.35) 100%
     );
   pointer-events: none;
   z-index: 9999;
