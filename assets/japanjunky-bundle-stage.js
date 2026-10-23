@@ -62,11 +62,13 @@
   // ─── Box texture pipeline ─────────────────────────────────────
   // The cardboard photos were shot under uneven light, so each face reads
   // a different shade. Normalize every face to a common mean luminance
-  // (with a mild grain-preserving contrast boost + fixed warm kraft tint).
-  // The Floyd-Steinberg step against the palette's NEUTRAL subset was
-  // dropped 2026-10-22: the box is theme art, and dithering is for product
-  // images and product-metafield media only. Knobs tuned via headless A/B
-  // renders against the raw photos.
+  // (with a mild grain-preserving contrast boost + fixed warm kraft tint),
+  // then Floyd-Steinberg dither with the product-image kernel against the
+  // palette's NEUTRAL subset (full phosphor palette speckles a near-flat
+  // neutral surface with green/red confetti). The dither step was dropped
+  // for one day (2026-10-22) and restored 2026-10-23 per user: the three.js
+  // scenes keep their dither. Knobs tuned via headless A/B renders against
+  // the raw photos.
   var BOX_TEX_LUMA = 168;      // shared brightness target across faces
   var BOX_TEX_CONTRAST = 1.4;  // amplifies cardboard grain past the palette step
   var BOX_TEX_DIM = 256;       // plenty next to the 240px shader res
@@ -129,6 +131,12 @@
               0, 0, wpx, BOX_TEX_DIM);
           }
         }
+        id = x.getImageData(0, 0, BOX_TEX_DIM, BOX_TEX_DIM);
+        if (window.JJ_Dither && window.JJ_Dither.ditherImageData) {
+          window.JJ_Dither.ditherImageData(id, BOX_TEX_DIM, BOX_TEX_DIM,
+            window.JJ_Dither.NEUTRAL_PALETTE);
+        }
+        x.putImageData(id, 0, 0);
       } catch (e) { /* tainted canvas — keep the raw draw */ }
       tex.needsUpdate = true;
     }

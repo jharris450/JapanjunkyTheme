@@ -5,11 +5,13 @@
  * Dithers to a custom CRT phosphor palette for a unified retro look.
  * Applied to all images inside .jj-thumb-img and .jj-detail-image containers
  * and to the explorer background (custom.explorer_background metafield).
- * Site rule (2026-10-22): dithering is applied ONLY to product images and
- * product-metafield media — this pipeline, the custom.video tear frames
- * (explorer-video.js) and the cover art on the 3D models (model-builder.js).
- * Nothing else on the site dithers (the CRT overlay's global checker, the
- * screensaver's VGA pass and the bundle box texture were removed that day).
+ * Site rule (2026-10-22, amended 2026-10-23): dithering is applied to
+ * product images and product-metafield media — this pipeline, the
+ * custom.video tear frames (explorer-video.js), the cover art on the 3D
+ * models (model-builder.js) — and to the three.js scenes (model atlases,
+ * the bundle box texture via NEUTRAL_PALETTE, the screensaver / underscene
+ * VGA pass in japanjunky-screensaver-post.js). No global dither layer: the
+ * CRT overlay's full-tube checker stays removed.
  *
  * Inspired by Hypnospace Outlaw's approach: Floyd-Steinberg dithering
  * to a fixed custom palette produces organic stipple patterns that look

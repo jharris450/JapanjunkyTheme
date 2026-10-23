@@ -9,14 +9,14 @@
  * viewer use, shaderRes 240 to match the player's 240 px backing store);
  * otherwise it falls back to MeshBasicMaterial.
  *
- * Texture: window.JJ_MODEL_DITHER selects the ATLAS treatment: 'site' /
- * 'neutral' = loaded through an Image, drawn to a 256x256 canvas,
- * Floyd-Steinberg dithered to that palette and used as a CanvasTexture;
- * 'off' (default since 2026-10-22, theme.liquid) = plain TextureLoader. The
- * product cover art painted into the dynamic rects (paintDynamic) is ALWAYS
- * dithered with the site palette when JJ_Dither is present: it is a product
- * image, and the site rule is dithering on product images and
- * product-metafield media only.
+ * Texture: when window.JJ_Dither is present the atlas is loaded through an
+ * Image, drawn to a 256x256 canvas, Floyd-Steinberg dithered and used as a
+ * CanvasTexture. window.JJ_MODEL_DITHER selects the atlas palette: 'site'
+ * (default) | 'neutral' | 'off' (plain TextureLoader). 'off' was the default
+ * for one day (2026-10-22) under the product-media-only dither rule; the
+ * three.js scenes got their dither back 2026-10-23 per user. The product
+ * cover art painted into the dynamic rects (paintDynamic) is ALWAYS dithered
+ * with the site palette when JJ_Dither is present, whatever the atlas setting.
  *
  * COLOUR SPACE — the PS1 frag is a raw passthrough (gl_FragColor = texel) and
  * three injects no decode/encode into a ShaderMaterial. On the shader path the
@@ -77,9 +77,9 @@
   // seconds. The lid takes 0.5 s to close (player.js); the arm lands after it.
   var SWING_SECS = 1.2;
 
-  // Default atlas treatment. theme.liquid (or the harness) may override this
+  // Default atlas palette. theme.liquid (or the harness) may override this
   // before the builder runs for an easy on-site switch.
-  if (typeof window.JJ_MODEL_DITHER === 'undefined') window.JJ_MODEL_DITHER = 'off';
+  if (typeof window.JJ_MODEL_DITHER === 'undefined') window.JJ_MODEL_DITHER = 'site';
 
   function ditherMode() {
     var m = window.JJ_MODEL_DITHER;

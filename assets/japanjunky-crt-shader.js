@@ -125,9 +125,9 @@
     overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
     beamWidth: 6.0
-    // Removed 2026-10-22 (site rule: dithering only on product images and
-    // product-metafield media): the 2 px checker "phosphor grain" that sat
-    // over the whole tube (ditherIntensity 0.06).
+    // Removed 2026-10-22 (no global dither layer; product media and the
+    // three.js scenes dither on their own): the 2 px checker "phosphor
+    // grain" that sat over the whole tube (ditherIntensity 0.06).
     // Removed 2026-10-21 for accuracy: the animated "volumetric fog" wisps
     // (no such thing on a CRT), a global 30 Hz brightness flicker (the PVM
     // refreshes at 60 Hz — 240p full frames / 480i fields — and 60 Hz
