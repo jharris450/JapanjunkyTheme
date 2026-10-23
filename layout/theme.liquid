@@ -415,10 +415,11 @@
       BEFORE any scene module inits, so heavy effects shed on throttled
       devices (weak GPU, high-DPI, thermal / iOS Low Power). {%- endcomment -%}
   <script src="{{ 'japanjunky-perf.js' | asset_url }}" defer></script>
-  {%- comment -%} japanjunky-screensaver-post.js (VGA 256-colour quantize +
-      Floyd-Steinberg on every screensaver / underscene frame) is no longer
-      loaded: dithering is for product images and product-metafield media only
-      (2026-10-22). The screensaver keeps its low-res pixelated render. {%- endcomment -%}
+  {%- comment -%} VGA 256-colour quantize + Floyd-Steinberg on every screensaver /
+      underscene frame (the 3D scene's "PC render" look). Unloaded for one day
+      (2026-10-22, product-media-only rule), restored 2026-10-23 per user: the
+      three.js scenes keep their dither. {%- endcomment -%}
+  <script src="{{ 'japanjunky-screensaver-post.js' | asset_url }}" defer></script>
   {% if settings.scene_mode != 'portal' %}
   <script src="{{ 'japanjunky-forest.js' | asset_url }}" defer></script>
   {% endif %}
@@ -481,11 +482,11 @@
       cd: "{{ 'jj-model-cd.png' | asset_url }}"
     };
     // Model ATLAS dithering: 'site' (full phosphor palette) | 'neutral' | 'off'.
-    // 'off' since 2026-10-22 (site rule: dithering only on product images and
-    // product-metafield media) -- the record/cassette/CD atlas is theme art.
-    // The product cover art painted onto the models is still dithered
+    // 'site' again since 2026-10-23 (was 'off' for one day under the
+    // product-media-only rule; the three.js scenes keep their dither). The
+    // product cover art painted onto the models is always dithered
     // (japanjunky-model-builder.js paintDynamic).
-    window.JJ_MODEL_DITHER = 'off';
+    window.JJ_MODEL_DITHER = 'site';
   </script>
   <script src="{{ 'jj-models.js' | asset_url }}" defer></script>
   <script src="{{ 'japanjunky-model-builder.js' | asset_url }}" defer></script>
@@ -522,9 +523,11 @@
     effect layer: it rides above ALL chrome inside #jj-crt-content (taskbar
     10010, toolbox 10011, popups 10015, shutdown 10020) so scanlines/grille/
     vignette cover the whole tube — individual elements must NOT add their own
-    raster overlays. Dithering is NOT a global layer: it is applied only to
-    product images and product-metafield media (japanjunky-dither.js,
-    explorer-video, the cover art on the 3D models), per the 2026-10-22 rule.
+    raster overlays. Dithering is NOT a global layer: the overlay's own 2 px
+    checker stays removed (2026-10-22). It is applied to product images and
+    product-metafield media (japanjunky-dither.js, explorer-video) and to the
+    three.js scenes (model atlases + cover art, the bundle box texture, the
+    screensaver / underscene VGA pass -- restored 2026-10-23 per user).
     Anything needing the effects must live INSIDE #jj-crt-content — the
     wrapper's barrel filter makes it a stacking context, so body-level
     siblings always paint above this canvas regardless of z. {%- endcomment -%}

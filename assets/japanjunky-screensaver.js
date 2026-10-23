@@ -2,12 +2,14 @@
  * JapanJunky Screensaver — Portal Vortex Tunnel
  *
  * Holographic swirling portal with flying objects (album covers),
- * rendered at low resolution (pixelated upscale) with PS1-style vertex
- * snapping. The VGA 256-colour quantize + Floyd-Steinberg pass
- * (japanjunky-screensaver-post.js) was dropped 2026-10-22: dithering is
- * for product images and product-metafield media only.
+ * rendered at low resolution with VGA 256-color dithering and
+ * PS1-style vertex snapping. (The VGA quantize + Floyd-Steinberg pass,
+ * japanjunky-screensaver-post.js, was unloaded for one day on 2026-10-22
+ * and restored 2026-10-23 per user: the three.js scenes keep their dither.
+ * The guard below keeps the render loop working without it.)
  *
- * Depends on: THREE (global), JJ_SCREENSAVER_CONFIG (global, set by theme.liquid)
+ * Depends on: THREE (global), JJ_ScreensaverPost (global, optional),
+ *             JJ_SCREENSAVER_CONFIG (global, set by theme.liquid)
  */
 (function () {
   'use strict';
@@ -1398,12 +1400,15 @@
       dst.set(src.subarray(srcRow, srcRow + rowBytes), row * rowBytes);
     }
 
+    if (window.JJ_ScreensaverPost) {
+      JJ_ScreensaverPost.dither(displayImageData);
+    }
     displayCtx.putImageData(displayImageData, 0, 0);
 
     // Underscene: hand the below-the-fold module its mirrored, wax-less
     // frame (japanjunky-underscene.js). Every other frame — the underworld
     // is decayed anyway, and it halves the extra readback cost.
-    // The inverse pass is a SECOND readback. On 'low' skip it — the
+    // The inverse pass is a SECOND readback + dither. On 'low' skip it — the
     // underworld is decayed anyway and this halves the per-frame stall cost.
     var lowFx = window.JJ_Perf && JJ_Perf.tier === 'low';
     if (!lowFx && window.JJ_UnderScene && JJ_UnderScene.wantsFrame() && (inverseFrameFlip = !inverseFrameFlip)) {
@@ -1416,7 +1421,8 @@
   // mirrored, rippled, darkened reflection continued downward — a direct
   // mirror by the same math as the visible water, not a pasted copy.
   // uWaxOff kills the wax field so only the reflection world renders.
-  // Same row flip as the main frame so the stylization carries over.
+  // Same row flip + same JJ_ScreensaverPost dither as the main frame so
+  // the stylization carries over.
   var inverseFrameFlip = false;
   var inverseCanvas = null, inverseCtx = null, inverseImageData = null;
   function renderInverseFrame() {
@@ -1476,6 +1482,9 @@
     for (var row = 0; row < resH; row++) {
       var srcRow = (resH - 1 - row) * rowBytesInv;
       dst.set(src.subarray(srcRow, srcRow + rowBytesInv), row * rowBytesInv);
+    }
+    if (window.JJ_ScreensaverPost) {
+      JJ_ScreensaverPost.dither(inverseImageData);
     }
     inverseCtx.putImageData(inverseImageData, 0, 0);
     return inverseCanvas;
