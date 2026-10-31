@@ -40,6 +40,10 @@
  *      fired after dips had ended). Covers Firefox software compositing,
  *      where WebGL still passes the caveat check. The line is 'low' (27) on
  *      Chromium and the 'high' line (54) on Gecko -- see LITE_LATCH_FPS.
+ *   3. remembered (Gecko only): once path 2 has fired on this origin, later
+ *      loads go lite from the first frame for LITE_MEMORY_MS, same browser
+ *      build -- path 2 cannot fire before the page has run full-fat for
+ *      seconds, and that is what a returning visitor would see every time.
  *
  * Brave (2026-09-16): Brave's fingerprint Shields spoof the WebGL renderer
  * string and can fail the caveat probe on a healthy GPU. A first version
@@ -163,9 +167,36 @@
     if (tier === 'low') setTier('mid');
   }
 
-  // Sustained-low requirement before the measured latch (path 2).
-  var LITE_LATCH_MS = 5000;
-  var LITE_MIN_AGE_MS = 8000;   // no latch inside the load-jank window
+  // Sustained-low requirement before the measured latch (path 2), and the
+  // load-jank window it may not fire inside. Gecko runs both short: visible-
+  // window load curves at 1920x1080 (2026-10-30, JJ_Perf.fps every 0.5 s)
+  //   hardware Firefox: 60 60 52 59 60 60 60 ...   one 0.5 s dip at 1.5 s
+  //   software Firefox: 60 60 51 32 23 18 15 13 ...  under 54 from 1.5 s on
+  // so 3 s + 3 s puts the software latch ~5 s after navigation (it was ~9 s,
+  // 10-15 s on the user's machine: the overlay, bang canvas and floating head
+  // all ran full-fat until then) while a hardware load dip would need 3 s
+  // continuous under 54 to misfire. Chromium keeps 5 s + 8 s (not re-measured).
+  var LITE_LATCH_MS = isGecko ? 3000 : 5000;
+  var LITE_MIN_AGE_MS = isGecko ? 3000 : 8000;
+
+  // Path 3: the remembered verdict (Gecko only; Chromium's probe already fires
+  // on frame 1). Expires after LITE_MEMORY_MS and whenever the browser build
+  // changes (a Firefox update may change software WebRender's speed); the
+  // 'jj-fx-lite' override still wins. A user who turns acceleration back on
+  // rides out the remaining days in lite -- or clears site data.
+  var LITE_MEMORY_KEY = 'jj-fx-lite-verdict', LITE_MEMORY_MS = 7 * 86400000;
+  var remembered = false;
+  function rememberedLite() {
+    if (!isGecko || forcedLite !== null) return false;
+    try {
+      var v = JSON.parse(localStorage.getItem(LITE_MEMORY_KEY) || 'null');
+      return !!(v && v.ua === navigator.userAgent && Date.now() - v.t < LITE_MEMORY_MS);
+    } catch (e) { return false; }
+  }
+  function rememberLite() {
+    if (!isGecko) return;
+    try { localStorage.setItem(LITE_MEMORY_KEY, JSON.stringify({ t: Date.now(), ua: navigator.userAgent })); } catch (e) {}
+  }
   // Recovery (probe-path latch only): this good, this long, and lite was wrong.
   // DISABLED (2026-09-16): the Brave report turned out to be a real soft GPU
   // (acceleration switched off in brave://settings), and once lite sheds
@@ -254,7 +285,7 @@
     if (!lite) {
       if (smoothed < LITE_LATCH_FPS) {
         lowTierSince = lowTierSince || t;
-        if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) latchLite(softGpu);
+        if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) { latchLite(softGpu); rememberLite(); }
       } else {
         lowTierSince = 0;
       }
@@ -295,6 +326,7 @@
     get fps() { return Math.round(smoothed); },
     get lite() { return lite; },
     get softGpu() { return softGpu; },
+    get remembered() { return remembered; },
     onChange: function (fn) {
       if (typeof fn !== 'function') return function () {};
       listeners.push(fn);
@@ -330,6 +362,7 @@
     // product page's tear video at mount and skip the underscene); the loop
     // still drops it to 'low' if the shed page cannot hold the rate.
     if (softGpu) { setTier('mid'); latchLite(true); }
+    else if (rememberedLite()) { remembered = true; setTier('mid'); latchLite(false); }
     else applyClass(tier);
     requestAnimationFrame(frame);
   }
