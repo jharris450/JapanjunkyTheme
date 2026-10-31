@@ -80,6 +80,13 @@ html.jj-fx-lite .jj-swirl-lite {
    through at 10%. The 10% scene blend the canvas had is the one visible
    lite difference on the ring itself. */
 .jj-swirl-lite--front { z-index: -1; opacity: 1; }
+/* Gecko lite (info-swirl.js geckoLite): the ONE merged image, ring + black
+   interior, under the head. OPAQUE on purpose: a layer with opacity < 1 costs
+   software WebRender a second full-size pass -- the same image at --back's
+   0.9 measured 50 fps while scrolling, opaque 58-59 (2026-10-30). The 10 %
+   scene blend the GPU canvas has is the one visible difference, as on the
+   Chromium lite front image. */
+.jj-swirl-lite--single { z-index: -2; opacity: 1; }
 
 /* Lite head: float animation and pupil tracking both stay. Measured on a
    software compositor (2026-09-16): the float itself is free; any CSS mask
@@ -143,7 +150,8 @@ html.jj-fx-lite .jj-kyogen-clip {
      its own opacity is what keeps the sale copy readable over the face.
      0.4 = dim enough for text contrast, bright enough that the gaze cue
      (pupils rest on the product info) still steers the eye to the sale */
-  opacity: 0.4;
+  --jj-kyogen-opacity: 0.4;
+  opacity: var(--jj-kyogen-opacity);
   pointer-events: none;
   transform: perspective(700px) rotateY(14deg) rotate(-2deg);
   /* subtle float; keyframes restate the full transform because animation
@@ -173,6 +181,30 @@ html.jj-fx-lite .jj-kyogen-clip {
 html.jj-fx-lite.jj-gecko .jj-kyogen {
   animation: none !important;
 }
+/* Lite on Gecko, the head's opacity (2026-10-30): a layer at opacity < 1 is
+   a second full-size pass for software WebRender -- the head at 0.4 measured
+   56 fps while scrolling, opaque 60 / 19 ms. info-swirl.js liteBakeHead
+   multiplies --jj-kyogen-opacity into the baked bitmap's alpha and adds
+   .jj-kyogen--baked, so the element runs opaque and looks the same; the two
+   pupil discs keep the 40 % on their own tiny boxes. Without a successful
+   bake the class is absent and the normal 0.4 stays. */
+html.jj-fx-lite.jj-gecko .jj-kyogen.jj-kyogen--baked {
+  opacity: 1;
+}
+html.jj-fx-lite.jj-gecko .jj-kyogen.jj-kyogen--baked .jj-kyogen__pupil {
+  opacity: var(--jj-kyogen-opacity);
+}
+
+/* Lite on Gecko, the bang itself (2026-10-30, user: "FPS drop happens when
+   scrolling"): info-swirl.js builds ONE snapshot image under the head
+   (black interior + ring merged, class --single, opaque) and no --front occluder.
+   Firefox's software WebRender redraws every visible <img> on every
+   composite, and each snapshot is ~2600x1600 on-screen px: the back+front
+   sandwich measured 44 fps / 50 ms stalls while scrolling (live, 1920x1080),
+   one image 58-59 fps, none 60. Nothing but fewer pixels helped
+   (will-change / contain / translateZ 47-48, bilinear 46, unrotated 52,
+   half size 54). The frozen head (rule above) is why no occluder is needed:
+   its bake ends at the ring's inner edge (LITE_HEAD_INSET_GECKO). */
 
 .jj-kyogen__img {
   width: 100%;

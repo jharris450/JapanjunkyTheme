@@ -433,10 +433,22 @@
        either loop (read live). */
     var lite = false;
     var liteSrc = null;        // [variantA, variantB] data URLs
+    /* Gecko lite (html.jj-gecko, japanjunky-perf.js; 2026-10-30): Firefox's
+       software WebRender redraws every visible <img> on every composite, and
+       each lite snapshot here is ~2600x1600 on-screen px — with the back +
+       front sandwich below, any motion on the page (scroll, pupils) ran at
+       44 fps; one image 58-59 (live, 1920x1080). So on Gecko the bang is ONE
+       image under the head (black interior + ring merged, liteSingleSnapshot, class --single),
+       there is no front occluder, and the head bake is cut at the interior
+       edge (LITE_HEAD_INSET_GECKO) — the head does not float on Gecko lite
+       (bundle.css), so no wobble margin is needed and nothing pokes past the
+       ring. Chromium's software compositor keeps the sandwich: its float is
+       on and it measured the imgs as cheap (2026-09-16). */
+    var geckoLite = document.documentElement.classList.contains('jj-gecko');
     var liteTimer = 0, liteRaf = 0, liteFrame = 0;
     var LITE_FILTER = 'saturate(1.15) contrast(1.1) brightness(0.95)'; // = #jj-swirl-canvas filter
 
-    function liteSnapshot(variant) {
+    function liteSnapshotCanvas(variant) {
       tunnel.material.map = variant ? stripeTexB : stripeTexA;
       glowRing.scale.setScalar(1);
       renderer.render(scene, camera);
@@ -452,6 +464,24 @@
       x.globalCompositeOperation = 'destination-out';
       if (polyPath(x, variant, BUFFER)) x.fill();
       x.globalCompositeOperation = 'source-over';
+      return c;
+    }
+    function liteSnapshot(variant) { return liteSnapshotCanvas(variant).toDataURL('image/png'); }
+
+    // Gecko lite: back + front in ONE bitmap — this variant's black interior
+    // (fill + fat stroke, as liteBackSnapshot) with the punched ring drawn
+    // over it, so the hole shows black and the ring's own pixels win
+    // everywhere else. Sits under the head like --back; no --front.
+    function liteSingleSnapshot(variant) {
+      var c = document.createElement('canvas');
+      c.width = c.height = BUFFER;
+      var x = c.getContext('2d');
+      x.fillStyle = '#000';
+      x.strokeStyle = '#000';
+      x.lineWidth = 12;
+      x.lineJoin = 'round';
+      if (polyPath(x, variant, BUFFER)) { x.fill(); x.stroke(); }
+      x.drawImage(liteSnapshotCanvas(variant), 0, 0);
       return c.toDataURL('image/png');
     }
 
@@ -484,6 +514,17 @@
        the ring is exactly what the GPU path does with its clip polygon.
        Five static images, no CSS masks. */
     var LITE_HEAD_INSET = 1.04;   // interior polygon scale for the head bake (~+6 px at valleys)
+    var LITE_HEAD_INSET_GECKO = 1.01; // no float, no occluder: end a hair over the ring's inner edge
+    // Gecko lite: the head's 40 % (bundle.css --jj-kyogen-opacity) is baked
+    // into the bitmap's alpha and the element runs opaque (.jj-kyogen--baked).
+    // An opacity < 1 layer is a second full-size pass for software WebRender:
+    // the head at 0.4 measured 56 fps while scrolling, at 1 it is 60 / 19 ms
+    // (2026-10-30). Pupils keep the 40 % on their own tiny boxes.
+    function liteHeadAlpha() {
+      if (!geckoLite) return 1;
+      var v = parseFloat(getComputedStyle(kyogen).getPropertyValue('--jj-kyogen-opacity'));
+      return v > 0 && v <= 1 ? v : 0.4;
+    }
     function parsePolygon(css, W, H) {
       var m = /polygon\((.*)\)/.exec(css || '');
       if (!m) return null;
@@ -575,6 +616,7 @@
         ocx.drawImage(liteHeadBitmap, 0, 0);
         var src = ocx.getImageData(0, 0, nw, nh).data;
 
+        var headAlpha = liteHeadAlpha();
         var sc = Math.min(1, 1024 / W);
         var mw = Math.ceil(W * sc), mh = Math.ceil(H * sc);
         var mc = document.createElement('canvas');
@@ -584,7 +626,7 @@
         for (var variant = 0; variant < 2; variant++) {
           // 3. this variant's dilated interior polygon -> alpha mask in
           //    frame space (capped resolution)
-          var pts = parsePolygon(Burst.buildClipPath(bangScreenEdge, variant, W, H, { rotDeg: 7, inset: LITE_HEAD_INSET }), W, H);
+          var pts = parsePolygon(Burst.buildClipPath(bangScreenEdge, variant, W, H, { rotDeg: 7, inset: geckoLite ? LITE_HEAD_INSET_GECKO : LITE_HEAD_INSET }), W, H);
           if (!pts) return;
           mx.clearRect(0, 0, mw, mh);
           mx.fillStyle = '#fff';
@@ -611,6 +653,7 @@
               var fy = oy + (m12 * lx + m22 * ly + m42) / w;
               var mi = Math.round(fx * sc), mj = Math.round(fy * sc);
               if (mi < 0 || mj < 0 || mi >= mw || mj >= mh || mask[(mj * mw + mi) * 4 + 3] < 128) d[idx] = 0;
+              else if (headAlpha < 1) d[idx] = Math.round(d[idx] * headAlpha);
             }
           }
           ocx.putImageData(od, 0, 0);
@@ -619,6 +662,7 @@
         liteHeadSrc = srcs;
         liteHeadImg.src = srcs[liteFrame];
         liteBakeKey = key;
+        if (headAlpha < 1) kyogen.classList.add('jj-kyogen--baked');   // bundle.css: element opacity 1
       } catch (e) {
         liteHeadFailed = true;
       }
@@ -626,7 +670,6 @@
 
     function liteBuild() {
       if (liteSrc) return;
-      liteSrc = [liteSnapshot(0), liteSnapshot(1)];
       function mkImg(cls, src) {
         var im = document.createElement('img');
         im.className = 'jj-swirl-lite ' + cls;
@@ -636,6 +679,17 @@
         im.src = src;
         return im;
       }
+      if (geckoLite) {
+        // One image under the head (see geckoLite). liteSrc doubles as the
+        // "built" flag; liteImg stays null, liteFlicker swaps liteBack only.
+        liteBackSrc = [liteSingleSnapshot(0), liteSingleSnapshot(1)];
+        liteSrc = liteBackSrc;
+        liteBack = mkImg('jj-swirl-lite--single', liteBackSrc[0]);
+        canvas.parentNode.insertBefore(liteBack, canvas.nextSibling);
+        fitCanvas();
+        return;
+      }
+      liteSrc = [liteSnapshot(0), liteSnapshot(1)];
       liteBackSrc = [liteBackSnapshot(0), liteBackSnapshot(1)];
       liteBack = mkImg('jj-swirl-lite--back', liteBackSrc[0]);
       canvas.parentNode.insertBefore(liteBack, canvas.nextSibling);          // below the head
