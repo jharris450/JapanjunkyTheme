@@ -84,6 +84,9 @@
   // already drops the barrel on Gecko (jj-crt-no-barrel).
   var isGecko = typeof CSS !== 'undefined' && CSS.supports
     && CSS.supports('-moz-appearance', 'none');
+  // html.jj-gecko lets CSS shed what only Gecko's software compositor pays
+  // for (bundle.css: the lite head float). The engine, not the device.
+  if (isGecko) root.classList.add('jj-gecko');
 
   // ─── Forced tier / lite (debugging / QA) ─────────────────────────
   var forced = null, forcedLite = null;

@@ -160,6 +160,20 @@ html.jj-fx-lite .jj-kyogen-clip {
    drift core to the CRT look, not a vestibular-risk movement — it keeps
    running when the OS turns animation effects off. */
 
+/* Lite on Gecko (html.jj-gecko, japanjunky-perf.js): NO float. Firefox 159
+   with hardware acceleration off re-rasterises the two 2600x1600 css px
+   rotated bang snapshots (.jj-swirl-lite, above and below this head) on
+   every frame the head's transform changes — the live homepage sat at
+   45 fps in lite with the float on, 59-60 with it off; pupils parked
+   changed nothing, will-change on either side changed nothing, stepping
+   the float to 12 Hz / 6 Hz only reached 51 / 55 (2026-10-30, SOFT=1
+   ff-perf-probe.js). Chromium's software compositor measured the float as
+   free (2026-09-16), so it keeps it. Pupils keep tracking; the frozen head
+   sits at float phase 0, inside the bake inset liteBakeHead allows. */
+html.jj-fx-lite.jj-gecko .jj-kyogen {
+  animation: none !important;
+}
+
 .jj-kyogen__img {
   width: 100%;
   height: 100%;
