@@ -38,7 +38,8 @@
  *      a sustained stretch outside the load-jank window (the frame rate, not
  *      the tier — the tier lags recovery by design and a tier-keyed latch
  *      fired after dips had ended). Covers Firefox software compositing,
- *      where WebGL still passes the caveat check.
+ *      where WebGL still passes the caveat check. The line is 'low' (27) on
+ *      Chromium and the 'high' line (54) on Gecko -- see LITE_LATCH_FPS.
  *
  * Brave (2026-09-16): Brave's fingerprint Shields spoof the WebGL renderer
  * string and can fail the caveat probe on a healthy GPU. A first version
@@ -77,6 +78,12 @@
 
   var TIERS = ['low', 'mid', 'high'];       // ordered weakest -> strongest
   var root = document.documentElement;
+  // Gecko: Firefox with hardware acceleration off (user pref / blocklist)
+  // composites in software but keeps hardware WebGL, so the caveat probe is
+  // negative there and only the measured path can latch lite. crt-shader.js
+  // already drops the barrel on Gecko (jj-crt-no-barrel).
+  var isGecko = typeof CSS !== 'undefined' && CSS.supports
+    && CSS.supports('-moz-appearance', 'none');
 
   // ─── Forced tier / lite (debugging / QA) ─────────────────────────
   var forced = null, forcedLite = null;
@@ -144,7 +151,7 @@
     maxTier = 'high';
     root.classList.remove('jj-fx-lite');
     // Gecko / handheld own this class too (crt-shader.js, theme.liquid gate).
-    if (!window.JJ_MOBILE && !(typeof CSS !== 'undefined' && CSS.supports && CSS.supports('-moz-appearance', 'none'))) {
+    if (!window.JJ_MOBILE && !isGecko) {
       root.classList.remove('jj-crt-no-barrel');
     }
     notifyLite(false);
@@ -202,6 +209,27 @@
   // Upshift thresholds (sustained above X for Y ms -> raise a tier)
   var TO_MID_UP = 40, TO_HIGH_UP = 54;
   var DOWN_MS = 1200, UP_MS = 4000;
+  // Lite latch line for the measured path (smoothed fps below it for
+  // LITE_LATCH_MS, outside the load window).
+  // Chromium: TO_LOW. Its software compositor already fails the caveat probe
+  // (lite from the first frame), so a measured 27-54 fps there is a real but
+  // weak GPU, which is what the tier knobs are for.
+  // Gecko: TO_HIGH_UP -- "cannot hold the 'high' line". Firefox with hardware
+  // acceleration off composites in software but keeps hardware WebGL, so the
+  // probe is negative and only this path can fire. Firefox 159 held the live
+  // homepage at a steady 42 fps that way (2026-10-30: tier 'mid', lite false,
+  // "running like crap"): above TO_LOW, so lite never latched, and the 'mid'
+  // DPR/bloom knobs cannot buy back compositing cost. (The 2026-09-16 Firefox
+  // ran the same page at 13 fps and latched through TO_LOW; 159's software
+  // WebRender is faster, just not fast enough.) TO_MID (46) was tried first
+  // and missed a page wobbling 44-47. A hardware-accelerated Firefox holds 60
+  // here and the barrel is already off on Gecko, so the structural shed is the
+  // right answer for any Gecko page that sits under 54 for 5 s; the price is
+  // that a hardware Firefox dragged under 54 for 5 s by a heavy page also
+  // goes lite (cohesive look, see crt.css). Reproduce:
+  // tests/harness/crt-ff-bench.html?perf=1&heavy=1 under SOFT=1
+  // ff-perf-probe.js -> 42-47 fps 'mid'.
+  var LITE_LATCH_FPS = isGecko ? TO_HIGH_UP : TO_LOW;
 
   function frame(now) {
     requestAnimationFrame(frame);
@@ -221,7 +249,7 @@
     // the tier deliberately lags recovery (4 s upshift), so a tier-based
     // latch fired after a dip had already ended.
     if (!lite) {
-      if (smoothed < TO_LOW) {
+      if (smoothed < LITE_LATCH_FPS) {
         lowTierSince = lowTierSince || t;
         if (t - lowTierSince > LITE_LATCH_MS && t - startedAt > LITE_MIN_AGE_MS) latchLite(softGpu);
       } else {
