@@ -249,6 +249,60 @@
   border-top: 1px solid #222;
 }
 
+/* --- Caption plates (2026-11-03) ---
+   The handheld's plates (japanjunky-mobile.css, 2026-09-19) behind every
+   text run of the spec sheet, now on desktop too (merchant: "the
+   background we added on mobile needs to be enabled for desktop"). The
+   sheet sits on the torn video / the 35 % explorer background on every
+   viewport. Same recipe, desktop type sizes untouched: fit-content plates
+   hug the text so the video stays visible wherever the copy is not. After
+   the base rules above so equal-specificity declarations here win; the
+   html.jj-mobile rules out-specify both, so the handheld is unchanged. */
+.jj-pdp-info {
+  gap: 4px;
+}
+.jj-pdp-artist,
+.jj-pdp-jp-name,
+.jj-pdp-title,
+.jj-pdp-jp-title,
+.jj-pdp-meta .jj-meta-row,
+.jj-pdp-price {
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  margin: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+  overflow-wrap: anywhere;
+}
+/* Keep the artist plate clear of the corner watch star (26px + inset). */
+.jj-pdp-artist {
+  max-width: calc(100% - 40px);
+}
+/* The 25% underline would sit inside the plate -- the plate gap is the rule. */
+.jj-pdp-jp-name {
+  background-image: none;
+  margin-bottom: 6px;
+}
+.jj-pdp-jp-title {
+  margin-bottom: 6px;
+}
+.jj-pdp-meta {
+  margin: 0 0 6px;
+}
+.jj-pdp-meta .jj-meta-row {
+  padding: 2px 8px;
+  margin-bottom: 3px;
+}
+.jj-pdp-price {
+  margin-bottom: 6px;
+}
+.jj-pdp-description {
+  padding: 10px;
+  border-top: 0;
+  color: #bbb; /* was #999: reads on the plate, not on the bare pane */
+  background-color: rgba(0, 0, 0, 0.72);
+}
+
 /* --- Viewer window stage ---
    Body of the standalone 3D viewer window: a warm amber radial glow (portal-
    lit, matching the homepage) behind the fluid 3D canvas. The canvas fills the

@@ -25,11 +25,13 @@
  *              horizontal lines bow toward the centre row).
  *            Absent on the no-barrel paths (Firefox / handheld / lite /
  *            YouTube-tear pages), colour included — see init().
- *   Layer 2: Three.js fullscreen quad (scanlines, grille, damper wire, bloom,
- *            vignette). Scanline period + beam profile, grille
- *            pitch and wire shadow are derived from the tube's physical
- *            dimensions at the current viewport + DPR (see applyTubeScale),
- *            not fixed px.
+ *   Layer 2: Three.js fullscreen quad (scanlines, grille, damper wire,
+ *            vignette) = a pure TRANSMISSION mask: it only ever darkens.
+ *            It paints no colour of its own, so black stays black (a CRT
+ *            emits nothing there -- see the composite note in CRT_FRAG).
+ *            Scanline period + beam profile, grille pitch and wire shadow
+ *            are derived from the tube's physical dimensions at the current
+ *            viewport + DPR (see applyTubeScale), not fixed px.
  *
  * Config: window.JJ_CRT_SHADER_CONFIG (optional overrides of `defaults`)
  * Loaded: <script src="{{ 'japanjunky-crt-shader.js' | asset_url }}" defer></script>
@@ -116,15 +118,22 @@
                                // of raw; no chain at 1.0 x 0.78 / 0.78, at
                                // 0.75 x 0.83 / 0.83, at 0.5 x 0.88 / 0.87.
     grilleIntensity: 0.18,
-    chromaticAberration: 2.5,
-    bloomIntensity: 0.22,
-    bloomRadius: 1.6,
     vignetteStart: 0.45,
     vignetteEnd: 0.95,
     vignetteIntensity: 0.35,
     overlayBarrel: 0.0,      // SVG filter on <html> handles barrel globally; shader barrel disabled to avoid double-distortion
     beamScan: false,
     beamWidth: 6.0
+    // Removed 2026-11-03 (user: "scanlines look very harsh across black"):
+    // the centre "bloom" haze (bloomIntensity 0.22 / bloomRadius 1.6), the
+    // grille's R/G/B stripe tint and the never-wired chromatic aberration.
+    // All three were COLOUR the overlay painted through its own alpha, so
+    // on black they drew the raster gaps as lit rows (bloom x tint x scan
+    // alpha), and the SVG chain's 8-bit linearRGB stages then snapped that
+    // tiny lift to exactly 13/255 -- hard 1 px lines on a black field,
+    // every few raster periods, drifting with the viewport height. A CRT
+    // puts no light on black; the overlay is now a transmission mask only.
+    // Harness: ?black=1&look=1 shot, checker mode black (max pixel <= 1).
     // Removed 2026-10-22 (no global dither layer; product media and the
     // three.js scenes dither on their own): the 2 px checker "phosphor
     // grain" that sat over the whole tube (ditherIntensity 0.06).
@@ -393,9 +402,6 @@
     'uniform float uScanSigmaPx;',
     'uniform float uGrilleIntensity;',
     'uniform float uGrillePitch;',
-    'uniform float uChromaticAberration;',
-    'uniform float uBloomIntensity;',
-    'uniform float uBloomRadius;',
     'uniform float uVignetteStart;',
     'uniform float uVignetteEnd;',
     'uniform float uVignetteIntensity;',
@@ -438,24 +444,17 @@
     '  float scanPeak = 1.0 + 2.0 * exp(uScanlinePeriod * uScanlinePeriod * scanK);',
     '  float scanline = 1.0 - uScanlineIntensity * (1.0 - scanSum / scanPeak);',
     '',
-    '  /* ── Trinitron Aperture Grille (vertical RGB stripes) ── */',
-    '  float grilleX = mod(bPx.x, uGrillePitch);',
-    '  float grillePhase = grilleX / uGrillePitch;',
-    '  vec3 grille = vec3(1.0);',
-    '  float grilleR = smoothstep(0.0, 0.05, grillePhase) * (1.0 - smoothstep(0.20, 0.25, grillePhase));',
-    '  float grilleG = smoothstep(0.25, 0.30, grillePhase) * (1.0 - smoothstep(0.45, 0.50, grillePhase));',
-    '  float grilleB = smoothstep(0.50, 0.55, grillePhase) * (1.0 - smoothstep(0.70, 0.75, grillePhase));',
+    '  /* ── Trinitron Aperture Grille ─────────────────────────',
+    '     What an LCD can show of a 0.25 mm grille is the dark gap between',
+    '     triads (the last quarter of each pitch), uGrilleIntensity / 2 deep.',
+    '     The R|G|B stripe tint this used to add was colour painted through',
+    '     the mask alpha -- it lit black (see the composite) and amounted to',
+    '     ~2/255 on white, so it is gone: the grille only absorbs. ── */',
+    '  float grillePhase = mod(bPx.x, uGrillePitch) / uGrillePitch;',
     '  float grilleGap = smoothstep(0.73, 0.75, grillePhase);',
-    '  grille.r = mix(1.0, 1.0 + uGrilleIntensity, grilleR);',
-    '  grille.g = mix(1.0, 1.0 + uGrilleIntensity, grilleG);',
-    '  grille.b = mix(1.0, 1.0 + uGrilleIntensity, grilleB);',
-    '  grille *= mix(1.0, 1.0 - uGrilleIntensity * 0.5, grilleGap);',
+    '  float grilleAlpha = uGrilleIntensity * 0.5 * grilleGap;',
     '',
     '  vec2 center = bUv - 0.5;',
-    '',
-    '  /* ── Bloom (simplified single-pass glow) ──────────────── */',
-    '  float bloomDist = length(center);',
-    '  float bloom = uBloomIntensity * exp(-bloomDist * bloomDist * uBloomRadius * uBloomRadius);',
     '',
     '  /* ── Vignette ─────────────────────────────────────────── */',
     '  float vignetteDist = length(center) * 1.414;',
@@ -483,22 +482,16 @@
     '    powerFade = smoothstep(0.0, 1.0, uTime / 0.4);',
     '  }',
     '',
-    '  /* ── Composite ────────────────────────────────────────── */',
-    '  float alpha = 0.0;',
-    '  vec3 color = vec3(0.0);',
-    '',
+    '  /* ── Composite: a transmission mask, nothing else ─────────',
+    '     Source-over of BLACK at alpha = 1 - transmission. The content keeps',
+    '     transmission x itself and black stays exactly black: a CRT emits no',
+    '     light where the beam is off, so no raster may show on a black',
+    '     field. Any colour painted here instead rides the mask alpha, i.e.',
+    '     the gaps between raster lines light up on black -- and the SVG',
+    '     chain the canvas sits inside (8-bit linearRGB stages) snaps such',
+    '     a lift to 13/255, a hard line. That was the "harsh scanlines',
+    '     across black" of 2026-11-03 (centre bloom + grille tint). ── */',
     '  float scanAlpha = (1.0 - scanline);',
-    '',
-    '  float grilleAlpha = (1.0 - min(grille.r, min(grille.g, grille.b)));',
-    '  vec3 phosphorTint = vec3(',
-    '    grilleR * 0.4,',
-    '    grilleG * 0.4,',
-    '    grilleB * 0.4',
-    '  ) * uGrilleIntensity;',
-    '',
-    '  vec3 caColor = vec3(0.0);',
-    '  float caAlpha = 0.0;',
-    '',
     '  float vignetteAlpha = (1.0 - vignette);',
     '',
     '  /* The wire is a brightness factor like the other layers, so it goes',
@@ -508,10 +501,7 @@
     '  float totalDarken = 1.0 - (1.0 - scanAlpha) * (1.0 - grilleAlpha) * (1.0 - vignetteAlpha) * damperWires;',
     '  totalDarken *= beamBrightness;',
     '',
-    '  color = phosphorTint + caColor + vec3(bloom);',
-    '  alpha = max(totalDarken, caAlpha);',
-    '',
-    '  gl_FragColor = vec4(color, clamp(alpha * powerFade, 0.0, 1.0));',
+    '  gl_FragColor = vec4(0.0, 0.0, 0.0, clamp(totalDarken * powerFade, 0.0, 1.0));',
     '}'
   ].join('\n');
 
@@ -567,9 +557,6 @@
       uScanSigmaPx:         { value: 1.0 },               // set by applyTubeScale
       uGrilleIntensity:     { value: cfg.grilleIntensity },
       uGrillePitch:         { value: cfg.grillePitchMin }, // set by applyTubeScale
-      uChromaticAberration: { value: cfg.chromaticAberration },
-      uBloomIntensity:      { value: cfg.bloomIntensity },
-      uBloomRadius:         { value: cfg.bloomRadius },
       uVignetteStart:       { value: cfg.vignetteStart },
       uVignetteEnd:         { value: cfg.vignetteEnd },
       uVignetteIntensity:   { value: cfg.vignetteIntensity },
@@ -659,27 +646,14 @@
     window.addEventListener('resize', onResize);
 
     // ─── Adaptive quality ────────────────────────────────────────
-    // Shed the expensive per-pixel effects (bloom + chromatic aberration are
-    // multi-tap) and lower render DPR when the governor reports a weak frame
-    // rate. Base values captured post-reduced-motion so restoring 'high'
-    // preserves the accessibility state.
-    var baseBloom  = uniforms.uBloomIntensity.value;
-    var baseChroma = uniforms.uChromaticAberration.value;
+    // Lower the render DPR when the governor reports a weak frame rate (the
+    // pass is pure fill rate; the multi-tap bloom / chromatic aberration it
+    // also used to shed are gone, see defaults).
     if (window.JJ_Perf) {
       window.JJ_Perf.onChange(function (t) {
-        if (t === 'low') {
-          perfDprCap = 1;
-          uniforms.uBloomIntensity.value = 0;
-          uniforms.uChromaticAberration.value = 0;
-        } else if (t === 'mid') {
-          perfDprCap = 1.25;
-          uniforms.uBloomIntensity.value = baseBloom * 0.5;
-          uniforms.uChromaticAberration.value = baseChroma * 0.5;
-        } else { // high
-          perfDprCap = 2;
-          uniforms.uBloomIntensity.value = baseBloom;
-          uniforms.uChromaticAberration.value = baseChroma;
-        }
+        if (t === 'low') perfDprCap = 1;
+        else if (t === 'mid') perfDprCap = 1.25;
+        else perfDprCap = 2; // high
         onResize();
       });
     }
