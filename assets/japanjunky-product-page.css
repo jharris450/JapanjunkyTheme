@@ -72,6 +72,13 @@
   bottom: 44px;
   height: auto;
   min-height: 90px;
+  /* Old-school cascade (user 2026-11-04: "don't have them line up
+     perfectly"): stepped 5% further right and a touch wider than the viewer
+     (right 14% / width 29%), so the spec window -> viewer -> description read
+     as a staircase instead of a tiled column. Still inside the page: its
+     left edge lands at 61%, just over the spec window's 62% right edge. */
+  right: 9%;
+  width: 30%;
 }
 
 /* Maximize must beat the positioning rules above (restate the max geometry). */
