@@ -47,6 +47,25 @@
   margin: 0;
 }
 
+/* Description window (2026-11-04): the product description in its own
+   window directly under the 3D viewer -- same right edge + width (inherited
+   from the .jj-viewerwin rule above; same specificity, so this rule must
+   FOLLOW it), from the viewer's TRUE bottom (top 13% + its height, which is
+   48% but never under the 220px min-height -- on a 1080p screen under the
+   2.5 zoom the page is ~394px tall and the min-height wins) plus a 12px
+   gap, down to the spec window's bottom (44px clears the 32px taskbar).
+   min-height 90px = titlebar + four lines; on that 1080p screen it ends
+   ~27px above the taskbar. Rendered only when the product has a
+   description (sections/jj-product.liquid); the
+   .jj-viewerwin.jj-explorer--max rule below still out-specifies this on
+   maximize. */
+.jj-pdp-page .jj-descwin {
+  top: calc(13% + max(48%, 220px) + 12px);
+  bottom: 44px;
+  height: auto;
+  min-height: 90px;
+}
+
 /* Maximize must beat the positioning rules above (restate the max geometry). */
 .jj-pdp-page .jj-explorer.jj-explorer--max,
 .jj-pdp-page .jj-viewerwin.jj-explorer--max {
@@ -211,36 +230,9 @@
   box-shadow: var(--jj-tactile-disabled);
 }
 
-/* --- Thumbnail strip --- */
-.jj-pdp-thumbs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.jj-pdp-thumb {
-  width: 60px;
-  height: 60px;
-  border: 1px solid #333;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 2px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.jj-pdp-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  image-rendering: pixelated;
-}
-.jj-pdp-thumb:hover {
-  border-color: #555;
-}
-.jj-pdp-thumb--active {
-  border-color: var(--jj-primary, #e04040);
-}
-
-/* --- Description --- */
+/* --- Description ---
+   Since 2026-11-04 the description lives in its own window (.jj-descwin,
+   below) and the spec sheet carries neither it nor a thumbnail strip. */
 .jj-pdp-description {
   font-size: 11px;
   color: #999;
@@ -332,8 +324,27 @@
   cursor: grab;
 }
 
+/* Pointer over the vinyl: it is clickable (product-viewer.js toggles it in
+   front of / behind the sleeve). Before the dragging rule so grabbing wins
+   mid-drag. */
+#jj-pdp-viewer-canvas.jj-viewer--hit-vinyl {
+  cursor: pointer;
+}
+
 #jj-pdp-viewer-canvas.jj-viewer--dragging {
   cursor: grabbing;
+}
+
+/* --- Text window pane (Description) ---
+   The window's body when win98-viewer renders a captured body instead of
+   the 3D stage: a scrolling terminal pane. The description inside keeps
+   .jj-pdp-description (11px / #bbb / plate above; 15px floor on the
+   handheld, where the pane flows instead -- japanjunky-mobile.css). */
+.jj-viewerwin__pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
 }
 
 /* --- Entrance animation --- */

@@ -6,6 +6,9 @@
  * Consumes: window.JJ_SCREENSAVER_CONFIG (for shader resolution)
  * Accesses: window.JJ_Portal (only for Tsuno Daishi + parallax coordination)
  * Listens:  jj:product-selected, jj:product-deselected
+ * Product page: the vinyl is clickable -- a press that travels < 6px on the
+ * disc toggles it in front of / behind the sleeve (jj:pdp-vinyl-toggled);
+ * anything longer is the usual drag. window.JJ_PDP_VIEWER exposes the state.
  */
 (function () {
   'use strict';
@@ -389,6 +392,29 @@
   var vinylIdleTime = 0;
   var vinylSlideProgress = -1; // -1 = not started, 0→1 = sliding out
 
+  // Rest poses (cover-local; the vinyl is parented to the cover). BEHIND is
+  // the entrance target: half pulled out of the sleeve, behind it. FRONT:
+  // in front of the cover (and its back plane at z -0.01), centred over the
+  // sleeve's right half. groupX drifts the pair so its combined extent stays
+  // centred (behind spans x -1..2.0, front -1..1.45).
+  var VINYL_BEHIND = { x: 1.1, z: -0.02, groupX: -0.5 };
+  var VINYL_FRONT = { x: 0.55, z: 0.25, groupX: -0.225 };
+  var VINYL_TWEEN_S = 0.45;
+  var vinylFront = false;
+  var vinylTween = null; // { t, from, to } while moving between poses
+
+  function toggleVinylFront() {
+    // Not before the entrance slide has landed, not mid-tween.
+    if (!vinylMesh || vinylSlideProgress < 1 || vinylTween) return;
+    vinylFront = !vinylFront;
+    vinylTween = {
+      t: 0,
+      from: vinylFront ? VINYL_BEHIND : VINYL_FRONT,
+      to: vinylFront ? VINYL_FRONT : VINYL_BEHIND
+    };
+    document.dispatchEvent(new CustomEvent('jj:pdp-vinyl-toggled', { detail: { front: vinylFront } }));
+  }
+
   var VINYL_FRAG = [
     'uniform sampler2D uLabel;',
     'uniform float uHasLabel;',
@@ -483,6 +509,8 @@
 
     vinylSlideProgress = -1; // entrance deferred until startVinylEntrance()
     vinylIdleTime = 0;
+    vinylFront = false;
+    vinylTween = null;
 
     return vinylMesh;
   }
@@ -496,18 +524,29 @@
   function updateVinyl(dt) {
     if (!vinylMesh) return;
 
-    // Slide-out animation
+    // Slide-out animation (entrance): hidden behind the cover -> BEHIND pose
     if (vinylSlideProgress >= 0 && vinylSlideProgress < 1) {
       vinylMesh.visible = true;
       vinylSlideProgress += dt / 0.6; // 0.6s duration
       if (vinylSlideProgress > 1) vinylSlideProgress = 1;
       var ease = 1 - Math.pow(1 - vinylSlideProgress, 3); // ease-out cubic
-      vinylMesh.position.x = ease * 1.1; // slide right to 50% pulled out
+      vinylMesh.position.x = ease * VINYL_BEHIND.x;
       // Keep the cover + record pair centered in-frame: as the disc slides
       // out to the right, drift the whole group left by half the distance so
       // the composition stays centered instead of hugging the right edge.
-      if (currentModel) currentModel.position.x = -ease * 0.5;
+      if (currentModel) currentModel.position.x = ease * VINYL_BEHIND.groupX;
       return;
+    }
+
+    // Click toggle: tween between the BEHIND / FRONT poses (ease-out cubic).
+    if (vinylTween) {
+      vinylTween.t += dt / VINYL_TWEEN_S;
+      var k = vinylTween.t >= 1 ? 1 : 1 - Math.pow(1 - vinylTween.t, 3);
+      var a = vinylTween.from, b = vinylTween.to;
+      vinylMesh.position.x = a.x + (b.x - a.x) * k;
+      vinylMesh.position.z = a.z + (b.z - a.z) * k;
+      if (currentModel) currentModel.position.x = a.groupX + (b.groupX - a.groupX) * k;
+      if (k >= 1) vinylTween = null;
     }
 
     // Idle: turntable spin only. Vertical bob is inherited from the parent
@@ -672,30 +711,56 @@
     }
   }
 
-  // ─── Drag Interaction (on canvas) ─────────────────────────────
+  // ─── Drag / click interaction (on canvas) ─────────────────────
+  // One press, two outcomes: travel < CLICK_PX before release = a click (on
+  // the vinyl: toggle front/behind), anything longer = the usual drag.
+  var CLICK_PX = 6;
+  var press = { onVinyl: false, x0: 0, y0: 0, moved: 0 };
 
-  canvas.addEventListener('mousedown', function (e) {
-    if (!currentModel) return;
-
+  // Nearest hit under a client point, or null. Hits are distance-sorted, so
+  // where the sleeve covers a BEHIND disc the sleeve wins; a FRONT disc wins
+  // wherever it overlaps.
+  function hitAt(clientX, clientY) {
+    if (!currentModel) return null;
     var rect = canvas.getBoundingClientRect();
-    var mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    var my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
+    var mx = ((clientX - rect.left) / rect.width) * 2 - 1;
+    var my = -((clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera({ x: mx, y: my }, camera);
     var hits = raycaster.intersectObject(currentModel, true);
+    return hits.length ? hits[0].object : null;
+  }
 
-    if (hits.length > 0) {
-      drag.active = true;
-      drag.prevX = e.clientX;
-      drag.prevY = e.clientY;
-      drag.velY = 0;
-      drag.velX = 0;
-      drag.lastTime = performance.now();
-      flick.active = false;
-      canvas.classList.add('jj-viewer--dragging');
-      e.preventDefault();
-    }
+  canvas.addEventListener('mousedown', function (e) {
+    var hit = hitAt(e.clientX, e.clientY);
+    if (!hit) return;
+
+    press.onVinyl = !!vinylMesh && hit === vinylMesh;
+    press.x0 = e.clientX;
+    press.y0 = e.clientY;
+    press.moved = 0;
+
+    drag.active = true;
+    drag.prevX = e.clientX;
+    drag.prevY = e.clientY;
+    drag.velY = 0;
+    drag.velX = 0;
+    drag.lastTime = performance.now();
+    flick.active = false;
+    canvas.classList.add('jj-viewer--dragging');
+    canvas.classList.remove('jj-viewer--hit-vinyl');
+    e.preventDefault();
   });
+
+  // Hover: pointer cursor over the (clickable) vinyl, product page only.
+  if (isProductPage) {
+    canvas.addEventListener('mousemove', function (e) {
+      if (drag.active || !vinylMesh) return;
+      canvas.classList.toggle('jj-viewer--hit-vinyl', hitAt(e.clientX, e.clientY) === vinylMesh);
+    });
+    canvas.addEventListener('mouseleave', function () {
+      canvas.classList.remove('jj-viewer--hit-vinyl');
+    });
+  }
 
   window.addEventListener('mousemove', function (e) {
     if (!drag.active || !currentModel) return;
@@ -705,6 +770,7 @@
 
     var dx = e.clientX - drag.prevX;
     var dy = e.clientY - drag.prevY;
+    press.moved = Math.max(press.moved, Math.abs(e.clientX - press.x0), Math.abs(e.clientY - press.y0));
 
     currentModel.rotation.y += dx * 0.01;
     currentModel.rotation.x += dy * 0.01;
@@ -719,22 +785,32 @@
   });
 
   window.addEventListener('mouseup', function () {
-    if (drag.active) {
-      drag.active = false;
-      canvas.classList.remove('jj-viewer--dragging');
+    if (!drag.active) return;
+    drag.active = false;
+    canvas.classList.remove('jj-viewer--dragging');
 
-      // If released with velocity, start flick spin
-      var speed = Math.abs(drag.velY) + Math.abs(drag.velX);
-      if (speed > 0.005) {
-        flick.active = true;
-        flick.velY = drag.velY;
-        flick.velX = drag.velX;
-      } else {
-        // No flick — spring back to idle
-        spring.active = true;
-        spring.velX = 0;
-        spring.velZ = 0;
-      }
+    // A click on the vinyl: toggle it, no flick (the sub-6px travel already
+    // nudged the rotation; the spring eases that back).
+    if (press.onVinyl && press.moved < CLICK_PX) {
+      press.onVinyl = false;
+      toggleVinylFront();
+      spring.active = true;
+      spring.velX = 0;
+      spring.velZ = 0;
+      return;
+    }
+
+    // If released with velocity, start flick spin
+    var speed = Math.abs(drag.velY) + Math.abs(drag.velX);
+    if (speed > 0.005) {
+      flick.active = true;
+      flick.velY = drag.velY;
+      flick.velX = drag.velX;
+    } else {
+      // No flick — spring back to idle
+      spring.active = true;
+      spring.velX = 0;
+      spring.velZ = 0;
     }
   });
 
@@ -1080,33 +1156,21 @@
       }, 500);
     }
 
-    // Listen for thumbnail clicks
-    document.addEventListener('jj:pdp-thumb-selected', function (e) {
-      var idx = e.detail.index;
-      var diff;
-      if (idx === 0 && currentModel) {
-        // Flip to front via flick animation
-        diff = 0 - currentModel.rotation.y;
-        if (Math.abs(diff) > 0.01) {
-          flick.active = true;
-          flick.velY = diff * 0.15;
-          flick.velX = 0;
-        }
-        swapVinylLabel('A');
-      } else if (idx === 1 && currentModel) {
-        // Flip to back via flick animation
-        diff = Math.PI - currentModel.rotation.y;
-        if (Math.abs(diff) > 0.01) {
-          flick.active = true;
-          flick.velY = diff * 0.15;
-          flick.velX = 0;
-        }
-        swapVinylLabel('B');
-      } else if (idx === 2) {
-        swapVinylLabel('A');
-      } else if (idx === 3) {
-        swapVinylLabel('B');
-      }
-    });
+    // Harness / debug surface (tests/harness/pdp-windows.html): vinyl state,
+    // where the disc is on the canvas (CSS px, canvas-relative; dx offsets
+    // along the COVER's local x -- not the disc's own frame, which spins --
+    // so a caller can aim at the disc's exposed part), and the cover's yaw.
+    window.JJ_PDP_VIEWER = {
+      isVinylFront: function () { return vinylFront; },
+      vinylScreenPoint: function (dx) {
+        if (!vinylMesh) return null;
+        var v = new THREE.Vector3(vinylMesh.position.x + (dx || 0), vinylMesh.position.y, vinylMesh.position.z);
+        if (vinylMesh.parent) vinylMesh.parent.localToWorld(v);
+        v.project(camera);
+        var rect = canvas.getBoundingClientRect();
+        return { x: (v.x + 1) / 2 * rect.width, y: (1 - v.y) / 2 * rect.height };
+      },
+      coverRotationY: function () { return currentModel ? currentModel.rotation.y : 0; }
+    };
   }
 })();

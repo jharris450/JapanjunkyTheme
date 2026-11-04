@@ -1,7 +1,8 @@
 /**
  * japanjunky-product-page.js
  * Product page logic: entrance animations, variant selector,
- * thumbnail strip, add-to-cart, back button transition.
+ * add-to-cart, back button transition. (Thumbnail strip removed 2026-11-04:
+ * the cover is the 3D viewer, the description has its own window.)
  *
  * Consumes: window.JJ_PRODUCT_DATA (set by jj-product.liquid)
  */
@@ -18,7 +19,6 @@
   var addToCartBtn = document.getElementById('jj-pdp-add-to-cart');
   var cartForm = document.getElementById('jj-pdp-cart-form');
   var variantsContainer = document.getElementById('jj-pdp-variants');
-  var thumbsContainer = document.getElementById('jj-pdp-thumbs');
   var backBtn = document.getElementById('jj-pdp-back');
 
   // ─── Entrance Animation ───────────────────────────────────────
@@ -123,29 +123,6 @@
           }, 1500);
         });
     });
-  }
-
-  // ─── Thumbnail Strip ───────────────────────────────────────────
-  if (thumbsContainer) {
-    var thumbBtns = thumbsContainer.querySelectorAll('.jj-pdp-thumb');
-
-    for (var ti = 0; ti < thumbBtns.length; ti++) {
-      thumbBtns[ti].addEventListener('click', function () {
-        var btn = this;
-        var idx = parseInt(btn.getAttribute('data-thumb-index'), 10);
-
-        // Update active state
-        for (var tj = 0; tj < thumbBtns.length; tj++) {
-          thumbBtns[tj].classList.remove('jj-pdp-thumb--active');
-        }
-        btn.classList.add('jj-pdp-thumb--active');
-
-        // Dispatch event for product viewer
-        document.dispatchEvent(new CustomEvent('jj:pdp-thumb-selected', {
-          detail: { index: idx, imageUrl: btn.getAttribute('data-image-url') }
-        }));
-      });
-    }
   }
 
   // ─── Back Button ───────────────────────────────────────────────

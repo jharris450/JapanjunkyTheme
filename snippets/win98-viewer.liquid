@@ -1,36 +1,52 @@
 {%- comment -%}
-  Lightweight Win98/IE "browser" window that holds the product page's 3D
-  cover + vinyl viewer as a SECOND window beside the spec-sheet explorer.
-  Reuses the .jj-explorer chrome styling (border/bevel/titlebar/controls) but
-  is a standalone instance driven by japanjunky-viewer-window.js (drag /
-  resize / min / max / close). The shared japanjunky-explorer.js binds by id
-  (#jj-explorer) and never touches this window. No address bar, toolbar, or
-  folder view — it's a viewer, not a file browser.
+  Lightweight Win98/IE "browser" window beside the spec-sheet explorer on the
+  product page. Rendered twice there: the 3D cover + vinyl viewer (default
+  params) and, when the product has a description, the Description window
+  (id 'jj-descwin', body = the description). Reuses the .jj-explorer chrome
+  styling (border/bevel/titlebar/controls) but each is a standalone instance
+  driven by japanjunky-viewer-window.js (drag / resize / min / max / close,
+  one init per .jj-viewerwin). The shared japanjunky-explorer.js binds by id
+  (#jj-explorer) and never touches these windows. No address bar, toolbar,
+  or folder view -- they are viewers, not file browsers.
 
   Params:
-    title — window title (default '3D Viewer')
-    icon  — win95-start-icon name (default 'box')
+    title    -- window title (default '3D Viewer')
+    icon     -- win95-start-icon name (default 'box')
+    id       -- element id (default 'jj-viewerwin'); the titlebar + controls
+                get '<id>-titlebar' / '-min' / '-max' / '-close'
+    modifier -- extra class on the window (product page: 'jj-descwin' for
+                the Description window's geometry)
+    body     -- captured HTML. Blank = the 3D stage (canvas
+                #jj-pdp-viewer-canvas, which product-viewer.js auto-inits);
+                set = a scrolling text pane (.jj-viewerwin__pane) instead.
 {%- endcomment -%}
 {%- assign vw_title = title | default: '3D Viewer' -%}
 {%- assign vw_icon = icon | default: 'box' -%}
+{%- assign vw_id = id | default: 'jj-viewerwin' -%}
 
-<div class="jj-explorer jj-viewerwin" id="jj-viewerwin" data-title="{{ vw_title | escape }}">
-  <header class="jj-explorer__titlebar" id="jj-viewerwin-titlebar">
+<div class="jj-explorer jj-viewerwin{% if modifier != blank %} {{ modifier }}{% endif %}" id="{{ vw_id }}" data-title="{{ vw_title | escape }}">
+  <header class="jj-explorer__titlebar" id="{{ vw_id }}-titlebar">
     <span class="jj-explorer__titleicon" aria-hidden="true">{% render 'win95-start-icon', icon: vw_icon %}</span>
     <h2 class="jj-explorer__title">{{ vw_title }}</h2>
     <span class="jj-explorer__ctls">
-      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--min" id="jj-viewerwin-min" aria-label="Minimize">_</button>
-      <button type="button" class="jj-explorer__ctl" id="jj-viewerwin-max" aria-label="Maximize">&#9633;</button>
-      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="jj-viewerwin-close" aria-label="Close">&times;</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--min" id="{{ vw_id }}-min" aria-label="Minimize">_</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--max" id="{{ vw_id }}-max" aria-label="Maximize">&#9633;</button>
+      <button type="button" class="jj-explorer__ctl jj-explorer__ctl--close" id="{{ vw_id }}-close" aria-label="Close">&times;</button>
     </span>
   </header>
 
+  {%- if body != blank -%}
+  {%- comment -%} Text pane (Description window): scrolls inside the window
+      on desktop, flows with the page on the handheld (japanjunky-mobile.css). {%- endcomment -%}
+  <div class="jj-viewerwin__pane" id="{{ vw_id }}-pane">{{ body }}</div>
+  {%- else -%}
   {%- comment -%} Stage: warm amber portal-glow behind the fluid 3D canvas.
       product-viewer.js auto-inits on #jj-pdp-viewer-canvas wherever it lives
       and tracks its box via ResizeObserver, so drag/resize just work. {%- endcomment -%}
   <div class="jj-viewerwin__stage" id="jj-viewerwin-stage">
     <canvas id="jj-pdp-viewer-canvas" aria-label="3D product viewer"></canvas>
   </div>
+  {%- endif -%}
 
   {%- comment -%} Resize handles (edges + corners); hidden while maximized /
       on the handheld (japanjunky-mobile.css). {%- endcomment -%}

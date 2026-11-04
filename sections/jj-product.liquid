@@ -2,8 +2,11 @@
   JapanJunky Product Page — product detail rendered inside the Win98
   explorer window (chrome = Win98, spec sheet = terminal, 3D cover +
   vinyl = PS1, per the layer rule). Same window snippet the cart /
-  watchlist / content pages use. Enhanced by japanjunky-product-page.js
-  (variant/thumb/ATC) + japanjunky-product-viewer.js (3D cover + record).
+  watchlist / content pages use. Three windows: the spec sheet (this
+  explorer), the 3D viewer and -- when the product has a description -- the
+  Description window (both via snippets/win98-viewer.liquid). Enhanced by
+  japanjunky-product-page.js (variant/ATC) + japanjunky-product-viewer.js
+  (3D cover + clickable record) + japanjunky-viewer-window.js (windows).
 {%- endcomment -%}
 
 {%- assign p = product -%}
@@ -140,24 +143,8 @@
       </form>
     </div>
 
-    {%- if p.images.size > 0 -%}
-    <div class="jj-pdp-thumbs" id="jj-pdp-thumbs">
-      {%- for image in p.images limit: 4 -%}
-      <button class="jj-pdp-thumb{% if forloop.first %} jj-pdp-thumb--active{% endif %}"
-              data-thumb-index="{{ forloop.index0 }}"
-              data-image-url="{{ image | image_url: width: 800 }}"
-              type="button">
-        <img src="{{ image | image_url: width: 80 }}" alt="{{ image.alt | escape }}" loading="lazy" width="80" height="80">
-      </button>
-      {%- endfor -%}
-    </div>
-    {%- endif -%}
-
-    {%- if p.description != blank -%}
-    <div class="jj-pdp-description">
-      {{ p.description }}
-    </div>
-    {%- endif -%}
+    {%- comment -%} No thumbs (the cover IS the 3D viewer) and no description
+        here since 2026-11-04: the description has its own window below. {%- endcomment -%}
 
   </div>
 {%- endcapture -%}
@@ -223,11 +210,23 @@
   {%- assign win_palette = p.featured_image | image_url: width: 64 -%}
 {%- endif -%}
 
+{%- comment -%} Description window body (2026-11-04). Keeps the
+    .jj-pdp-description class so the existing desktop plate / mobile floor
+    rules apply unchanged inside the window. {%- endcomment -%}
+{%- capture desc_body -%}
+  <div class="jj-pdp-description" id="jj-pdp-description">{{ p.description }}</div>
+{%- endcapture -%}
+
 <div class="jj-page jj-pdp-page">
-  {%- comment -%} Two windows: the spec-sheet explorer + a standalone viewer
-      window holding the 3D cover/vinyl. {%- endcomment -%}
+  {%- comment -%} Three windows: the spec-sheet explorer, the standalone 3D
+      viewer (upper right) and, only when the product has a description, the
+      Description window directly under the viewer (geometry in
+      japanjunky-product-page.css .jj-descwin; stacked last on the handheld). {%- endcomment -%}
   {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt, palette_src: win_palette, background_src: win_bg %}
   {% render 'win98-viewer', title: '3D Viewer', icon: 'box' %}
+  {%- if p.description != blank -%}
+  {% render 'win98-viewer', id: 'jj-descwin', modifier: 'jj-descwin', title: 'Description', icon: 'doc', body: desc_body %}
+  {%- endif -%}
 </div>
 
 {%- comment -%} No-JS fallback: static image + standard form {%- endcomment -%}

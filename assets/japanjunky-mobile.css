@@ -270,12 +270,24 @@ html.jj-mobile .jj-pdp-page .jj-pdp-info::-webkit-scrollbar {
   display: none;
 }
 
-/* Viewer window: no resize / min / max on the handheld (drag + resize are
-   already gated off in JS by JJ_MOBILE; close stays so it can be dismissed). */
+/* Viewer + Description windows: no resize / min / max on the handheld (drag
+   + resize are already gated off in JS by JJ_MOBILE; close stays so they
+   can be dismissed). By class since 2026-11-04 -- two such windows now. */
 html.jj-mobile .jj-viewerwin .jj-explorer__rs,
-html.jj-mobile #jj-viewerwin-min,
-html.jj-mobile #jj-viewerwin-max {
+html.jj-mobile .jj-viewerwin .jj-explorer__ctl--min,
+html.jj-mobile .jj-viewerwin .jj-explorer__ctl--max {
   display: none;
+}
+
+/* Description window (2026-11-04): last in the stack (viewer -1, spec 0),
+   so price + Add to Cart stay high; its pane flows with the scrolling page
+   layer instead of scrolling inside a window with no definite height. */
+html.jj-mobile .jj-pdp-page .jj-descwin {
+  order: 1;
+}
+html.jj-mobile .jj-viewerwin__pane {
+  height: auto;
+  overflow: visible;
 }
 
 /* --- Homepage landing: pop card (kyogen + live 3D box + panel) --- */
@@ -699,14 +711,6 @@ html.jj-mobile .jj-pdp-actions .jj-action-btn {
   min-height: 44px;
   padding: 10px 16px;
   background: rgba(0, 0, 0, 0.72);
-}
-html.jj-mobile .jj-pdp-thumbs {
-  gap: 6px;
-  margin-bottom: 10px;
-}
-html.jj-mobile .jj-pdp-thumb {
-  width: 72px;
-  height: 72px;
 }
 html.jj-mobile .jj-pdp-description {
   font-size: 15px;
