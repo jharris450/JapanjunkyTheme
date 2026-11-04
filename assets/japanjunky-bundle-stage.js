@@ -893,6 +893,11 @@
     // greeting bubble AND engages his roaming personality (peek gesture).
     // No-op if he's already awake.
     document.dispatchEvent(new CustomEvent('jj:tsuno-wake'));
+    // "The offer" (2026-11-03): the masked figure rises behind the box the
+    // moment it is clicked (not on load) — bundle.css .is-offering reveals
+    // #jj-offer-body / #jj-offer-hand; japanjunky-offer.js has placed them.
+    var offerCard = document.getElementById('jj-product-info');
+    if (offerCard) offerCard.classList.add('is-offering');
     var pool = pickPool();
     buildStack(pool);
     // Finish the idle spin forward to face front (no snap), then open.
