@@ -304,22 +304,13 @@
       </div>
       {%- comment -%} Mystery-box hero takes the product-graphic spot; panel text shows the bundle product. {%- endcomment -%}
       {%- comment -%} "The offer" (2026-11-03): masked figure BEHIND the box, head
-          over its top edge, hand held out under it -- one mirrored dithered
+          over its top edge, hand held out under it, legs crossed with the AK
+          across his lap, fading out at the bottom -- one mirrored dithered
           sprite (tools/offer-split.py). Card child at z -1 placed AFTER the
           kyogen clip frame (and after the lite occluder info-swirl inserts behind
           it), so it sits ON TOP of the pop burst + head but under the card copy
           and the box canvas (z 1). japanjunky-offer.js places it from the box
           canvas; bundle-stage's click adds .is-offering. {%- endcomment -%}
-      {%- comment -%} Genie tail under him (rev 8): the wispy lower half of genie.png,
-          dithered grey (tools/offer-tail.py), swaying from its top anchor, with
-          three smoke puffs rising off it (bundle.css keyframes). Earlier sibling
-          at the same z -1: the man's dissolving torso paints OVER the tail's top. {%- endcomment -%}
-      <div class="jj-offer__tail" id="jj-offer-tail" aria-hidden="true">
-        <img class="jj-offer__tail-img" src="{{ 'offer-tail.png' | asset_url }}" alt="" draggable="false">
-        <img class="jj-offer__puff jj-offer__puff--1" src="{{ 'offer-puff.png' | asset_url }}" alt="" draggable="false">
-        <img class="jj-offer__puff jj-offer__puff--2" src="{{ 'offer-puff.png' | asset_url }}" alt="" draggable="false">
-        <img class="jj-offer__puff jj-offer__puff--3" src="{{ 'offer-puff.png' | asset_url }}" alt="" draggable="false">
-      </div>
       <img class="jj-offer__body" id="jj-offer-body" src="{{ 'offer-man.png' | asset_url }}" alt="" aria-hidden="true" draggable="false">
       <canvas id="jj-bundle-canvas" aria-label="3D mystery box"></canvas>
       {%- comment -%} Daruma reroll: floats between the box and the crescent.

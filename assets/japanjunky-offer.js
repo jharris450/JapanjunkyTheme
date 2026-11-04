@@ -1,5 +1,6 @@
 /**
- * japanjunky-offer.js -- "the offer" (2026-11-03, rev 6 "A+C")
+ * japanjunky-offer.js -- "the offer" (2026-11-03, rev 6 "A+C"; rev 12 2026-11-04:
+ * whole figure, legs + AK across the lap, bottom fade, genie tail gone)
  * One mirrored, dithered sprite of a masked figure (#jj-offer-body, see
  * japanjunky-bundle.css "The offer") placed BEHIND the mystery box: palm on
  * the box's tape seam, whole head over the box's top edge where the viewport
@@ -16,7 +17,6 @@
   var card = document.getElementById('jj-product-info');
   var canvas = document.getElementById('jj-bundle-canvas');
   var man = document.getElementById('jj-offer-body');
-  var tail = document.getElementById('jj-offer-tail');
   if (!card || !canvas || !man) return;
 
   // -- Tuning ----------------------------------------------------------
@@ -46,11 +46,7 @@
   // (css px): 1920x1080 at zoom 2.5 is 762 wide, 2560x1440 is 1018.
   var VW_NARROW = 800, VW_WIDE = 1000;
   // Crop box of the sprite inside the mirrored source (tools/offer-split.py prints it).
-  var MAN_BBOX = { x: 244, y: 72, w: 836 };
-  // Genie tail (tools/offer-tail.py): hung by its top centre from this point
-  // in mirrored man-source px (his waist, inside the 640-820 fade band so the
-  // torso dissolves into it); w = the padded sprite width x 4.
-  var TAIL = { x: 690, y: 665, w: 1000 }; // a little right of centre: keeps the left lobe off the card copy
+  var MAN_BBOX = { x: 304, y: 72, w: 792 };
 
   var SCALE = SCALE_MIN, HEAD_PEEK = 0, SEAM_SRC_X = PALM.x; // last computed, for get()
 
@@ -77,11 +73,6 @@
     man.style.left = Math.round(ox + MAN_BBOX.x * SCALE) + 'px';
     man.style.top = Math.round(oy + MAN_BBOX.y * SCALE) + 'px';
     man.style.width = Math.round(MAN_BBOX.w * SCALE) + 'px';
-    if (tail) {
-      tail.style.left = Math.round(ox + (TAIL.x - TAIL.w / 2) * SCALE) + 'px';
-      tail.style.top = Math.round(oy + TAIL.y * SCALE) + 'px';
-      tail.style.width = Math.round(TAIL.w * SCALE) + 'px';
-    }
   }
 
   // One rAF late so layout from the same ResizeObserver / resize event has

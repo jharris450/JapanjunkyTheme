@@ -432,11 +432,12 @@ html.jj-fx-lite.jj-gecko .jj-kyogen.jj-kyogen--baked .jj-kyogen__pupil {
    likewise no longer bails out of play().) */
 
 /* --- "The offer" (2026-11-03): masked figure behind the mystery box ---
-   ONE dithered sprite, offer-man.png (159x178), built by tools/offer-split.py
-   from mantheoffer.png: the figure MIRRORED (rev 6 "A+C": the offering hand
-   comes from his left so the arm reads whole -- the earlier split hand /
-   shifted hand / cloned sleeve are gone), stipple-dissolving at his other
-   wrist so the rifle and lap never cross the card copy. Same recipe as the
+   ONE dithered sprite, offer-man.png (220x206), built by tools/offer-split.py
+   from Mantheoffer.png: the WHOLE figure MIRRORED (rev 6 "A+C": the offering
+   hand comes from his left so the arm reads whole), crossed legs and the AK
+   across his lap included (rev 12, 2026-11-04; the rev 8 genie tail is
+   gone), fading out over the last rows of the source frame so the figure
+   never ends in a flat edge. Same recipe as the
    kyogen / daruma sprites (4x box downsample, Floyd-Steinberg to the phosphor
    palette: grey ramp on luminance for mask + cloth, greys + warm tones for the
    hand, 1-bit alpha), upscaled crisp (image-rendering: pixelated) at ~2-3.3
@@ -471,68 +472,8 @@ html.jj-fx-lite.jj-gecko .jj-kyogen.jj-kyogen--baked .jj-kyogen__pupil {
   opacity: 1;
   transform: none;
 }
-/* Genie tail (rev 8, user: "add a genie wisp tail... animated with smoke
-   effects"): offer-tail.png is the wispy lower half of genie.png, dithered to
-   the man's grey ramp (tools/offer-tail.py), hung from one anchor at his
-   waist by japanjunky-offer.js (the sprite's top centre is at 50 % of its
-   width, so left = anchor - width/2). Earlier sibling of the man at the same
-   z -1: his dissolving torso paints over the tail's faded-in top, so the two
-   melt into each other; still under the card copy and the box canvas.
-   The tail SWAYS from its top (transform-origin 50% 0, slow rotate +
-   stretch), and three smoke puffs (offer-puff.png, one procedural cloud)
-   drift up and out of it on staggered loops: scale up, fade in fast, fade
-   out slow -- per-puff drift via --dx/--dy. Reduced-motion bypass as the
-   kyogen/daruma. Gecko lite: no animation (same reason as the kyogen float:
-   software WebRender re-rasters the big bang snapshots under any moving
-   layer) -- the tail stands still and the puffs stay hidden. */
-.jj-offer__tail {
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.2s ease-out 0.4s; /* arrives a beat after the man */
-}
-#jj-product-info.is-offering .jj-offer__tail {
-  opacity: 1;
-}
-.jj-offer__tail-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-width: none;
-  image-rendering: pixelated;
-  transform-origin: 50% 0;
-  animation: jj-offer-tail-sway 7.5s ease-in-out infinite;
-}
-@keyframes jj-offer-tail-sway {
-  0%, 100% { transform: rotate(-2.5deg) scaleY(1); }
-  50%      { transform: rotate(2.5deg) scaleY(1.04); }
-}
-.jj-offer__puff {
-  position: absolute;
-  width: 26%;
-  height: auto;
-  max-width: none;
-  image-rendering: pixelated;
-  opacity: 0;
-  --dx: -30%;
-  --dy: -150%;
-  animation: jj-offer-puff 6s ease-out infinite;
-}
-.jj-offer__puff--1 { left: 22%; top: 40%; --dx: -45%; --dy: -160%; animation-delay: 0s; }
-.jj-offer__puff--2 { left: 52%; top: 58%; --dx: 35%; --dy: -140%; animation-duration: 7s; animation-delay: 2.3s; }
-.jj-offer__puff--3 { left: 38%; top: 24%; --dx: -10%; --dy: -170%; animation-duration: 5.5s; animation-delay: 4.1s; }
-@keyframes jj-offer-puff {
-  0%   { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
-  14%  { opacity: 0.6; }
-  100% { transform: translate(var(--dx), var(--dy)) scale(1.6) rotate(28deg); opacity: 0; }
-}
-html.jj-fx-lite.jj-gecko .jj-offer__tail-img { animation: none !important; }
-html.jj-fx-lite.jj-gecko .jj-offer__puff { display: none !important; }
-
 /* Mobile: the card is reparented and the box lives in its own slot below it --
    no composition to serve, hidden. */
-html.jj-mobile .jj-offer__body,
-html.jj-mobile .jj-offer__tail {
+html.jj-mobile .jj-offer__body {
   display: none !important;
 }
