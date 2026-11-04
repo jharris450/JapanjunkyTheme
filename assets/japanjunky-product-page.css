@@ -49,18 +49,26 @@
 
 /* Description window (2026-11-04): the product description in its own
    window directly under the 3D viewer -- same right edge + width (inherited
-   from the .jj-viewerwin rule above; same specificity, so this rule must
-   FOLLOW it), from the viewer's TRUE bottom (top 13% + its height, which is
-   48% but never under the 220px min-height -- on a 1080p screen under the
-   2.5 zoom the page is ~394px tall and the min-height wins) plus a 12px
-   gap, down to the spec window's bottom (44px clears the 32px taskbar).
-   min-height 90px = titlebar + four lines; on that 1080p screen it ends
-   ~27px above the taskbar. Rendered only when the product has a
-   description (sections/jj-product.liquid); the
-   .jj-viewerwin.jj-explorer--max rule below still out-specifies this on
+   from the .jj-viewerwin rule above). Only rendered when the product has a
+   description (sections/jj-product.liquid), and then the page carries
+   --has-desc, which lifts the viewer from 13% to the spec window's top
+   (16px): on a 1080p screen under the 2.5 zoom the fixed page layer is
+   ~394px tall, the viewer's 220px min-height wins over its 48%, and the
+   right column (16px top .. 44px bottom = 334px) only fits viewer + 12px
+   gap + a readable description window (102px = titlebar + three lines) if
+   the viewer starts at the top. Both right-hand windows then end on the
+   spec window's bottom line (44px clears the 32px taskbar). The window's
+   top is the viewer's TRUE bottom (16px + max(48%, 220px)) + 12px.
+   Same specificity as the .jj-viewerwin rule above, so order matters: the
+   lift must follow that rule, and this window's rule must follow the lift
+   (the Description window is a .jj-viewerwin too). The
+   .jj-viewerwin.jj-explorer--max rule below still out-specifies both on
    maximize. */
+.jj-pdp-page--has-desc .jj-viewerwin {
+  top: 16px;
+}
 .jj-pdp-page .jj-descwin {
-  top: calc(13% + max(48%, 220px) + 12px);
+  top: calc(16px + max(48%, 220px) + 12px);
   bottom: 44px;
   height: auto;
   min-height: 90px;

@@ -217,11 +217,13 @@
   <div class="jj-pdp-description" id="jj-pdp-description">{{ p.description }}</div>
 {%- endcapture -%}
 
-<div class="jj-page jj-pdp-page">
+<div class="jj-page jj-pdp-page{% if p.description != blank %} jj-pdp-page--has-desc{% endif %}">
   {%- comment -%} Three windows: the spec-sheet explorer, the standalone 3D
       viewer (upper right) and, only when the product has a description, the
       Description window directly under the viewer (geometry in
-      japanjunky-product-page.css .jj-descwin; stacked last on the handheld). {%- endcomment -%}
+      japanjunky-product-page.css .jj-descwin; stacked last on the handheld).
+      --has-desc lifts the viewer to the spec window's top so both right-hand
+      windows fit above the taskbar on a 1080p screen. {%- endcomment -%}
   {% render 'win98-explorer', title: p.title, body: win_body, desc: win_desc, path: win_path, icon: 'box', objects: p.variants.size, video_src: win_video, video_poster: win_poster, youtube_url: win_yt, palette_src: win_palette, background_src: win_bg %}
   {% render 'win98-viewer', title: '3D Viewer', icon: 'box' %}
   {%- if p.description != blank -%}
