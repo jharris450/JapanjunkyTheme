@@ -27,19 +27,23 @@
   margin: 0;
 }
 
-/* The 3D viewer floats upper-right, inset from the edge and overlapping the
-   spec window's right side (it starts focused/on top — see viewer-window.js).
-   Shorter than the spec window so the desktop reads as two distinct windows.
-   Scoped to .jj-pdp-page so it out-specifies the base .jj-explorer rules
-   (width:100%/margin:auto/position:relative) regardless of stylesheet order.
-   left/bottom:auto cancel any values inherited from those base rules. */
+/* The 3D viewer floats upper-right, ENTIRELY right of the spec window
+   (user 2026-11-04, something.png: "don't want to have anything on the
+   product tab covered initially") -- right 2% / width 30% puts its left edge
+   at 68%, past the spec window's 62% right edge; at the 260px min-width on
+   a 768px-wide page (1080p under the 2.5 zoom) the edge is still 64%. It
+   starts focused/on top (viewer-window.js). Shorter than the spec window so
+   the desktop reads as distinct windows. Scoped to .jj-pdp-page so it
+   out-specifies the base .jj-explorer rules (width:100%/margin:auto/
+   position:relative) regardless of stylesheet order. left/bottom:auto
+   cancel any values inherited from those base rules. */
 .jj-pdp-page .jj-viewerwin {
   position: absolute;
-  right: 14%;
+  right: 2%;
   left: auto;
   top: 13%;
   bottom: auto;
-  width: 29%;
+  width: 30%;
   min-width: 260px;
   max-width: 460px;
   height: 48%;
@@ -73,12 +77,14 @@
   height: auto;
   min-height: 90px;
   /* Old-school cascade (user 2026-11-04: "don't have them line up
-     perfectly"): stepped 5% further right and a touch wider than the viewer
-     (right 14% / width 29%), so the spec window -> viewer -> description read
-     as a staircase instead of a tiled column. Still inside the page: its
-     left edge lands at 61%, just over the spec window's 62% right edge. */
-  right: 9%;
-  width: 30%;
+     perfectly", then something.png for the arrangement): stepped 2.5% LEFT
+     of the viewer (right 2% / width 30%) and a touch wider, so the two
+     right-hand windows are offset without either touching the spec window:
+     its left edge lands at 64.5%, past the spec window's 62% right edge, and
+     with the smaller 240px min-width still 64% on a 768px-wide page. */
+  right: 4.5%;
+  width: 31%;
+  min-width: 240px;
 }
 
 /* Maximize must beat the positioning rules above (restate the max geometry). */
