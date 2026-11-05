@@ -66,6 +66,38 @@
     if (e.detail && e.detail.id !== 'toolbox' && isOpen()) close();
   });
 
+  // --- Stow target (2026-11-04) ---
+  // The player drags back onto the ♪ button to be put away. player.js hit-tests
+  // the cursor against getButtonRect() while dragging and asks for the hover
+  // cue / the "clunk in" flash; it never touches this DOM itself. Defined after
+  // the guards above, so on mobile (or missing markup) there is no JJ_Toolbox
+  // and the player has no stow target.
+  var stowFlashTimer = null;
+
+  function getButtonRect() {
+    return btn.getBoundingClientRect(); // visual px, same space as pointer clientX/Y
+  }
+
+  function setStowHover(on) {
+    toolbox.classList.toggle('jj-toolbox--stow-hover', !!on);
+  }
+
+  function flashStow() {
+    clearTimeout(stowFlashTimer);
+    toolbox.classList.remove('jj-toolbox--stow-flash');
+    void btn.offsetWidth; // restart the animation if it is still running
+    toolbox.classList.add('jj-toolbox--stow-flash');
+    stowFlashTimer = setTimeout(function () {
+      toolbox.classList.remove('jj-toolbox--stow-flash');
+    }, 320); // a hair past the 0.3 s jj-toolbox-stow animation
+  }
+
+  window.JJ_Toolbox = {
+    getButtonRect: getButtonRect,
+    setStowHover: setStowHover,
+    flashStow: flashStow
+  };
+
   // --- Drag (or click) a fan tool to spawn its player (Tranche 2) ---
   var PLAYER_HALF = 48; // half of the 96px player, to centre it on the cursor
 

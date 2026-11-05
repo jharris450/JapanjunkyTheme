@@ -752,6 +752,29 @@ svg.jj-start-item-icon {
   transition-delay: 90ms;
 }
 
+/* Stow target (2026-11-04): the player is being dragged over the ♪ button.
+   player.js hit-tests the cursor against the button and toggles this on
+   #jj-toolbox through JJ_Toolbox.setStowHover(). Accept-green, like the
+   player's own accept flash. */
+.jj-toolbox--stow-hover .jj-toolbox__btn {
+  border-color: var(--jj-green, #33ff33);
+  box-shadow: 0 0 10px rgba(51, 255, 51, 0.7);
+}
+
+/* The "clunk in" when a player is dropped on the button: pressed + green glow,
+   two steps. JJ_Toolbox.flashStow() applies the class for 320 ms. */
+.jj-toolbox--stow-flash .jj-toolbox__btn {
+  animation: jj-toolbox-stow 0.3s steps(2);
+}
+
+@keyframes jj-toolbox-stow {
+  0%, 100% { box-shadow: var(--jj-tactile); border-color: #444; }
+  50% {
+    box-shadow: var(--jj-tactile-pressed), 0 0 12px rgba(51, 255, 51, 0.85);
+    border-color: var(--jj-green, #33ff33);
+  }
+}
+
 /* (reduced-motion block removed - global bypass, see theme.liquid shim) */
 
 @keyframes jj-shutdown-dots {
@@ -888,6 +911,16 @@ svg.jj-start-item-icon {
     box-shadow: 0 0 14px rgba(232, 49, 58, 0.9);
     border-color: var(--jj-primary, #e8313a);
   }
+}
+
+/* --- Stow (dropped on the toolbox button, 2026-11-04): the shrink + fade into
+   the button is stepped by player.js stow() on el's own inline transform
+   (translate + scale) and opacity — no CSS animation here on purpose: a
+   keyframe on `transform` would drop the physics translate, and the
+   standalone `scale` property multiplies that translate too, sliding the
+   player toward the page corner instead of into the button. --- */
+.jj-player--stow {
+  pointer-events: none;
 }
 
 /* --- Drag ghost (placeholder until 3D graphics land in Tranche 3) --- */

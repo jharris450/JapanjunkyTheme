@@ -35,6 +35,9 @@
   var THROW_MAX = 4000;         // clamp thrown speed (layout px/s)
   var STORE_KEY = 'jj-player';
   var flashTimer = null;
+  var stowTimer = null;   // pending despawn at the end of the stow shrink
+  var STOW_MS = 200;      // matches the jj-player-stow animation in japanjunky-win95.css
+  var STOW_PAD = 4;       // px of forgiveness around the toolbox button
   var model = null;       // { group, setOpen, setPlaying, update } or null
   var modelRenderer = null, modelScene = null, modelCamera = null, modelRaf = null;
   var lidT = 0, lidTarget = 0; // current/target open fraction for the tween
@@ -132,6 +135,7 @@
     body.x = Physics.clamp(px - grabDX, opts.bounds.minX, opts.bounds.maxX);
     body.y = Physics.clamp(py - grabDY, opts.bounds.minY, opts.bounds.maxY);
     setPosition(body.x, body.y);
+    setStowHover(overToolbox(e.clientX, e.clientY));
   }
 
   function onPointerUp(e) {
@@ -141,6 +145,9 @@
     el.removeEventListener('pointerup', onPointerUp);
     el.removeEventListener('pointercancel', onPointerCancel);
     el.classList.remove('jj-player--grabbed');
+    setStowHover(false);
+    // Released on the toolbox button: put the player away instead of throwing it.
+    if (overToolbox(e.clientX, e.clientY)) { stow(); return; }
     body.vx = Physics.clamp(velX, -THROW_MAX, THROW_MAX);
     body.vy = Physics.clamp(velY, -THROW_MAX, THROW_MAX);
     startLoop();
@@ -153,6 +160,7 @@
     el.removeEventListener('pointerup', onPointerUp);
     el.removeEventListener('pointercancel', onPointerCancel);
     el.classList.remove('jj-player--grabbed');
+    setStowHover(false);
     body.vx = 0;
     body.vy = 0;
     startLoop();
@@ -278,6 +286,67 @@
     lidTarget = restOpen();
   }
 
+  // --- Stow: drag the player back onto the toolbox's ♪ button (2026-11-04) ---
+  // Cursor-based hit test (visual px), like media drops and eject tokens: the
+  // pointer inside the button's rect, padded a little. No JJ_Toolbox (mobile,
+  // missing markup) means no stow target.
+  function overToolbox(clientX, clientY) {
+    var TB = window.JJ_Toolbox;
+    if (!TB || !TB.getButtonRect) return false;
+    var r = TB.getButtonRect();
+    return !!r && clientX >= r.left - STOW_PAD && clientX <= r.right + STOW_PAD &&
+                  clientY >= r.top - STOW_PAD && clientY <= r.bottom + STOW_PAD;
+  }
+
+  function setStowHover(on) {
+    var TB = window.JJ_Toolbox;
+    if (TB && TB.setStowHover) TB.setStowHover(on);
+  }
+
+  // Put the player away. The loaded song (if any) pops out as a token first so
+  // nothing vanishes with the player; then the unit shrinks into the button in
+  // STOW_STEPS chunky steps and despawns, which also clears sessionStorage so
+  // it stays put away on the next page.
+  // The shrink is stepped here in JS, not in CSS: physics owns el's transform
+  // (translate) and stopLoop() hands it over, so stow() appends scale() to the
+  // same translate. (A CSS animation on `transform` would drop the translate,
+  // and the standalone `scale` property multiplies the translate too, which
+  // slides the player toward the page corner instead of into the button.)
+  // The shrink origin is the toolbox button's centre expressed in the player's
+  // own box (clamped to its edges), not the grab point: the physics floor keeps
+  // the player above the taskbar while the cursor is on the button, so the
+  // grab point can sit well above the button by then. No toolbox = the centre.
+  var STOW_STEPS = 4;
+  function stowOrigin() {
+    var TB = window.JJ_Toolbox;
+    var r = TB && TB.getButtonRect ? TB.getButtonRect() : null;
+    if (!r || !body) return '50% 50%';
+    var w = el.offsetWidth || 96, h = el.offsetHeight || 96;
+    var ox = Physics.clamp((r.left + r.width / 2) / zoom - body.x, 0, w);
+    var oy = Physics.clamp((r.top + r.height / 2) / zoom - body.y, 0, h);
+    return Math.round(ox) + 'px ' + Math.round(oy) + 'px';
+  }
+
+  function stow() {
+    if (!el || stowTimer !== null) return;
+    popOutLoaded();
+    stopLoop();
+    dragging = false;
+    el.removeEventListener('pointerdown', onPointerDown);
+    el.classList.add('jj-player--stow'); // pointer-events: none
+    el.style.transformOrigin = stowOrigin();
+    if (window.JJ_Toolbox && window.JJ_Toolbox.flashStow) window.JJ_Toolbox.flashStow();
+    var sx = body.x, sy = body.y, i = 0;
+    stowTimer = setInterval(function () {
+      i++;
+      var k = i / STOW_STEPS;            // 0.25 .. 1
+      var s = 1 - 0.9 * k;               // scale 1 -> 0.1
+      el.style.transform = 'translate(' + sx + 'px,' + sy + 'px) scale(' + s.toFixed(3) + ')';
+      el.style.opacity = String(1 - k);  // 1 -> 0
+      if (i >= STOW_STEPS) { clearInterval(stowTimer); stowTimer = null; despawn(); }
+    }, STOW_MS / STOW_STEPS);
+  }
+
   function spawn(tool, x, y) {
     despawn();
     currentTool = tool;
@@ -307,6 +376,7 @@
   }
 
   function despawn() {
+    clearInterval(stowTimer); stowTimer = null; // a spawn mid-shrink must not be removed by the old stow stepper
     stopLoop();
     unmountModel();
     if (window.JJ_PlayerAudio) window.JJ_PlayerAudio.stop();
@@ -447,6 +517,7 @@
   window.JJ_Player = {
     spawn: spawn,
     despawn: despawn,
+    stow: stow, // put the player away (shrink into the toolbox, then despawn)
     getType: function () { return currentTool; },
     getRect: getRect,
     tryLoadProduct: tryLoadProduct,
